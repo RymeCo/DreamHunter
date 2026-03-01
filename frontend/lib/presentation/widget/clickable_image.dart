@@ -55,7 +55,7 @@ class _MakeItButtonState extends State<MakeItButton> {
             duration: const Duration(
               milliseconds: 100,
             ), // Reduced duration for responsiveness
-            decoration: widget.onHoverGlow && _isHovering
+            decoration: widget.onHoverGlow && (_isHovering || _isTapped)
                 ? BoxDecoration(
                     boxShadow: [
                       BoxShadow(
