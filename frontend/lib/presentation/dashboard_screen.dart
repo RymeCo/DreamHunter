@@ -26,6 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    _isLoggedIn = FirebaseAuth.instance.currentUser != null;
     _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (mounted) {
         setState(() {
@@ -91,10 +92,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                   onRegisterSuccess: () {
                     setDialogState(() {
-                      _currentDialogType = AuthDialogType.login;
+                      _isLoggedIn = true;
+                      _currentDialogType = AuthDialogType.profile;
                       showCustomSnackBar(
                         context,
-                        'Registration successful! Please log in.',
+                        'Registration successful!',
                         type: SnackBarType.success,
                       );
                     });
@@ -210,17 +212,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
+        toolbarHeight: 120,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: MakeItButton(
-              imagePath: 'assets/widget/sandwitch.png',
+            child: SizedBox(
               width: 45,
               height: 45,
-              onTap: _showAuthDialog,
-              clickResponsiveness: true,
-              onHoverGlow: true,
-              isClickable: true,
+              child: OverflowBox(
+                maxWidth: 150,
+                maxHeight: 150,
+                child: MakeItButton(
+                  imagePath: 'assets/widget/sandwitch.png',
+                  width: 45,
+                  height: 45,
+                  onTap: _showAuthDialog,
+                  clickResponsiveness: true,
+                  onHoverGlow: true,
+                  isClickable: true,
+                ),
+              ),
             ),
           ),
         ],

@@ -5,3 +5,7 @@
 node_modules/
 build/
 *.log
+# VS Code related
+.vscode/
+.gemini/
+note.txt
