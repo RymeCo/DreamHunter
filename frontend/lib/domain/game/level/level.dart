@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 
-class Level extends World {
+class Level extends Component {
   final String fileName;
   final Vector2 destTileSize;
   late TiledComponent level;
