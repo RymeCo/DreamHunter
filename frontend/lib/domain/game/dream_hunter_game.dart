@@ -19,7 +19,7 @@ class DreamHunterGame extends FlameGame with HasKeyboardHandlerComponents {
     await images.loadAllImages();
 
     final level = Level(
-      fileName: 'map/map 1.json',
+      fileName: 'map/map_1.json',
       destTileSize: Vector2.all(32),
     );
 

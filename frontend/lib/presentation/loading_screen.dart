@@ -39,7 +39,8 @@ class _LoadingScreenState extends State<LoadingScreen> with TickerProviderStateM
 
     // 2. Load Tiled map
     setState(() => _progress = 0.6);
-    await TiledComponent.load('map/map 1.json', Vector2.all(32));
+    // Set Tiled prefix to empty to avoid assets/tiles/
+    await TiledComponent.load('map/map_1.json', Vector2.all(32), prefix: '');
 
     // 3. Finalize
     setState(() => _progress = 1.0);
