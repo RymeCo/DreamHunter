@@ -27,19 +27,20 @@ class _LoadingScreenState extends State<LoadingScreen> with TickerProviderStateM
   }
 
   Future<void> _startPreloading() async {
-    // Set prefix to empty since our assets are in assets/ (not assets/images/)
+    // Force empty prefixes to handle manual paths correctly
     Flame.images.prefix = '';
     
     // 1. Load basic images
     setState(() => _progress = 0.2);
     await Flame.images.loadAll([
-      'sprites/character/char1.png',
-      'widget/smallcirclefigure.png',
+      'assets/sprites/character/char1.png',
+      'assets/widget/smallcirclefigure.png',
     ]);
 
     // 2. Load Tiled map
     setState(() => _progress = 0.6);
-    await TiledComponent.load('map_1.json', Vector2.all(32));
+    // Explicitly use the full path and empty prefix to avoid auto-prefixing bugs
+    await TiledComponent.load('assets/tiles/map.json', Vector2.all(32), prefix: '');
 
     // 3. Finalize
     setState(() => _progress = 1.0);
