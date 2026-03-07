@@ -1,6 +1,5 @@
 import 'package:dreamhunter/domain/game/playground_service.dart';
 import 'package:dreamhunter/presentation/loading_screen.dart';
-import 'package:dreamhunter/presentation/widget/liquid_glass_dialog.dart';
 import 'package:flutter/material.dart';
 
 class PlayDialog extends StatefulWidget {
@@ -53,10 +52,10 @@ class _PlayDialogState extends State<PlayDialog> {
                       width: 2,
                     ),
                     borderRadius: BorderRadius.circular(10),
-                    color: isSelected ? Colors.purple.withOpacity(0.3) : Colors.transparent,
+                    color: isSelected ? Colors.purple.withValues(alpha: 0.3) : Colors.transparent,
                   ),
                   child: Image.asset(
-                    'assets/sprites/character/char1.png', // Placeholder for other character images
+                    'assets/sprites/character/char1.png',
                     width: 60,
                     height: 60,
                     fit: BoxFit.contain,

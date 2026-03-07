@@ -8,7 +8,6 @@ import 'package:dreamhunter/presentation/widget/login_dialog.dart';
 import 'package:dreamhunter/presentation/widget/register_dialog.dart';
 import 'package:dreamhunter/presentation/widget/profile_dialog.dart';
 import 'package:dreamhunter/presentation/widget/liquid_glass_dialog.dart';
-import 'package:dreamhunter/presentation/game_screen.dart';
 import 'package:dreamhunter/presentation/widget/play_dialog.dart';
 
 enum AuthDialogType { login, register, profile }

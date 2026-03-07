@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:dreamhunter/presentation/game_screen.dart';
 import 'package:flame/flame.dart';
-import 'package:flame_tiled/flame_tiled.dart';
+import 'package:flame/components.dart';
+import 'package:flame_tiled/flame_tiled.dart' hide Text;
 import 'package:flutter/material.dart';
 
 class LoadingScreen extends StatefulWidget {
