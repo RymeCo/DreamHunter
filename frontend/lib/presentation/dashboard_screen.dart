@@ -9,6 +9,7 @@ import 'package:dreamhunter/presentation/widget/register_dialog.dart';
 import 'package:dreamhunter/presentation/widget/profile_dialog.dart';
 import 'package:dreamhunter/presentation/widget/liquid_glass_dialog.dart';
 import 'package:dreamhunter/presentation/game_screen.dart';
+import 'package:dreamhunter/presentation/widget/play_dialog.dart';
 
 enum AuthDialogType { login, register, profile }
 
@@ -205,6 +206,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _showPlayDialog() {
+    showGeneralDialog(
+      context: context,
+      barrierLabel: "PlayDialog",
+      barrierDismissible: true,
+      barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        const double dialogWidth = 350;
+        const double dialogHeight = 400;
+        final double dialogX = (MediaQuery.of(context).size.width - dialogWidth) / 2;
+        final double dialogY = (MediaQuery.of(context).size.height - dialogHeight) / 2;
+
+        return Stack(
+          children: [
+            Positioned(
+              left: dialogX,
+              top: dialogY,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20.0),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Container(
+                    width: dialogWidth,
+                    height: dialogHeight,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color.fromRGBO(255, 255, 255, 0.1),
+                      borderRadius: BorderRadius.circular(20.0),
+                      border: Border.all(
+                        color: const Color.fromRGBO(255, 255, 255, 0.2),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: const LiquidGlassDialog(child: PlayDialog()),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+          child: FadeTransition(opacity: animation, child: child),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -256,12 +308,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     imagePath: 'assets/widget/dorm.png',
                     width: MediaQuery.of(context).size.width * 0.8,
                     onHoverGlow: true,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const GameScreen()),
-                      );
-                    },
+                    onTap: _showPlayDialog,
                   ),
                 ],
               ),
