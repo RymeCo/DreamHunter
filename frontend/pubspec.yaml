@@ -28,7 +28,10 @@ flutter:
 
   assets:
     - assets/widget/
-    - assets/widget/
-    - assets/widget/
+    - assets/map/
+    - assets/sprites/character/
+    - assets/sprites/floor/
+    - assets/sprites/tower/
+    - assets/tiled/
 
 
