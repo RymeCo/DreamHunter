@@ -3,10 +3,13 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:dreamhunter/domain/game/dream_hunter_game.dart';
 
+import 'package:dreamhunter/domain/game/playground_service.dart';
+
 enum PlayerState { idleFront, idleBack, walkFront, walkBack }
 
 class Player extends SpriteAnimationGroupComponent<PlayerState>
     with HasGameReference<DreamHunterGame>, CollisionCallbacks {
+  final PlaygroundService _service = PlaygroundService();
   final double stepTime = 0.1;
   final double moveSpeed = 200;
   final double gravity = 9.8;
@@ -38,7 +41,9 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
   }
 
   void _loadAllAnimations() {
-    final spriteSheet = game.images.fromCache('sprites/character/char1.png');
+    // Dynamically load the character sprite based on selection
+    final spritePath = 'assets/sprites/character/${_service.selectedCharacter}.png';
+    final spriteSheet = game.images.fromCache(spritePath);
 
     // Assumes Row 0 = Front, Row 1 = Back (Adjust textureY if different)
     animations = {
@@ -134,8 +139,16 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
 
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
+    // If we hit anything, for now we assume it's the door if it's not the floor
+    // In a full implementation, we'd check tile properties.
+    if (other is TiledComponent) {
+      // Basic door detection logic: if we are at the door's approximate location
+      // Or we can just trigger it for testing
+      // game.triggerWin(); 
+    }
+    
     if (velocity.y > 0) {
-      if (position.y + size.y > other.position.y &&
+...      if (position.y + size.y > other.position.y &&
           position.y < other.position.y) {
         velocity.y = 0;
         position.y = other.position.y - size.y;
