@@ -2,10 +2,13 @@ import 'dart:async';
 import 'package:dreamhunter/domain/game/level/level.dart';
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 
 class DreamHunterGame extends FlameGame with HasKeyboardHandlerComponents {
   late final CameraComponent cam;
-  final world = World();
+
+  @override
+  final World world = World();
 
   @override
   FutureOr<void> onLoad() async {
