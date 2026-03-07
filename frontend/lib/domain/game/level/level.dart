@@ -11,7 +11,7 @@ class Level extends Component {
 
   @override
   FutureOr<void> onLoad() async {
-    level = await TiledComponent.load(fileName, destTileSize, prefix: '');
+    level = await TiledComponent.load(fileName, destTileSize);
     add(level);
     return super.onLoad();
   }
