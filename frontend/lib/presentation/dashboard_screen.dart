@@ -8,6 +8,7 @@ import 'package:dreamhunter/presentation/widget/login_dialog.dart';
 import 'package:dreamhunter/presentation/widget/register_dialog.dart';
 import 'package:dreamhunter/presentation/widget/profile_dialog.dart';
 import 'package:dreamhunter/presentation/widget/liquid_glass_dialog.dart';
+import 'package:dreamhunter/presentation/game_screen.dart';
 
 enum AuthDialogType { login, register, profile }
 
@@ -251,10 +252,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Center(
               child: Stack(
                 children: [
-                  Image.asset(
-                    'assets/widget/dorm.png',
-                    fit: BoxFit.contain,
+                  MakeItButton(
+                    imagePath: 'assets/widget/dorm.png',
                     width: MediaQuery.of(context).size.width * 0.8,
+                    onHoverGlow: true,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const GameScreen()),
+                      );
+                    },
                   ),
                 ],
               ),
