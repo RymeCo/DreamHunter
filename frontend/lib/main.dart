@@ -1,5 +1,6 @@
-import 'package:dreamhunter/screens/splash_screen.dart';
+import 'package:dreamhunter/game/dreamhunter_game.dart';
 import 'package:flame/flame.dart';
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -25,7 +26,7 @@ void main() async {
       theme: ThemeData(
         textTheme: GoogleFonts.quicksandTextTheme(),
       ),
-      home: const SplashScreen(),
+      home: GameWidget(game: DreamHunterGame(characterType: 'lady')),
       debugShowCheckedModeBanner: false,
     ),
   );
