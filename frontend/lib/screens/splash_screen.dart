@@ -23,7 +23,6 @@ class _SplashScreenState extends State<SplashScreen> {
     });
   }
 
-  /// Real initialization logic to avoid lagging UI
   Future<void> _initializeAppData() async {
     final startTime = DateTime.now();
 
