@@ -59,21 +59,25 @@ class _LoadingScreenState extends State<LoadingScreen>
                 shape: BoxShape.circle, // Added this line
                 boxShadow: [
                   BoxShadow(
-                    color: const Color.fromARGB(255, 229, 46, 246).withAlpha((255 * 0.5).round()),
+                    color: const Color.fromARGB(
+                      255,
+                      229,
+                      46,
+                      246,
+                    ).withAlpha((255 * 0.5).round()),
                     blurRadius: 8,
                     spreadRadius: 2,
-
                   ),
                 ],
               ),
               child: RotationTransition(
-              turns: _rotationController,
-              child: Image.asset(
-                'assets/widget/smallcirclefigure.png',
-                width: 48, // 2x larger
-                height: 48, // 2x larger
+                turns: _rotationController,
+                child: Image.asset(
+                  'assets/widget/smallcirclefigure.png',
+                  width: 48, // 2x larger
+                  height: 48, // 2x larger
+                ),
               ),
-            ),
             ),
             // Removed SizedBox here, as Expanded and SpaceBetween will handle spacing
             Expanded(
@@ -90,17 +94,18 @@ class _LoadingScreenState extends State<LoadingScreen>
                   value: _progress,
                   minHeight: 20.0,
                   backgroundColor: Colors.transparent,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color.fromARGB(255, 203, 28, 197)),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color.fromARGB(255, 203, 28, 197),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(
-              width: 10,
-            ),
+            const SizedBox(width: 10),
             Text(
               '${(_progress * 100).toInt()}%',
-              style: TextStyle(fontSize: 18,
-              color: const Color.fromARGB(255, 188, 173, 173)
+              style: TextStyle(
+                fontSize: 18,
+                color: const Color.fromARGB(255, 188, 173, 173),
               ),
             ),
           ],

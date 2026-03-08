@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:dreamhunter/presentation/widget/loading_screen.dart';
-import 'package:dreamhunter/presentation/dashboard_screen.dart';
+import 'package:dreamhunter/widgets/loading_screen.dart';
+import 'package:dreamhunter/screens/dashboard_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

@@ -1,14 +1,14 @@
-import 'package:dreamhunter/presentation/widget/custom_snackbar.dart';
+import 'package:dreamhunter/widgets/custom_snackbar.dart';
+import 'package:dreamhunter/screens/loading_screen.dart';
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:dreamhunter/presentation/widget/clickable_image.dart';
-import 'package:dreamhunter/presentation/widget/login_dialog.dart';
-import 'package:dreamhunter/presentation/widget/register_dialog.dart';
-import 'package:dreamhunter/presentation/widget/profile_dialog.dart';
-import 'package:dreamhunter/presentation/widget/liquid_glass_dialog.dart';
-import 'package:dreamhunter/presentation/widget/play_dialog.dart';
+import 'package:dreamhunter/widgets/clickable_image.dart';
+import 'package:dreamhunter/widgets/login_dialog.dart';
+import 'package:dreamhunter/widgets/register_dialog.dart';
+import 'package:dreamhunter/widgets/profile_dialog.dart';
+import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 
 enum AuthDialogType { login, register, profile }
 
@@ -28,7 +28,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _isLoggedIn = FirebaseAuth.instance.currentUser != null;
-    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((
+      user,
+    ) {
       if (mounted) {
         setState(() {
           _isLoggedIn = user != null;
@@ -45,7 +47,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _showAuthDialog() {
     setState(() {
-      _currentDialogType = _isLoggedIn ? AuthDialogType.profile : AuthDialogType.login;
+      _currentDialogType = _isLoggedIn
+          ? AuthDialogType.profile
+          : AuthDialogType.login;
     });
 
     showGeneralDialog(
@@ -123,9 +127,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               logoPath = 'assets/widget/registerLogo.png';
             }
 
-            final double dialogX = (MediaQuery.of(context).size.width - dialogWidth) / 2;
+            final double dialogX =
+                (MediaQuery.of(context).size.width - dialogWidth) / 2;
             // Shifted dialogY down by another 40 pixels (total +100)
-            final double dialogY = (MediaQuery.of(context).size.height - dialogHeight) / 2 + 100;
+            final double dialogY =
+                (MediaQuery.of(context).size.height - dialogHeight) / 2 + 100;
 
             final double logoX = dialogX + (dialogWidth - logoHeight) / 2;
             final double logoY = dialogY - logoOverlap;
@@ -143,7 +149,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: Container(
                         width: dialogWidth,
                         height: dialogHeight,
-                        padding: const EdgeInsets.fromLTRB(20, logoOverlap + 10, 20, 20),
+                        padding: const EdgeInsets.fromLTRB(
+                          20,
+                          logoOverlap + 10,
+                          20,
+                          20,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color.fromRGBO(255, 255, 255, 0.1),
                           borderRadius: BorderRadius.circular(20.0),
@@ -192,14 +203,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return ScaleTransition(
-          scale: CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutBack,
-          ),
-          child: FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
+          scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+          child: FadeTransition(opacity: animation, child: child),
         );
       },
     );
@@ -215,8 +220,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       pageBuilder: (context, animation, secondaryAnimation) {
         const double dialogWidth = 350;
         const double dialogHeight = 400;
-        final double dialogX = (MediaQuery.of(context).size.width - dialogWidth) / 2;
-        final double dialogY = (MediaQuery.of(context).size.height - dialogHeight) / 2;
+        final double dialogX =
+            (MediaQuery.of(context).size.width - dialogWidth) / 2;
+        final double dialogY =
+            (MediaQuery.of(context).size.height - dialogHeight) / 2;
 
         return Stack(
           children: [
@@ -239,7 +246,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         width: 1.5,
                       ),
                     ),
-                    child: const LiquidGlassDialog(child: PlayDialog()),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "Ready to enter the Dream World?",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context); // Close dialog
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoadingScreen(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.purpleAccent,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 40,
+                              vertical: 15,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: const Text(
+                            "ENTER",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            "CANCEL",
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.dreamhunter.ryme"
+    namespace = "com.dreamhunter.dreamhunter"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

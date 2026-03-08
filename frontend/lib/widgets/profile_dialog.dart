@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dreamhunter/presentation/widget/liquid_glass_dialog.dart';
+import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 
 class ProfileDialog extends StatelessWidget {
   final VoidCallback onLogoutRequested;
 
-  const ProfileDialog({
-    super.key,
-    required this.onLogoutRequested,
-  });
+  const ProfileDialog({super.key, required this.onLogoutRequested});
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +32,13 @@ class ProfileDialog extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance.collection('users').doc(displayName).get(),
+                future: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(displayName)
+                    .get(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                  if (snapshot.connectionState == ConnectionState.done &&
+                      snapshot.hasData) {
                     final data = snapshot.data!.data() as Map<String, dynamic>?;
                     final playerNumber = data?['playerNumber'];
                     if (playerNumber != null) {
@@ -58,8 +59,16 @@ class ProfileDialog extends StatelessWidget {
               CircleAvatar(
                 radius: 50,
                 backgroundColor: const Color.fromRGBO(255, 255, 255, 0.3),
-                backgroundImage: user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
-                child: user?.photoURL == null ? const Icon(Icons.person, size: 50, color: Color.fromRGBO(255, 255, 255, 0.7)) : null,
+                backgroundImage: user?.photoURL != null
+                    ? NetworkImage(user!.photoURL!)
+                    : null,
+                child: user?.photoURL == null
+                    ? const Icon(
+                        Icons.person,
+                        size: 50,
+                        color: Color.fromRGBO(255, 255, 255, 0.7),
+                      )
+                    : null,
               ),
               const SizedBox(height: 10),
               Text(
@@ -87,11 +96,16 @@ class ProfileDialog extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromRGBO(255, 255, 255, 0.1),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 15,
+                  ),
                   fixedSize: const Size(200, 50),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
-                    side: const BorderSide(color: Color.fromRGBO(255, 255, 255, 0.3)),
+                    side: const BorderSide(
+                      color: Color.fromRGBO(255, 255, 255, 0.3),
+                    ),
                   ),
                 ),
                 child: const Text(

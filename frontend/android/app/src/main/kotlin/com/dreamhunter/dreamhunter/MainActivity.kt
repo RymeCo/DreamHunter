@@ -1,4 +1,4 @@
-package com.example.dreamhunter
+package com.dreamhunter.dreamhunter
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -23,20 +23,11 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -66,4 +57,34 @@ class DefaultFirebaseOptions {
     storageBucket: 'dream-hunter-c0f89.firebasestorage.app',
   );
 
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyDm55KpIYdt8TnY-TR8tva0lDZM1_Dt0iE',
+    appId: '1:167750425566:ios:c47441c5d9c11edadedb4f',
+    messagingSenderId: '167750425566',
+    projectId: 'dream-hunter-c0f89',
+    storageBucket: 'dream-hunter-c0f89.firebasestorage.app',
+    iosClientId:
+        '167750425566-s4la9ldd3tthgdnh8ufrsgls44r1pvi5.apps.googleusercontent.com',
+    iosBundleId: 'com.dreamhunter.dreamhunter',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyDm55KpIYdt8TnY-TR8tva0lDZM1_Dt0iE',
+    appId: '1:167750425566:ios:c47441c5d9c11edadedb4f',
+    messagingSenderId: '167750425566',
+    projectId: 'dream-hunter-c0f89',
+    storageBucket: 'dream-hunter-c0f89.firebasestorage.app',
+    iosClientId:
+        '167750425566-s4la9ldd3tthgdnh8ufrsgls44r1pvi5.apps.googleusercontent.com',
+    iosBundleId: 'com.dreamhunter.dreamhunter',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyCQWpMYkL0-hJxo5e6RbYpZu_pAE-tKFWo',
+    appId: '1:167750425566:web:40feb7cf00b41033dedb4f',
+    messagingSenderId: '167750425566',
+    projectId: 'dream-hunter-c0f89',
+    authDomain: 'dream-hunter-c0f89.firebaseapp.com',
+    storageBucket: 'dream-hunter-c0f89.firebasestorage.app',
+  );
 }
