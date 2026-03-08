@@ -48,23 +48,23 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
     position.y += movement.y;
     _checkVerticalCollisions();
 
-    if (joystick.relativeDelta.x < -0.1) {
+    if (joystick.relativeDelta.x < 0) {
       if (scale.x > 0) scale.x = -1;
-    } else if (joystick.relativeDelta.x > 0.1) {
+    } else if (joystick.relativeDelta.x > 0) {
       if (scale.x < 0) scale.x = 1;
     }
 
-    if (joystick.relativeDelta.y < -0.1) {
+    if (joystick.relativeDelta.y < 0) {
       if (_state != PlayerState.facingBack) {
         _state = PlayerState.facingBack;
         _updateSprite();
       }
-    } else if (joystick.relativeDelta.y > 0.1) {
+    } else if (joystick.relativeDelta.y > 0) {
       if (_state != PlayerState.facingFront) {
         _state = PlayerState.facingFront;
         _updateSprite();
       }
-    } else if (joystick.relativeDelta.x.abs() > 0.1) {
+    } else if (joystick.relativeDelta.x.abs() > 0) {
       if (_state != PlayerState.facingFront) {
         _state = PlayerState.facingFront;
         _updateSprite();
@@ -93,7 +93,7 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
       if (_checkCollision(block)) {
         if (joystick.relativeDelta.y > 0) {
           position.y = block.y;
-        } else if (joystick.relativeDelta.y < -0.1) {
+        } else if (joystick.relativeDelta.y < 0) {
           position.y = block.y + block.height + hitboxSize.y;
         }
       }

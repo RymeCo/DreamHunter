@@ -25,11 +25,15 @@ class Level extends World {
           switch (spawnPoint.class_) {
             case 'Player':
               player.position = Vector2(spawnPoint.x, spawnPoint.y);
-              add(player);
               break;
             default:
           }
         }
+      }
+      
+      // Ensure player is added once after trying to find spawnpoint
+      if (!player.isMounted) {
+        add(player);
       }
 
       final collisionsLayer = level.tileMap.getLayer<ObjectGroup>('Collisions');
