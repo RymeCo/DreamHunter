@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="50" height="50" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="1">
  <tileset firstgid="1" source="floor_1_16.tsx"/>
- <tileset firstgid="43" source="blue-bed(64x64).tsx"/>
+ <tileset firstgid="43" source="bed_blue_32x64.tsx"/>
  <layer id="1" name="Walls" width="50" height="50">
   <data encoding="csv">
 5,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,24,25,25,26,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,7,

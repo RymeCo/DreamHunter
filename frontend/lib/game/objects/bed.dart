@@ -19,7 +19,7 @@ class Bed extends SpriteComponent with HasGameReference<DreamHunterGame> {
     // to adjust the Y position if we're increasing the height.
     // If the object was 48, and we increase to 64, we move it up by 16.
     // But for now, let's keep it simple.
-    sprite = await game.loadSprite('blue-bed(64x64).png',
+    sprite = await game.loadSprite('bed_blue_32x64.png',
       srcPosition: Vector2(0, 0),
       srcSize: Vector2(32, 64),
     );
