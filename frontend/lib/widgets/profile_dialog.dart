@@ -1,7 +1,6 @@
 import 'package:dreamhunter/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 
 /// A dialog that displays the current player's profile information.
 /// Uses [AuthService] for logout and [FirebaseFirestore] for extra player data.
