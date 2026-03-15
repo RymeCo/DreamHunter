@@ -1,6 +1,8 @@
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dreamhunter/widgets/clickable_image.dart';
 import 'package:dreamhunter/widgets/login_dialog.dart';
@@ -43,6 +45,102 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.dispose();
   }
 
+  void _showDropdownMenu() {
+    showGeneralDialog(
+      context: context,
+      barrierLabel: "DropdownMenu",
+      barrierDismissible: true,
+      barrierColor: Colors.transparent,
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Stack(
+          children: [
+            Positioned(
+              top: 100,
+              right: 20,
+              child: FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: animation,
+                  alignment: Alignment.topRight,
+                  child: LiquidGlassDialog(
+                    width: 200,
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildMenuButton(
+                          icon: _isLoggedIn ? Icons.person : Icons.login,
+                          label: _isLoggedIn ? 'Profile' : 'Login',
+                          onTap: () {
+                            Navigator.pop(context);
+                            _showAuthDialog();
+                          },
+                        ),
+                        const Divider(color: Colors.white24),
+                        _buildMenuButton(
+                          icon: Icons.settings,
+                          label: 'Settings',
+                          onTap: () {
+                            Navigator.pop(context);
+                            showCustomSnackBar(context, 'Settings coming soon!');
+                          },
+                        ),
+                        const Divider(color: Colors.white24),
+                        _buildMenuButton(
+                          icon: Icons.exit_to_app,
+                          label: 'Exit',
+                          onTap: () {
+                            if (Platform.isAndroid || Platform.isIOS) {
+                              SystemNavigator.pop();
+                            } else {
+                              exit(0);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildMenuButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 24),
+              const SizedBox(width: 12),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showAuthDialog() {
     setState(() {
       _currentDialogType = _isLoggedIn
@@ -61,7 +159,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           builder: (context, setDialogState) {
             Widget dialogContent;
             const double dialogWidth = 350;
-            const double dialogHeight = 520;
+            const double dialogHeight = 600;
             const double logoHeight = 375;
             const double logoOverlap = 150;
 
@@ -200,7 +298,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   imagePath: 'assets/images/dashboard/sandwich.png',
                   width: 45,
                   height: 45,
-                  onTap: _showAuthDialog,
+                  onTap: _showDropdownMenu,
                   clickResponsiveness: true,
                   onHoverGlow: true,
                   isClickable: true,
@@ -231,12 +329,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           Positioned(
-            bottom: MediaQuery.of(context).size.height * 0.15,
+            bottom: MediaQuery.of(context).size.height * 0.19,
             child: Image.asset(
               'assets/images/dashboard/signage.png',
               fit: BoxFit.contain,
-              width: 80,
-              height: 80,
+              width: 110,
+              height: 110,
             ),
           ),
           Positioned(

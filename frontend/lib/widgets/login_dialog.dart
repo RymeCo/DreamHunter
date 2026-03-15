@@ -60,56 +60,54 @@ class _LoginDialogState extends State<LoginDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return LiquidGlassDialog(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _emailController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: AuthUIHelper.inputDecoration('Email'),
-                  validator: AuthUIHelper.validateEmail,
-                ),
-                const SizedBox(height: 15),
-                TextFormField(
-                  controller: _passwordController,
-                  style: const TextStyle(color: Colors.white),
-                  obscureText: true,
-                  decoration: AuthUIHelper.inputDecoration('Password'),
-                  validator: AuthUIHelper.validatePassword,
-                ),
-                const SizedBox(height: 25),
-                ElevatedButton(
-                  onPressed: _login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(255, 255, 255, 0.3),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(
-                          color: Color.fromRGBO(255, 255, 255, 0.5)),
-                    ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _emailController,
+                style: const TextStyle(color: Colors.white),
+                decoration: AuthUIHelper.inputDecoration('Email'),
+                validator: AuthUIHelper.validateEmail,
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: _passwordController,
+                style: const TextStyle(color: Colors.white),
+                obscureText: true,
+                decoration: AuthUIHelper.inputDecoration('Password'),
+                validator: AuthUIHelper.validatePassword,
+              ),
+              const SizedBox(height: 25),
+              ElevatedButton(
+                onPressed: _login,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromRGBO(255, 255, 255, 0.3),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 40, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: const BorderSide(
+                        color: Color.fromRGBO(255, 255, 255, 0.5)),
                   ),
-                  child: const Text('Login',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
-                TextButton(
-                  onPressed: widget.onRegisterRequested,
-                  child: const Text("Don't have an account? Register",
-                      style:
-                          TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8))),
-                ),
-              ],
-            ),
+                child: const Text('Login',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              TextButton(
+                onPressed: widget.onRegisterRequested,
+                child: const Text("Don't have an account? Register",
+                    style:
+                        TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8))),
+              ),
+            ],
           ),
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'backend_service.dart';
 
 /// A centralized service for managing authentication and Firebase interactions.
 ///
@@ -23,13 +24,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final BackendService _backend = BackendService();
 
   /// Sign in with email and password
   Future<UserCredential> signIn(String email, String password) async {
-    return await _auth.signInWithEmailAndPassword(
+    final userCredential = await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
+    
+    // Sync with FastAPI backend
+    await _backend.syncUserProfile();
+    
+    return userCredential;
   }
 
   /// Register new user with display name and Firestore record
@@ -85,6 +92,9 @@ class AuthService {
         'saveSlots': {'slot1': null, 'slot2': null, 'slot3': null},
       });
     });
+
+    // Sync with FastAPI backend after registration
+    await _backend.syncUserProfile();
   }
 
   /// Log out

@@ -1,1 +1,6 @@
 fastapi
+uvicorn
+firebase-admin
+python-dotenv
+pydantic
+pydantic-settings

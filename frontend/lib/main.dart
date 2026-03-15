@@ -1,6 +1,5 @@
-import 'package:dreamhunter/game/dreamhunter_game.dart';
+import 'package:dreamhunter/screens/splash_screen.dart';
 import 'package:flame/flame.dart';
-import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,7 +13,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 2. Set Device Preferences (Wait for them to apply)
+  // 2. Set Device Preferences
   // Only run on mobile platforms to avoid "ViewInsets" assertion errors on Web
   if (!ThemeData().platform.toString().contains('web')) {
     await Flame.device.fullScreen();
@@ -26,7 +25,7 @@ void main() async {
       theme: ThemeData(
         textTheme: GoogleFonts.quicksandTextTheme(),
       ),
-      home: GameWidget(game: DreamHunterGame(characterType: 'lady')),
+      home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
     ),
   );
