@@ -50,8 +50,8 @@ class BackendService {
       final token = await _getIdToken();
       if (token == null) return false;
 
-      final response = await http.post(
-        Uri.parse('$_baseUrl/user/update_display_name?name=$newName'),
+      final response = await http.patch(
+        Uri.parse('$_baseUrl/users/display-name?name=$newName'),
         headers: {
           'Authorization': 'Bearer $token',
         },

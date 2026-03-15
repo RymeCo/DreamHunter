@@ -67,37 +67,52 @@ from dotenv import load_dotenv
 @app.get("/user/profile")
 async def get_user_profile(decoded_token: dict = Depends(verify_firebase_token)):
     """
-    Example protected endpoint that fetches user data from Firestore.
+    Fetches user data from Firestore using UID. 
+    Includes migration logic for legacy displayName-keyed documents.
     """
     uid = decoded_token['uid']
+    display_name = decoded_token.get('name', 'Dreamer')
+    email = decoded_token.get('email')
+    
     user_ref = db.collection('users').document(uid)
     doc = user_ref.get()
-
+    
     if doc.exists:
         return doc.to_dict()
-    else:
-        # Create a default profile if it doesn't exist
-        now = datetime.now(timezone.utc)
-        default_profile = {
-            "uid": uid,
-            "email": decoded_token.get('email'),
-            "display_name": decoded_token.get('name', 'Dreamer'),
-            "player_number": None,
-            "created_at": now.isoformat() # Use ISO string for JSON
-        }
+    
+    # MIGRATION LOGIC: Check for legacy document keyed by displayName
+    legacy_ref = db.collection('users').document(display_name)
+    legacy_doc = legacy_ref.get()
+    
+    if legacy_doc.exists:
+        legacy_data = legacy_doc.to_dict()
+        # Move legacy data to UID-keyed document
+        user_ref.set(legacy_data)
+        # Delete old legacy document
+        legacy_ref.delete()
+        return legacy_data
 
-        # In the database, we still use the server-side timestamp for accuracy
-        db_profile = default_profile.copy()
-        db_profile["created_at"] = firestore.SERVER_TIMESTAMP
-        user_ref.set(db_profile)
+    # NEW USER: Create a default profile
+    now = datetime.now(timezone.utc)
+    default_profile = {
+        "uid": uid,
+        "email": email,
+        "displayName": display_name,
+        "playerNumber": None,
+        "createdAt": now.isoformat()
+    }
+    
+    db_profile = default_profile.copy()
+    db_profile["createdAt"] = firestore.SERVER_TIMESTAMP
+    user_ref.set(db_profile)
+    
+    return default_profile
 
-        return default_profile
-
-@app.post("/user/update_display_name")
-async def update_display_name(name: str, decoded_token: dict = Depends(verify_firebase_token)):
+@app.patch("/users/display-name")
+async def patch_user_display_name(name: str, decoded_token: dict = Depends(verify_firebase_token)):
     uid = decoded_token['uid']
-    db.collection('users').document(uid).update({"display_name": name})
-    return {"status": "success", "new_name": name}
+    db.collection('users').document(uid).update({"displayName": name})
+    return {"status": "success", "displayName": name}
 
 if __name__ == "__main__":
     import uvicorn

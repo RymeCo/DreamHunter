@@ -45,9 +45,14 @@ class AuthService {
     required String password,
     required String displayName,
   }) async {
-    // 1. Check if display name is already taken
-    final docSnapshot = await _db.collection('users').doc(displayName).get();
-    if (docSnapshot.exists) {
+    // 1. Check if display name is already taken using a query
+    final querySnapshot = await _db
+        .collection('users')
+        .where('displayName', isEqualTo: displayName)
+        .limit(1)
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
       throw FirebaseAuthException(
         code: 'display-name-taken',
         message: 'This display name is already in use.',
@@ -65,7 +70,7 @@ class AuthService {
 
     // 4. Use a Transaction for the global counter and user document
     final counterRef = _db.collection('metadata').doc('counters');
-    final userRef = _db.collection('users').doc(displayName);
+    final userRef = _db.collection('users').doc(userCredential.user!.uid);
 
     await _db.runTransaction((transaction) async {
       DocumentSnapshot counterDoc = await transaction.get(counterRef);

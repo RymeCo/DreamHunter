@@ -36,7 +36,7 @@ class ProfileDialog extends StatelessWidget {
             FutureBuilder<DocumentSnapshot>(
               future: FirebaseFirestore.instance
                   .collection('users')
-                  .doc(displayName)
+                  .doc(user?.uid)
                   .get(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.done &&
