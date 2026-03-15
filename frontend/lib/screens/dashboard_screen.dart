@@ -49,7 +49,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final response = await http
           .get(Uri.parse('https://dreamhunter-api.onrender.com/'))
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 30)); // Increased timeout for Render cold start
       if (response.statusCode == 200) {
         if (mounted) setState(() => _isBackendReady = true);
       }
@@ -66,9 +66,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _showDropdownMenu() {
-    // If backend isn't ready, let's try to wake it up again
-    if (!_isBackendReady) _pingBackend();
-
     showGeneralDialog(
       context: context,
       barrierLabel: "DropdownMenu",
@@ -349,6 +346,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 fit: BoxFit.contain,
                 width: MediaQuery.of(context).size.width * 0.8,
               ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            child: Image.asset(
+              'assets/images/dashboard/roulette_man.png',
+              fit: BoxFit.contain,
+              width: 200,
+              height: 200,
             ),
           ),
           Positioned(
