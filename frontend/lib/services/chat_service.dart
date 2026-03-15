@@ -1,26 +1,24 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'backend_service.dart';
 
 class ChatService {
-  static const String _baseUrl = 'https://dreamhunter-api.onrender.com';
   final FirebaseFirestore _db;
   final FirebaseAuth _auth;
-  final http.Client _client;
+  final BackendService _backend;
 
   ChatService({
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-    http.Client? client,
+    BackendService? backend,
   })  : _db = firestore ?? FirebaseFirestore.instance,
         _auth = auth ?? FirebaseAuth.instance,
-        _client = client ?? http.Client();
+        _backend = backend ?? BackendService();
 
   String? _cachedGuestId;
   String? _cachedDeviceInfo;
@@ -93,21 +91,14 @@ class ChatService {
     if (user == null) return false; // Guests cannot send
     
     try {
-      final token = await user.getIdToken();
-      if (token == null) return false;
-
       final device = await getDeviceInfo();
 
-      final response = await _client.post(
-        Uri.parse('$_baseUrl/chat/$region/send'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
+      final response = await _backend.post(
+        '/chats/$region/messages',
+        body: {
           'text': text,
           'senderDevice': device,
-        }),
+        },
       );
 
       // 429 means Spam Cooldown hit
@@ -136,12 +127,11 @@ class ChatService {
     try {
       final reporterId = await getActiveId();
 
-      final response = await _client.post(
-        Uri.parse('$_baseUrl/chat/report'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
+      // Use an unauthenticated client for reports if guest, but BackendService
+      // uses authenticated if available. Reports endpoint is public anyway.
+      final response = await _backend.post(
+        '/reports',
+        body: {
           'reportedMessageId': messageId,
           'originalMessageText': originalMessageText,
           'senderId': senderId,
@@ -150,7 +140,7 @@ class ChatService {
           'messageTimestamp': messageTimestamp,
           'categories': categories,
           'reporterEmail': reporterEmail,
-        }),
+        },
       );
 
       return response.statusCode == 200;
@@ -160,24 +150,33 @@ class ChatService {
     }
   }
 
-  /// Like a message directly in Firestore
+  /// Like a message directly in Firestore using a transaction to prevent duplicates.
   Future<void> likeMessage(String region, String messageId) async {
     final user = _auth.currentUser;
     if (user == null) return; // Guests cannot like
 
     final msgRef = _db.collection('chats').doc(region).collection('messages').doc(messageId);
     
-    // Using a transaction/increment is safer for counters
-    await msgRef.update({
-      'likes': FieldValue.increment(1),
-      // Optional: keep track of who liked it to prevent multi-liking
-      'likedBy': FieldValue.arrayUnion([user.uid])
-    }).catchError((e) {
-      // If 'likes' doesn't exist yet, we can set it
-      msgRef.set({
-        'likes': 1,
-        'likedBy': [user.uid]
-      }, SetOptions(merge: true));
+    await _db.runTransaction((transaction) async {
+      final snapshot = await transaction.get(msgRef);
+      if (!snapshot.exists) return;
+
+      final data = snapshot.data()!;
+      final List<dynamic> likedBy = data['likedBy'] ?? [];
+
+      if (likedBy.contains(user.uid)) {
+        // User already liked, so unlike
+        transaction.update(msgRef, {
+          'likes': FieldValue.increment(-1),
+          'likedBy': FieldValue.arrayRemove([user.uid])
+        });
+      } else {
+        // User hasn't liked yet
+        transaction.update(msgRef, {
+          'likes': FieldValue.increment(1),
+          'likedBy': FieldValue.arrayUnion([user.uid])
+        });
+      }
     });
   }
 }

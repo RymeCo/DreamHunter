@@ -97,15 +97,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           label: _isLoggedIn ? 'Profile' : 'Login',
                           onTap: () {
                             Navigator.pop(context);
-                            if (!_isBackendReady) {
-                              showCustomSnackBar(
-                                context,
-                                'Backend is waking up... please wait 30-60 seconds.',
-                                type: SnackBarType.info,
-                              );
-                              _pingBackend(); // Try again
-                              return;
-                            }
                             _showAuthDialog();
                           },
                         ),
@@ -361,7 +352,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           Positioned(
+            bottom: 0,
+            right: -1,
+            child: Image.asset(
+              'assets/images/dashboard/shop_stall.png',
+              fit: BoxFit.contain,
+              width: 200,
+              height: 200,
+            ),
+          ),
+          Positioned(
             bottom: MediaQuery.of(context).size.height * 0.19,
+            left: 20,
             child: MakeItButton(
               imagePath: 'assets/images/dashboard/signage.png',
               width: 110,
@@ -384,7 +386,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   transitionDuration: const Duration(milliseconds: 300),
                   pageBuilder: (context, animation, secondaryAnimation) {
                     return ScaleTransition(
-                      scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+                      scale: CurvedAnimation(
+                          parent: animation, curve: Curves.easeOutBack),
                       child: FadeTransition(
                         opacity: animation,
                         child: const Center(child: ChatDialog()),
@@ -396,25 +399,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               clickResponsiveness: true,
               onHoverGlow: true,
               isClickable: true,
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            child: Image.asset(
-              'assets/images/dashboard/roulette_man.png',
-              fit: BoxFit.contain,
-              width: 200,
-              height: 200,
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            right: -1,
-            child: Image.asset(
-              'assets/images/dashboard/shop_stall.png',
-              fit: BoxFit.contain,
-              width: 200,
-              height: 200,
             ),
           ),
         ],

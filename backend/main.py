@@ -1,6 +1,5 @@
 import os
 import json
-import time
 from datetime import datetime, timezone
 from typing import Optional, List
 import firebase_admin
@@ -79,11 +78,9 @@ class ReportRequest(BaseModel):
     categories: List[str]
     reporterEmail: Optional[str] = None
 
-
-# --- In-Memory State ---
-
-# Tracks the last time a user sent a message (for spam protection)
-last_message_times = {}
+class ChatConfigUpdate(BaseModel):
+    archiveMessages: Optional[bool] = None
+    moderationTier: Optional[str] = None
 
 
 # --- Helper Functions ---
@@ -95,15 +92,12 @@ def enforce_chat_lifecycle(region: str):
     """
     try:
         messages_ref = db.collection('chats').document(region).collection('messages')
-        # Get all messages ordered by timestamp descending
         query = messages_ref.order_by("timestamp", direction=firestore.Query.DESCENDING)
         docs = list(query.stream())
         
         if len(docs) > 100:
-            # We have more than 100 messages.
             docs_to_remove = docs[100:]
             
-            # Check archival config
             config_ref = db.collection('metadata').document('chat_config')
             config_doc = config_ref.get()
             archive_messages = False
@@ -111,24 +105,15 @@ def enforce_chat_lifecycle(region: str):
                 archive_messages = config_doc.to_dict().get('archiveMessages', False)
                 
             batch = db.batch()
-            
             for doc in docs_to_remove:
                 if archive_messages:
-                    # Move to archives
-                    # e.g., chat_archives/{region}/messages/{doc_id}
                     archive_ref = db.collection('chat_archives').document(region).collection('messages').document(doc.id)
                     batch.set(archive_ref, doc.to_dict())
-                # Delete from active stream
                 batch.delete(doc.reference)
-                
             batch.commit()
     except Exception as e:
         print(f"Error enforcing chat lifecycle: {e}")
 
-
-class ChatConfigUpdate(BaseModel):
-    archiveMessages: Optional[bool] = None
-    moderationTier: Optional[str] = None
 
 # --- Endpoints ---
 
@@ -152,7 +137,6 @@ async def get_user_profile(decoded_token: dict = Depends(verify_firebase_token))
     if doc.exists:
         return doc.to_dict()
     
-    # MIGRATION LOGIC: Check for legacy document keyed by displayName
     legacy_ref = db.collection('users').document(display_name)
     legacy_doc = legacy_ref.get()
     
@@ -162,7 +146,6 @@ async def get_user_profile(decoded_token: dict = Depends(verify_firebase_token))
         legacy_ref.delete()
         return legacy_data
 
-    # NEW USER: Create a default profile
     now = datetime.now(timezone.utc)
     default_profile = {
         "uid": uid,
@@ -184,8 +167,8 @@ async def patch_user_display_name(name: str, decoded_token: dict = Depends(verif
     db.collection('users').document(uid).update({"displayName": name})
     return {"status": "success", "displayName": name}
 
-@app.post("/chat/{region}/send")
-async def send_chat_message(
+@app.post("/chats/{region}/messages")
+async def post_chat_message(
     region: str, 
     message: ChatMessage, 
     background_tasks: BackgroundTasks,
@@ -193,51 +176,55 @@ async def send_chat_message(
 ):
     """
     Sends a message to the specified regional chat.
-    Enforces a 1-second spam cooldown.
+    Enforces a 1-second spam cooldown using a Firestore transaction.
     """
     uid = decoded_token['uid']
+    now_ts = datetime.now(timezone.utc).timestamp()
     
-    # Fetch user's profile to get their current display name
-    user_doc = db.collection('users').document(uid).get()
-    display_name = user_doc.to_dict().get('displayName', 'Dreamer') if user_doc.exists else 'Dreamer'
+    # Use a transaction to check spam and post message
+    transaction = db.transaction()
+    user_ref = db.collection('users').document(uid)
 
-    # Spam Protection Check
-    current_time = time.time()
-    last_time = last_message_times.get(uid, 0)
-    if current_time - last_time < 1.0:
-        raise HTTPException(status_code=429, detail="Please wait before sending another message.")
-    
-    last_message_times[uid] = current_time
+    @firestore.transactional
+    def send_in_transaction(transaction, user_ref, msg_text, device):
+        snapshot = user_ref.get(transaction=transaction)
+        user_data = snapshot.to_dict() if snapshot.exists else {}
+        
+        last_msg_at = user_data.get('lastMessageAt', 0)
+        if now_ts - last_msg_at < 1.0:
+            raise HTTPException(status_code=429, detail="Please wait before sending another message.")
+        
+        display_name = user_data.get('displayName', 'Dreamer')
+        
+        # Update user's last message time
+        transaction.update(user_ref, {'lastMessageAt': now_ts})
+        
+        # Construct message
+        new_msg = {
+            "text": msg_text,
+            "senderUid": uid,
+            "senderName": display_name,
+            "senderDevice": device,
+            "timestamp": firestore.SERVER_TIMESTAMP
+        }
+        
+        chat_ref = db.collection('chats').document(region).collection('messages').document()
+        transaction.set(chat_ref, new_msg)
+        return chat_ref.id
 
-    # Construct the message
-    new_msg = {
-        "text": message.text,
-        "senderUid": uid,
-        "senderName": display_name,
-        "senderDevice": message.senderDevice,
-        "timestamp": firestore.SERVER_TIMESTAMP
-    }
+    try:
+        msg_id = send_in_transaction(transaction, user_ref, message.text, message.senderDevice)
+        background_tasks.add_task(enforce_chat_lifecycle, region)
+        return {"status": "success", "messageId": msg_id}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    # Moderate message based on tier (Placeholder for Phase 4)
-    # config_doc = db.collection('metadata').document('chat_config').get()
-    # tier = config_doc.to_dict().get('moderationTier', 'None') if config_doc.exists else 'None'
-    # if tier == 'Aggressive' and contains_profanity(message.text):
-    #     raise HTTPException(status_code=403, detail="Message blocked by auto-moderator.")
-    
-    # Save to Firestore
-    chat_ref = db.collection('chats').document(region).collection('messages')
-    _, doc_ref = chat_ref.add(new_msg)
-
-    # Trigger lifecycle enforcement in the background
-    background_tasks.add_task(enforce_chat_lifecycle, region)
-
-    return {"status": "success", "messageId": doc_ref.id}
-
-@app.post("/chat/report")
-async def report_chat_message(report: ReportRequest):
+@app.post("/reports")
+async def report_content(report: ReportRequest):
     """
-    Public endpoint to submit a chat report. 
-    Accepts reports from both logged-in users and guests.
+    Public endpoint to submit a content report.
     """
     now = datetime.now(timezone.utc)
     report_data = report.model_dump()
@@ -245,7 +232,6 @@ async def report_chat_message(report: ReportRequest):
     report_data["status"] = "pending"
     
     db.collection('reports').add(report_data)
-    
     return {"status": "success", "message": "Report submitted successfully."}
 
 @app.patch("/admin/chat-config")
@@ -253,12 +239,6 @@ async def update_chat_config(
     config: ChatConfigUpdate, 
     decoded_token: dict = Depends(verify_firebase_token)
 ):
-    """
-    Admin endpoint to update chat configuration (Archival and Moderation).
-    Requires a valid Firebase token (you may want to add an admin check here later).
-    """
-    # TODO: Add logic to verify decoded_token['uid'] belongs to an admin
-    
     update_data = {}
     if config.archiveMessages is not None:
         update_data['archiveMessages'] = config.archiveMessages
@@ -271,7 +251,6 @@ async def update_chat_config(
         return {"status": "success", "message": "No changes requested."}
         
     db.collection('metadata').document('chat_config').set(update_data, merge=True)
-    
     return {"status": "success", "updatedConfig": update_data}
 
 
