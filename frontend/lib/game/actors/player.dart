@@ -25,7 +25,7 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
   @override
   Future<void> onLoad() async {
     final sizeStr = '${spriteSize.x.toInt()}x${spriteSize.y.toInt()}';
-    sprite = await game.loadSprite('game/characters/$characterType/facing-front ($sizeStr).png');
+    sprite = await game.loadSprite('game/characters/$characterType/facing-front($sizeStr).png');
     
     size = spriteSize;
     anchor = Anchor.bottomCenter;
@@ -120,6 +120,6 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
   Future<void> _updateSprite() async {
     final stateStr = _state == PlayerState.facingBack ? 'back' : 'front';
     final sizeStr = '${spriteSize.x.toInt()}x${spriteSize.y.toInt()}';
-    sprite = await game.loadSprite('game/characters/$characterType/facing-$stateStr ($sizeStr).png');
+    sprite = await game.loadSprite('game/characters/$characterType/facing-$stateStr($sizeStr).png');
   }
 }

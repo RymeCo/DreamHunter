@@ -1,10 +1,11 @@
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
+import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'actors/player.dart';
 import 'level/level.dart';
 
-class DreamHunterGame extends FlameGame with HasCollisionDetection {
+class DreamHunterGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   final String characterType;
   late final JoystickComponent joystick;
   late final Player player;
@@ -18,14 +19,13 @@ class DreamHunterGame extends FlameGame with HasCollisionDetection {
 
     player = Player(joystick: joystick, characterType: characterType);
 
-    level = Level(levelName: 'dorm', player: player);
+    level = Level(levelName: 'mini-01', player: player);
 
     camera = CameraComponent.withFixedResolution(
       world: level,
       width: 400,
       height: 800,
     );
-    
     camera.follow(player);
 
     camera.viewport.add(joystick);
