@@ -2,6 +2,7 @@
 
 This project follows a strict development workflow to ensure consistency and clean repository management.
 SCRUM-33 is always the go to if its just minor change so this scrum is called  clean up so use this for commits
+
 ## Git Workflow
 For every new task (SCRUM-XX):
 1. **Branch Creation**: Create a new branch from `development` with the name `SCRUM-XX-task-name`.
@@ -16,9 +17,22 @@ For every new task (SCRUM-XX):
 - `backend/`: Python (FastAPI/Firebase) backend.
 - `frontend/`: Flutter/Flame application.
 
+## Standardized Naming & Data
+- **Naming Convention**: Use `camelCase` for all Firestore field names (e.g., `displayName`, `playerNumber`, `createdAt`) across both backend and frontend.
+- **User Identification**: Always use the Firebase `uid` as the primary document ID for user records in the Firestore `users` collection.
+- **Data Serialization**: In backend JSON responses, convert Firestore "Sentinels" (like `SERVER_TIMESTAMP`) to ISO strings (`now.isoformat()`) to ensure compatibility.
+
+## Backend Standards (FastAPI)
+- **RESTful Design**: Use lowercase, kebab-case for URL paths (e.g., `/users/display-name`).
+- **HTTP Methods**: Use `GET` for fetching, `PATCH` for partial updates, and `POST` for creating new resources.
+- **Security**: Every protected endpoint must use the `verify_firebase_token` dependency and expect an `Authorization: Bearer <ID_TOKEN>` header.
+- **Secrets Management**: Never commit `serviceAccountKey.json`. Use the `FIREBASE_SERVICE_ACCOUNT` environment variable for production deployment on Render.
+
+## Frontend Standards (Flutter)
+- **Service Layer**: Centralize API communication in the `BackendService` class. Do not use the `http` package directly in screens or widgets.
+- **UI Consistency**: Maintain the "Glassmorphism" aesthetic by using the `LiquidGlassDialog` for all modal windows and dropdown menus.
+- **Interaction Feedback**: Always use `showCustomSnackBar` for user notifications (success/error/info) to ensure a consistent look and feel.
+- **Flutter Modernization**: Avoid deprecated members. Use `.withValues(alpha: 0.x)` instead of `withOpacity()`. Enable `android:enableOnBackInvokedCallback="true"` in the manifest for modern Android gestures.
+
 ## Asset Management
 Always register new assets in `frontend/pubspec.yaml` under the appropriate category to ensure the Flame engine can load them correctly.
-
-## Flutter Standards
-- **Deprecation Policy**: Do not use deprecated members. Specifically, avoid `withOpacity()`; instead, use `.withValues(alpha: 0.x)` (e.g., `Colors.red.withValues(alpha: 0.5)`) to avoid precision loss.
-

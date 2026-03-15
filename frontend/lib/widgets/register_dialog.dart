@@ -3,7 +3,6 @@ import 'package:dreamhunter/services/auth_ui_helper.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 
 class RegisterDialog extends StatefulWidget {
   final VoidCallback onLoginRequested;
