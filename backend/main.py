@@ -58,10 +58,11 @@ async def verify_firebase_token(authorization: Optional[str] = Header(None)):
         return decoded_token
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired Firebase token")
+from typing import Optional
+from datetime import datetime, timezone
+from dotenv import load_dotenv
 
-@app.get("/")
-async def root():
-    return {"message": "DreamHunter API is running!", "status": "online"}
+# ... (middleware and initialization)
 
 @app.get("/user/profile")
 async def get_user_profile(decoded_token: dict = Depends(verify_firebase_token)):
@@ -71,19 +72,25 @@ async def get_user_profile(decoded_token: dict = Depends(verify_firebase_token))
     uid = decoded_token['uid']
     user_ref = db.collection('users').document(uid)
     doc = user_ref.get()
-    
+
     if doc.exists:
         return doc.to_dict()
     else:
         # Create a default profile if it doesn't exist
+        now = datetime.now(timezone.utc)
         default_profile = {
             "uid": uid,
             "email": decoded_token.get('email'),
             "display_name": decoded_token.get('name', 'Dreamer'),
             "player_number": None,
-            "created_at": firestore.SERVER_TIMESTAMP
+            "created_at": now.isoformat() # Use ISO string for JSON
         }
-        user_ref.set(default_profile)
+
+        # In the database, we still use the server-side timestamp for accuracy
+        db_profile = default_profile.copy()
+        db_profile["created_at"] = firestore.SERVER_TIMESTAMP
+        user_ref.set(db_profile)
+
         return default_profile
 
 @app.post("/user/update_display_name")
