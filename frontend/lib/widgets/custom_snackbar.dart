@@ -40,7 +40,7 @@ void showCustomSnackBar(
       }
 
       return Positioned(
-        top: 50,
+        bottom: 50,
         left: 20,
         right: 20,
         child: Material(

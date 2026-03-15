@@ -118,6 +118,7 @@ def enforce_chat_lifecycle(region: str):
 # --- Endpoints ---
 
 @app.get("/")
+@app.head("/")
 async def root():
     return {"message": "DreamHunter API is running!", "status": "online"}
 
