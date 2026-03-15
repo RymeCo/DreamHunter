@@ -4,8 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class BackendService {
-  // Replace this with your actual Render URL after deployment
-  // For local testing on WayDroid, use 10.0.2.2 instead of localhost
+  // Your live Render URL
   static const String _baseUrl = 'https://dreamhunter-api.onrender.com';
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
