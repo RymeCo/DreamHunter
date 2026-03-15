@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/services/chat_service.dart';
 

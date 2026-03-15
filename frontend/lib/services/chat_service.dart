@@ -10,8 +10,17 @@ import 'package:device_info_plus/device_info_plus.dart';
 
 class ChatService {
   static const String _baseUrl = 'https://dreamhunter-api.onrender.com';
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db;
+  final FirebaseAuth _auth;
+  final http.Client _client;
+
+  ChatService({
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+    http.Client? client,
+  })  : _db = firestore ?? FirebaseFirestore.instance,
+        _auth = auth ?? FirebaseAuth.instance,
+        _client = client ?? http.Client();
 
   String? _cachedGuestId;
   String? _cachedDeviceInfo;
@@ -89,7 +98,7 @@ class ChatService {
 
       final device = await getDeviceInfo();
 
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('$_baseUrl/chat/$region/send'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -127,7 +136,7 @@ class ChatService {
     try {
       final reporterId = await getActiveId();
 
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('$_baseUrl/chat/report'),
         headers: {
           'Content-Type': 'application/json',

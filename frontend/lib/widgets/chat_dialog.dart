@@ -11,14 +11,15 @@ import 'package:dreamhunter/widgets/register_dialog.dart';
 enum _ChatAuthDialogType { login, register }
 
 class ChatDialog extends StatefulWidget {
-  const ChatDialog({super.key});
+  final ChatService? chatService;
+  const ChatDialog({super.key, this.chatService});
 
   @override
   State<ChatDialog> createState() => _ChatDialogState();
 }
 
 class _ChatDialogState extends State<ChatDialog> {
-  final ChatService _chatService = ChatService();
+  late final ChatService _chatService;
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   
@@ -34,6 +35,12 @@ class _ChatDialogState extends State<ChatDialog> {
 
   bool _isSending = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _chatService = widget.chatService ?? ChatService();
+  }
+
   void _showAuthPrompt(_ChatAuthDialogType type) {
     showGeneralDialog(
       context: context,
@@ -41,7 +48,7 @@ class _ChatDialogState extends State<ChatDialog> {
       barrierDismissible: true,
       barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
       transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, _, __) {
+      pageBuilder: (context, animation, secondaryAnimation) {
         return Center(
           child: LiquidGlassDialog(
             width: 350,
@@ -54,7 +61,9 @@ class _ChatDialogState extends State<ChatDialog> {
                     },
                     onLoginSuccess: () {
                       Navigator.pop(context);
-                      showCustomSnackBar(context, 'Login successful!', type: SnackBarType.success);
+                      if (!mounted) return;
+                      showCustomSnackBar(context, 'Login successful!',
+                          type: SnackBarType.success);
                       setState(() {}); // Refresh chat state
                     },
                   )
@@ -65,7 +74,9 @@ class _ChatDialogState extends State<ChatDialog> {
                     },
                     onRegisterSuccess: () {
                       Navigator.pop(context);
-                      showCustomSnackBar(context, 'Registration successful!', type: SnackBarType.success);
+                      if (!mounted) return;
+                      showCustomSnackBar(context, 'Registration successful!',
+                          type: SnackBarType.success);
                       setState(() {}); // Refresh chat state
                     },
                   ),
@@ -80,7 +91,8 @@ class _ChatDialogState extends State<ChatDialog> {
     if (text.isEmpty) return;
 
     if (FirebaseAuth.instance.currentUser == null) {
-      showCustomSnackBar(context, 'Please login to chat!', type: SnackBarType.error);
+      showCustomSnackBar(context, 'Please login to chat!',
+          type: SnackBarType.error);
       _showAuthPrompt(_ChatAuthDialogType.login);
       return;
     }
@@ -92,11 +104,15 @@ class _ChatDialogState extends State<ChatDialog> {
       if (success) {
         _textController.clear();
       } else {
-        showCustomSnackBar(context, 'Failed to send message.', type: SnackBarType.error);
+        if (!mounted) return;
+        showCustomSnackBar(context, 'Failed to send message.',
+            type: SnackBarType.error);
       }
     } catch (e) {
+      if (!mounted) return;
       if (e.toString().contains('cooldown')) {
-        showCustomSnackBar(context, 'Please wait before sending another message.', type: SnackBarType.warning);
+        showCustomSnackBar(context, 'Please wait before sending another message.',
+            type: SnackBarType.info);
       } else {
         showCustomSnackBar(context, 'Error: $e', type: SnackBarType.error);
       }
@@ -119,7 +135,7 @@ class _ChatDialogState extends State<ChatDialog> {
       barrierLabel: "ReportDialog",
       barrierDismissible: true,
       barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
-      pageBuilder: (context, _, __) {
+      pageBuilder: (context, animation, secondaryAnimation) {
         return Center(
           child: LiquidGlassDialog(
             width: 350,
@@ -138,8 +154,11 @@ class _ChatDialogState extends State<ChatDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = screenWidth > 500 ? 400.0 : screenWidth * 0.9;
+
     return LiquidGlassDialog(
-      width: 400,
+      width: dialogWidth,
       height: 600,
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -148,7 +167,18 @@ class _ChatDialogState extends State<ChatDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Global Chat', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+              const Flexible(
+                child: Text(
+                  'Global Chat',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
               DropdownButton<String>(
                 value: _selectedRegion,
                 dropdownColor: const Color.fromRGBO(30, 30, 30, 0.9),
@@ -230,7 +260,7 @@ class _ChatDialogState extends State<ChatDialog> {
                               GestureDetector(
                                 onTap: () {
                                   if (FirebaseAuth.instance.currentUser == null) {
-                                    showCustomSnackBar(context, 'Please login to like messages.', type: SnackBarType.warning);
+                                    showCustomSnackBar(context, 'Please login to like messages.', type: SnackBarType.info);
                                   } else {
                                     _chatService.likeMessage(_selectedRegion, messageId);
                                   }
