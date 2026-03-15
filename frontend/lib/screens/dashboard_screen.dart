@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 import 'package:dreamhunter/widgets/clickable_image.dart';
 import 'package:dreamhunter/widgets/login_dialog.dart';
 import 'package:dreamhunter/widgets/register_dialog.dart';
@@ -22,6 +23,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late StreamSubscription<User?> _authStateSubscription;
   bool _isLoggedIn = false;
+  bool _isBackendReady = false;
   AuthDialogType _currentDialogType = AuthDialogType.login;
 
   @override
@@ -37,6 +39,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
     });
+
+    // Proactively "ping" the backend to wake it up
+    _pingBackend();
+  }
+
+  Future<void> _pingBackend() async {
+    try {
+      final response = await http
+          .get(Uri.parse('https://dreamhunter-api.onrender.com/'))
+          .timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        if (mounted) setState(() => _isBackendReady = true);
+      }
+    } catch (_) {
+      // Backend is likely sleeping or we timed out
+      if (mounted) setState(() => _isBackendReady = false);
+    }
   }
 
   @override
@@ -46,6 +65,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _showDropdownMenu() {
+    // If backend isn't ready, let's try to wake it up again
+    if (!_isBackendReady) _pingBackend();
+
     showGeneralDialog(
       context: context,
       barrierLabel: "DropdownMenu",
@@ -74,6 +96,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           label: _isLoggedIn ? 'Profile' : 'Login',
                           onTap: () {
                             Navigator.pop(context);
+                            if (!_isBackendReady) {
+                              showCustomSnackBar(
+                                context,
+                                'Backend is waking up... please wait 30-60 seconds.',
+                                type: SnackBarType.info,
+                              );
+                              _pingBackend(); // Try again
+                              return;
+                            }
                             _showAuthDialog();
                           },
                         ),
