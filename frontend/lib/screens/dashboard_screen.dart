@@ -9,6 +9,7 @@ import 'package:dreamhunter/widgets/clickable_image.dart';
 import 'package:dreamhunter/widgets/login_dialog.dart';
 import 'package:dreamhunter/widgets/register_dialog.dart';
 import 'package:dreamhunter/widgets/profile_dialog.dart';
+import 'package:dreamhunter/widgets/chat_dialog.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 
 enum AuthDialogType { login, register, profile }
@@ -361,11 +362,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           Positioned(
             bottom: MediaQuery.of(context).size.height * 0.19,
-            child: Image.asset(
-              'assets/images/dashboard/signage.png',
-              fit: BoxFit.contain,
+            child: MakeItButton(
+              imagePath: 'assets/images/dashboard/signage.png',
               width: 110,
               height: 110,
+              onTap: () {
+                if (!_isBackendReady) {
+                  showCustomSnackBar(
+                    context,
+                    'Backend is waking up... please wait 30-60 seconds.',
+                    type: SnackBarType.info,
+                  );
+                  _pingBackend();
+                  return;
+                }
+                showGeneralDialog(
+                  context: context,
+                  barrierLabel: "ChatDialog",
+                  barrierDismissible: true,
+                  barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+                  transitionDuration: const Duration(milliseconds: 300),
+                  pageBuilder: (context, animation, secondaryAnimation) {
+                    return ScaleTransition(
+                      scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+                      child: FadeTransition(
+                        opacity: animation,
+                        child: const Center(child: ChatDialog()),
+                      ),
+                    );
+                  },
+                );
+              },
+              clickResponsiveness: true,
+              onHoverGlow: true,
+              isClickable: true,
             ),
           ),
           Positioned(
