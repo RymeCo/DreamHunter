@@ -1,6 +1,6 @@
 import os
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
 import firebase_admin
@@ -69,10 +69,6 @@ class ReportRequest(BaseModel):
     messageTimestamp: str
     categories: List[str]
     reporterEmail: Optional[str] = None
-
-class ChatConfigUpdate(BaseModel):
-    archiveMessages: Optional[bool] = None
-    moderationTier: Optional[str] = None
 
 # --- Dependencies ---
 
@@ -156,7 +152,10 @@ async def get_user_profile(decoded_token: dict = Depends(verify_firebase_token))
         "email": email,
         "displayName": display_name,
         "playerNumber": None,
-        "createdAt": now.isoformat()
+        "createdAt": now.isoformat(),
+        "isBanned": False,
+        "mutedUntil": None,
+        "isAdmin": False
     }
     
     db_profile = default_profile.copy()
@@ -194,11 +193,29 @@ async def post_chat_message(
         snapshot = user_ref.get(transaction=transaction)
         user_data = snapshot.to_dict() if snapshot.exists else {}
         
+        # 1. Ban/Mute Checks
+        if user_data.get('isBanned', False):
+            raise HTTPException(status_code=403, detail="You are permanently banned from Global Chat.")
+        
+        muted_until = user_data.get('mutedUntil')
+        if muted_until:
+            # Handle both ISO string and Firestore Timestamp
+            if isinstance(muted_until, str):
+                until_dt = datetime.fromisoformat(muted_until.replace('Z', '+00:00'))
+            else:
+                # Firestore returns datetime objects already
+                until_dt = muted_until 
+                
+            if datetime.now(timezone.utc) < until_dt:
+                raise HTTPException(status_code=403, detail=f"You are muted until {until_dt.strftime('%Y-%m-%d %H:%M:%S')} UTC.")
+
+        # 2. Spam Cooldown
         last_msg_at = user_data.get('lastMessageAt', 0)
         if now_ts - last_msg_at < 1.0:
             raise HTTPException(status_code=429, detail="Please wait before sending another message.")
         
         display_name = user_data.get('displayName', 'Dreamer')
+        is_admin = user_data.get('isAdmin', False)
         
         # Update user's last message time
         transaction.update(user_ref, {'lastMessageAt': now_ts})
@@ -209,6 +226,7 @@ async def post_chat_message(
             "senderUid": uid,
             "senderName": display_name,
             "senderDevice": device,
+            "isAdmin": is_admin,
             "timestamp": firestore.SERVER_TIMESTAMP
         }
         
@@ -237,7 +255,6 @@ async def report_content(report: ReportRequest):
     
     db.collection('reports').add(report_data)
     return {"status": "success", "message": "Report submitted successfully."}
-
 
 if __name__ == "__main__":
     import uvicorn
