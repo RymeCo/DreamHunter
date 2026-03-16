@@ -1,6 +1,6 @@
 import os
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
 import firebase_admin
@@ -71,6 +71,12 @@ class ChatConfigUpdate(BaseModel):
     archiveMessages: Optional[bool] = None
     moderationTier: Optional[str] = None
 
+class UserBanRequest(BaseModel):
+    isBanned: bool
+
+class UserMuteRequest(BaseModel):
+    durationHours: int # 0 to unmute
+
 # --- Dependencies ---
 
 async def verify_firebase_token(authorization: Optional[str] = Header(None)):
@@ -87,6 +93,20 @@ async def verify_firebase_token(authorization: Optional[str] = Header(None)):
         return decoded_token
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired Firebase token")
+
+async def verify_admin(decoded_token: dict = Depends(verify_firebase_token)):
+    """
+    Dependency to check if the user is an admin.
+    For now, we check if the UID is in an admin_uids collection or environment variable.
+    """
+    # Simple hardcoded check or environment variable check
+    admin_uids = os.getenv("ADMIN_UIDS", "").split(",")
+    if decoded_token['uid'] not in admin_uids:
+        # Check Firestore for admin status as fallback
+        user_doc = db.collection('users').document(decoded_token['uid']).get()
+        if not user_doc.exists or not user_doc.to_dict().get('isAdmin', False):
+            raise HTTPException(status_code=403, detail="Admin privileges required")
+    return decoded_token
 
 # --- Helper Functions ---
 
@@ -153,7 +173,10 @@ async def get_user_profile(decoded_token: dict = Depends(verify_firebase_token))
         "email": email,
         "displayName": display_name,
         "playerNumber": None,
-        "createdAt": now.isoformat()
+        "createdAt": now.isoformat(),
+        "isBanned": False,
+        "mutedUntil": None,
+        "isAdmin": False
     }
     
     db_profile = default_profile.copy()
@@ -191,6 +214,23 @@ async def post_chat_message(
         snapshot = user_ref.get(transaction=transaction)
         user_data = snapshot.to_dict() if snapshot.exists else {}
         
+        # 1. Ban/Mute Checks
+        if user_data.get('isBanned', False):
+            raise HTTPException(status_code=403, detail="You are permanently banned from Global Chat.")
+        
+        muted_until = user_data.get('mutedUntil')
+        if muted_until:
+            # Handle both ISO string and Firestore Timestamp
+            if isinstance(muted_until, str):
+                until_dt = datetime.fromisoformat(muted_until.replace('Z', '+00:00'))
+            else:
+                # Firestore returns datetime objects already
+                until_dt = muted_until 
+                
+            if datetime.now(timezone.utc) < until_dt:
+                raise HTTPException(status_code=403, detail=f"You are muted until {until_dt.strftime('%Y-%m-%d %H:%M:%S')} UTC.")
+
+        # 2. Spam Cooldown
         last_msg_at = user_data.get('lastMessageAt', 0)
         if now_ts - last_msg_at < 1.0:
             raise HTTPException(status_code=429, detail="Please wait before sending another message.")
@@ -238,7 +278,7 @@ async def report_content(report: ReportRequest):
 @app.patch("/admin/chat-config")
 async def update_chat_config(
     config: ChatConfigUpdate, 
-    decoded_token: dict = Depends(verify_firebase_token)
+    _admin: dict = Depends(verify_admin)
 ):
     update_data = {}
     if config.archiveMessages is not None:
@@ -254,6 +294,23 @@ async def update_chat_config(
     db.collection('metadata').document('chat_config').set(update_data, merge=True)
     return {"status": "success", "updatedConfig": update_data}
 
+@app.patch("/admin/users/{uid}/ban")
+async def ban_user(uid: str, req: UserBanRequest, _admin: dict = Depends(verify_admin)):
+    """Ban or unban a user from Global Chat."""
+    db.collection('users').document(uid).update({"isBanned": req.isBanned})
+    status = "banned" if req.isBanned else "unbanned"
+    return {"status": "success", "message": f"User {uid} has been {status}."}
+
+@app.patch("/admin/users/{uid}/mute")
+async def mute_user(uid: str, req: UserMuteRequest, _admin: dict = Depends(verify_admin)):
+    """Mute a user for a specific duration in hours. Set duration to 0 to unmute."""
+    if req.durationHours <= 0:
+        db.collection('users').document(uid).update({"mutedUntil": None})
+        return {"status": "success", "message": f"User {uid} has been unmuted."}
+    
+    until = datetime.now(timezone.utc) + timedelta(hours=req.durationHours)
+    db.collection('users').document(uid).update({"mutedUntil": until})
+    return {"status": "success", "message": f"User {uid} has been muted until {until.isoformat()}."}
 
 if __name__ == "__main__":
     import uvicorn
