@@ -18,11 +18,15 @@ dependencies:
   firebase_auth: ^6.1.4
   audioplayers: ^6.5.1
   google_fonts: ^8.0.2
+  shared_preferences: ^2.5.4
+  uuid: ^4.5.3
+  device_info_plus: ^12.3.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true

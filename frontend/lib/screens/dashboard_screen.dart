@@ -4,10 +4,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 import 'package:dreamhunter/widgets/clickable_image.dart';
 import 'package:dreamhunter/widgets/login_dialog.dart';
 import 'package:dreamhunter/widgets/register_dialog.dart';
 import 'package:dreamhunter/widgets/profile_dialog.dart';
+import 'package:dreamhunter/widgets/chat_dialog.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 
 enum AuthDialogType { login, register, profile }
@@ -22,6 +24,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late StreamSubscription<User?> _authStateSubscription;
   bool _isLoggedIn = false;
+  bool _isBackendReady = false;
   AuthDialogType _currentDialogType = AuthDialogType.login;
 
   @override
@@ -37,6 +40,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
     });
+
+    // Proactively "ping" the backend to wake it up
+    _pingBackend();
+  }
+
+  Future<void> _pingBackend() async {
+    try {
+      final response = await http
+          .get(Uri.parse('https://dreamhunter-api.onrender.com/'))
+          .timeout(const Duration(seconds: 30)); // Increased timeout for Render cold start
+      if (response.statusCode == 200) {
+        if (mounted) setState(() => _isBackendReady = true);
+      }
+    } catch (_) {
+      // Backend is likely sleeping or we timed out
+      if (mounted) setState(() => _isBackendReady = false);
+    }
   }
 
   @override
@@ -329,15 +349,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           Positioned(
-            bottom: MediaQuery.of(context).size.height * 0.19,
-            child: Image.asset(
-              'assets/images/dashboard/signage.png',
-              fit: BoxFit.contain,
-              width: 110,
-              height: 110,
-            ),
-          ),
-          Positioned(
             bottom: 0,
             child: Image.asset(
               'assets/images/dashboard/roulette_man.png',
@@ -354,6 +365,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
               fit: BoxFit.contain,
               width: 200,
               height: 200,
+            ),
+          ),
+          Positioned(
+            bottom: MediaQuery.of(context).size.height * 0.19,
+            left: 20,
+            child: MakeItButton(
+              imagePath: 'assets/images/dashboard/signage.png',
+              width: 110,
+              height: 110,
+              onTap: () {
+                if (!_isBackendReady) {
+                  showCustomSnackBar(
+                    context,
+                    'Backend is waking up... please wait 30-60 seconds.',
+                    type: SnackBarType.info,
+                  );
+                  _pingBackend();
+                  return;
+                }
+                showGeneralDialog(
+                  context: context,
+                  barrierLabel: "ChatDialog",
+                  barrierDismissible: true,
+                  barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+                  transitionDuration: const Duration(milliseconds: 300),
+                  pageBuilder: (context, animation, secondaryAnimation) {
+                    return ScaleTransition(
+                      scale: CurvedAnimation(
+                          parent: animation, curve: Curves.easeOutBack),
+                      child: FadeTransition(
+                        opacity: animation,
+                        child: const Center(child: ChatDialog()),
+                      ),
+                    );
+                  },
+                );
+              },
+              clickResponsiveness: true,
+              onHoverGlow: true,
+              isClickable: true,
             ),
           ),
         ],
