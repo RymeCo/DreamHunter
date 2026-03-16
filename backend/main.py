@@ -210,11 +210,20 @@ async def post_chat_message(
             if datetime.now(timezone.utc) < until_dt:
                 raise HTTPException(status_code=403, detail=f"You are muted until {until_dt.strftime('%Y-%m-%d %H:%M:%S')} UTC.")
 
-        # 2. Auto-Mod Scan (Basic Keyword Check)
+        # 2. Auto-Mod Scan (Toxic Word Filter)
         if auto_mod_config.get('autoModEnabled', False):
-            # For demonstration, a simple banned word list. In production, use NLP or an external API.
-            banned_words = ['spamword', 'badword'] 
-            if any(word in msg_text.lower() for word in banned_words):
+            # A starter list of toxic gaming keywords/slurs. 
+            # In a real production app, this would be a much larger list or an external API.
+            toxic_keywords = [
+                'nigger', 'faggot', 'retard', 'ky$', 'kill yourself', 
+                'cunt', 'whore', 'slut', 'fuck you', 'stfu',
+                'noob team', 'trash player', 'dog water', 'garbage team',
+                'ez win', 'easy clap', 'uninstall', 'hack', 'cheat'
+            ] 
+            
+            # Check for matches
+            msg_lower = msg_text.lower()
+            if any(word in msg_lower for word in toxic_keywords):
                 violations = user_data.get('violationCount', 0) + 1
                 updates = {'violationCount': violations}
                 
@@ -228,10 +237,10 @@ async def post_chat_message(
                     if auto_mod_config.get('strike3Ban', True):
                         updates['isBanned'] = True
                     else:
-                        updates['mutedUntil'] = datetime.now(timezone.utc) + timedelta(days=365) # Mute for a year if not banned
+                        updates['mutedUntil'] = datetime.now(timezone.utc) + timedelta(days=365)
                 
                 transaction.update(user_ref, updates)
-                raise HTTPException(status_code=403, detail=f"Message blocked by Auto-Mod. Strike {violations} applied.")
+                raise HTTPException(status_code=403, detail=f"Message blocked: Toxicity detected. Strike {violations} applied.")
 
         # 3. Spam Cooldown
         last_msg_at = user_data.get('lastMessageAt', 0)

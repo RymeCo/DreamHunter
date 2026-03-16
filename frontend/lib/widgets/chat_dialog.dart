@@ -410,27 +410,43 @@ class _ChatDialogState extends State<ChatDialog> {
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _textController,
-                  enabled: !_isChatMaintenance,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: _isChatMaintenance ? 'Chat Disabled' : strings['hint']!,
-                    hintStyle: const TextStyle(color: Colors.white38),
-                    filled: true,
-                    fillColor: Colors.black45,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _isChatMaintenance ? () {
+                    final strings = _localizedStrings[_selectedRegion] ?? _localizedStrings['english']!;
+                    showCustomSnackBar(context, strings['maintenance']!, type: SnackBarType.info);
+                  } : null,
+                  child: AbsorbPointer(
+                    absorbing: _isChatMaintenance,
+                    child: TextField(
+                      controller: _textController,
+                      enabled: !_isChatMaintenance,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: _isChatMaintenance ? 'Chat Disabled' : strings['hint']!,
+                      hintStyle: const TextStyle(color: Colors.white38),
+                      filled: true,
+                      fillColor: Colors.black45,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    onSubmitted: (_) => _sendMessage(),
                   ),
-                  onSubmitted: (_) => _sendMessage(),
                 ),
               ),
               const SizedBox(width: 8),
               GestureDetector(
-                onTap: (_isSending || _isChatMaintenance) ? null : _sendMessage,
+                onTap: _isSending ? null : () {
+                  if (_isChatMaintenance) {
+                    final strings = _localizedStrings[_selectedRegion] ?? _localizedStrings['english']!;
+                    showCustomSnackBar(context, strings['maintenance']!, type: SnackBarType.info);
+                  } else {
+                    _sendMessage();
+                  }
+                },
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
