@@ -26,16 +26,27 @@ class ReportDialog extends StatefulWidget {
 class _ReportDialogState extends State<ReportDialog> {
   final ChatService _chatService = ChatService();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _otherReasonController = TextEditingController();
   
   final Map<String, bool> _categories = {
     'Harassment': false,
-    'Hate Speech (Racist/Sexist)': false,
+    'Hate Speech': false,
     'Spam': false,
     'Inappropriate Language': false,
+    'Sexual Content': false,
+    'Violence': false,
+    'Scam/Fraud': false,
     'Other': false,
   };
 
   bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _otherReasonController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -58,7 +69,20 @@ class _ReportDialogState extends State<ReportDialog> {
       return;
     }
 
+    if (_categories['Other']! && _otherReasonController.text.trim().isEmpty) {
+      showCustomSnackBar(context, 'Please specify your "Other" reason.', type: SnackBarType.error);
+      return;
+    }
+
     setState(() => _isSubmitting = true);
+
+    // If 'Other' is selected, append the custom text to the category list for the backend to see
+    final finalCategories = selectedCategories.map((c) {
+      if (c == 'Other') {
+        return 'Other: ${_otherReasonController.text.trim()}';
+      }
+      return c;
+    }).toList();
 
     final success = await _chatService.reportMessage(
       messageId: widget.messageId,
@@ -66,7 +90,7 @@ class _ReportDialogState extends State<ReportDialog> {
       senderId: widget.senderId,
       senderDevice: widget.senderDevice,
       messageTimestamp: widget.messageTimestamp,
-      categories: selectedCategories,
+      categories: finalCategories,
       reporterEmail: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
     );
 
@@ -115,7 +139,7 @@ class _ReportDialogState extends State<ReportDialog> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Select reasons (Multiple allowed):', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            const Text('Select reasons:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8.0,
@@ -123,10 +147,12 @@ class _ReportDialogState extends State<ReportDialog> {
               children: _categories.keys.map((String key) {
                 final isSelected = _categories[key]!;
                 return FilterChip(
-                  label: Text(key, style: TextStyle(color: isSelected ? Colors.black : Colors.white)),
+                  label: Text(key, style: TextStyle(color: isSelected ? Colors.white : Colors.white70)),
                   selected: isSelected,
-                  selectedColor: Colors.redAccent,
-                  backgroundColor: Colors.white24,
+                  selectedColor: Colors.redAccent.withValues(alpha: 0.8),
+                  backgroundColor: Colors.white10,
+                  checkmarkColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   onSelected: (bool value) {
                     setState(() {
                       _categories[key] = value;
@@ -135,6 +161,23 @@ class _ReportDialogState extends State<ReportDialog> {
                 );
               }).toList(),
             ),
+            if (_categories['Other']!) ...[
+              const SizedBox(height: 15),
+              TextField(
+                controller: _otherReasonController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white12,
+                  hintText: 'Please specify other reason...',
+                  hintStyle: const TextStyle(color: Colors.white38),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
             const Text('Email (Optional for follow-up):', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
