@@ -5,12 +5,18 @@ from firebase_admin import credentials, auth, firestore
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 # Load environment variables for local development
 load_dotenv()
 
 app = FastAPI(title="DreamHunter API")
+
+@app.get("/")
+async def root():
+    """Health check endpoint for Render deployment."""
+    return {"status": "ok", "message": "DreamHunter API is running"}
 
 # Enable CORS for Flutter web/local development
 app.add_middleware(
@@ -58,11 +64,6 @@ async def verify_firebase_token(authorization: Optional[str] = Header(None)):
         return decoded_token
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired Firebase token")
-from typing import Optional
-from datetime import datetime, timezone
-from dotenv import load_dotenv
-
-# ... (middleware and initialization)
 
 @app.get("/user/profile")
 async def get_user_profile(decoded_token: dict = Depends(verify_firebase_token)):
