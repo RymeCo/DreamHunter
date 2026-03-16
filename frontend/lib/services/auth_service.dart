@@ -95,6 +95,9 @@ class AuthService {
         'playerNumber': newPlayerNumber,
         'createdAt': FieldValue.serverTimestamp(),
         'saveSlots': {'slot1': null, 'slot2': null, 'slot3': null},
+        'isBanned': false,
+        'mutedUntil': null,
+        'isAdmin': false,
       });
     });
 

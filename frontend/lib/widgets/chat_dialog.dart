@@ -151,9 +151,13 @@ class _ChatDialogState extends State<ChatDialog> {
       }
     } catch (e) {
       if (!mounted) return;
-      if (e.toString().contains('cooldown')) {
+      final errorStr = e.toString().toLowerCase();
+      if (errorStr.contains('cooldown')) {
         showCustomSnackBar(context, 'Please wait before sending another message.',
             type: SnackBarType.info);
+      } else if (errorStr.contains('banned') || errorStr.contains('mute')) {
+        // Show the specific error message from the backend (e.g., "You are banned")
+        showCustomSnackBar(context, e.toString().replaceAll('Exception: ', ''), type: SnackBarType.error);
       } else {
         showCustomSnackBar(context, 'Error: $e', type: SnackBarType.error);
       }
