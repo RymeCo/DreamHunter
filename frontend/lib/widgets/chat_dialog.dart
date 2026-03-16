@@ -33,6 +33,39 @@ class _ChatDialogState extends State<ChatDialog> {
     'tagalog': '🇵🇭 Tagalog',
   };
 
+  final Map<String, Map<String, String>> _localizedStrings = {
+    'english': {
+      'title': 'Global Chat',
+      'empty': 'No messages yet. Be the first!',
+      'hint': 'Type a message...',
+      'error': 'Error loading chat.',
+    },
+    'spanish': {
+      'title': 'Chat Global',
+      'empty': 'Aún no hay mensajes. ¡Sé el primero!',
+      'hint': 'Escribe un mensaje...',
+      'error': 'Error al cargar el chat.',
+    },
+    'chinese': {
+      'title': '全球聊天',
+      'empty': '还没有消息。成为第一个！',
+      'hint': '输入消息...',
+      'error': '加载聊天时出错。',
+    },
+    'russian': {
+      'title': 'Глобальный чат',
+      'empty': 'Сообщений пока нет. Будь первым!',
+      'hint': 'Введите сообщение...',
+      'error': 'Ошибка при загрузке чата.',
+    },
+    'tagalog': {
+      'title': 'Global Chat',
+      'empty': 'Wala pang mga mensahe. Mauna ka na!',
+      'hint': 'Mag-type ng mensahe...',
+      'error': 'Error sa pag-load ng chat.',
+    },
+  };
+
   bool _isSending = false;
 
   @override
@@ -156,6 +189,7 @@ class _ChatDialogState extends State<ChatDialog> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final dialogWidth = screenWidth > 500 ? 400.0 : screenWidth * 0.9;
+    final strings = _localizedStrings[_selectedRegion] ?? _localizedStrings['english']!;
 
     return LiquidGlassDialog(
       width: dialogWidth,
@@ -167,10 +201,10 @@ class _ChatDialogState extends State<ChatDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Flexible(
+              Flexible(
                 child: Text(
-                  'Global Chat',
-                  style: TextStyle(
+                  strings['title']!,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -206,7 +240,7 @@ class _ChatDialogState extends State<ChatDialog> {
               stream: _chatService.getChatStream(_selectedRegion),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return const Center(child: Text('Error loading chat.', style: TextStyle(color: Colors.red)));
+                  return Center(child: Text(strings['error']!, style: const TextStyle(color: Colors.red)));
                 }
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator(color: Colors.white54));
@@ -215,7 +249,7 @@ class _ChatDialogState extends State<ChatDialog> {
                 final docs = snapshot.data?.docs ?? [];
                 
                 if (docs.isEmpty) {
-                  return const Center(child: Text('No messages yet. Be the first!', style: TextStyle(color: Colors.white54)));
+                  return Center(child: Text(strings['empty']!, style: const TextStyle(color: Colors.white54)));
                 }
 
                 return ListView.builder(
@@ -299,7 +333,7 @@ class _ChatDialogState extends State<ChatDialog> {
                   controller: _textController,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: 'Type a message...',
+                    hintText: strings['hint']!,
                     hintStyle: const TextStyle(color: Colors.white38),
                     filled: true,
                     fillColor: Colors.black45,
