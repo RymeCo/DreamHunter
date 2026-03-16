@@ -35,18 +35,22 @@ class _SplashScreenState extends State<SplashScreen> {
       'assets/images/game/environment/dorm.png',
     ];
 
-    // Pre-cache images and update progress
-    for (int i = 0; i < imagesToPrecache.length; i++) {
-      if (!mounted) return;
+    // Pre-cache images in parallel and update progress
+    int loadedCount = 0;
+    await Future.wait(imagesToPrecache.map((path) async {
       try {
-        await precacheImage(AssetImage(imagesToPrecache[i]), context);
+        await precacheImage(AssetImage(path), context);
       } catch (e) {
-        debugPrint('Failed to precache: ${imagesToPrecache[i]} - $e');
+        debugPrint('Failed to precache: $path - $e');
+      } finally {
+        if (mounted) {
+          loadedCount++;
+          setState(() {
+            _progress = (loadedCount) / (imagesToPrecache.length + 1);
+          });
+        }
       }
-      setState(() {
-        _progress = (i + 1) / (imagesToPrecache.length + 1); // Save room for final sync
-      });
-    }
+    }));
 
     // Ensure we wait at least 2 seconds total for the logo display
     final endTime = DateTime.now();
@@ -90,7 +94,7 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Stack(
         children: [
           ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 1.0, sigmaY: 5.0),
+            imageFilter: ImageFilter.blur(sigmaX: 0.5, sigmaY: 1.0),
             child: Image.asset(
               'assets/images/dashboard/background_1.png',
               fit: BoxFit.cover,
@@ -106,7 +110,7 @@ class _SplashScreenState extends State<SplashScreen> {
               alignment: Alignment.center,
               children: [
                 ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+                  imageFilter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
                   child: Image.asset(
                     'assets/images/core/splash_logo.png',
                     width: 600.0,
