@@ -7,22 +7,26 @@ environment:
   sdk: ^3.11.0
 
 dependencies:
-  flame: ^1.35.1
+  flame: ^1.36.0
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
   firebase_core: ^4.4.0
   cloud_firestore: ^6.1.2
   http: ^1.6.0
-  flame_tiled: ^1.21.2
+  flame_tiled: ^3.1.0
   firebase_auth: ^6.1.4
   audioplayers: ^6.5.1
   google_fonts: ^8.0.2
+  shared_preferences: ^2.5.4
+  uuid: ^4.5.3
+  device_info_plus: ^12.3.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true
@@ -33,6 +37,9 @@ flutter:
     - assets/images/dashboard/
     - assets/images/game/environment/
     - assets/images/game/characters/
-    - assets/tiles/
+    - assets/images/game/characters/lady/
+    - assets/images/game/characters/boy/
+    - assets/images/game/characters/man/
+    - assets/images/tiles/
 
 

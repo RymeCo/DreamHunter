@@ -13,8 +13,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 2. Set Device Preferences (Wait for them to apply)
-  // Only run on mobile platforms to avoid "ViewInsets" assertion errors on Web
   if (!ThemeData().platform.toString().contains('web')) {
     await Flame.device.fullScreen();
     await Flame.device.setPortrait();

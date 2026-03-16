@@ -3,7 +3,6 @@ import 'package:dreamhunter/services/auth_ui_helper.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 
 class RegisterDialog extends StatefulWidget {
   final VoidCallback onLoginRequested;
@@ -64,84 +63,82 @@ class _RegisterDialogState extends State<RegisterDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return LiquidGlassDialog(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _displayNameController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: AuthUIHelper.inputDecoration('Display Name'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Enter display name';
-                    }
-                    if (value.length < 3) {
-                      return 'At least 3 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 15),
-                TextFormField(
-                  controller: _emailController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: AuthUIHelper.inputDecoration('Email'),
-                  validator: AuthUIHelper.validateEmail,
-                ),
-                const SizedBox(height: 15),
-                TextFormField(
-                  controller: _passwordController,
-                  style: const TextStyle(color: Colors.white),
-                  obscureText: true,
-                  decoration: AuthUIHelper.inputDecoration('Password'),
-                  validator: AuthUIHelper.validatePassword,
-                ),
-                const SizedBox(height: 15),
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  style: const TextStyle(color: Colors.white),
-                  obscureText: true,
-                  decoration: AuthUIHelper.inputDecoration('Confirm Password'),
-                  validator: (value) {
-                    if (value != _passwordController.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 25),
-                ElevatedButton(
-                  onPressed: _register,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(255, 255, 255, 0.3),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(
-                          color: Color.fromRGBO(255, 255, 255, 0.5)),
-                    ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _displayNameController,
+                style: const TextStyle(color: Colors.white),
+                decoration: AuthUIHelper.inputDecoration('Display Name'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Enter display name';
+                  }
+                  if (value.length < 3) {
+                    return 'At least 3 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: _emailController,
+                style: const TextStyle(color: Colors.white),
+                decoration: AuthUIHelper.inputDecoration('Email'),
+                validator: AuthUIHelper.validateEmail,
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: _passwordController,
+                style: const TextStyle(color: Colors.white),
+                obscureText: true,
+                decoration: AuthUIHelper.inputDecoration('Password'),
+                validator: AuthUIHelper.validatePassword,
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: _confirmPasswordController,
+                style: const TextStyle(color: Colors.white),
+                obscureText: true,
+                decoration: AuthUIHelper.inputDecoration('Confirm Password'),
+                validator: (value) {
+                  if (value != _passwordController.text) {
+                    return 'Passwords do not match';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 25),
+              ElevatedButton(
+                onPressed: _register,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromRGBO(255, 255, 255, 0.3),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 40, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: const BorderSide(
+                        color: Color.fromRGBO(255, 255, 255, 0.5)),
                   ),
-                  child: const Text('Register',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
-                TextButton(
-                  onPressed: widget.onLoginRequested,
-                  child: const Text('Already have an account? Login',
-                      style:
-                          TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8))),
-                ),
-              ],
-            ),
+                child: const Text('Register',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              TextButton(
+                onPressed: widget.onLoginRequested,
+                child: const Text('Already have an account? Login',
+                    style:
+                        TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8))),
+              ),
+            ],
           ),
         ),
       ),

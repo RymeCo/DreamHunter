@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'backend_service.dart';
 
 /// A centralized service for managing authentication and Firebase interactions.
 ///
@@ -23,13 +24,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final BackendService _backend = BackendService();
 
   /// Sign in with email and password
   Future<UserCredential> signIn(String email, String password) async {
-    return await _auth.signInWithEmailAndPassword(
+    final userCredential = await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
+    
+    // Sync with FastAPI backend
+    await _backend.syncUserProfile();
+    
+    return userCredential;
   }
 
   /// Register new user with display name and Firestore record
@@ -38,9 +45,14 @@ class AuthService {
     required String password,
     required String displayName,
   }) async {
-    // 1. Check if display name is already taken
-    final docSnapshot = await _db.collection('users').doc(displayName).get();
-    if (docSnapshot.exists) {
+    // 1. Check if display name is already taken using a query
+    final querySnapshot = await _db
+        .collection('users')
+        .where('displayName', isEqualTo: displayName)
+        .limit(1)
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
       throw FirebaseAuthException(
         code: 'display-name-taken',
         message: 'This display name is already in use.',
@@ -58,7 +70,7 @@ class AuthService {
 
     // 4. Use a Transaction for the global counter and user document
     final counterRef = _db.collection('metadata').doc('counters');
-    final userRef = _db.collection('users').doc(displayName);
+    final userRef = _db.collection('users').doc(userCredential.user!.uid);
 
     await _db.runTransaction((transaction) async {
       DocumentSnapshot counterDoc = await transaction.get(counterRef);
@@ -85,6 +97,9 @@ class AuthService {
         'saveSlots': {'slot1': null, 'slot2': null, 'slot3': null},
       });
     });
+
+    // Sync with FastAPI backend after registration
+    await _backend.syncUserProfile();
   }
 
   /// Log out
