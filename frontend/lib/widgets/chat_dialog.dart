@@ -24,7 +24,8 @@ class _ChatDialogState extends State<ChatDialog> {
   final ScrollController _scrollController = ScrollController();
   
   String _selectedRegion = 'english';
-  
+  bool _isChatMaintenance = false;
+
   final Map<String, String> _regions = {
     'english': '🇺🇸 English',
     'spanish': '🇪🇸 Español',

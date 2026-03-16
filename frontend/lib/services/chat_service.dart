@@ -74,6 +74,16 @@ class ChatService {
     return _auth.currentUser?.uid ?? await getGuestId();
   }
 
+  /// Streams the current system configuration (maintenance modes).
+  Stream<DocumentSnapshot> getSystemConfig() {
+    return _db.collection('metadata').doc('system_config').snapshots();
+  }
+
+  /// Streams the latest global alert/broadcast message.
+  Stream<DocumentSnapshot> getGlobalAlert() {
+    return _db.collection('metadata').doc('global_alert').snapshots();
+  }
+
   /// Stream messages from a specific region, limited to the latest 100.
   Stream<QuerySnapshot> getChatStream(String region) {
     return _db

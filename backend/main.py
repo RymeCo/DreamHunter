@@ -10,10 +10,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
+from admin import router as admin_router
+
 # Load environment variables for local development
 load_dotenv()
 
 app = FastAPI(title="DreamHunter API")
+app.include_router(admin_router)
 
 @app.get("/")
 @app.head("/")
@@ -234,25 +237,6 @@ async def report_content(report: ReportRequest):
     
     db.collection('reports').add(report_data)
     return {"status": "success", "message": "Report submitted successfully."}
-
-@app.patch("/admin/chat-config")
-async def update_chat_config(
-    config: ChatConfigUpdate, 
-    decoded_token: dict = Depends(verify_firebase_token)
-):
-    update_data = {}
-    if config.archiveMessages is not None:
-        update_data['archiveMessages'] = config.archiveMessages
-    if config.moderationTier is not None:
-        if config.moderationTier not in ['None', 'Mild', 'Aggressive']:
-            raise HTTPException(status_code=400, detail="Invalid moderation tier.")
-        update_data['moderationTier'] = config.moderationTier
-        
-    if not update_data:
-        return {"status": "success", "message": "No changes requested."}
-        
-    db.collection('metadata').document('chat_config').set(update_data, merge=True)
-    return {"status": "success", "updatedConfig": update_data}
 
 
 if __name__ == "__main__":
