@@ -62,8 +62,8 @@ class _MainLayoutState extends State<MainLayout> {
             },
             labelType: NavigationRailLabelType.all,
             backgroundColor: const Color(0xFF16162F),
-            selectedIconTheme: const IconDataTheme(color: Colors.amberAccent),
-            unselectedIconTheme: const IconDataTheme(color: Colors.white54),
+            selectedIconTheme: const IconThemeData(color: Colors.amberAccent),
+            unselectedIconTheme: const IconThemeData(color: Colors.white54),
             destinations: const [
               NavigationRailDestination(
                 icon: Icon(Icons.dashboard_outlined),
