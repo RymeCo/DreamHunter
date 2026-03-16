@@ -1,11 +1,12 @@
 # Gemini CLI Workflow Mandates
 
 This project follows a strict development workflow to ensure consistency and clean repository management.
+SCRUM-34 is the focus for performance optimization and startup fixes.
 SCRUM-33 is always the go to if its just minor change so this scrum is called  clean up so use this for commits
 
 ## Git Workflow
 For every new task (SCRUM-XX):
-0. **Initiation Mandate**: The agent MUST instruct the user to create a new Jira/SCRUM ticket for the feature. Once confirmed, the agent will automatically create the corresponding branch.
+0. **Initiation Mandate**: The agent MUST instruct the user to provide a Jira/SCRUM ticket number for the feature. Once provided, the agent will automatically generate a descriptive task name based on the current objective and create the corresponding branch (e.g., `SCRUM-XX-task-name`).
 1. **Branch Creation**: Create a new branch from `development` with the name `SCRUM-XX-task-name`.
 2. **Implementation**: Perform the required changes within the branch and push to origin.
 3. **Review**: Create a Pull Request (PR) to `development`. **Wait for Baz review and user confirmation.**
