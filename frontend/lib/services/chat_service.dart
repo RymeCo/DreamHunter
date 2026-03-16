@@ -69,6 +69,18 @@ class ChatService {
     return info;
   }
 
+  /// Retrieves the last selected region, defaulting to 'english'.
+  Future<String> getSelectedRegion() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('selected_chat_region') ?? 'english';
+  }
+
+  /// Saves the selected region to SharedPreferences.
+  Future<void> setSelectedRegion(String region) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selected_chat_region', region);
+  }
+
   /// Get the active user ID (either Firebase UID or Guest UUID)
   Future<String> getActiveId() async {
     return _auth.currentUser?.uid ?? await getGuestId();

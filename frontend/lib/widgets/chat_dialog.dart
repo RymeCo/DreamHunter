@@ -72,6 +72,14 @@ class _ChatDialogState extends State<ChatDialog> {
   void initState() {
     super.initState();
     _chatService = widget.chatService ?? ChatService();
+    _loadInitialRegion();
+  }
+
+  Future<void> _loadInitialRegion() async {
+    final region = await _chatService.getSelectedRegion();
+    if (mounted) {
+      setState(() => _selectedRegion = region);
+    }
   }
 
   void _showAuthPrompt(_ChatAuthDialogType type) {
@@ -227,6 +235,7 @@ class _ChatDialogState extends State<ChatDialog> {
                 onChanged: (val) {
                   if (val != null) {
                     setState(() => _selectedRegion = val);
+                    _chatService.setSelectedRegion(val);
                   }
                 },
               ),
