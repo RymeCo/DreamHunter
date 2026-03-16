@@ -4,7 +4,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
+import 'package:dreamhunter/services/chat_service.dart';
 import 'package:dreamhunter/widgets/clickable_image.dart';
 import 'package:dreamhunter/widgets/login_dialog.dart';
 import 'package:dreamhunter/widgets/register_dialog.dart';
@@ -335,6 +337,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
+          ),
+          // Global Broadcast Banner
+          Positioned(
+            top: 100,
+            left: 20,
+            right: 20,
+            child: StreamBuilder<DocumentSnapshot>(
+              stream: ChatService().getGlobalAlert(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || !snapshot.data!.exists) return const SizedBox.shrink();
+                
+                final data = snapshot.data!.data() as Map<String, dynamic>;
+                final message = data['message'] as String?;
+                
+                if (message == null || message.isEmpty) return const SizedBox.shrink();
+                
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withValues(alpha: 0.5),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          message,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
           Positioned(
             bottom: MediaQuery.of(context).size.height * 0.15,

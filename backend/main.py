@@ -187,11 +187,15 @@ async def post_chat_message(
     # Use a transaction to check spam and post message
     transaction = db.transaction()
     user_ref = db.collection('users').document(uid)
+    config_ref = db.collection('metadata').document('moderation_config')
 
     @firestore.transactional
-    def send_in_transaction(transaction, user_ref, msg_text, device):
+    def send_in_transaction(transaction, user_ref, config_ref, msg_text, device):
         snapshot = user_ref.get(transaction=transaction)
         user_data = snapshot.to_dict() if snapshot.exists else {}
+        
+        config_snap = config_ref.get(transaction=transaction)
+        auto_mod_config = config_snap.to_dict() if config_snap.exists else {}
         
         # 1. Ban/Mute Checks
         if user_data.get('isBanned', False):
@@ -199,17 +203,37 @@ async def post_chat_message(
         
         muted_until = user_data.get('mutedUntil')
         if muted_until:
-            # Handle both ISO string and Firestore Timestamp
             if isinstance(muted_until, str):
                 until_dt = datetime.fromisoformat(muted_until.replace('Z', '+00:00'))
             else:
-                # Firestore returns datetime objects already
                 until_dt = muted_until 
-                
             if datetime.now(timezone.utc) < until_dt:
                 raise HTTPException(status_code=403, detail=f"You are muted until {until_dt.strftime('%Y-%m-%d %H:%M:%S')} UTC.")
 
-        # 2. Spam Cooldown
+        # 2. Auto-Mod Scan (Basic Keyword Check)
+        if auto_mod_config.get('autoModEnabled', False):
+            # For demonstration, a simple banned word list. In production, use NLP or an external API.
+            banned_words = ['spamword', 'badword'] 
+            if any(word in msg_text.lower() for word in banned_words):
+                violations = user_data.get('violationCount', 0) + 1
+                updates = {'violationCount': violations}
+                
+                if violations == 1:
+                    hours = auto_mod_config.get('strike1MuteHours', 1)
+                    updates['mutedUntil'] = datetime.now(timezone.utc) + timedelta(hours=hours)
+                elif violations == 2:
+                    hours = auto_mod_config.get('strike2MuteHours', 24)
+                    updates['mutedUntil'] = datetime.now(timezone.utc) + timedelta(hours=hours)
+                else:
+                    if auto_mod_config.get('strike3Ban', True):
+                        updates['isBanned'] = True
+                    else:
+                        updates['mutedUntil'] = datetime.now(timezone.utc) + timedelta(days=365) # Mute for a year if not banned
+                
+                transaction.update(user_ref, updates)
+                raise HTTPException(status_code=403, detail=f"Message blocked by Auto-Mod. Strike {violations} applied.")
+
+        # 3. Spam Cooldown
         last_msg_at = user_data.get('lastMessageAt', 0)
         if now_ts - last_msg_at < 1.0:
             raise HTTPException(status_code=429, detail="Please wait before sending another message.")
@@ -235,7 +259,7 @@ async def post_chat_message(
         return chat_ref.id
 
     try:
-        msg_id = send_in_transaction(transaction, user_ref, message.text, message.senderDevice)
+        msg_id = send_in_transaction(transaction, user_ref, config_ref, message.text, message.senderDevice)
         background_tasks.add_task(enforce_chat_lifecycle, region)
         return {"status": "success", "messageId": msg_id}
     except HTTPException as e:
