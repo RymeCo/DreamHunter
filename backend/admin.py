@@ -5,9 +5,6 @@ from fastapi import APIRouter, HTTPException, Depends, Header
 from pydantic import BaseModel
 from firebase_admin import auth, firestore
 
-# Use the same database instance from the main app
-db = firestore.client()
-
 router = APIRouter(prefix="/admin", tags=["Superadmin"])
 
 # --- Models ---
@@ -57,6 +54,7 @@ async def verify_admin(authorization: Optional[str] = Header(None)):
             return decoded_token
             
         # Check Firestore
+        db = firestore.client()
         user_doc = db.collection('users').document(uid).get()
         if user_doc.exists and user_doc.to_dict().get('isAdmin', False):
             return decoded_token
@@ -69,6 +67,7 @@ async def verify_admin(authorization: Optional[str] = Header(None)):
 
 def log_audit(admin_uid: str, action: str, target: Optional[str] = None, details: Optional[str] = None):
     """Log an administrative action to the audit_logs collection."""
+    db = firestore.client()
     db.collection('audit_logs').add({
         "adminUid": admin_uid,
         "action": action,
@@ -87,6 +86,7 @@ async def search_players(
     admin: dict = Depends(verify_admin)
 ):
     """Advanced player search with filtering."""
+    db = firestore.client()
     users_ref = db.collection('users')
     
     # We fetch more docs because filtering non-indexed or missing fields 
@@ -123,6 +123,7 @@ async def search_players(
 
 @router.patch("/users/{uid}/ban")
 async def ban_user(uid: str, req: UserBanRequest, admin: dict = Depends(verify_admin)):
+    db = firestore.client()
     db.collection('users').document(uid).update({"isBanned": req.isBanned})
     status = "banned" if req.isBanned else "unbanned"
     log_audit(admin['uid'], f"USER_{status.upper()}", uid)
@@ -130,6 +131,7 @@ async def ban_user(uid: str, req: UserBanRequest, admin: dict = Depends(verify_a
 
 @router.patch("/users/{uid}/mute")
 async def mute_user(uid: str, req: UserMuteRequest, admin: dict = Depends(verify_admin)):
+    db = firestore.client()
     if req.durationHours <= 0:
         db.collection('users').document(uid).update({"mutedUntil": None})
         log_audit(admin['uid'], "USER_UNMUTED", uid)
@@ -143,6 +145,7 @@ async def mute_user(uid: str, req: UserMuteRequest, admin: dict = Depends(verify
 @router.patch("/maintenance")
 async def update_maintenance(req: MaintenanceRequest, admin: dict = Depends(verify_admin)):
     """Toggle maintenance modes for Chat or Shop."""
+    db = firestore.client()
     update_data = {}
     if req.chatMaintenance is not None:
         update_data['chatMaintenance'] = req.chatMaintenance
@@ -159,6 +162,7 @@ async def update_maintenance(req: MaintenanceRequest, admin: dict = Depends(veri
 @router.post("/broadcast")
 async def post_broadcast(req: BroadcastRequest, admin: dict = Depends(verify_admin)):
     """Send a global alert banner to all users."""
+    db = firestore.client()
     broadcast_data = {
         "message": req.message,
         "isPersistent": req.isPersistent,
@@ -172,6 +176,7 @@ async def post_broadcast(req: BroadcastRequest, admin: dict = Depends(verify_adm
 @router.get("/reports")
 async def get_reports(status: Optional[str] = None, admin: dict = Depends(verify_admin)):
     """Fetch reports by status lifecycle."""
+    db = firestore.client()
     q = db.collection('reports')
     if status:
         q = q.where("status", "==", status)
@@ -185,6 +190,7 @@ async def update_report_status(report_id: str, status: str, admin: dict = Depend
     if status not in valid_statuses:
         raise HTTPException(status_code=400, detail="Invalid status.")
         
+    db = firestore.client()
     db.collection('reports').document(report_id).update({
         "status": status,
         "updatedAt": firestore.SERVER_TIMESTAMP
@@ -195,6 +201,7 @@ async def update_report_status(report_id: str, status: str, admin: dict = Depend
 @router.patch("/automod/config")
 async def update_automod_config(req: AutoModConfigRequest, admin: dict = Depends(verify_admin)):
     """Customize the Auto-Moderation Strike System."""
+    db = firestore.client()
     update_data = {}
     for field, value in req.model_dump(exclude_none=True).items():
         update_data[field] = value
@@ -209,5 +216,6 @@ async def update_automod_config(req: AutoModConfigRequest, admin: dict = Depends
 @router.get("/audit-logs")
 async def get_audit_logs(admin: dict = Depends(verify_admin)):
     """Retrieve history of all administrative actions."""
+    db = firestore.client()
     docs = list(db.collection('audit_logs').order_by("timestamp", direction=firestore.Query.DESCENDING).limit(100).stream())
     return [d.to_dict() for d in docs]

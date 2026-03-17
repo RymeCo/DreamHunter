@@ -141,6 +141,7 @@ class _PlayersScreenState extends State<PlayersScreen> {
             const SizedBox(width: 16),
             ElevatedButton(
               onPressed: _fetchPlayers,
+              style: ElevatedButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.deepPurple),
               child: const Text('Search'),
             ),
           ],

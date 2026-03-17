@@ -6,34 +6,16 @@ from typing import Optional, List
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 from fastapi import FastAPI, HTTPException, Depends, Header, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from typing import Optional, List
 from dotenv import load_dotenv
-
-from admin import router as admin_router
 
 # Load environment variables for local development
 load_dotenv()
 
-app = FastAPI(title="DreamHunter API")
-app.include_router(admin_router)
+# Initialize Firebase BEFORE including admin router
+import firebase_admin
+from firebase_admin import credentials, auth, firestore
 
-@app.get("/")
-@app.head("/")
-async def root():
-    """Health check endpoint for Render deployment."""
-    return {"status": "ok", "message": "DreamHunter API is running"}
-
-# Enable CORS for Flutter web/local development
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Initialize Firebase
 service_account_env = os.getenv("FIREBASE_SERVICE_ACCOUNT")
 
 if service_account_env:
@@ -51,6 +33,13 @@ else:
         firebase_admin.initialize_app()
     except Exception as e:
         print("Firebase could not be initialized. Please check your service account configuration.")
+
+from admin import router as admin_router
+
+app = FastAPI(title="DreamHunter API")
+app.include_router(admin_router)
+
+@app.get("/")
 
 db = firestore.client()
 
