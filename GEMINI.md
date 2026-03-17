@@ -1,6 +1,8 @@
 # Gemini CLI Workflow Mandates
 
 This project follows a strict development workflow to ensure consistency and clean repository management.
+SCRUM-39 is the focus for the Admin Backend infrastructure.
+SCRUM-38 is the focus for the standalone Admin Flutter App.
 SCRUM-35 is the focus for performance optimization, startup fixes, and general cleanup.
 SCRUM-33 is always the go to if its just minor change so this scrum is called  clean up so use this for commits
 

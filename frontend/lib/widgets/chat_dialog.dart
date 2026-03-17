@@ -24,7 +24,8 @@ class _ChatDialogState extends State<ChatDialog> {
   final ScrollController _scrollController = ScrollController();
   
   String _selectedRegion = 'english';
-  
+  bool _isChatMaintenance = false;
+
   final Map<String, String> _regions = {
     'english': '🇺🇸 English',
     'spanish': '🇪🇸 Español',
@@ -39,30 +40,35 @@ class _ChatDialogState extends State<ChatDialog> {
       'empty': 'No messages yet. Be the first!',
       'hint': 'Type a message...',
       'error': 'Error loading chat.',
+      'maintenance': 'Chat is under maintenance. Please try again later.',
     },
     'spanish': {
       'title': 'Chat Global',
       'empty': 'Aún no hay mensajes. ¡Sé el primero!',
       'hint': 'Escribe un mensaje...',
       'error': 'Error al cargar el chat.',
+      'maintenance': 'El chat está en mantenimiento. Por favor, inténtelo de nuevo más tarde.',
     },
     'chinese': {
       'title': '全球聊天',
       'empty': '还没有消息。成为第一个！',
       'hint': '输入消息...',
       'error': '加载聊天时出错。',
+      'maintenance': '聊天正在维护中。请稍后再试。',
     },
     'russian': {
       'title': 'Глобальный чат',
       'empty': 'Сообщений пока нет. Будь первым!',
       'hint': 'Введите сообщение...',
       'error': 'Ошибка при загрузке чата.',
+      'maintenance': 'Чат находится на техническом обслуживании. Пожалуйста, попробуйте позже.',
     },
     'tagalog': {
       'title': 'Global Chat',
       'empty': 'Wala pang mga mensahe. Mauna ka na!',
       'hint': 'Mag-type ng mensahe...',
       'error': 'Error sa pag-load ng chat.',
+      'maintenance': 'Kasalukuyang inaayos ang chat. Pakisubukang muli mamaya.',
     },
   };
 
@@ -73,6 +79,18 @@ class _ChatDialogState extends State<ChatDialog> {
     super.initState();
     _chatService = widget.chatService ?? ChatService();
     _loadInitialRegion();
+    _listenToMaintenance();
+  }
+
+  void _listenToMaintenance() {
+    _chatService.getSystemConfig().listen((snapshot) {
+      if (snapshot.exists && mounted) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        setState(() {
+          _isChatMaintenance = data['chatMaintenance'] ?? false;
+        });
+      }
+    });
   }
 
   Future<void> _loadInitialRegion() async {
@@ -128,6 +146,12 @@ class _ChatDialogState extends State<ChatDialog> {
   }
 
   void _sendMessage() async {
+    if (_isChatMaintenance) {
+      final strings = _localizedStrings[_selectedRegion] ?? _localizedStrings['english']!;
+      showCustomSnackBar(context, strings['maintenance']!, type: SnackBarType.info);
+      return;
+    }
+
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
@@ -156,7 +180,6 @@ class _ChatDialogState extends State<ChatDialog> {
         showCustomSnackBar(context, 'Please wait before sending another message.',
             type: SnackBarType.info);
       } else if (errorStr.contains('banned') || errorStr.contains('mute')) {
-        // Show the specific error message from the backend (e.g., "You are banned")
         showCustomSnackBar(context, e.toString().replaceAll('Exception: ', ''), type: SnackBarType.error);
       } else {
         showCustomSnackBar(context, 'Error: $e', type: SnackBarType.error);
@@ -249,92 +272,137 @@ class _ChatDialogState extends State<ChatDialog> {
           
           // Chat Stream
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _chatService.getChatStream(_selectedRegion),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text(strings['error']!, style: const TextStyle(color: Colors.red)));
-                }
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.white54));
-                }
-
-                final docs = snapshot.data?.docs ?? [];
-                
-                if (docs.isEmpty) {
-                  return Center(child: Text(strings['empty']!, style: const TextStyle(color: Colors.white54)));
-                }
-
-                return ListView.builder(
-                  controller: _scrollController,
-                  reverse: true, // Show latest at the bottom
-                  itemCount: docs.length,
-                  itemBuilder: (context, index) {
-                    final data = docs[index].data() as Map<String, dynamic>;
-                    final messageId = docs[index].id;
-                    final text = data['text'] ?? '';
-                    final senderName = data['senderName'] ?? 'Guest';
-                    final likes = data['likes'] ?? 0;
-                    
-                    final isMe = data['senderUid'] == FirebaseAuth.instance.currentUser?.uid;
-
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isMe ? const Color.fromRGBO(255, 255, 255, 0.15) : const Color.fromRGBO(0, 0, 0, 0.25),
-                        borderRadius: BorderRadius.circular(12),
-                        border: isMe ? Border.all(color: Colors.white24, width: 1) : null,
+            child: _isChatMaintenance 
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.build_circle_outlined, color: Colors.orangeAccent, size: 64),
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Text(
+                          strings['maintenance']!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            senderName, 
-                            style: TextStyle(
-                              color: isMe ? Colors.blueAccent : Colors.orangeAccent, 
-                              fontWeight: FontWeight.bold, 
-                              fontSize: 12
-                            )
+                    ],
+                  ),
+                )
+              : StreamBuilder<QuerySnapshot>(
+                  stream: _chatService.getChatStream(_selectedRegion),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(child: Text(strings['error']!, style: const TextStyle(color: Colors.red)));
+                    }
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator(color: Colors.white54));
+                    }
+
+                    final docs = snapshot.data?.docs ?? [];
+                    
+                    if (docs.isEmpty) {
+                      return Center(child: Text(strings['empty']!, style: const TextStyle(color: Colors.white54)));
+                    }
+
+                    return ListView.builder(
+                      controller: _scrollController,
+                      reverse: true, // Show latest at the bottom
+                      itemCount: docs.length,
+                      itemBuilder: (context, index) {
+                        final data = docs[index].data() as Map<String, dynamic>;
+                        final messageId = docs[index].id;
+                        final text = data['text'] ?? '';
+                        final senderName = data['senderName'] ?? 'Guest';
+                        final likes = data['likes'] ?? 0;
+                        final isAdmin = data['isAdmin'] ?? false;
+                        
+                        final isMe = data['senderUid'] == FirebaseAuth.instance.currentUser?.uid;
+
+                        return Container(
+                          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isAdmin 
+                                ? const Color.fromRGBO(106, 13, 173, 0.3) // Purple tint for admin
+                                : (isMe ? const Color.fromRGBO(255, 255, 255, 0.15) : const Color.fromRGBO(0, 0, 0, 0.25)),
+                            borderRadius: BorderRadius.circular(12),
+                            border: isAdmin 
+                                ? Border.all(color: Colors.amberAccent.withValues(alpha: 0.5), width: 1.5)
+                                : (isMe ? Border.all(color: Colors.white24, width: 1) : null),
+                            boxShadow: isAdmin ? [
+                              BoxShadow(
+                                color: Colors.deepPurple.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              )
+                            ] : null,
                           ),
-                          const SizedBox(height: 4),
-                          Text(text, style: const TextStyle(color: Colors.white, fontSize: 14)),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Like Button
-                              GestureDetector(
-                                onTap: () {
-                                  if (FirebaseAuth.instance.currentUser == null) {
-                                    showCustomSnackBar(context, 'Please login to like messages.', type: SnackBarType.info);
-                                  } else {
-                                    _chatService.likeMessage(_selectedRegion, messageId);
-                                  }
-                                },
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.thumb_up_alt_outlined, color: Colors.white54, size: 16),
+                              Row(
+                                children: [
+                                  Text(
+                                    senderName, 
+                                    style: TextStyle(
+                                      color: isAdmin 
+                                          ? Colors.amberAccent 
+                                          : (isMe ? Colors.blueAccent : Colors.orangeAccent), 
+                                      fontWeight: FontWeight.bold, 
+                                      fontSize: 12
+                                    )
+                                  ),
+                                  if (isAdmin) ...[
                                     const SizedBox(width: 4),
-                                    Text('$likes', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                    const Icon(Icons.verified, color: Colors.amberAccent, size: 14),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      'DreamMaster',
+                                      style: TextStyle(color: Colors.amberAccent, fontSize: 10, fontWeight: FontWeight.w900),
+                                    ),
                                   ],
-                                ),
+                                ],
                               ),
-                              const SizedBox(width: 16),
-                              // Report Button
-                              GestureDetector(
-                                onTap: () => _showReportDialog(data, messageId),
-                                child: const Icon(Icons.flag_outlined, color: Colors.redAccent, size: 16),
+                              const SizedBox(height: 4),
+                              Text(text, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  // Like Button
+                                  GestureDetector(
+                                    onTap: () {
+                                      if (FirebaseAuth.instance.currentUser == null) {
+                                        showCustomSnackBar(context, 'Please login to like messages.', type: SnackBarType.info);
+                                      } else {
+                                        _chatService.likeMessage(_selectedRegion, messageId);
+                                      }
+                                    },
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.thumb_up_alt_outlined, color: Colors.white54, size: 16),
+                                        const SizedBox(width: 4),
+                                        Text('$likes', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Report Button
+                                  GestureDetector(
+                                    onTap: () => _showReportDialog(data, messageId),
+                                    child: const Icon(Icons.flag_outlined, color: Colors.redAccent, size: 16),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
           ),
           
           // Input Area
@@ -342,30 +410,48 @@ class _ChatDialogState extends State<ChatDialog> {
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _textController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: strings['hint']!,
-                    hintStyle: const TextStyle(color: Colors.white38),
-                    filled: true,
-                    fillColor: Colors.black45,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _isChatMaintenance ? () {
+                    final strings = _localizedStrings[_selectedRegion] ?? _localizedStrings['english']!;
+                    showCustomSnackBar(context, strings['maintenance']!, type: SnackBarType.info);
+                  } : null,
+                  child: AbsorbPointer(
+                    absorbing: _isChatMaintenance,
+                    child: TextField(
+                      controller: _textController,
+                      enabled: !_isChatMaintenance,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: _isChatMaintenance ? 'Chat Disabled' : strings['hint']!,
+                        hintStyle: const TextStyle(color: Colors.white38),
+                        filled: true,
+                        fillColor: Colors.black45,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      ),
+                      onSubmitted: (_) => _sendMessage(),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   ),
-                  onSubmitted: (_) => _sendMessage(),
                 ),
               ),
               const SizedBox(width: 8),
               GestureDetector(
-                onTap: _isSending ? null : _sendMessage,
+                onTap: _isSending ? null : () {
+                  if (_isChatMaintenance) {
+                    final strings = _localizedStrings[_selectedRegion] ?? _localizedStrings['english']!;
+                    showCustomSnackBar(context, strings['maintenance']!, type: SnackBarType.info);
+                  } else {
+                    _sendMessage();
+                  }
+                },
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _isSending ? Colors.grey : Colors.orangeAccent,
+                    color: (_isSending || _isChatMaintenance) ? Colors.grey : Colors.orangeAccent,
                     shape: BoxShape.circle,
                   ),
                   child: _isSending 

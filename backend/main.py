@@ -6,31 +6,16 @@ from typing import Optional, List
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 from fastapi import FastAPI, HTTPException, Depends, Header, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from typing import Optional, List
 from dotenv import load_dotenv
 
 # Load environment variables for local development
 load_dotenv()
 
-app = FastAPI(title="DreamHunter API")
+# Initialize Firebase BEFORE including admin router
+import firebase_admin
+from firebase_admin import credentials, auth, firestore
 
-@app.get("/")
-@app.head("/")
-async def root():
-    """Health check endpoint for Render deployment."""
-    return {"status": "ok", "message": "DreamHunter API is running"}
-
-# Enable CORS for Flutter web/local development
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Initialize Firebase
 service_account_env = os.getenv("FIREBASE_SERVICE_ACCOUNT")
 
 if service_account_env:
@@ -48,6 +33,13 @@ else:
         firebase_admin.initialize_app()
     except Exception as e:
         print("Firebase could not be initialized. Please check your service account configuration.")
+
+from admin import router as admin_router
+
+app = FastAPI(title="DreamHunter API")
+app.include_router(admin_router)
+
+@app.get("/")
 
 db = firestore.client()
 
@@ -67,16 +59,6 @@ class ReportRequest(BaseModel):
     categories: List[str]
     reporterEmail: Optional[str] = None
 
-class ChatConfigUpdate(BaseModel):
-    archiveMessages: Optional[bool] = None
-    moderationTier: Optional[str] = None
-
-class UserBanRequest(BaseModel):
-    isBanned: bool
-
-class UserMuteRequest(BaseModel):
-    durationHours: int # 0 to unmute
-
 # --- Dependencies ---
 
 async def verify_firebase_token(authorization: Optional[str] = Header(None)):
@@ -93,20 +75,6 @@ async def verify_firebase_token(authorization: Optional[str] = Header(None)):
         return decoded_token
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired Firebase token")
-
-async def verify_admin(decoded_token: dict = Depends(verify_firebase_token)):
-    """
-    Dependency to check if the user is an admin.
-    For now, we check if the UID is in an admin_uids collection or environment variable.
-    """
-    # Simple hardcoded check or environment variable check
-    admin_uids = os.getenv("ADMIN_UIDS", "").split(",")
-    if decoded_token['uid'] not in admin_uids:
-        # Check Firestore for admin status as fallback
-        user_doc = db.collection('users').document(decoded_token['uid']).get()
-        if not user_doc.exists or not user_doc.to_dict().get('isAdmin', False):
-            raise HTTPException(status_code=403, detail="Admin privileges required")
-    return decoded_token
 
 # --- Helper Functions ---
 
@@ -208,11 +176,15 @@ async def post_chat_message(
     # Use a transaction to check spam and post message
     transaction = db.transaction()
     user_ref = db.collection('users').document(uid)
+    config_ref = db.collection('metadata').document('moderation_config')
 
     @firestore.transactional
-    def send_in_transaction(transaction, user_ref, msg_text, device):
+    def send_in_transaction(transaction, user_ref, config_ref, msg_text, device):
         snapshot = user_ref.get(transaction=transaction)
         user_data = snapshot.to_dict() if snapshot.exists else {}
+        
+        config_snap = config_ref.get(transaction=transaction)
+        auto_mod_config = config_snap.to_dict() if config_snap.exists else {}
         
         # 1. Ban/Mute Checks
         if user_data.get('isBanned', False):
@@ -220,22 +192,52 @@ async def post_chat_message(
         
         muted_until = user_data.get('mutedUntil')
         if muted_until:
-            # Handle both ISO string and Firestore Timestamp
             if isinstance(muted_until, str):
                 until_dt = datetime.fromisoformat(muted_until.replace('Z', '+00:00'))
             else:
-                # Firestore returns datetime objects already
                 until_dt = muted_until 
-                
             if datetime.now(timezone.utc) < until_dt:
                 raise HTTPException(status_code=403, detail=f"You are muted until {until_dt.strftime('%Y-%m-%d %H:%M:%S')} UTC.")
 
-        # 2. Spam Cooldown
+        # 2. Auto-Mod Scan (Toxic Word Filter)
+        if auto_mod_config.get('autoModEnabled', False):
+            # A starter list of toxic gaming keywords/slurs. 
+            # In a real production app, this would be a much larger list or an external API.
+            toxic_keywords = [
+                'nigger', 'faggot', 'retard', 'ky$', 'kill yourself', 
+                'cunt', 'whore', 'slut', 'fuck you', 'stfu',
+                'noob team', 'trash player', 'dog water', 'garbage team',
+                'ez win', 'easy clap', 'uninstall', 'hack', 'cheat'
+            ] 
+            
+            # Check for matches
+            msg_lower = msg_text.lower()
+            if any(word in msg_lower for word in toxic_keywords):
+                violations = user_data.get('violationCount', 0) + 1
+                updates = {'violationCount': violations}
+                
+                if violations == 1:
+                    hours = auto_mod_config.get('strike1MuteHours', 1)
+                    updates['mutedUntil'] = datetime.now(timezone.utc) + timedelta(hours=hours)
+                elif violations == 2:
+                    hours = auto_mod_config.get('strike2MuteHours', 24)
+                    updates['mutedUntil'] = datetime.now(timezone.utc) + timedelta(hours=hours)
+                else:
+                    if auto_mod_config.get('strike3Ban', True):
+                        updates['isBanned'] = True
+                    else:
+                        updates['mutedUntil'] = datetime.now(timezone.utc) + timedelta(days=365)
+                
+                transaction.update(user_ref, updates)
+                raise HTTPException(status_code=403, detail=f"Message blocked: Toxicity detected. Strike {violations} applied.")
+
+        # 3. Spam Cooldown
         last_msg_at = user_data.get('lastMessageAt', 0)
         if now_ts - last_msg_at < 1.0:
             raise HTTPException(status_code=429, detail="Please wait before sending another message.")
         
         display_name = user_data.get('displayName', 'Dreamer')
+        is_admin = user_data.get('isAdmin', False)
         
         # Update user's last message time
         transaction.update(user_ref, {'lastMessageAt': now_ts})
@@ -246,6 +248,7 @@ async def post_chat_message(
             "senderUid": uid,
             "senderName": display_name,
             "senderDevice": device,
+            "isAdmin": is_admin,
             "timestamp": firestore.SERVER_TIMESTAMP
         }
         
@@ -254,7 +257,7 @@ async def post_chat_message(
         return chat_ref.id
 
     try:
-        msg_id = send_in_transaction(transaction, user_ref, message.text, message.senderDevice)
+        msg_id = send_in_transaction(transaction, user_ref, config_ref, message.text, message.senderDevice)
         background_tasks.add_task(enforce_chat_lifecycle, region)
         return {"status": "success", "messageId": msg_id}
     except HTTPException as e:
@@ -274,43 +277,6 @@ async def report_content(report: ReportRequest):
     
     db.collection('reports').add(report_data)
     return {"status": "success", "message": "Report submitted successfully."}
-
-@app.patch("/admin/chat-config")
-async def update_chat_config(
-    config: ChatConfigUpdate, 
-    _admin: dict = Depends(verify_admin)
-):
-    update_data = {}
-    if config.archiveMessages is not None:
-        update_data['archiveMessages'] = config.archiveMessages
-    if config.moderationTier is not None:
-        if config.moderationTier not in ['None', 'Mild', 'Aggressive']:
-            raise HTTPException(status_code=400, detail="Invalid moderation tier.")
-        update_data['moderationTier'] = config.moderationTier
-        
-    if not update_data:
-        return {"status": "success", "message": "No changes requested."}
-        
-    db.collection('metadata').document('chat_config').set(update_data, merge=True)
-    return {"status": "success", "updatedConfig": update_data}
-
-@app.patch("/admin/users/{uid}/ban")
-async def ban_user(uid: str, req: UserBanRequest, _admin: dict = Depends(verify_admin)):
-    """Ban or unban a user from Global Chat."""
-    db.collection('users').document(uid).update({"isBanned": req.isBanned})
-    status = "banned" if req.isBanned else "unbanned"
-    return {"status": "success", "message": f"User {uid} has been {status}."}
-
-@app.patch("/admin/users/{uid}/mute")
-async def mute_user(uid: str, req: UserMuteRequest, _admin: dict = Depends(verify_admin)):
-    """Mute a user for a specific duration in hours. Set duration to 0 to unmute."""
-    if req.durationHours <= 0:
-        db.collection('users').document(uid).update({"mutedUntil": None})
-        return {"status": "success", "message": f"User {uid} has been unmuted."}
-    
-    until = datetime.now(timezone.utc) + timedelta(hours=req.durationHours)
-    db.collection('users').document(uid).update({"mutedUntil": until})
-    return {"status": "success", "message": f"User {uid} has been muted until {until.isoformat()}."}
 
 if __name__ == "__main__":
     import uvicorn

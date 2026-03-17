@@ -52,6 +52,17 @@ class BackendService {
     );
   }
 
+  /// Checks if the backend is reachable
+  Future<bool> pingServer() async {
+    try {
+      final response = await _client.get(Uri.parse(baseUrl)).timeout(const Duration(seconds: 10));
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Server ping failed: $e');
+      return false;
+    }
+  }
+
   /// Syncs the user profile with the backend after login or register
   Future<Map<String, dynamic>?> syncUserProfile() async {
     try {
