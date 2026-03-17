@@ -89,11 +89,13 @@ class AdminService {
       final response = await _client.get(Uri.parse(url), headers: await getAuthHeaders());
       if (response.statusCode == 200) {
         return json.decode(response.body);
+      } else if (response.statusCode == 403) {
+        throw Exception('Admin privileges required.');
       }
       return [];
     } catch (e) {
       debugPrint('Error searching players: $e');
-      return [];
+      rethrow;
     }
   }
 

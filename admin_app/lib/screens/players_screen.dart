@@ -25,16 +25,25 @@ class _PlayersScreenState extends State<PlayersScreen> {
 
   Future<void> _fetchPlayers() async {
     setState(() => _isLoading = true);
-    final results = await _adminService.searchPlayers(
-      query: _searchController.text.trim(),
-      isBanned: _filterBanned,
-      isAdmin: _filterAdmin,
-    );
-    if (!mounted) return;
-    setState(() {
-      _players = results;
-      _isLoading = false;
-    });
+    try {
+      final results = await _adminService.searchPlayers(
+        query: _searchController.text.trim(),
+        isBanned: _filterBanned,
+        isAdmin: _filterAdmin,
+      );
+      if (!mounted) return;
+      setState(() {
+        _players = results;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
+        backgroundColor: Colors.redAccent,
+      ));
+    }
   }
 
   void _toggleBan(String uid, bool currentStatus) async {

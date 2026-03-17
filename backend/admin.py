@@ -96,6 +96,10 @@ async def search_players(
     
     for d in docs:
         u = d.to_dict()
+        # Always ensure UID is present (fallback to doc ID)
+        if 'uid' not in u:
+            u['uid'] = d.id
+            
         # Default missing fields for consistency during in-memory filter
         u_is_banned = u.get('isBanned', False)
         u_is_admin = u.get('isAdmin', False)
