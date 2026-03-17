@@ -26,11 +26,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _isPinging = true;
       _pingStatus = 'Pinging...';
     });
-    final isOnline = await _adminService.pingServer();
+    final latency = await _adminService.pingServer();
     if (!mounted) return;
     setState(() {
       _isPinging = false;
-      _pingStatus = isOnline ? 'Online (200 OK)' : 'Offline/Timeout';
+      _pingStatus = latency != null ? 'Online (${latency}ms)' : 'Offline/Timeout';
     });
   }
 

@@ -26,13 +26,21 @@ class AdminService {
     };
   }
 
-  Future<bool> pingServer() async {
+  /// Checks if the backend is reachable and returns the latency in ms if successful.
+  /// Returns null if the ping fails.
+  Future<int?> pingServer() async {
     try {
+      final stopwatch = Stopwatch()..start();
       final response = await _client.get(Uri.parse(baseUrl)).timeout(const Duration(seconds: 10));
-      return response.statusCode == 200;
+      stopwatch.stop();
+      
+      if (response.statusCode == 200) {
+        return stopwatch.elapsedMilliseconds;
+      }
+      return null;
     } catch (e) {
       debugPrint('Server ping failed: $e');
-      return false;
+      return null;
     }
   }
 
