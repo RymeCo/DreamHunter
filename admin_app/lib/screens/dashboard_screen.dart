@@ -66,25 +66,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   const Text('Service Health', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
-                  Row(
+                  Wrap(
+                    spacing: 20,
+                    runSpacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Flexible(
-                        child: ElevatedButton.icon(
-                          onPressed: _isPinging ? null : _pingServer,
-                          icon: _isPinging ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.network_ping),
-                          label: const Text('Ping Backend'),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-                        ),
+                      ElevatedButton.icon(
+                        onPressed: _isPinging ? null : _pingServer,
+                        icon: _isPinging ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.network_ping),
+                        label: const Text('Ping Backend'),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
                       ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Text(
-                          'Status: $_pingStatus', 
-                          style: TextStyle(
-                            color: _pingStatus.contains('Online') ? Colors.greenAccent : Colors.redAccent, 
-                            fontSize: 16,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                      Text(
+                        'Status: $_pingStatus', 
+                        style: TextStyle(
+                          color: _pingStatus.contains('Online') ? Colors.greenAccent : Colors.redAccent, 
+                          fontSize: 16,
                         ),
                       ),
                     ],
