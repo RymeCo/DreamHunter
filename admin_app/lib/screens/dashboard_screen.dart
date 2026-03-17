@@ -14,7 +14,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _pingStatus = 'Unknown';
   final TextEditingController _broadcastController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    _pingServer();
+  }
+
   void _pingServer() async {
+    if (!mounted) return;
     setState(() {
       _isPinging = true;
       _pingStatus = 'Pinging...';
@@ -61,14 +68,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      ElevatedButton.icon(
-                        onPressed: _isPinging ? null : _pingServer,
-                        icon: _isPinging ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.network_ping),
-                        label: const Text('Ping Backend'),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+                      Flexible(
+                        child: ElevatedButton.icon(
+                          onPressed: _isPinging ? null : _pingServer,
+                          icon: _isPinging ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.network_ping),
+                          label: const Text('Ping Backend'),
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+                        ),
                       ),
                       const SizedBox(width: 20),
-                      Text('Status: $_pingStatus', style: TextStyle(color: _pingStatus.contains('Online') ? Colors.greenAccent : Colors.redAccent, fontSize: 16)),
+                      Expanded(
+                        child: Text(
+                          'Status: $_pingStatus', 
+                          style: TextStyle(
+                            color: _pingStatus.contains('Online') ? Colors.greenAccent : Colors.redAccent, 
+                            fontSize: 16,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ],

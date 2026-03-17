@@ -102,7 +102,10 @@ class _MainLayoutState extends State<MainLayout> {
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(24),
-              child: _screens[_selectedIndex],
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: _screens,
+              ),
             ),
           ),
         ],

@@ -48,7 +48,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Report Center', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Report Center', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            IconButton(
+              icon: const Icon(Icons.refresh, size: 28, color: Colors.amberAccent),
+              onPressed: _fetchReports,
+              tooltip: 'Refresh Reports',
+            ),
+          ],
+        ),
         const SizedBox(height: 16),
         
         // Filters

@@ -89,26 +89,31 @@ async def search_players(
     """Advanced player search with filtering."""
     users_ref = db.collection('users')
     
-    # Start building query
-    q = users_ref
-    if isBanned is not None:
-        q = q.where("isBanned", "==", isBanned)
-    if isAdmin is not None:
-        q = q.where("isAdmin", "==", isAdmin)
-        
-    # Note: Firestore doesn't support easy multi-field text search without Algolia/ElasticSearch.
-    # For now, we fetch limited docs and filter in memory for small-scale apps.
-    docs = list(q.limit(100).stream())
-    results = [d.to_dict() for d in docs]
+    # We fetch more docs because filtering non-indexed or missing fields 
+    # in Firestore is restrictive. We'll filter in memory for precision.
+    docs = list(users_ref.limit(500).stream())
+    results = []
     
-    if query:
-        query = query.lower()
-        results = [
-            u for u in results 
-            if query in u.get('displayName', '').lower() or 
-               query in u.get('email', '').lower() or 
-               query in u.get('uid', '').lower()
-        ]
+    for d in docs:
+        u = d.to_dict()
+        # Default missing fields for consistency during in-memory filter
+        u_is_banned = u.get('isBanned', False)
+        u_is_admin = u.get('isAdmin', False)
+        
+        # Apply Filters
+        if isBanned is not None and u_is_banned != isBanned:
+            continue
+        if isAdmin is not None and u_is_admin != isAdmin:
+            continue
+            
+        if query:
+            q = query.lower()
+            if q not in u.get('displayName', '').lower() and \
+               q not in u.get('email', '').lower() and \
+               q not in u.get('uid', '').lower():
+                continue
+        
+        results.append(u)
         
     return results
 

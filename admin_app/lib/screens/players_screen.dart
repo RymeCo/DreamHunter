@@ -88,7 +88,17 @@ class _PlayersScreenState extends State<PlayersScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Player Management', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Player Management', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            IconButton(
+              icon: const Icon(Icons.refresh, size: 28, color: Colors.amberAccent),
+              onPressed: _fetchPlayers,
+              tooltip: 'Refresh Player List',
+            ),
+          ],
+        ),
         const SizedBox(height: 16),
         
         // Search & Filters
