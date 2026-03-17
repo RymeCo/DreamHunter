@@ -3,6 +3,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 
+import 'screens/dashboard_screen.dart';
+import 'screens/players_screen.dart';
+import 'screens/reports_screen.dart';
+import 'screens/automod_screen.dart';
+import 'screens/audit_screen.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -41,11 +47,11 @@ class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const Center(child: Text('Dashboard (System Health & Emergency)')),
-    const Center(child: Text('Player Management')),
-    const Center(child: Text('Report Center')),
-    const Center(child: Text('Auto-Moderation Console')),
-    const Center(child: Text('Audit Logs')),
+    const DashboardScreen(),
+    const PlayersScreen(),
+    const ReportsScreen(),
+    const AutoModScreen(),
+    const AuditScreen(),
   ];
 
   @override

@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Header
 from pydantic import BaseModel
 from firebase_admin import auth, firestore
 
