@@ -40,6 +40,10 @@ app = FastAPI(title="DreamHunter API")
 app.include_router(admin_router)
 
 @app.get("/")
+@app.head("/")
+async def root():
+    """Health check endpoint for Render deployment."""
+    return {"status": "ok", "message": "DreamHunter API is running"}
 
 db = firestore.client()
 

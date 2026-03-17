@@ -103,6 +103,9 @@ class AuthService {
 
     // Sync with FastAPI backend after registration
     await _backend.syncUserProfile();
+    
+    // Sign out to force manual login
+    await signOut();
   }
 
   /// Log out

@@ -215,11 +215,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                   onRegisterSuccess: () {
                     setDialogState(() {
-                      _isLoggedIn = true;
-                      _currentDialogType = AuthDialogType.profile;
+                      _currentDialogType = AuthDialogType.login;
                       showCustomSnackBar(
                         context,
-                        'Registration successful!',
+                        'Successfully registered account. Please log in.',
                         type: SnackBarType.success,
                       );
                     });
