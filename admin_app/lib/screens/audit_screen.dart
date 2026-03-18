@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../services/admin_service.dart';
 import '../widgets/liquid_glass_dialog.dart';
@@ -203,10 +204,10 @@ class _AuditScreenState extends State<AuditScreen> {
                     color: Colors.blueAccent,
                   ),
                   onPressed: () {
-                    // Note: Would typically use Clipboard.setData here
+                    Clipboard.setData(ClipboardData(text: value));
                     showCustomSnackBar(
                       context,
-                      'UID copied to clipboard',
+                      'ID copied to clipboard',
                       type: SnackBarType.info,
                     );
                   },
@@ -308,9 +309,15 @@ class _AuditScreenState extends State<AuditScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    _buildActionBadge(
-                                      log['action'] ?? 'UNKNOWN',
+                                    Expanded(
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: _buildActionBadge(
+                                          log['action'] ?? 'UNKNOWN',
+                                        ),
+                                      ),
                                     ),
+                                    const SizedBox(width: 8),
                                     Text(
                                       formattedDate,
                                       style: const TextStyle(
@@ -327,6 +334,7 @@ class _AuditScreenState extends State<AuditScreen> {
                                     fontWeight: FontWeight.bold,
                                     color: Colors.blueAccent,
                                   ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 if (log['target'] != null) ...[
                                   const SizedBox(height: 4),
@@ -336,6 +344,7 @@ class _AuditScreenState extends State<AuditScreen> {
                                       color: Colors.orangeAccent,
                                       fontSize: 13,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                                 const SizedBox(height: 8),
@@ -397,6 +406,7 @@ class _AuditScreenState extends State<AuditScreen> {
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

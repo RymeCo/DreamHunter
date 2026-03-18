@@ -129,6 +129,21 @@ async def search_players(
         
     return results
 
+@router.get("/users/{uid}")
+async def get_user_profile(uid: str, admin: dict = Depends(verify_admin)):
+    """Fetch a single player's profile by UID."""
+    db = firestore.client()
+    user_doc = db.collection('users').document(uid).get()
+    
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="Player not found")
+        
+    data = user_doc.to_dict()
+    if 'uid' not in data:
+        data['uid'] = user_doc.id
+        
+    return data
+
 @router.patch("/users/{uid}/ban")
 async def ban_user(uid: str, req: UserBanRequest, admin: dict = Depends(verify_admin)):
     db = firestore.client()
