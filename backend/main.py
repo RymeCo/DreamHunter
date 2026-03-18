@@ -3,10 +3,9 @@ import json
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
-import firebase_admin
-from firebase_admin import credentials, auth, firestore
 from fastapi import FastAPI, HTTPException, Depends, Header, BackgroundTasks
-from typing import Optional, List
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from dotenv import load_dotenv
 
 # Load environment variables for local development
@@ -44,6 +43,15 @@ app.include_router(admin_router)
 async def root():
     """Health check endpoint for Render deployment."""
     return {"status": "ok", "message": "DreamHunter API is running"}
+
+# Enable CORS for Flutter web/local development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 db = firestore.client()
 
@@ -199,14 +207,15 @@ async def post_chat_message(
             if isinstance(muted_until, str):
                 until_dt = datetime.fromisoformat(muted_until.replace('Z', '+00:00'))
             else:
+                # Firestore returns datetime objects already
                 until_dt = muted_until 
+                
             if datetime.now(timezone.utc) < until_dt:
                 raise HTTPException(status_code=403, detail=f"You are muted until {until_dt.strftime('%Y-%m-%d %H:%M:%S')} UTC.")
 
         # 2. Auto-Mod Scan (Toxic Word Filter)
         if auto_mod_config.get('autoModEnabled', False):
             # A starter list of toxic gaming keywords/slurs. 
-            # In a real production app, this would be a much larger list or an external API.
             toxic_keywords = [
                 'nigger', 'faggot', 'retard', 'ky$', 'kill yourself', 
                 'cunt', 'whore', 'slut', 'fuck you', 'stfu',
@@ -284,5 +293,6 @@ async def report_content(report: ReportRequest):
 
 if __name__ == "__main__":
     import uvicorn
+    # Render provides the PORT environment variable
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
