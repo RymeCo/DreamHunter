@@ -44,3 +44,10 @@ Always register new assets in `frontend/pubspec.yaml` under the appropriate cate
 ## SCRUM Finalization
 - **Post-Merge Cleanup**: Once a PR is successfully merged into `development`, immediately delete the local task branch and the remote branch to keep the repository clean.
 - **Workflow Integrity**: A SCRUM task is only "Done" when the feature is merged and the branch is removed from both local and origin.
+
+
+## GSD Mode (Get Shit Done)
+**Isolated Automation**: This directory supports GSD automation. 
+- **Toggle**: Use `/gsd:on` to enable auto-commits and `/gsd:off` to disable them.
+- **Workflow**: When GSD is ON, every file change triggers a local git commit. This is intended for rapid prototyping and iterative development. 
+- **SCRUM Integration**: Use GSD for the 'Implementation' phase of your SCRUM tasks. Ensure you switch back to the standard SCRUM Git Workflow for PRs and merges.

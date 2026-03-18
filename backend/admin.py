@@ -89,29 +89,24 @@ async def search_players(
     db = firestore.client()
     users_ref = db.collection('users')
     
-    # We fetch more docs because filtering non-indexed or missing fields 
-    # in Firestore is restrictive. We'll filter in memory for precision.
-    docs = list(users_ref.limit(500).stream())
+    # Apply indexed filters directly in Firestore query
+    if isBanned is not None:
+        users_ref = users_ref.where("isBanned", "==", isBanned)
+    if isAdmin is not None:
+        users_ref = users_ref.where("isAdmin", "==", isAdmin)
+        
+    # Limit base results to prevent overhead
+    docs = list(users_ref.limit(200).stream())
     results = []
     
     for d in docs:
         u = d.to_dict()
-        # Always ensure UID is present (fallback to doc ID)
         if 'uid' not in u:
             u['uid'] = d.id
             
-        # Default missing fields for consistency during in-memory filter
-        u_is_banned = u.get('isBanned', False)
-        u_is_admin = u.get('isAdmin', False)
-        
-        # Apply Filters
-        if isBanned is not None and u_is_banned != isBanned:
-            continue
-        if isAdmin is not None and u_is_admin != isAdmin:
-            continue
-            
         if query:
             q = query.lower()
+            # If search query provided, filter in-memory for flexible match
             if q not in u.get('displayName', '').lower() and \
                q not in u.get('email', '').lower() and \
                q not in u.get('uid', '').lower():
@@ -124,23 +119,60 @@ async def search_players(
 @router.patch("/users/{uid}/ban")
 async def ban_user(uid: str, req: UserBanRequest, admin: dict = Depends(verify_admin)):
     db = firestore.client()
-    db.collection('users').document(uid).update({"isBanned": req.isBanned})
-    status = "banned" if req.isBanned else "unbanned"
-    log_audit(admin['uid'], f"USER_{status.upper()}", uid)
-    return {"status": "success", "message": f"User {uid} has been {status}."}
+    user_ref = db.collection('users').document(uid)
+    
+    # Verify user exists before update
+    if not user_ref.get().exists:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_ref.update({
+        "isBanned": req.isBanned,
+        "updatedAt": firestore.SERVER_TIMESTAMP
+    })
+    
+    status = "BANNED" if req.isBanned else "UNBANNED"
+    log_audit(
+        admin_uid=admin['uid'], 
+        action=f"USER_{status}", 
+        target=uid, 
+        details=f"Admin {admin['uid']} set isBanned to {req.isBanned}"
+    )
+    return {"status": "success", "message": f"User {uid} has been {status.lower()}."}
 
 @router.patch("/users/{uid}/mute")
 async def mute_user(uid: str, req: UserMuteRequest, admin: dict = Depends(verify_admin)):
     db = firestore.client()
+    user_ref = db.collection('users').document(uid)
+    
+    if not user_ref.get().exists:
+        raise HTTPException(status_code=404, detail="User not found")
+
     if req.durationHours <= 0:
-        db.collection('users').document(uid).update({"mutedUntil": None})
+        user_ref.update({
+            "mutedUntil": None,
+            "updatedAt": firestore.SERVER_TIMESTAMP
+        })
         log_audit(admin['uid'], "USER_UNMUTED", uid)
         return {"status": "success", "message": f"User {uid} has been unmuted."}
     
+    # Calculate expiry
     until = datetime.now(timezone.utc) + timedelta(hours=req.durationHours)
-    db.collection('users').document(uid).update({"mutedUntil": until})
-    log_audit(admin['uid'], "USER_MUTED", uid, f"Duration: {req.durationHours}h")
-    return {"status": "success", "message": f"User {uid} has been muted until {until.isoformat()}."}
+    user_ref.update({
+        "mutedUntil": until,
+        "updatedAt": firestore.SERVER_TIMESTAMP
+    })
+    
+    log_audit(
+        admin_uid=admin['uid'], 
+        action="USER_MUTED", 
+        target=uid, 
+        details=f"Duration: {req.durationHours} hours (Expires: {until.isoformat()})"
+    )
+    return {
+        "status": "success", 
+        "message": f"User {uid} muted.",
+        "mutedUntil": until.isoformat()
+    }
 
 @router.patch("/maintenance")
 async def update_maintenance(req: MaintenanceRequest, admin: dict = Depends(verify_admin)):

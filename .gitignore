@@ -9,3 +9,7 @@ build/
 .vscode/
 .gemini/
 note.txt
+# GSD Workflow - Local Setup
+.gemini/gsd_active
+.gemini/settings.json
+.gemini/commands/gsd/

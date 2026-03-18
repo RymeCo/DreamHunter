@@ -1,9 +1,10 @@
 import os
 import json
 from datetime import datetime, timezone, timedelta
-from typing import Optional, List
+from typing import Optional, List, Any
 
 from fastapi import FastAPI, HTTPException, Depends, Header, BackgroundTasks
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -35,7 +36,24 @@ else:
 
 from admin import router as admin_router
 
-app = FastAPI(title="DreamHunter API")
+class CustomJSONResponse(JSONResponse):
+    def render(self, content: Any) -> bytes:
+        def serialize(obj):
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            # Handle other firestore types if necessary
+            return str(obj)
+
+        return json.dumps(
+            content,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=None,
+            separators=(",", ":"),
+            default=serialize,
+        ).encode("utf-8")
+
+app = FastAPI(title="DreamHunter API", default_response_class=CustomJSONResponse)
 app.include_router(admin_router)
 
 @app.get("/")
