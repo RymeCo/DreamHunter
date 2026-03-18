@@ -107,12 +107,15 @@ class AdminService {
     }
   }
 
-  Future<bool> banUser(String uid, bool isBanned) async {
+  Future<bool> banUser(String uid, bool isBanned, {String? until}) async {
     try {
       final response = await _client.patch(
         Uri.parse('$baseUrl/admin/users/$uid/ban'),
         headers: await getAuthHeaders(),
-        body: json.encode({'isBanned': isBanned}),
+        body: json.encode({
+          'isBanned': isBanned,
+          if (until != null) 'until': until,
+        }),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -121,12 +124,15 @@ class AdminService {
     }
   }
 
-  Future<bool> muteUser(String uid, int durationHours) async {
+  Future<bool> muteUser(String uid, int? durationHours, {String? until}) async {
     try {
       final response = await _client.patch(
         Uri.parse('$baseUrl/admin/users/$uid/mute'),
         headers: await getAuthHeaders(),
-        body: json.encode({'durationHours': durationHours}),
+        body: json.encode({
+          if (durationHours != null) 'durationHours': durationHours,
+          if (until != null) 'until': until,
+        }),
       );
       return response.statusCode == 200;
     } catch (e) {
