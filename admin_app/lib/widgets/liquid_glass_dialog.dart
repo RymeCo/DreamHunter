@@ -79,10 +79,7 @@ class LiquidGlassDialog extends StatelessWidget {
                 ),
               ],
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: child,
-            ),
+            child: Material(color: Colors.transparent, child: child),
           ),
         ),
       ),

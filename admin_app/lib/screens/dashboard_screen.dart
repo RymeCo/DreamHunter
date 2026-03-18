@@ -32,15 +32,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (!mounted) return;
     setState(() {
       _isPinging = false;
-      _pingStatus = latency != null ? 'Online (${latency}ms)' : 'Offline/Timeout';
+      _pingStatus = latency != null
+          ? 'Online (${latency}ms)'
+          : 'Offline/Timeout';
     });
   }
 
   void _sendBroadcast() async {
     if (_broadcastController.text.trim().isEmpty) return;
-    final success = await _adminService.sendGlobalBroadcast(_broadcastController.text.trim(), false);
+    final success = await _adminService.sendGlobalBroadcast(
+      _broadcastController.text.trim(),
+      false,
+    );
     if (!mounted) return;
-    
+
     showCustomSnackBar(
       context,
       success ? 'Broadcast sent!' : 'Failed to send broadcast.',
@@ -59,9 +64,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Dashboard Overview', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+          const Text(
+            'Dashboard Overview',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 24),
-          
+
           // Service Health
           LiquidGlassDialog(
             width: double.infinity,
@@ -69,7 +77,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Service Health', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Service Health',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 16),
                 Wrap(
                   spacing: 20,
@@ -78,14 +89,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     ElevatedButton.icon(
                       onPressed: _isPinging ? null : _pingServer,
-                      icon: _isPinging ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.network_ping),
+                      icon: _isPinging
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.network_ping),
                       label: const Text('Ping Backend'),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                      ),
                     ),
                     Text(
-                      'Status: $_pingStatus', 
+                      'Status: $_pingStatus',
                       style: TextStyle(
-                        color: _pingStatus.contains('Online') ? Colors.greenAccent : Colors.redAccent, 
+                        color: _pingStatus.contains('Online')
+                            ? Colors.greenAccent
+                            : Colors.redAccent,
                         fontSize: 16,
                       ),
                     ),
@@ -103,13 +124,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Maintenance Controls', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Maintenance Controls',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 16),
                 StreamBuilder(
                   stream: _adminService.getSystemConfig(),
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData) return const CircularProgressIndicator();
-                    final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+                    if (!snapshot.hasData) {
+                      return const CircularProgressIndicator();
+                    }
+                    final data =
+                        snapshot.data!.data() as Map<String, dynamic>? ?? {};
                     final chatMaint = data['chatMaintenance'] ?? false;
                     final shopMaint = data['shopMaintenance'] ?? false;
 
@@ -117,16 +144,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         SwitchListTile(
                           title: const Text('Chat Maintenance Mode'),
-                          subtitle: const Text('Disables the global chat for all players.'),
+                          subtitle: const Text(
+                            'Disables the global chat for all players.',
+                          ),
                           value: chatMaint,
-                          onChanged: (val) => _adminService.updateMaintenance(val, null),
+                          onChanged: (val) =>
+                              _adminService.updateMaintenance(val, null),
                           activeThumbColor: Colors.orangeAccent,
                         ),
                         SwitchListTile(
                           title: const Text('Shop Maintenance Mode'),
                           subtitle: const Text('Disables the shop interface.'),
                           value: shopMaint,
-                          onChanged: (val) => _adminService.updateMaintenance(null, val),
+                          onChanged: (val) =>
+                              _adminService.updateMaintenance(null, val),
                           activeThumbColor: Colors.orangeAccent,
                         ),
                       ],
@@ -145,7 +176,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Emergency Broadcast', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                const Text(
+                  'Emergency Broadcast',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.redAccent,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _broadcastController,
@@ -162,7 +200,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onPressed: _sendBroadcast,
                   icon: const Icon(Icons.campaign),
                   label: const Text('Send Global Alert'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
               ],
             ),

@@ -13,7 +13,7 @@ class AutoModScreen extends StatefulWidget {
 class _AutoModScreenState extends State<AutoModScreen> {
   final AdminService _adminService = AdminService();
   bool _isLoading = true;
-  
+
   bool _enabled = false;
   int _strike1Hours = 1;
   int _strike2Hours = 24;
@@ -46,7 +46,7 @@ class _AutoModScreenState extends State<AutoModScreen> {
       'strike2MuteHours': _strike2Hours,
       'strike3Ban': _strike3Ban,
     });
-    
+
     if (mounted) {
       showCustomSnackBar(
         context,
@@ -65,9 +65,12 @@ class _AutoModScreenState extends State<AutoModScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Auto-Moderation Console', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+          const Text(
+            'Auto-Moderation Console',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 24),
-          
+
           LiquidGlassDialog(
             width: double.infinity,
             padding: const EdgeInsets.all(24.0),
@@ -75,8 +78,13 @@ class _AutoModScreenState extends State<AutoModScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SwitchListTile(
-                  title: const Text('Enable Auto-Moderation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  subtitle: const Text('Automatically scans chat for toxic language and applies strikes.'),
+                  title: const Text(
+                    'Enable Auto-Moderation',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: const Text(
+                    'Automatically scans chat for toxic language and applies strikes.',
+                  ),
                   value: _enabled,
                   onChanged: (val) {
                     setState(() => _enabled = val);
@@ -85,10 +93,17 @@ class _AutoModScreenState extends State<AutoModScreen> {
                   activeThumbColor: Colors.redAccent,
                 ),
                 const Divider(height: 40, color: Colors.white24),
-                
-                const Text('Strike Configuration', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orangeAccent)),
+
+                const Text(
+                  'Strike Configuration',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orangeAccent,
+                  ),
+                ),
                 const SizedBox(height: 16),
-                
+
                 // Strike 1
                 Row(
                   children: [
@@ -100,14 +115,18 @@ class _AutoModScreenState extends State<AutoModScreen> {
                         max: 24,
                         divisions: 23,
                         label: '$_strike1Hours Hours',
-                        onChanged: (val) => setState(() => _strike1Hours = val.toInt()),
+                        onChanged: (val) =>
+                            setState(() => _strike1Hours = val.toInt()),
                         onChangeEnd: (_) => _updateConfig(),
                       ),
                     ),
-                    Text('$_strike1Hours h', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      '$_strike1Hours h',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
-                
+
                 // Strike 2
                 Row(
                   children: [
@@ -119,18 +138,24 @@ class _AutoModScreenState extends State<AutoModScreen> {
                         max: 168, // 1 week
                         divisions: 167,
                         label: '$_strike2Hours Hours',
-                        onChanged: (val) => setState(() => _strike2Hours = val.toInt()),
+                        onChanged: (val) =>
+                            setState(() => _strike2Hours = val.toInt()),
                         onChangeEnd: (_) => _updateConfig(),
                       ),
                     ),
-                    Text('$_strike2Hours h', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      '$_strike2Hours h',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
-                
+
                 // Strike 3
                 SwitchListTile(
                   title: const Text('Strike 3 (Permanent Ban)'),
-                  subtitle: const Text('If off, defaults to a 1-year mute instead.'),
+                  subtitle: const Text(
+                    'If off, defaults to a 1-year mute instead.',
+                  ),
                   value: _strike3Ban,
                   onChanged: (val) {
                     setState(() => _strike3Ban = val);
