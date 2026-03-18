@@ -63,6 +63,24 @@ class _PlayersScreenState extends State<PlayersScreen> {
     }
   }
 
+  Future<DateTime?> _pickCustomDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 10)), // 10 years max
+    );
+    if (date == null || !mounted) return null;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (time == null) return null;
+
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
   void _showPlayerActions(Map<String, dynamic> player) {
     final uid = player['uid'] ?? '';
     final displayName = player['displayName'] ?? 'Unknown Player';
@@ -100,25 +118,58 @@ class _PlayersScreenState extends State<PlayersScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Ban/Unban Section
+              // Ban Section
               const Text('Account Access', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent)),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                    _toggleBan(uid, isBanned);
-                  },
-                  icon: Icon(isBanned ? Icons.restore : Icons.block),
-                  label: Text(isBanned ? 'UNBAN PLAYER' : 'BAN PLAYER'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isBanned ? Colors.green : Colors.redAccent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+              const SizedBox(height: 12),
+              if (isBanned) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                      _toggleBan(uid, isBanned);
+                    },
+                    icon: const Icon(Icons.restore),
+                    label: const Text('UNBAN PLAYER'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                   ),
                 ),
-              ),
+              ] else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(dialogContext);
+                          _toggleBan(uid, false);
+                        },
+                        icon: const Icon(Icons.block),
+                        label: const Text('PERMANENT BAN'),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          final dt = await _pickCustomDateTime();
+                          if (dt != null && mounted) {
+                            Navigator.pop(dialogContext);
+                            final success = await _adminService.banUser(uid, true, until: dt.toUtc().toIso8601String());
+                            if (success) {
+                              showCustomSnackBar(context, 'Temporary ban applied!', type: SnackBarType.success);
+                              _fetchPlayers();
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.timer),
+                        label: const Text('TEMP BAN'),
+                        style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent, side: const BorderSide(color: Colors.redAccent)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 24),
 
               // Mute Section
@@ -148,10 +199,26 @@ class _PlayersScreenState extends State<PlayersScreen> {
                   spacing: 10,
                   runSpacing: 10,
                   children: [
-                    _muteButton(dialogContext, uid, '24 Hours', 24),
-                    _muteButton(dialogContext, uid, '3 Days', 24 * 3),
-                    _muteButton(dialogContext, uid, '1 Week', 24 * 7),
-                    _muteButton(dialogContext, uid, '1 Month', 24 * 30),
+                    _muteButton(dialogContext, uid, '24h', 24),
+                    _muteButton(dialogContext, uid, '3d', 24 * 3),
+                    _muteButton(dialogContext, uid, '1w', 24 * 7),
+                    _muteButton(dialogContext, uid, '1m', 24 * 30),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final dt = await _pickCustomDateTime();
+                        if (dt != null && mounted) {
+                          Navigator.pop(dialogContext);
+                          final success = await _adminService.muteUser(uid, null, until: dt.toUtc().toIso8601String());
+                          if (success) {
+                            showCustomSnackBar(context, 'Custom mute applied!', type: SnackBarType.success);
+                            _fetchPlayers();
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.edit_calendar),
+                      label: const Text('Custom...'),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white12, foregroundColor: Colors.white),
+                    ),
                   ],
                 ),
               ],

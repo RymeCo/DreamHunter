@@ -11,9 +11,11 @@ router = APIRouter(prefix="/admin", tags=["Superadmin"])
 
 class UserBanRequest(BaseModel):
     isBanned: bool
+    until: Optional[str] = None # ISO format string for temporary bans
 
 class UserMuteRequest(BaseModel):
-    durationHours: int # 0 to unmute
+    durationHours: Optional[int] = None # 0 to unmute
+    until: Optional[str] = None # ISO format string for custom durations
 
 class ChatConfigUpdate(BaseModel):
     archiveMessages: Optional[bool] = None
@@ -65,11 +67,12 @@ async def verify_admin(authorization: Optional[str] = Header(None)):
 
 # --- Helper Functions ---
 
-def log_audit(admin_uid: str, action: str, target: Optional[str] = None, details: Optional[str] = None):
+def log_audit(admin_uid: str, action: str, target: Optional[str] = None, details: Optional[str] = None, admin_email: Optional[str] = None):
     """Log an administrative action to the audit_logs collection."""
     db = firestore.client()
     db.collection('audit_logs').add({
         "adminUid": admin_uid,
+        "adminEmail": admin_email,
         "action": action,
         "target": target,
         "details": details,
@@ -125,19 +128,34 @@ async def ban_user(uid: str, req: UserBanRequest, admin: dict = Depends(verify_a
     if not user_ref.get().exists:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_ref.update({
+    update_data = {
         "isBanned": req.isBanned,
         "updatedAt": firestore.SERVER_TIMESTAMP
-    })
+    }
+    
+    expiry_msg = ""
+    if req.isBanned and req.until:
+        try:
+            # Parse provided ISO string and ensure UTC
+            dt = datetime.fromisoformat(req.until.replace('Z', '+00:00'))
+            update_data["bannedUntil"] = dt
+            expiry_msg = f" until {dt.isoformat()}"
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid date format: {e}")
+    else:
+        update_data["bannedUntil"] = None
+
+    user_ref.update(update_data)
     
     status = "BANNED" if req.isBanned else "UNBANNED"
     log_audit(
         admin_uid=admin['uid'], 
+        admin_email=admin.get('email'),
         action=f"USER_{status}", 
         target=uid, 
-        details=f"Admin {admin['uid']} set isBanned to {req.isBanned}"
+        details=f"Admin {admin['uid']} set isBanned to {req.isBanned}{expiry_msg}"
     )
-    return {"status": "success", "message": f"User {uid} has been {status.lower()}."}
+    return {"status": "success", "message": f"User {uid} has been {status.lower()}{expiry_msg}."}
 
 @router.patch("/users/{uid}/mute")
 async def mute_user(uid: str, req: UserMuteRequest, admin: dict = Depends(verify_admin)):
@@ -147,31 +165,43 @@ async def mute_user(uid: str, req: UserMuteRequest, admin: dict = Depends(verify
     if not user_ref.get().exists:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if req.durationHours <= 0:
-        user_ref.update({
-            "mutedUntil": None,
-            "updatedAt": firestore.SERVER_TIMESTAMP
-        })
-        log_audit(admin['uid'], "USER_UNMUTED", uid)
-        return {"status": "success", "message": f"User {uid} has been unmuted."}
-    
-    # Calculate expiry
-    until = datetime.now(timezone.utc) + timedelta(hours=req.durationHours)
-    user_ref.update({
-        "mutedUntil": until,
+    update_data = {
         "updatedAt": firestore.SERVER_TIMESTAMP
-    })
+    }
+    
+    log_details = ""
+    
+    if req.until:
+        try:
+            dt = datetime.fromisoformat(req.until.replace('Z', '+00:00'))
+            update_data["mutedUntil"] = dt
+            log_details = f"Until: {dt.isoformat()}"
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid date format: {e}")
+    elif req.durationHours is not None:
+        if req.durationHours <= 0:
+            update_data["mutedUntil"] = None
+            log_details = "Unmuted"
+        else:
+            until = datetime.now(timezone.utc) + timedelta(hours=req.durationHours)
+            update_data["mutedUntil"] = until
+            log_details = f"Duration: {req.durationHours} hours (Expires: {until.isoformat()})"
+    else:
+        raise HTTPException(status_code=400, detail="Either until or durationHours must be provided.")
+
+    user_ref.update(update_data)
     
     log_audit(
         admin_uid=admin['uid'], 
-        action="USER_MUTED", 
+        admin_email=admin.get('email'),
+        action="USER_MUTED" if update_data.get("mutedUntil") else "USER_UNMUTED", 
         target=uid, 
-        details=f"Duration: {req.durationHours} hours (Expires: {until.isoformat()})"
+        details=log_details
     )
     return {
         "status": "success", 
-        "message": f"User {uid} muted.",
-        "mutedUntil": until.isoformat()
+        "message": f"User mute updated.",
+        "mutedUntil": update_data.get("mutedUntil").isoformat() if update_data.get("mutedUntil") else None
     }
 
 @router.patch("/maintenance")
@@ -188,7 +218,7 @@ async def update_maintenance(req: MaintenanceRequest, admin: dict = Depends(veri
         return {"status": "success", "message": "No changes requested."}
         
     db.collection('metadata').document('system_config').set(update_data, merge=True)
-    log_audit(admin['uid'], "MAINTENANCE_TOGGLE", details=str(update_data))
+    log_audit(admin['uid'], "MAINTENANCE_TOGGLE", details=str(update_data), admin_email=admin.get('email'))
     return {"status": "success", "config": update_data}
 
 @router.post("/broadcast")
@@ -202,7 +232,7 @@ async def post_broadcast(req: BroadcastRequest, admin: dict = Depends(verify_adm
         "timestamp": firestore.SERVER_TIMESTAMP
     }
     db.collection('metadata').document('global_alert').set(broadcast_data)
-    log_audit(admin['uid'], "GLOBAL_BROADCAST", details=req.message)
+    log_audit(admin['uid'], "GLOBAL_BROADCAST", details=req.message, admin_email=admin.get('email'))
     return {"status": "success", "broadcast": broadcast_data}
 
 @router.get("/reports")
@@ -227,7 +257,7 @@ async def update_report_status(report_id: str, status: str, admin: dict = Depend
         "status": status,
         "updatedAt": firestore.SERVER_TIMESTAMP
     })
-    log_audit(admin['uid'], "REPORT_STATUS_UPDATE", report_id, f"New Status: {status}")
+    log_audit(admin['uid'], "REPORT_STATUS_UPDATE", report_id, f"New Status: {status}", admin_email=admin.get('email'))
     return {"status": "success", "message": f"Report {report_id} updated to {status}."}
 
 @router.patch("/automod/config")
@@ -242,7 +272,7 @@ async def update_automod_config(req: AutoModConfigRequest, admin: dict = Depends
         return {"status": "success", "message": "No changes requested."}
         
     db.collection('metadata').document('moderation_config').set(update_data, merge=True)
-    log_audit(admin['uid'], "AUTOMOD_CONFIG_UPDATE", details=str(update_data))
+    log_audit(admin['uid'], "AUTOMOD_CONFIG_UPDATE", details=str(update_data), admin_email=admin.get('email'))
     return {"status": "success", "config": update_data}
 
 @router.get("/audit-logs")
