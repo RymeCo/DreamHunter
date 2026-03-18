@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/admin_service.dart';
+import '../widgets/custom_snackbar.dart';
+import '../widgets/liquid_glass_dialog.dart';
 
 class AutoModScreen extends StatefulWidget {
   const AutoModScreen({super.key});
@@ -46,10 +48,11 @@ class _AutoModScreenState extends State<AutoModScreen> {
     });
     
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(success ? 'Configuration updated!' : 'Failed to update.'),
-        backgroundColor: success ? Colors.green : Colors.red,
-      ));
+      showCustomSnackBar(
+        context,
+        success ? 'Configuration updated!' : 'Failed to update.',
+        type: success ? SnackBarType.success : SnackBarType.error,
+      );
     }
   }
 
@@ -57,15 +60,16 @@ class _AutoModScreenState extends State<AutoModScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Auto-Moderation Console', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 24),
-        
-        Card(
-          color: const Color(0xFF1E1E36),
-          child: Padding(
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Auto-Moderation Console', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 24),
+          
+          LiquidGlassDialog(
+            width: double.infinity,
             padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,8 +141,8 @@ class _AutoModScreenState extends State<AutoModScreen> {
               ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
