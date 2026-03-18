@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Defines the visual style of the snackbar.
 enum SnackBarType { success, error, info }
+
+/// Utility to copy text to clipboard and show a snackbar notification.
+void copyToClipboardWithFeedback(BuildContext context, String text, String label) {
+  Clipboard.setData(ClipboardData(text: text));
+  showCustomSnackBar(context, '$label copied!', type: SnackBarType.info);
+}
 
 /// Displays a stylized, game-themed snackbar message at the top of the screen.
 ///

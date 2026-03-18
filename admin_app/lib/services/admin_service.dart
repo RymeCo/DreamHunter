@@ -234,4 +234,50 @@ class AdminService {
       return [];
     }
   }
+
+  // --- Live Chat ---
+
+  Stream<QuerySnapshot> getLiveChatStream(String region) {
+    return _db
+        .collection('chats')
+        .doc(region)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .limit(100)
+        .snapshots();
+  }
+
+  Future<void> likeMessage(String region, String messageId) async {
+    final msgRef = _db.collection('chats').doc(region).collection('messages').doc(messageId);
+    await msgRef.update({'adminLiked': true});
+  }
+
+  Future<void> dislikeMessage(String region, String messageId) async {
+    final msgRef = _db.collection('chats').doc(region).collection('messages').doc(messageId);
+    await msgRef.update({'adminDisliked': true});
+  }
+
+  Future<bool> sendSystemBroadcastToChat(String region, String text) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return false;
+
+      final newMsg = {
+        "text": text,
+        "senderUid": user.uid,
+        "senderName": "System",
+        "senderDevice": "AdminConsole",
+        "isAdmin": true,
+        "isSystemWarning": true,
+        "timestamp": FieldValue.serverTimestamp(),
+      };
+      
+      await _db.collection('chats').doc(region).collection('messages').add(newMsg);
+      return true;
+    } catch (e) {
+      debugPrint('Error sending system broadcast: $e');
+      return false;
+    }
+  }
 }
+

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../services/admin_service.dart';
 import '../widgets/liquid_glass_dialog.dart';
@@ -204,12 +203,7 @@ class _AuditScreenState extends State<AuditScreen> {
                     color: Colors.blueAccent,
                   ),
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: value));
-                    showCustomSnackBar(
-                      context,
-                      'ID copied to clipboard',
-                      type: SnackBarType.info,
-                    );
+                    copyToClipboardWithFeedback(context, value, 'ID');
                   },
                 ),
             ],
