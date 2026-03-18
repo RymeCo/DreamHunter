@@ -31,9 +31,11 @@ class AdminService {
   Future<int?> pingServer() async {
     try {
       final stopwatch = Stopwatch()..start();
-      final response = await _client.get(Uri.parse(baseUrl)).timeout(const Duration(seconds: 10));
+      final response = await _client
+          .get(Uri.parse(baseUrl))
+          .timeout(const Duration(seconds: 10));
       stopwatch.stop();
-      
+
       if (response.statusCode == 200) {
         return stopwatch.elapsedMilliseconds;
       }
@@ -50,12 +52,19 @@ class AdminService {
     return _db.collection('metadata').doc('system_config').snapshots();
   }
 
-  Future<bool> updateMaintenance(bool? chatMaintenance, bool? shopMaintenance) async {
+  Future<bool> updateMaintenance(
+    bool? chatMaintenance,
+    bool? shopMaintenance,
+  ) async {
     try {
       final Map<String, dynamic> bodyData = {};
-      if (chatMaintenance != null) bodyData['chatMaintenance'] = chatMaintenance;
-      if (shopMaintenance != null) bodyData['shopMaintenance'] = shopMaintenance;
-      
+      if (chatMaintenance != null) {
+        bodyData['chatMaintenance'] = chatMaintenance;
+      }
+      if (shopMaintenance != null) {
+        bodyData['shopMaintenance'] = shopMaintenance;
+      }
+
       final response = await _client.patch(
         Uri.parse('$baseUrl/admin/maintenance'),
         headers: await getAuthHeaders(),
@@ -73,10 +82,7 @@ class AdminService {
       final response = await _client.post(
         Uri.parse('$baseUrl/admin/broadcast'),
         headers: await getAuthHeaders(),
-        body: json.encode({
-          'message': message,
-          'isPersistent': isPersistent,
-        }),
+        body: json.encode({'message': message, 'isPersistent': isPersistent}),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -87,14 +93,21 @@ class AdminService {
 
   // --- Player Management ---
 
-  Future<List<dynamic>> searchPlayers({String? query, bool? isBanned, bool? isAdmin}) async {
+  Future<List<dynamic>> searchPlayers({
+    String? query,
+    bool? isBanned,
+    bool? isAdmin,
+  }) async {
     try {
       String url = '$baseUrl/admin/players/search?';
       if (query != null && query.isNotEmpty) url += 'query=$query&';
       if (isBanned != null) url += 'isBanned=$isBanned&';
       if (isAdmin != null) url += 'isAdmin=$isAdmin&';
 
-      final response = await _client.get(Uri.parse(url), headers: await getAuthHeaders());
+      final response = await _client.get(
+        Uri.parse(url),
+        headers: await getAuthHeaders(),
+      );
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else if (response.statusCode == 403) {
@@ -112,10 +125,7 @@ class AdminService {
       final response = await _client.patch(
         Uri.parse('$baseUrl/admin/users/$uid/ban'),
         headers: await getAuthHeaders(),
-        body: json.encode({
-          'isBanned': isBanned,
-          if (until != null) 'until': until,
-        }),
+        body: json.encode({'isBanned': isBanned, 'until': ?until}),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -129,10 +139,7 @@ class AdminService {
       final response = await _client.patch(
         Uri.parse('$baseUrl/admin/users/$uid/mute'),
         headers: await getAuthHeaders(),
-        body: json.encode({
-          if (durationHours != null) 'durationHours': durationHours,
-          if (until != null) 'until': until,
-        }),
+        body: json.encode({'durationHours': ?durationHours, 'until': ?until}),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -147,7 +154,10 @@ class AdminService {
     try {
       String url = '$baseUrl/admin/reports';
       if (status != null) url += '?status=$status';
-      final response = await _client.get(Uri.parse(url), headers: await getAuthHeaders());
+      final response = await _client.get(
+        Uri.parse(url),
+        headers: await getAuthHeaders(),
+      );
       if (response.statusCode == 200) {
         return json.decode(response.body);
       }
@@ -195,7 +205,10 @@ class AdminService {
 
   Future<List<dynamic>> getAuditLogs() async {
     try {
-      final response = await _client.get(Uri.parse('$baseUrl/admin/audit-logs'), headers: await getAuthHeaders());
+      final response = await _client.get(
+        Uri.parse('$baseUrl/admin/audit-logs'),
+        headers: await getAuthHeaders(),
+      );
       if (response.statusCode == 200) {
         return json.decode(response.body);
       }

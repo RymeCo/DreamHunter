@@ -67,7 +67,15 @@ async def verify_admin(authorization: Optional[str] = Header(None)):
 
 # --- Helper Functions ---
 
-def log_audit(admin_uid: str, action: str, target: Optional[str] = None, details: Optional[str] = None, admin_email: Optional[str] = None):
+def log_audit(
+    admin_uid: str, 
+    action: str, 
+    target: Optional[str] = None, 
+    details: Optional[str] = None, 
+    admin_email: Optional[str] = None,
+    target_name: Optional[str] = None,
+    target_email: Optional[str] = None
+):
     """Log an administrative action to the audit_logs collection."""
     db = firestore.client()
     db.collection('audit_logs').add({
@@ -75,6 +83,8 @@ def log_audit(admin_uid: str, action: str, target: Optional[str] = None, details
         "adminEmail": admin_email,
         "action": action,
         "target": target,
+        "targetName": target_name,
+        "targetEmail": target_email,
         "details": details,
         "timestamp": firestore.SERVER_TIMESTAMP
     })
@@ -125,8 +135,13 @@ async def ban_user(uid: str, req: UserBanRequest, admin: dict = Depends(verify_a
     user_ref = db.collection('users').document(uid)
     
     # Verify user exists before update
-    if not user_ref.get().exists:
+    user_doc = user_ref.get()
+    if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    target_data = user_doc.to_dict()
+    target_name = target_data.get('displayName', 'Unknown')
+    target_email = target_data.get('email', 'No Email')
 
     update_data = {
         "isBanned": req.isBanned,
@@ -153,6 +168,8 @@ async def ban_user(uid: str, req: UserBanRequest, admin: dict = Depends(verify_a
         admin_email=admin.get('email'),
         action=f"USER_{status}", 
         target=uid, 
+        target_name=target_name,
+        target_email=target_email,
         details=f"Admin {admin['uid']} set isBanned to {req.isBanned}{expiry_msg}"
     )
     return {"status": "success", "message": f"User {uid} has been {status.lower()}{expiry_msg}."}
@@ -162,8 +179,13 @@ async def mute_user(uid: str, req: UserMuteRequest, admin: dict = Depends(verify
     db = firestore.client()
     user_ref = db.collection('users').document(uid)
     
-    if not user_ref.get().exists:
+    user_doc = user_ref.get()
+    if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    target_data = user_doc.to_dict()
+    target_name = target_data.get('displayName', 'Unknown')
+    target_email = target_data.get('email', 'No Email')
 
     update_data = {
         "updatedAt": firestore.SERVER_TIMESTAMP
@@ -196,6 +218,8 @@ async def mute_user(uid: str, req: UserMuteRequest, admin: dict = Depends(verify
         admin_email=admin.get('email'),
         action="USER_MUTED" if update_data.get("mutedUntil") else "USER_UNMUTED", 
         target=uid, 
+        target_name=target_name,
+        target_email=target_email,
         details=log_details
     )
     return {

@@ -15,7 +15,7 @@ class _PlayersScreenState extends State<PlayersScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _players = [];
   bool _isLoading = false;
-  
+
   bool? _filterBanned;
   bool? _filterAdmin;
 
@@ -52,12 +52,12 @@ class _PlayersScreenState extends State<PlayersScreen> {
   void _toggleBan(String uid, bool currentStatus) async {
     final success = await _adminService.banUser(uid, !currentStatus);
     if (!mounted) return;
-    
+
     if (success) {
       showCustomSnackBar(
-        context, 
+        context,
         currentStatus ? 'User unbanned!' : 'User banned!',
-        type: SnackBarType.success
+        type: SnackBarType.success,
       );
       _fetchPlayers();
     }
@@ -68,7 +68,9 @@ class _PlayersScreenState extends State<PlayersScreen> {
       context: context,
       initialDate: DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 10)), // 10 years max
+      lastDate: DateTime.now().add(
+        const Duration(days: 365 * 10),
+      ), // 10 years max
     );
     if (date == null || !mounted) return null;
 
@@ -91,7 +93,7 @@ class _PlayersScreenState extends State<PlayersScreen> {
       context: context,
       builder: (dialogContext) => Center(
         child: LiquidGlassDialog(
-          width: 500,
+          width: 400,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,13 +101,19 @@ class _PlayersScreenState extends State<PlayersScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Player Actions', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  IconButton(onPressed: () => Navigator.pop(dialogContext), icon: const Icon(Icons.close)),
+                  const Text(
+                    'Player Actions',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    icon: const Icon(Icons.close),
+                  ),
                 ],
               ),
               const Divider(color: Colors.white24),
               const SizedBox(height: 12),
-              
+
               // Player Info Header
               ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -113,13 +121,26 @@ class _PlayersScreenState extends State<PlayersScreen> {
                   backgroundColor: Colors.deepPurple,
                   child: Text(displayName[0].toUpperCase()),
                 ),
-                title: Text(displayName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                title: Text(
+                  displayName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 subtitle: Text('UID: $uid\nEmail: ${player['email'] ?? 'N/A'}'),
               ),
               const SizedBox(height: 20),
 
               // Ban Section
-              const Text('Account Access', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+              const Text(
+                'Account Access',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.redAccent,
+                ),
+              ),
               const SizedBox(height: 12),
               if (isBanned) ...[
                 SizedBox(
@@ -131,7 +152,10 @@ class _PlayersScreenState extends State<PlayersScreen> {
                     },
                     icon: const Icon(Icons.restore),
                     label: const Text('UNBAN PLAYER'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
                   ),
                 ),
               ] else ...[
@@ -145,7 +169,10 @@ class _PlayersScreenState extends State<PlayersScreen> {
                         },
                         icon: const Icon(Icons.block),
                         label: const Text('PERMANENT BAN'),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -153,18 +180,30 @@ class _PlayersScreenState extends State<PlayersScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () async {
                           final dt = await _pickCustomDateTime();
-                          if (dt != null && mounted) {
+                          if (dt != null && mounted && dialogContext.mounted) {
                             Navigator.pop(dialogContext);
-                            final success = await _adminService.banUser(uid, true, until: dt.toUtc().toIso8601String());
+                            final success = await _adminService.banUser(
+                              uid,
+                              true,
+                              until: dt.toUtc().toIso8601String(),
+                            );
+                            if (!mounted) return;
                             if (success) {
-                              showCustomSnackBar(context, 'Temporary ban applied!', type: SnackBarType.success);
+                              showCustomSnackBar(
+                                context,
+                                'Temporary ban applied!',
+                                type: SnackBarType.success,
+                              );
                               _fetchPlayers();
                             }
                           }
                         },
                         icon: const Icon(Icons.timer),
                         label: const Text('TEMP BAN'),
-                        style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent, side: const BorderSide(color: Colors.redAccent)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.redAccent,
+                          side: const BorderSide(color: Colors.redAccent),
+                        ),
                       ),
                     ),
                   ],
@@ -173,10 +212,20 @@ class _PlayersScreenState extends State<PlayersScreen> {
               const SizedBox(height: 24),
 
               // Mute Section
-              const Text('Chat Restrictions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orangeAccent)),
+              const Text(
+                'Chat Restrictions',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orangeAccent,
+                ),
+              ),
               const SizedBox(height: 12),
               if (isMuted) ...[
-                Text('Currently Muted until: ${player['mutedUntil']}', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                Text(
+                  'Currently Muted until: ${player['mutedUntil']}',
+                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                ),
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
@@ -185,13 +234,20 @@ class _PlayersScreenState extends State<PlayersScreen> {
                       Navigator.pop(dialogContext);
                       final success = await _adminService.muteUser(uid, 0);
                       if (success && mounted) {
-                        showCustomSnackBar(context, 'User unmuted!', type: SnackBarType.success);
+                        showCustomSnackBar(
+                          context,
+                          'User unmuted!',
+                          type: SnackBarType.success,
+                        );
                         _fetchPlayers();
                       }
                     },
                     icon: const Icon(Icons.volume_up),
                     label: const Text('UNMUTE NOW'),
-                    style: OutlinedButton.styleFrom(foregroundColor: Colors.orangeAccent, side: const BorderSide(color: Colors.orangeAccent)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.orangeAccent,
+                      side: const BorderSide(color: Colors.orangeAccent),
+                    ),
                   ),
                 ),
               ] else ...[
@@ -206,18 +262,30 @@ class _PlayersScreenState extends State<PlayersScreen> {
                     ElevatedButton.icon(
                       onPressed: () async {
                         final dt = await _pickCustomDateTime();
-                        if (dt != null && mounted) {
+                        if (dt != null && mounted && dialogContext.mounted) {
                           Navigator.pop(dialogContext);
-                          final success = await _adminService.muteUser(uid, null, until: dt.toUtc().toIso8601String());
+                          final success = await _adminService.muteUser(
+                            uid,
+                            null,
+                            until: dt.toUtc().toIso8601String(),
+                          );
+                          if (!mounted) return;
                           if (success) {
-                            showCustomSnackBar(context, 'Custom mute applied!', type: SnackBarType.success);
+                            showCustomSnackBar(
+                              context,
+                              'Custom mute applied!',
+                              type: SnackBarType.success,
+                            );
                             _fetchPlayers();
                           }
                         }
                       },
                       icon: const Icon(Icons.edit_calendar),
                       label: const Text('Custom...'),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white12, foregroundColor: Colors.white),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white12,
+                        foregroundColor: Colors.white,
+                      ),
                     ),
                   ],
                 ),
@@ -230,17 +298,29 @@ class _PlayersScreenState extends State<PlayersScreen> {
     );
   }
 
-  Widget _muteButton(BuildContext dialogContext, String uid, String label, int hours) {
+  Widget _muteButton(
+    BuildContext dialogContext,
+    String uid,
+    String label,
+    int hours,
+  ) {
     return ElevatedButton(
       onPressed: () async {
         Navigator.pop(dialogContext);
         final success = await _adminService.muteUser(uid, hours);
         if (success && mounted) {
-          showCustomSnackBar(context, 'Muted for $label', type: SnackBarType.success);
+          showCustomSnackBar(
+            context,
+            'Muted for $label',
+            type: SnackBarType.success,
+          );
           _fetchPlayers();
         }
       },
-      style: ElevatedButton.styleFrom(backgroundColor: Colors.white12, foregroundColor: Colors.white),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white12,
+        foregroundColor: Colors.white,
+      ),
       child: Text(label),
     );
   }
@@ -255,16 +335,23 @@ class _PlayersScreenState extends State<PlayersScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Player Management', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+              const Text(
+                'Player Management',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
               IconButton(
-                icon: const Icon(Icons.refresh, size: 28, color: Colors.amberAccent),
+                icon: const Icon(
+                  Icons.refresh,
+                  size: 28,
+                  color: Colors.amberAccent,
+                ),
                 onPressed: _fetchPlayers,
                 tooltip: 'Refresh Player List',
               ),
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Search & Filters
           Row(
             children: [
@@ -296,18 +383,21 @@ class _PlayersScreenState extends State<PlayersScreen> {
               const SizedBox(width: 16),
               ElevatedButton(
                 onPressed: _fetchPlayers,
-                style: ElevatedButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.deepPurple),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.deepPurple,
+                ),
                 child: const Text('Search'),
               ),
             ],
           ),
           const SizedBox(height: 24),
-  
+
           // Data Table
           Expanded(
-            child: _isLoading 
-              ? const Center(child: CircularProgressIndicator())
-              : _players.isEmpty 
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _players.isEmpty
                 ? const Center(child: Text('No players found.'))
                 : LiquidGlassDialog(
                     width: double.infinity,
@@ -327,7 +417,7 @@ class _PlayersScreenState extends State<PlayersScreen> {
                             final isBanned = p['isBanned'] ?? false;
                             final isMuted = p['mutedUntil'] != null;
                             final isAdmin = p['isAdmin'] ?? false;
-                            
+
                             return DataRow(
                               onSelectChanged: (_) => _showPlayerActions(p),
                               cells: [
@@ -337,19 +427,39 @@ class _PlayersScreenState extends State<PlayersScreen> {
                                 DataCell(
                                   Row(
                                     children: [
-                                      if (isAdmin) const Padding(
-                                        padding: EdgeInsets.only(right: 4),
-                                        child: Icon(Icons.verified, color: Colors.amber, size: 16),
-                                      ),
-                                      if (isBanned) const Padding(
-                                        padding: EdgeInsets.only(right: 4),
-                                        child: Icon(Icons.block, color: Colors.red, size: 16),
-                                      ),
-                                      if (isMuted) const Padding(
-                                        padding: EdgeInsets.only(right: 4),
-                                        child: Icon(Icons.volume_off, color: Colors.orange, size: 16),
-                                      ),
-                                      if (!isAdmin && !isBanned && !isMuted) const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                                      if (isAdmin)
+                                        const Padding(
+                                          padding: EdgeInsets.only(right: 4),
+                                          child: Icon(
+                                            Icons.verified,
+                                            color: Colors.amber,
+                                            size: 16,
+                                          ),
+                                        ),
+                                      if (isBanned)
+                                        const Padding(
+                                          padding: EdgeInsets.only(right: 4),
+                                          child: Icon(
+                                            Icons.block,
+                                            color: Colors.red,
+                                            size: 16,
+                                          ),
+                                        ),
+                                      if (isMuted)
+                                        const Padding(
+                                          padding: EdgeInsets.only(right: 4),
+                                          child: Icon(
+                                            Icons.volume_off,
+                                            color: Colors.orange,
+                                            size: 16,
+                                          ),
+                                        ),
+                                      if (!isAdmin && !isBanned && !isMuted)
+                                        const Icon(
+                                          Icons.check_circle,
+                                          color: Colors.green,
+                                          size: 16,
+                                        ),
                                     ],
                                   ),
                                 ),
