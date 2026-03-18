@@ -14,10 +14,17 @@ class _AutoModScreenState extends State<AutoModScreen> {
   final AdminService _adminService = AdminService();
   bool _isLoading = true;
 
-  bool _enabled = false;
-  int _strike1Hours = 1;
-  int _strike2Hours = 24;
-  bool _strike3Ban = true;
+  String _moderationLevel = 'none';
+  int _decayDays = 30;
+
+  String _strike1Action = 'mute';
+  int _strike1DurationHours = 1;
+
+  String _strike2Action = 'mute';
+  int _strike2DurationHours = 24;
+
+  String _strike3Action = 'ban';
+  int _strike3DurationHours = 8760;
 
   @override
   void initState() {
@@ -30,10 +37,19 @@ class _AutoModScreenState extends State<AutoModScreen> {
       if (!snapshot.exists || !mounted) return;
       final data = snapshot.data() as Map<String, dynamic>;
       setState(() {
-        _enabled = data['autoModEnabled'] ?? false;
-        _strike1Hours = data['strike1MuteHours'] ?? 1;
-        _strike2Hours = data['strike2MuteHours'] ?? 24;
-        _strike3Ban = data['strike3Ban'] ?? true;
+        final legacyEnabled = data['autoModEnabled'] ?? false;
+        _moderationLevel = data['moderationLevel'] ?? (legacyEnabled ? 'mild' : 'none');
+        _decayDays = data['decayDays'] ?? 30;
+
+        _strike1Action = data['strike1Action'] ?? 'mute';
+        _strike1DurationHours = data['strike1DurationHours'] ?? data['strike1MuteHours'] ?? 1;
+
+        _strike2Action = data['strike2Action'] ?? 'mute';
+        _strike2DurationHours = data['strike2DurationHours'] ?? data['strike2MuteHours'] ?? 24;
+
+        _strike3Action = data['strike3Action'] ?? (data['strike3Ban'] == true ? 'ban' : 'mute');
+        _strike3DurationHours = data['strike3DurationHours'] ?? 8760;
+
         _isLoading = false;
       });
     });
@@ -41,10 +57,15 @@ class _AutoModScreenState extends State<AutoModScreen> {
 
   void _updateConfig() async {
     final success = await _adminService.updateAutoModConfig({
-      'autoModEnabled': _enabled,
-      'strike1MuteHours': _strike1Hours,
-      'strike2MuteHours': _strike2Hours,
-      'strike3Ban': _strike3Ban,
+      'moderationLevel': _moderationLevel,
+      'decayDays': _decayDays,
+      'strike1Action': _strike1Action,
+      'strike1DurationHours': _strike1DurationHours,
+      'strike2Action': _strike2Action,
+      'strike2DurationHours': _strike2DurationHours,
+      'strike3Action': _strike3Action,
+      'strike3DurationHours': _strike3DurationHours,
+      'autoModEnabled': _moderationLevel != 'none', // For backwards compatibility
     });
 
     if (mounted) {
@@ -56,11 +77,67 @@ class _AutoModScreenState extends State<AutoModScreen> {
     }
   }
 
+  Widget _buildStrikeConfig(
+    int strikeNum,
+    String action,
+    int duration,
+    Function(String) onActionChanged,
+    Function(int) onDurationChanged,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            SizedBox(width: 150, child: Text('Strike $strikeNum Action', style: const TextStyle(fontWeight: FontWeight.bold))),
+            DropdownButton<String>(
+              value: action,
+              dropdownColor: const Color(0xFF16162F),
+              items: const [
+                DropdownMenuItem(value: 'mute', child: Text('Chat Mute')),
+                DropdownMenuItem(value: 'ban', child: Text('Global Chat Ban')),
+              ],
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => onActionChanged(val));
+                  _updateConfig();
+                }
+              },
+            ),
+          ],
+        ),
+        if (action == 'mute')
+          Row(
+            children: [
+              const SizedBox(width: 150, child: Text('Mute Duration (h)')),
+              Expanded(
+                child: Slider(
+                  value: duration.toDouble(),
+                  min: 1,
+                  max: 720, // max 30 days
+                  label: '$duration Hours',
+                  onChanged: (val) {
+                    setState(() => onDurationChanged(val.toInt()));
+                  },
+                  onChangeEnd: (_) => _updateConfig(),
+                ),
+              ),
+              Text(
+                '$duration h',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,91 +154,101 @@ class _AutoModScreenState extends State<AutoModScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SwitchListTile(
-                  title: const Text(
-                    'Enable Auto-Moderation',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: const Text(
-                    'Automatically scans chat for toxic language and applies strikes.',
-                  ),
-                  value: _enabled,
-                  onChanged: (val) {
-                    setState(() => _enabled = val);
+                const Text(
+                  'Moderation Level',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'None: Messages are not filtered.\nMild: Severe toxicity is filtered and struck.\nAggressive: Mild toxicity receives 5-min timeout.',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 16),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'none', label: Text('None')),
+                    ButtonSegment(value: 'mild', label: Text('Mild')),
+                    ButtonSegment(value: 'aggressive', label: Text('Aggressive')),
+                  ],
+                  selected: {_moderationLevel},
+                  onSelectionChanged: (Set<String> newSelection) {
+                    setState(() => _moderationLevel = newSelection.first);
                     _updateConfig();
                   },
-                  activeThumbColor: Colors.redAccent,
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                      (states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return Colors.redAccent.withValues(alpha: 0.3);
+                        }
+                        return Colors.transparent;
+                      },
+                    ),
+                  ),
                 ),
+
                 const Divider(height: 40, color: Colors.white24),
 
                 const Text(
                   'Strike Configuration',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orangeAccent,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
                 ),
                 const SizedBox(height: 16),
 
-                // Strike 1
+                _buildStrikeConfig(
+                  1,
+                  _strike1Action,
+                  _strike1DurationHours,
+                  (val) => _strike1Action = val,
+                  (val) => _strike1DurationHours = val,
+                ),
+                _buildStrikeConfig(
+                  2,
+                  _strike2Action,
+                  _strike2DurationHours,
+                  (val) => _strike2Action = val,
+                  (val) => _strike2DurationHours = val,
+                ),
+                _buildStrikeConfig(
+                  3,
+                  _strike3Action,
+                  _strike3DurationHours,
+                  (val) => _strike3Action = val,
+                  (val) => _strike3DurationHours = val,
+                ),
+
+                const Divider(height: 40, color: Colors.white24),
+
+                const Text(
+                  'Strike Decay',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Days of good behavior required to reduce a player\'s strike count by 1.',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 16),
                 Row(
                   children: [
-                    const SizedBox(width: 150, child: Text('Strike 1 (Mute)')),
+                    const SizedBox(width: 150, child: Text('Decay Time (Days)')),
                     Expanded(
                       child: Slider(
-                        value: _strike1Hours.toDouble(),
+                        value: _decayDays.toDouble(),
                         min: 1,
-                        max: 24,
-                        divisions: 23,
-                        label: '$_strike1Hours Hours',
-                        onChanged: (val) =>
-                            setState(() => _strike1Hours = val.toInt()),
+                        max: 365,
+                        label: '$_decayDays Days',
+                        onChanged: (val) {
+                          setState(() => _decayDays = val.toInt());
+                        },
                         onChangeEnd: (_) => _updateConfig(),
                       ),
                     ),
                     Text(
-                      '$_strike1Hours h',
+                      '$_decayDays d',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],
-                ),
-
-                // Strike 2
-                Row(
-                  children: [
-                    const SizedBox(width: 150, child: Text('Strike 2 (Mute)')),
-                    Expanded(
-                      child: Slider(
-                        value: _strike2Hours.toDouble(),
-                        min: 1,
-                        max: 168, // 1 week
-                        divisions: 167,
-                        label: '$_strike2Hours Hours',
-                        onChanged: (val) =>
-                            setState(() => _strike2Hours = val.toInt()),
-                        onChangeEnd: (_) => _updateConfig(),
-                      ),
-                    ),
-                    Text(
-                      '$_strike2Hours h',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-
-                // Strike 3
-                SwitchListTile(
-                  title: const Text('Strike 3 (Permanent Ban)'),
-                  subtitle: const Text(
-                    'If off, defaults to a 1-year mute instead.',
-                  ),
-                  value: _strike3Ban,
-                  onChanged: (val) {
-                    setState(() => _strike3Ban = val);
-                    _updateConfig();
-                  },
-                  contentPadding: EdgeInsets.zero,
                 ),
               ],
             ),

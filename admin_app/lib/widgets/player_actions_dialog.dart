@@ -38,18 +38,19 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
 
-  void _toggleBan(String uid, bool currentStatus) async {
-    final success = await _adminService.banUser(uid, !currentStatus);
+  void _toggleBan(String uid, bool currentStatus, {String? until}) async {
+    final success = await _adminService.banUser(uid, !currentStatus, until: until);
     if (!mounted) return;
 
     if (success) {
       showCustomSnackBar(
         context,
-        currentStatus ? 'User unbanned!' : 'User banned!',
+        currentStatus ? 'User unbanned!' : (until != null ? 'Temp ban applied!' : 'User banned!'),
         type: SnackBarType.success,
       );
       if (widget.onActionComplete != null) widget.onActionComplete!();
-      Navigator.pop(context, 'ban');
+      // PR FIX: Return correct action string
+      Navigator.pop(context, currentStatus ? 'unban' : 'ban');
     }
   }
 
@@ -64,7 +65,8 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
         type: SnackBarType.success,
       );
       if (widget.onActionComplete != null) widget.onActionComplete!();
-      Navigator.pop(context, 'mute');
+      // PR FIX: Return correct action string
+      Navigator.pop(context, hours == 0 ? 'unmute' : 'mute');
     }
   }
 
@@ -110,6 +112,10 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text('UID: $uid'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.copy, size: 18, color: Colors.blueAccent),
+                  onPressed: () => copyToClipboardWithFeedback(context, uid, 'User ID'),
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -145,8 +151,8 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                         onPressed: () async {
                           final dt = await _pickCustomDateTime();
                           if (dt != null) {
-                            _toggleBan(uid, false); // Toggle logic handled internally or extend
-                            // For simplicity, reusing _toggleBan logic or creating specific temp ban
+                            // PR FIX: Pass the ISO string for temp ban
+                            _toggleBan(uid, false, until: dt.toUtc().toIso8601String());
                           }
                         },
                         icon: const Icon(Icons.timer),

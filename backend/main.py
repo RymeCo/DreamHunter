@@ -216,6 +216,11 @@ async def post_chat_message(
         config_snap = config_ref.get(transaction=transaction)
         auto_mod_config = config_snap.to_dict() if config_snap.exists else {}
         
+        # Configuration parameters
+        # For backwards compatibility, if 'autoModEnabled' is set and 'moderationLevel' is not, map it
+        mod_level = auto_mod_config.get('moderationLevel', 'mild' if auto_mod_config.get('autoModEnabled') else 'none')
+        decay_days = auto_mod_config.get('decayDays', 30)
+        
         # 1. Ban/Mute Checks
         if user_data.get('isBanned', False):
             raise HTTPException(status_code=403, detail="You are permanently banned from Global Chat.")
@@ -231,40 +236,94 @@ async def post_chat_message(
             if datetime.now(timezone.utc) < until_dt:
                 raise HTTPException(status_code=403, detail=f"You are muted until {until_dt.strftime('%Y-%m-%d %H:%M:%S')} UTC.")
 
+        # 1.5. Strike Decay
+        violations = user_data.get('violationCount', 0)
+        last_violation_at = user_data.get('lastViolationAt')
+        
+        if last_violation_at and violations > 0:
+            if isinstance(last_violation_at, str):
+                last_violation_dt = datetime.fromisoformat(last_violation_at.replace('Z', '+00:00'))
+            else:
+                last_violation_dt = last_violation_at
+            if (datetime.now(timezone.utc) - last_violation_dt).days >= decay_days:
+                violations = max(0, violations - 1)
+                transaction.update(user_ref, {'violationCount': violations})
+                user_data['violationCount'] = violations
+
         # 2. Auto-Mod Scan (Toxic Word Filter)
-        if auto_mod_config.get('autoModEnabled', False):
-            # A starter list of toxic gaming keywords/slurs. 
-            toxic_keywords = [
+        is_system_warning = False
+        original_text = None
+        
+        if mod_level != 'none':
+            severe_keywords = [
                 'nigger', 'faggot', 'retard', 'ky$', 'kill yourself', 
                 'cunt', 'whore', 'slut', 'fuck you', 'stfu',
                 'noob team', 'trash player', 'dog water', 'garbage team',
                 'ez win', 'easy clap', 'uninstall', 'hack', 'cheat'
             ] 
+            mild_keywords = [
+                'hate you', 'annoying', 'shut up', 'idiot', 'stupid', 'dumb', 'loser'
+            ]
             
             # Check for matches
             msg_lower = msg_text.lower()
-            if any(word in msg_lower for word in toxic_keywords):
-                violations = user_data.get('violationCount', 0) + 1
-                updates = {'violationCount': violations}
+            caught_severe = any(word in msg_lower for word in severe_keywords)
+            caught_mild = any(word in msg_lower for word in mild_keywords) if mod_level == 'aggressive' else False
+            
+            if caught_severe:
+                violations += 1
+                updates = {'violationCount': violations, 'lastViolationAt': datetime.now(timezone.utc)}
                 
+                # Fetch configurable strike settings
                 if violations == 1:
-                    hours = auto_mod_config.get('strike1MuteHours', 1)
-                    updates['mutedUntil'] = datetime.now(timezone.utc) + timedelta(hours=hours)
+                    strike_action = auto_mod_config.get('strike1Action', 'mute')
+                    strike_duration = auto_mod_config.get('strike1DurationHours', auto_mod_config.get('strike1MuteHours', 1))
                 elif violations == 2:
-                    hours = auto_mod_config.get('strike2MuteHours', 24)
-                    updates['mutedUntil'] = datetime.now(timezone.utc) + timedelta(hours=hours)
+                    strike_action = auto_mod_config.get('strike2Action', 'mute')
+                    strike_duration = auto_mod_config.get('strike2DurationHours', auto_mod_config.get('strike2MuteHours', 24))
                 else:
-                    if auto_mod_config.get('strike3Ban', True):
-                        updates['isBanned'] = True
-                    else:
-                        updates['mutedUntil'] = datetime.now(timezone.utc) + timedelta(days=365)
+                    is_legacy_ban = auto_mod_config.get('strike3Ban', True)
+                    strike_action = auto_mod_config.get('strike3Action', 'ban' if is_legacy_ban else 'mute')
+                    strike_duration = auto_mod_config.get('strike3DurationHours', 8760)
+
+                if strike_action == 'ban':
+                    updates['isBanned'] = True
+                else:
+                    updates['mutedUntil'] = datetime.now(timezone.utc) + timedelta(hours=strike_duration)
                 
                 transaction.update(user_ref, updates)
-                raise HTTPException(status_code=403, detail=f"Message blocked: Toxicity detected. Strike {violations} applied.")
+                
+                # Transform message to system warning
+                original_text = msg_text
+                msg_text = f"⚠️ [System: Message hidden. Strike {violations} applied for inappropriate language. Strikes decay after {decay_days} days of good behavior.]"
+                is_system_warning = True
+                
+                if violations == 3:
+                    report_ref = db.collection('reports').document()
+                    report_data = {
+                        "reportedMessageId": "SYSTEM_GENERATED", 
+                        "originalMessageText": original_text,
+                        "senderId": uid,
+                        "senderDevice": device,
+                        "reporterId": "SYSTEM_AUTOMOD",
+                        "messageTimestamp": datetime.now(timezone.utc).isoformat(),
+                        "categories": ["Severe Toxicity (Auto-Mod 3rd Strike)"],
+                        "status": "pending",
+                        "reportTimestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                    transaction.set(report_ref, report_data)
+
+            elif caught_mild:
+                updates = {'mutedUntil': datetime.now(timezone.utc) + timedelta(minutes=5)}
+                transaction.update(user_ref, updates)
+                
+                original_text = msg_text
+                msg_text = "⚠️ [System: Message hidden. 5-minute cool-down applied for minor hostility.]"
+                is_system_warning = True
 
         # 3. Spam Cooldown
         last_msg_at = user_data.get('lastMessageAt', 0)
-        if now_ts - last_msg_at < 1.0:
+        if now_ts - last_msg_at < 1.0 and not is_system_warning:
             raise HTTPException(status_code=429, detail="Please wait before sending another message.")
         
         display_name = user_data.get('displayName', 'Dreamer')
@@ -282,8 +341,17 @@ async def post_chat_message(
             "isAdmin": is_admin,
             "timestamp": firestore.SERVER_TIMESTAMP
         }
-        
+        if is_system_warning:
+            new_msg['isSystemWarning'] = True
+            new_msg['originalText'] = original_text
+            
         chat_ref = db.collection('chats').document(region).collection('messages').document()
+        
+        # Also update the reportedMessageId if it was generated
+        if is_system_warning and violations == 3:
+            report_data["reportedMessageId"] = chat_ref.id
+            transaction.set(report_ref, report_data)
+
         transaction.set(chat_ref, new_msg)
         return chat_ref.id
 

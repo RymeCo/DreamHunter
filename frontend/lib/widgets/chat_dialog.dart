@@ -317,27 +317,70 @@ class _ChatDialogState extends State<ChatDialog> {
                         final senderName = data['senderName'] ?? 'Guest';
                         final likes = data['likes'] ?? 0;
                         final isAdmin = data['isAdmin'] ?? false;
+                        final isSystemWarning = data['isSystemWarning'] ?? false;
+                        final adminLiked = data['adminLiked'] ?? false;
+                        final adminDisliked = data['adminDisliked'] ?? false;
                         
                         final isMe = data['senderUid'] == FirebaseAuth.instance.currentUser?.uid;
+
+                        if (adminDisliked) {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color.fromRGBO(0, 0, 0, 0.25),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'Message removed by Admin',
+                                style: TextStyle(color: Colors.white38, fontStyle: FontStyle.italic, fontSize: 12),
+                              ),
+                            ),
+                          );
+                        }
+
+                        // Determine borders and colors
+                        Color bgColor = isAdmin 
+                            ? const Color.fromRGBO(106, 13, 173, 0.3) // Purple tint for admin
+                            : (isMe ? const Color.fromRGBO(255, 255, 255, 0.15) : const Color.fromRGBO(0, 0, 0, 0.25));
+                        
+                        Border? border;
+                        if (adminLiked) {
+                          border = Border.all(color: Colors.amberAccent, width: 2.0);
+                        } else if (isAdmin) {
+                          border = Border.all(color: Colors.amberAccent.withValues(alpha: 0.5), width: 1.5);
+                        } else if (isMe) {
+                          border = Border.all(color: Colors.white24, width: 1);
+                        }
+
+                        List<BoxShadow>? boxShadow;
+                        if (adminLiked) {
+                          boxShadow = [
+                            BoxShadow(
+                              color: Colors.amberAccent.withValues(alpha: 0.4),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            )
+                          ];
+                        } else if (isAdmin) {
+                          boxShadow = [
+                            BoxShadow(
+                              color: Colors.deepPurple.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            )
+                          ];
+                        }
 
                         return Container(
                           margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: isAdmin 
-                                ? const Color.fromRGBO(106, 13, 173, 0.3) // Purple tint for admin
-                                : (isMe ? const Color.fromRGBO(255, 255, 255, 0.15) : const Color.fromRGBO(0, 0, 0, 0.25)),
+                            color: bgColor,
                             borderRadius: BorderRadius.circular(12),
-                            border: isAdmin 
-                                ? Border.all(color: Colors.amberAccent.withValues(alpha: 0.5), width: 1.5)
-                                : (isMe ? Border.all(color: Colors.white24, width: 1) : null),
-                            boxShadow: isAdmin ? [
-                              BoxShadow(
-                                color: Colors.deepPurple.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                              )
-                            ] : null,
+                            border: border,
+                            boxShadow: boxShadow,
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,16 +388,18 @@ class _ChatDialogState extends State<ChatDialog> {
                               Row(
                                 children: [
                                   Text(
-                                    senderName, 
+                                    isSystemWarning ? 'SYSTEM' : senderName, 
                                     style: TextStyle(
-                                      color: isAdmin 
-                                          ? Colors.amberAccent 
-                                          : (isMe ? Colors.blueAccent : Colors.orangeAccent), 
+                                      color: isSystemWarning
+                                          ? Colors.redAccent
+                                          : (isAdmin 
+                                              ? Colors.amberAccent 
+                                              : (isMe ? Colors.blueAccent : Colors.orangeAccent)), 
                                       fontWeight: FontWeight.bold, 
                                       fontSize: 12
                                     )
                                   ),
-                                  if (isAdmin) ...[
+                                  if (isAdmin && !isSystemWarning) ...[
                                     const SizedBox(width: 4),
                                     const Icon(Icons.verified, color: Colors.amberAccent, size: 14),
                                     const SizedBox(width: 4),
@@ -363,10 +408,26 @@ class _ChatDialogState extends State<ChatDialog> {
                                       style: TextStyle(color: Colors.amberAccent, fontSize: 10, fontWeight: FontWeight.w900),
                                     ),
                                   ],
+                                  if (adminLiked) ...[
+                                    const Spacer(),
+                                    const Icon(Icons.star, color: Colors.amberAccent, size: 14),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      'Admin Liked',
+                                      style: TextStyle(color: Colors.amberAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
                                 ],
                               ),
                               const SizedBox(height: 4),
-                              Text(text, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                              Text(
+                                text, 
+                                style: TextStyle(
+                                  color: isSystemWarning ? Colors.yellowAccent : Colors.white, 
+                                  fontSize: 14,
+                                  fontStyle: isSystemWarning ? FontStyle.italic : FontStyle.normal,
+                                )
+                              ),
                               const SizedBox(height: 8),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,

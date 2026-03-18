@@ -9,6 +9,7 @@ import 'screens/players_screen.dart';
 import 'screens/reports_screen.dart';
 import 'screens/automod_screen.dart';
 import 'screens/audit_screen.dart';
+import 'screens/live_chat_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -162,6 +163,7 @@ class _MainLayoutState extends State<MainLayout> {
     const DashboardScreen(),
     const PlayersScreen(),
     const ReportsScreen(),
+    const LiveChatScreen(),
     const AutoModScreen(),
     const AuditScreen(),
   ];
@@ -197,6 +199,11 @@ class _MainLayoutState extends State<MainLayout> {
                 icon: Icon(Icons.report_problem_outlined),
                 selectedIcon: Icon(Icons.report_problem),
                 label: Text('Reports'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.chat_outlined),
+                selectedIcon: Icon(Icons.chat),
+                label: Text('Live Chat'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.security_outlined),
