@@ -141,7 +141,7 @@ class AdminService {
       final response = await _client.patch(
         Uri.parse('$baseUrl/admin/users/$uid/ban'),
         headers: await getAuthHeaders(),
-        body: json.encode({'isBanned': isBanned, 'until': ?until}),
+        body: json.encode({'isBanned': isBanned, 'until': until}),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -155,7 +155,7 @@ class AdminService {
       final response = await _client.patch(
         Uri.parse('$baseUrl/admin/users/$uid/mute'),
         headers: await getAuthHeaders(),
-        body: json.encode({'durationHours': ?durationHours, 'until': ?until}),
+        body: json.encode({'durationHours': durationHours, 'until': until}),
       );
       return response.statusCode == 200;
     } catch (e) {
