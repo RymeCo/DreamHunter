@@ -120,6 +120,22 @@ class AdminService {
     }
   }
 
+  Future<Map<String, dynamic>?> getUserProfile(String uid) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$baseUrl/admin/users/$uid'),
+        headers: await getAuthHeaders(),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting user profile: $e');
+      return null;
+    }
+  }
+
   Future<bool> banUser(String uid, bool isBanned, {String? until}) async {
     try {
       final response = await _client.patch(

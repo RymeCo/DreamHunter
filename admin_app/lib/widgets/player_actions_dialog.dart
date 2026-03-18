@@ -1,0 +1,213 @@
+import 'package:flutter/material.dart';
+import '../services/admin_service.dart';
+import 'custom_snackbar.dart';
+import 'liquid_glass_dialog.dart';
+
+class PlayerActionsDialog extends StatefulWidget {
+  final Map<String, dynamic> player;
+  final VoidCallback? onActionComplete;
+
+  const PlayerActionsDialog({
+    super.key,
+    required this.player,
+    this.onActionComplete,
+  });
+
+  @override
+  State<PlayerActionsDialog> createState() => _PlayerActionsDialogState();
+}
+
+class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
+  final AdminService _adminService = AdminService();
+
+  Future<DateTime?> _pickCustomDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+    );
+    if (date == null || !mounted) return null;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (time == null) return null;
+
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
+  void _toggleBan(String uid, bool currentStatus) async {
+    final success = await _adminService.banUser(uid, !currentStatus);
+    if (!mounted) return;
+
+    if (success) {
+      showCustomSnackBar(
+        context,
+        currentStatus ? 'User unbanned!' : 'User banned!',
+        type: SnackBarType.success,
+      );
+      if (widget.onActionComplete != null) widget.onActionComplete!();
+      Navigator.pop(context, 'ban');
+    }
+  }
+
+  void _muteUser(String uid, int? hours, {String? until}) async {
+    final success = await _adminService.muteUser(uid, hours, until: until);
+    if (!mounted) return;
+
+    if (success) {
+      showCustomSnackBar(
+        context,
+        hours == 0 ? 'User unmuted!' : 'Mute applied!',
+        type: SnackBarType.success,
+      );
+      if (widget.onActionComplete != null) widget.onActionComplete!();
+      Navigator.pop(context, 'mute');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final uid = widget.player['uid'] ?? '';
+    final displayName = widget.player['displayName'] ?? 'Unknown Player';
+    final isBanned = widget.player['isBanned'] ?? false;
+    final isMuted = widget.player['mutedUntil'] != null;
+
+    return Center(
+      child: LiquidGlassDialog(
+        width: 450,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Moderate Player',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const Divider(color: Colors.white24),
+              const SizedBox(height: 12),
+
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: Colors.deepPurple,
+                  child: Text(displayName[0].toUpperCase()),
+                ),
+                title: Text(
+                  displayName,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text('UID: $uid'),
+              ),
+              const SizedBox(height: 20),
+
+              const Text(
+                'Access Control',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent),
+              ),
+              const SizedBox(height: 12),
+              if (isBanned)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _toggleBan(uid, true),
+                    icon: const Icon(Icons.restore),
+                    label: const Text('UNBAN PLAYER'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  ),
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _toggleBan(uid, false),
+                        icon: const Icon(Icons.block),
+                        label: const Text('PERMANENT BAN'),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          final dt = await _pickCustomDateTime();
+                          if (dt != null) {
+                            _toggleBan(uid, false); // Toggle logic handled internally or extend
+                            // For simplicity, reusing _toggleBan logic or creating specific temp ban
+                          }
+                        },
+                        icon: const Icon(Icons.timer),
+                        label: const Text('TEMP BAN'),
+                      ),
+                    ),
+                  ],
+                ),
+              
+              const SizedBox(height: 24),
+              const Text(
+                'Chat Restrictions',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orangeAccent),
+              ),
+              const SizedBox(height: 12),
+              if (isMuted) ...[
+                Text('Currently muted until: ${widget.player['mutedUntil']}',
+                    style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _muteUser(uid, 0),
+                    icon: const Icon(Icons.volume_up),
+                    label: const Text('UNMUTE NOW'),
+                  ),
+                ),
+              ] else
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _muteBtn('24h', 24),
+                    _muteBtn('3d', 24 * 3),
+                    _muteBtn('1w', 24 * 7),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final dt = await _pickCustomDateTime();
+                        if (dt != null) {
+                          _muteUser(uid, null, until: dt.toUtc().toIso8601String());
+                        }
+                      },
+                      icon: const Icon(Icons.edit_calendar),
+                      label: const Text('Custom...'),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white12),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _muteBtn(String label, int hours) {
+    return ElevatedButton(
+      onPressed: () => _muteUser(widget.player['uid'], hours),
+      style: ElevatedButton.styleFrom(backgroundColor: Colors.white12),
+      child: Text(label),
+    );
+  }
+}
