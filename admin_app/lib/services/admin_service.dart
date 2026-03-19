@@ -26,26 +26,6 @@ class AdminService {
     };
   }
 
-  /// Checks if the backend is reachable and returns the latency in ms if successful.
-  /// Returns null if the ping fails.
-  Future<int?> pingServer() async {
-    try {
-      final stopwatch = Stopwatch()..start();
-      final response = await _client
-          .get(Uri.parse(baseUrl))
-          .timeout(const Duration(seconds: 10));
-      stopwatch.stop();
-
-      if (response.statusCode == 200) {
-        return stopwatch.elapsedMilliseconds;
-      }
-      return null;
-    } catch (e) {
-      debugPrint('Server ping failed: $e');
-      return null;
-    }
-  }
-
   // --- Maintenance & Broadcast ---
 
   Stream<DocumentSnapshot> getSystemConfig() {
@@ -278,6 +258,38 @@ class AdminService {
     await msgRef.update({'adminDisliked': true});
   }
 
+  Future<bool> sendGhostMessage(
+    String region,
+    String text,
+    String ghostName,
+  ) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return false;
+
+      final newMsg = {
+        "text": text,
+        "senderUid": user.uid,
+        "senderName": ghostName,
+        "senderDevice": "GhostConsole",
+        "isAdmin": false, // Ghost mode
+        "isSystemWarning": false,
+        "isGhost": true,
+        "timestamp": FieldValue.serverTimestamp(),
+      };
+
+      await _db
+          .collection('chats')
+          .doc(region)
+          .collection('messages')
+          .add(newMsg);
+      return true;
+    } catch (e) {
+      debugPrint('Error sending ghost message: $e');
+      return false;
+    }
+  }
+
   Future<bool> sendSystemBroadcastToChat(String region, String text) async {
     try {
       final user = _auth.currentUser;
@@ -315,7 +327,7 @@ class AdminService {
         body: json.encode({
           'uids': uids,
           'action': action,
-          if (params != null) 'params': params,
+          'params':? params,
         }),
       );
       return response.statusCode == 200;

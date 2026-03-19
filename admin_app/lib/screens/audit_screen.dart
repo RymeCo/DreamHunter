@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/admin_service.dart';
@@ -19,6 +20,9 @@ class _AuditScreenState extends State<AuditScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'All';
 
+  bool _isLive = false;
+  Timer? _liveTimer;
+
   final List<String> _categories = [
     'All',
     'USER_BANNED',
@@ -37,8 +41,25 @@ class _AuditScreenState extends State<AuditScreen> {
     _fetchLogs();
   }
 
-  Future<void> _fetchLogs() async {
-    setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    _liveTimer?.cancel();
+    super.dispose();
+  }
+
+  void _toggleLive(bool val) {
+    setState(() => _isLive = val);
+    if (_isLive) {
+      _liveTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+        _fetchLogs(silent: true);
+      });
+    } else {
+      _liveTimer?.cancel();
+    }
+  }
+
+  Future<void> _fetchLogs({bool silent = false}) async {
+    if (!silent) setState(() => _isLoading = true);
     try {
       final results = await _adminService.getAuditLogs();
       if (!mounted) return;
@@ -227,14 +248,26 @@ class _AuditScreenState extends State<AuditScreen> {
                 'Audit Logs',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
-              IconButton(
-                icon: const Icon(
-                  Icons.refresh,
-                  size: 28,
-                  color: Colors.amberAccent,
-                ),
-                onPressed: _fetchLogs,
-                tooltip: 'Refresh Logs',
+              Row(
+                children: [
+                  const Text('Live',
+                      style: TextStyle(color: Colors.greenAccent)),
+                  Switch(
+                    value: _isLive,
+                    onChanged: _toggleLive,
+                    activeColor: Colors.greenAccent,
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.refresh,
+                      size: 28,
+                      color: Colors.amberAccent,
+                    ),
+                    onPressed: () => _fetchLogs(),
+                    tooltip: 'Refresh Logs',
+                  ),
+                ],
               ),
             ],
           ),
