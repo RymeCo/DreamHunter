@@ -16,25 +16,25 @@ class _AutoModScreenState extends State<AutoModScreen> {
 
   // Local state for changes before saving
   String? _localModerationLevel;
-  int? _localDecayDays;
+  num? _localDecayDays;
   String? _localStrike1Action;
-  int? _localStrike1DurationHours;
+  num? _localStrike1DurationHours;
   String? _localStrike2Action;
-  int? _localStrike2DurationHours;
+  num? _localStrike2DurationHours;
   String? _localStrike3Action;
-  int? _localStrike3DurationHours;
+  num? _localStrike3DurationHours;
 
   void _updateConfig(Map<String, dynamic> currentData) async {
     // Combine local state with current data from DB
     final Map<String, dynamic> configToUpdate = {
       'moderationLevel': _localModerationLevel ?? currentData['moderationLevel'] ?? 'none',
-      'decayDays': _localDecayDays ?? currentData['decayDays'] ?? 30,
+      'decayDays': (_localDecayDays ?? currentData['decayDays'] as num? ?? 30).toInt(),
       'strike1Action': _localStrike1Action ?? currentData['strike1Action'] ?? 'mute',
-      'strike1DurationHours': _localStrike1DurationHours ?? currentData['strike1DurationHours'] ?? dataOrLegacy(currentData, 'strike1MuteHours', 1),
+      'strike1DurationHours': (_localStrike1DurationHours ?? currentData['strike1DurationHours'] as num? ?? dataOrLegacy(currentData, 'strike1MuteHours', 1)).toInt(),
       'strike2Action': _localStrike2Action ?? currentData['strike2Action'] ?? 'mute',
-      'strike2DurationHours': _localStrike2DurationHours ?? currentData['strike2DurationHours'] ?? dataOrLegacy(currentData, 'strike2MuteHours', 24),
+      'strike2DurationHours': (_localStrike2DurationHours ?? currentData['strike2DurationHours'] as num? ?? dataOrLegacy(currentData, 'strike2MuteHours', 24)).toInt(),
       'strike3Action': _localStrike3Action ?? currentData['strike3Action'] ?? (currentData['strike3Ban'] == true ? 'ban' : 'mute'),
-      'strike3DurationHours': _localStrike3DurationHours ?? currentData['strike3DurationHours'] ?? 8760,
+      'strike3DurationHours': (_localStrike3DurationHours ?? currentData['strike3DurationHours'] as num? ?? 8760).toInt(),
     };
     
     configToUpdate['autoModEnabled'] = configToUpdate['moderationLevel'] != 'none';
@@ -64,16 +64,18 @@ class _AutoModScreenState extends State<AutoModScreen> {
   }
 
   int dataOrLegacy(Map<String, dynamic> data, String legacyKey, int defaultValue) {
-    return data[legacyKey] ?? defaultValue;
+    final val = data[legacyKey];
+    if (val is num) return val.toInt();
+    return defaultValue;
   }
 
   Widget _buildStrikeConfig(
     int strikeNum,
     String action,
-    int duration,
+    num duration,
     Map<String, dynamic> currentData,
     Function(String) onActionChanged,
-    Function(int) onDurationChanged, {
+    Function(num) onDurationChanged, {
     int max = 8760,
   }) {
     return Column(
@@ -113,7 +115,7 @@ class _AutoModScreenState extends State<AutoModScreen> {
           const SizedBox(height: 8),
           _AutoModInputRow(
             label: 'Mute Duration (h)',
-            value: duration,
+            value: duration.toInt(),
             unit: 'hours',
             max: max,
             onChanged: (val) {
@@ -145,16 +147,16 @@ class _AutoModScreenState extends State<AutoModScreen> {
 
         // Effective values (local state overrides DB data)
         final moderationLevel = _localModerationLevel ?? data['moderationLevel'] ?? (legacyEnabled ? 'mild' : 'none');
-        final decayDays = _localDecayDays ?? data['decayDays'] ?? 30;
+        final decayDays = _localDecayDays ?? (data['decayDays'] as num? ?? 30);
 
         final strike1Action = _localStrike1Action ?? data['strike1Action'] ?? 'mute';
-        final strike1Duration = _localStrike1DurationHours ?? data['strike1DurationHours'] ?? data['strike1MuteHours'] ?? 1;
+        final strike1Duration = _localStrike1DurationHours ?? (data['strike1DurationHours'] as num? ?? data['strike1MuteHours'] as num? ?? 1);
 
         final strike2Action = _localStrike2Action ?? data['strike2Action'] ?? 'mute';
-        final strike2Duration = _localStrike2DurationHours ?? data['strike2DurationHours'] ?? data['strike2MuteHours'] ?? 24;
+        final strike2Duration = _localStrike2DurationHours ?? (data['strike2DurationHours'] as num? ?? data['strike2MuteHours'] as num? ?? 24);
 
         final strike3Action = _localStrike3Action ?? data['strike3Action'] ?? (data['strike3Ban'] == true ? 'ban' : 'mute');
-        final strike3Duration = _localStrike3DurationHours ?? data['strike3DurationHours'] ?? 8760;
+        final strike3Duration = _localStrike3DurationHours ?? (data['strike3DurationHours'] as num? ?? 8760);
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -255,7 +257,7 @@ class _AutoModScreenState extends State<AutoModScreen> {
                     const SizedBox(height: 16),
                     _AutoModInputRow(
                       label: 'Decay Time (Days)',
-                      value: decayDays,
+                      value: decayDays.toInt(),
                       unit: 'days',
                       max: 365,
                       onChanged: (val) {

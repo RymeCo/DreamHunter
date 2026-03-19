@@ -17,10 +17,6 @@ class UserMuteRequest(BaseModel):
     durationHours: Optional[int] = None # 0 to unmute
     until: Optional[str] = None # ISO format string for custom durations
 
-class ChatConfigUpdate(BaseModel):
-    archiveMessages: Optional[bool] = None
-    moderationTier: Optional[str] = None
-
 class MaintenanceRequest(BaseModel):
     chatMaintenance: Optional[bool] = None
     shopMaintenance: Optional[bool] = None
@@ -31,10 +27,14 @@ class BroadcastRequest(BaseModel):
 
 class AutoModConfigRequest(BaseModel):
     autoModEnabled: Optional[bool] = None
-    violationCategories: Optional[List[str]] = None
-    strike1MuteHours: Optional[int] = None
-    strike2MuteHours: Optional[int] = None
-    strike3Ban: Optional[bool] = None
+    moderationLevel: Optional[str] = None
+    decayDays: Optional[int] = None
+    strike1Action: Optional[str] = None
+    strike1DurationHours: Optional[int] = None
+    strike2Action: Optional[str] = None
+    strike2DurationHours: Optional[int] = None
+    strike3Action: Optional[str] = None
+    strike3DurationHours: Optional[int] = None
 
 class BatchActionRequest(BaseModel):
     uids: List[str]
@@ -335,16 +335,17 @@ async def get_stats_summary(admin: dict = Depends(verify_admin)):
     working = working_count[0][0].value
     resolved = resolved_count[0][0].value
     
-    # 2. Mock Activity Trends (In production, this would be daily aggregations)
-    now = datetime.now(timezone.utc)
-    trends = []
-    for i in range(7):
-        date = (now - timedelta(days=6-i)).strftime('%Y-%m-%d')
-        trends.append({
-            "date": date,
-            "messages": 100 + (i * 15), # Mock data
-            "logins": 20 + (i * 3)      # Mock data
-        })
+    # 2. User Growth Stats
+    users_ref = db.collection('users')
+    total_users = users_ref.count().get()[0][0].value
+    
+    # Mock DAU and New Today for now (In production, use indexed timestamps)
+    new_today = 5 
+    dau = 12
+    
+    # 3. System Health (Mock / Placeholder)
+    latency = 45.5
+    error_count = 0
 
     return {
         "reportStats": {
@@ -352,11 +353,15 @@ async def get_stats_summary(admin: dict = Depends(verify_admin)):
             "working": working,
             "resolved": resolved
         },
-        "activityTrends": trends,
-        "violationSummary": {
-            "Toxicity": 45,
-            "Spam": 22,
-            "Harassment": 15
+        "systemHealth": {
+            "latency": latency,
+            "errorCount": error_count,
+            "status": "Healthy" if latency < 200 else "Degraded"
+        },
+        "userGrowth": {
+            "total": total_users,
+            "newToday": new_today,
+            "dau": dau
         }
     }
 
