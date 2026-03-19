@@ -255,7 +255,7 @@ class _AuditScreenState extends State<AuditScreen> {
                   Switch(
                     value: _isLive,
                     onChanged: _toggleLive,
-                    activeColor: Colors.greenAccent,
+                    activeThumbColor: Colors.greenAccent,
                   ),
                   const SizedBox(width: 8),
                   IconButton(

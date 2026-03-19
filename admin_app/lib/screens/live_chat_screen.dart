@@ -117,16 +117,21 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             const Text(
               'Live Chat Monitor',
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Ghost Mode', style: TextStyle(color: Colors.white70)),
+                const Text('Ghost Mode',
+                    style: TextStyle(color: Colors.white70)),
                 Switch(
                   value: _isGhostMode,
                   onChanged: (val) async {
@@ -141,15 +146,15 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       setState(() => _isGhostMode = val);
                     }
                   },
-                  activeColor: Colors.amberAccent,
+                  activeThumbColor: Colors.amberAccent,
                 ),
                 const SizedBox(width: 16),
                 DropdownButton<String>(
                   value: _selectedRegion,
                   dropdownColor: const Color(0xFF16162F),
                   items: _regions
-                      .map((r) =>
-                          DropdownMenuItem(value: r, child: Text(r.toUpperCase())))
+                      .map((r) => DropdownMenuItem(
+                          value: r, child: Text(r.toUpperCase())))
                       .toList(),
                   onChanged: (val) {
                     if (val != null) setState(() => _selectedRegion = val);
