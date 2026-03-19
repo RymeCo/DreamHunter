@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timezone
 from typing import Optional, List, Any
 
-from fastapi import FastAPI, HTTPException, Depends, Header, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
