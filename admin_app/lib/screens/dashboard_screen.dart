@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../services/admin_service.dart';
 import '../widgets/custom_snackbar.dart';
 import '../widgets/liquid_glass_dialog.dart';
@@ -16,10 +17,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _pingStatus = 'Unknown';
   final TextEditingController _broadcastController = TextEditingController();
 
+  Map<String, dynamic>? _statsSummary;
+  bool _isLoadingStats = true;
+  String? _statsErrorMessage;
+
   @override
   void initState() {
     super.initState();
     _pingServer();
+    _fetchStats();
+  }
+
+  void _fetchStats() async {
+    setState(() {
+      _isLoadingStats = true;
+      _statsErrorMessage = null;
+    });
+    try {
+      final stats = await _adminService.getStatsSummary();
+      if (!mounted) return;
+      setState(() {
+        _statsSummary = stats;
+        _isLoadingStats = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _statsErrorMessage = e.toString().replaceAll('Exception: ', '');
+        _isLoadingStats = false;
+      });
+    }
   }
 
   void _pingServer() async {
@@ -64,11 +91,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Dashboard Overview',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Dashboard Overview',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                onPressed: _fetchStats,
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Refresh Stats',
+              ),
+            ],
           ),
           const SizedBox(height: 24),
+
+          if (_isLoadingStats)
+            const Center(child: CircularProgressIndicator())
+          else if (_statsSummary != null) ...[
+            _buildChartsSection(),
+            const SizedBox(height: 24),
+          ] else ...[
+            Center(
+              child: Column(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.redAccent, size: 40),
+                  const SizedBox(height: 8),
+                  Text(
+                    _statsErrorMessage ?? 'Failed to load dashboard statistics.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                  TextButton(
+                    onPressed: _fetchStats,
+                    child: const Text('Retry Fetch'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
 
           // Service Health
           LiquidGlassDialog(
@@ -210,6 +273,126 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildChartsSection() {
+    final reportStats = _statsSummary?['reportStats'] as Map<String, dynamic>? ?? {};
+    final activityTrends = _statsSummary?['activityTrends'] as List<dynamic>? ?? [];
+
+    return Column(
+      children: [
+        LiquidGlassDialog(
+          height: 250,
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Text('Reports Status (Pending, Working, Resolved)',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+              Expanded(
+                child: BarChart(
+                  BarChartData(
+                    gridData: const FlGridData(show: false),
+                    titlesData: const FlTitlesData(show: false),
+                    borderData: FlBorderData(show: false),
+                    barGroups: [
+                      BarChartGroupData(
+                        x: 0,
+                        barRods: [
+                          BarChartRodData(
+                            toY: (reportStats['pending'] as int? ?? 0).toDouble(),
+                            color: Colors.redAccent,
+                            width: 25,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ],
+                      ),
+                      BarChartGroupData(
+                        x: 1,
+                        barRods: [
+                          BarChartRodData(
+                            toY: (reportStats['working'] as int? ?? 0).toDouble(),
+                            color: Colors.orangeAccent,
+                            width: 25,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ],
+                      ),
+                      BarChartGroupData(
+                        x: 2,
+                        barRods: [
+                          BarChartRodData(
+                            toY: (reportStats['resolved'] as int? ?? 0).toDouble(),
+                            color: Colors.greenAccent,
+                            width: 25,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        LiquidGlassDialog(
+          height: 300,
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Text('Weekly Activity (Logins & Messages)',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+              Expanded(
+                child: activityTrends.isEmpty
+                    ? const Center(child: Text('No activity data available'))
+                    : LineChart(
+                        LineChartData(
+                          gridData: const FlGridData(show: false),
+                          titlesData: const FlTitlesData(show: false),
+                          borderData: FlBorderData(show: false),
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: activityTrends.asMap().entries.map((e) {
+                                return FlSpot(e.key.toDouble(),
+                                    (e.value['messages'] as int? ?? 0).toDouble());
+                              }).toList(),
+                              isCurved: false, // Performance: Set to false
+                              color: Colors.blueAccent,
+                              barWidth: 3,
+                              dotData: const FlDotData(show: true),
+                              belowBarData: BarAreaData(
+                                show: true,
+                                color: Colors.blueAccent.withValues(alpha: 0.1),
+                              ),
+                            ),
+                            LineChartBarData(
+                              spots: activityTrends.asMap().entries.map((e) {
+                                return FlSpot(e.key.toDouble(),
+                                    (e.value['logins'] as int? ?? 0).toDouble());
+                              }).toList(),
+                              isCurved: false, // Performance: Set to false
+                              color: Colors.purpleAccent,
+                              barWidth: 3,
+                              dotData: const FlDotData(show: true),
+                              belowBarData: BarAreaData(
+                                show: true,
+                                color: Colors.purpleAccent.withValues(alpha: 0.1),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

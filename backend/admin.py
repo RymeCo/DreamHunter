@@ -36,6 +36,11 @@ class AutoModConfigRequest(BaseModel):
     strike2MuteHours: Optional[int] = None
     strike3Ban: Optional[bool] = None
 
+class BatchActionRequest(BaseModel):
+    uids: List[str]
+    action: str # 'ban', 'unban', 'mute', 'unmute'
+    params: Optional[dict] = None
+
 # --- Dependencies ---
 
 async def verify_admin(authorization: Optional[str] = Header(None)):
@@ -313,6 +318,87 @@ async def update_automod_config(req: AutoModConfigRequest, admin: dict = Depends
     db.collection('metadata').document('moderation_config').set(update_data, merge=True)
     log_audit(admin['uid'], "AUTOMOD_CONFIG_UPDATE", details=str(update_data), admin_email=admin.get('email'))
     return {"status": "success", "config": update_data}
+
+@router.get("/stats/summary")
+async def get_stats_summary(admin: dict = Depends(verify_admin)):
+    """Consolidated summary for dashboard visuals."""
+    db = firestore.client()
+    
+    # 1. Report Stats (Optimized with Aggregations)
+    reports_ref = db.collection('reports')
+    
+    pending_count = reports_ref.where("status", "==", "pending").count().get()
+    working_count = reports_ref.where("status", "==", "working").count().get()
+    resolved_count = reports_ref.where("status", "==", "resolved").count().get()
+    
+    pending = pending_count[0][0].value
+    working = working_count[0][0].value
+    resolved = resolved_count[0][0].value
+    
+    # 2. Mock Activity Trends (In production, this would be daily aggregations)
+    now = datetime.now(timezone.utc)
+    trends = []
+    for i in range(7):
+        date = (now - timedelta(days=6-i)).strftime('%Y-%m-%d')
+        trends.append({
+            "date": date,
+            "messages": 100 + (i * 15), # Mock data
+            "logins": 20 + (i * 3)      # Mock data
+        })
+
+    return {
+        "reportStats": {
+            "pending": pending,
+            "working": working,
+            "resolved": resolved
+        },
+        "activityTrends": trends,
+        "violationSummary": {
+            "Toxicity": 45,
+            "Spam": 22,
+            "Harassment": 15
+        }
+    }
+
+@router.patch("/users/batch-action")
+async def batch_action(req: BatchActionRequest, admin: dict = Depends(verify_admin)):
+    """Perform a moderation action on multiple players at once."""
+    db = firestore.client()
+    batch = db.batch()
+    
+    update_data = {"updatedAt": firestore.SERVER_TIMESTAMP}
+    log_msg = f"Batch {req.action.upper()} on {len(req.uids)} users."
+    
+    if req.action == "ban":
+        update_data["isBanned"] = True
+        if req.params and req.params.get("until"):
+            update_data["bannedUntil"] = datetime.fromisoformat(req.params["until"].replace('Z', '+00:00'))
+    elif req.action == "unban":
+        update_data["isBanned"] = False
+        update_data["bannedUntil"] = None
+    elif req.action == "mute":
+        if req.params and req.params.get("until"):
+            update_data["mutedUntil"] = datetime.fromisoformat(req.params["until"].replace('Z', '+00:00'))
+        elif req.params and req.params.get("durationHours"):
+            update_data["mutedUntil"] = datetime.now(timezone.utc) + timedelta(hours=int(req.params["durationHours"]))
+    elif req.action == "unmute":
+        update_data["mutedUntil"] = None
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action")
+
+    for uid in req.uids:
+        batch.update(db.collection('users').document(uid), update_data)
+        
+    batch.commit()
+    
+    log_audit(
+        admin_uid=admin['uid'],
+        admin_email=admin.get('email'),
+        action=f"BATCH_{req.action.upper()}",
+        details=f"{log_msg} Params: {req.params}"
+    )
+    
+    return {"status": "success", "count": len(req.uids)}
 
 @router.get("/audit-logs")
 async def get_audit_logs(admin: dict = Depends(verify_admin)):
