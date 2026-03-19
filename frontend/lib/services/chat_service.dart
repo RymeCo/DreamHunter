@@ -128,9 +128,16 @@ class ChatService {
         throw Exception('cooldown');
       }
 
-      return response.statusCode == 200;
+      if (response.statusCode != 200) {
+        final data = json.decode(response.body);
+        throw Exception(data['detail'] ?? 'Failed to send message.');
+      }
+
+      return true;
     } catch (e) {
-      if (e.toString().contains('cooldown')) rethrow;
+      if (e.toString().contains('cooldown') || e.toString().contains('muted') || e.toString().contains('banned')) {
+        rethrow;
+      }
       debugPrint('Error sending message: $e');
       return false;
     }

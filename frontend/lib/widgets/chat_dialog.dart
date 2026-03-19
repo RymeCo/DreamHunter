@@ -443,9 +443,9 @@ class _ChatDialogState extends State<ChatDialog> {
                           final adminLiked = data['adminLiked'] ?? false;
                           final adminDisliked = data['adminDisliked'] ?? false;
 
-                          final isMe =
-                              data['senderUid'] ==
-                              FirebaseAuth.instance.currentUser?.uid;
+                          final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+                          final isMe = data['senderUid'] == currentUserId;
+                          final isGhost = data['isGhost'] == true;
 
                           if (adminDisliked && !_isModerator) {
                             return Container(
@@ -609,8 +609,7 @@ class _ChatDialogState extends State<ChatDialog> {
                                     // Like Button
                                     GestureDetector(
                                       onTap: () {
-                                        if (FirebaseAuth.instance.currentUser ==
-                                            null) {
+                                        if (currentUserId == null) {
                                           showCustomSnackBar(
                                             context,
                                             'Please login to like messages.',
@@ -662,7 +661,7 @@ class _ChatDialogState extends State<ChatDialog> {
                                     if (_isModerator && _modCanHideMessages)
                                       const SizedBox(width: 16),
                                     // Report Button
-                                    if (!isAdmin && !isSystemWarning && !isMe)
+                                    if (!isAdmin && !isSystemWarning && !isMe && !isGhost)
                                       GestureDetector(
                                         onTap: () =>
                                             _showReportDialog(data, messageId),

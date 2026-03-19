@@ -229,7 +229,13 @@ async def post_chat_message(region: str, msg: ChatMessage, decoded_token: dict =
     if user_data.get('isBanned'):
         banned_until = user_data.get('bannedUntil')
         if not banned_until or banned_until.replace(tzinfo=timezone.utc) > now:
-            raise HTTPException(status_code=403, detail="You are banned.")
+            detail = "You are permanently banned."
+            if banned_until:
+                diff = banned_until.replace(tzinfo=timezone.utc) - now
+                hours, remainder = divmod(int(diff.total_seconds()), 3600)
+                minutes, _ = divmod(remainder, 60)
+                detail = f"You are banned for {hours}h {minutes}m."
+            raise HTTPException(status_code=403, detail=detail)
             
     # Check if muted
     muted_until = user_data.get('mutedUntil')
@@ -238,9 +244,14 @@ async def post_chat_message(region: str, msg: ChatMessage, decoded_token: dict =
             muted_until = datetime.fromisoformat(muted_until.replace('Z', '+00:00'))
         
         if muted_until.replace(tzinfo=timezone.utc) > now:
-            raise HTTPException(status_code=403, detail=f"You are muted until {muted_until.isoformat()}")
+            diff = muted_until.replace(tzinfo=timezone.utc) - now
+            hours, remainder = divmod(int(diff.total_seconds()), 3600)
+            minutes, _ = divmod(remainder, 60)
+            raise HTTPException(status_code=403, detail=f"You are muted for {hours}h {minutes}m.")
 
     # --- Auto-Mod Logic ---
+    from admin import log_audit # Import here to avoid circular dependencies if any
+    
     config_doc = db.collection('metadata').document('moderation_config').get()
     config = config_doc.to_dict() if config_doc.exists else {}
     
@@ -285,8 +296,24 @@ async def post_chat_message(region: str, msg: ChatMessage, decoded_token: dict =
             
             if action == 'ban':
                 user_ref.update({"isBanned": True, "bannedUntil": until})
+                log_audit(
+                    admin_uid="SYSTEM_AUTOMOD",
+                    action="AUTOMOD_BAN",
+                    target=uid,
+                    details=f"User reached {strike_count} strikes. Auto-banned for {duration}h.",
+                    target_name=user_data.get('displayName'),
+                    target_email=user_data.get('email')
+                )
             else:
                 user_ref.update({"mutedUntil": until})
+                log_audit(
+                    admin_uid="SYSTEM_AUTOMOD",
+                    action="AUTOMOD_MUTE",
+                    target=uid,
+                    details=f"User reached {strike_count} strikes. Auto-muted for {duration}h.",
+                    target_name=user_data.get('displayName'),
+                    target_email=user_data.get('email')
+                )
                 
     # Save message to Firestore
     message_data = {
