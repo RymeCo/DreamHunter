@@ -120,12 +120,58 @@ async def verify_firebase_token(authorization: Optional[str] = Header(None)):
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired Firebase token")
 
+# --- Firestore Initialization ---
+
+async def initialize_firestore():
+    """Ensures critical metadata and config documents exist in Firestore."""
+    print("Checking Firestore initialization...")
+    
+    # 1. System Config
+    sys_ref = db.collection('metadata').document('system_config')
+    if not sys_ref.get().exists:
+        sys_ref.set({
+            "chatMaintenance": False,
+            "shopMaintenance": False,
+            "lastInitialized": datetime.now(timezone.utc).isoformat()
+        })
+        print("Initialized metadata/system_config")
+
+    # 2. Moderation Config
+    mod_ref = db.collection('metadata').document('moderation_config')
+    if not mod_ref.get().exists:
+        mod_ref.set({
+            "autoModEnabled": True,
+            "decayDays": 30,
+            "strike3Action": "mute",
+            "strike3DurationHours": 24,
+            "bannedWords": ["****"], # Default placeholder
+            "modCanMute": True,
+            "modCanWarn": True,
+            "modCanHideMessages": True
+        })
+        print("Initialized metadata/moderation_config")
+
+@app.on_event("startup")
+async def startup_event():
+    await initialize_firestore()
+
+# --- Email Notification Helper ---
+
+def send_urgent_report_email(report_id: str, message_text: str):
+    """Placeholder for sending urgent email notifications."""
+    # In production, use smtplib or a service like Resend/SendGrid.
+    # For now, we log it to the console (visible in Render logs).
+    print(f"!!! URGENT REPORT [{report_id}] !!!")
+    print(f"Message Content: {message_text}")
+    print("Action Required: Check Admin Dashboard immediately.")
+
 # --- Endpoints ---
 
 @app.get("/user/profile")
-async def get_user_profile(decoded_token: dict = Depends(verify_firebase_token)):
+async def get_user_profile_data(decoded_token: dict = Depends(verify_firebase_token)):
     """
     Fetches user data from Firestore using UID. 
+    Unified with Admin profile logic but accessible to normal users.
     """
     uid = decoded_token['uid']
     display_name = decoded_token.get('name', 'Dreamer')
@@ -135,7 +181,10 @@ async def get_user_profile(decoded_token: dict = Depends(verify_firebase_token))
     doc = user_ref.get()
     
     if doc.exists:
-        return doc.to_dict()
+        data = doc.to_dict()
+        if 'uid' not in data:
+            data['uid'] = doc.id
+        return data
     
     now = datetime.now(timezone.utc)
     default_profile = {
@@ -146,7 +195,9 @@ async def get_user_profile(decoded_token: dict = Depends(verify_firebase_token))
         "createdAt": now.isoformat(),
         "isBanned": False,
         "mutedUntil": None,
-        "isAdmin": False
+        "isAdmin": False,
+        "isModerator": False,
+        "warnings": []
     }
     
     db_profile = default_profile.copy()
@@ -256,15 +307,48 @@ async def post_chat_message(region: str, msg: ChatMessage, decoded_token: dict =
 @app.post("/reports")
 async def report_content(report: ReportRequest):
     """
-    Public endpoint to submit a content report.
+    Public endpoint to submit a content report with Anti-Spam and Self-Report protection.
     """
+    # 1. Self-Report Check
+    if report.reporterId == report.senderId:
+        raise HTTPException(status_code=400, detail="You cannot report your own messages.")
+
+    db_client = firestore.client()
+    
+    # 2. Anti-Spam / Duplicate Check
+    # Check if this reporter has already reported this specific message
+    existing_reports = db_client.collection('reports') \
+        .where("reportedMessageId", "==", report.reportedMessageId) \
+        .where("reporterId", "==", report.reporterId) \
+        .limit(1).get()
+    
+    if len(existing_reports) > 0:
+        return {"status": "success", "message": "Report already received. Thank you!"}
+
+    # 3. Urgency / Unique Reporter Count
+    # Find how many unique reporters have flagged this message
+    total_reporters = db_client.collection('reports') \
+        .where("reportedMessageId", "==", report.reportedMessageId) \
+        .get()
+    
+    unique_count = len(total_reporters) + 1 # Include this current report
+    is_urgent = unique_count >= 5
+
     now = datetime.now(timezone.utc)
     report_data = report.model_dump()
     report_data["reportTimestamp"] = now.isoformat()
     report_data["status"] = "pending"
+    report_data["isUrgent"] = is_urgent
+    report_data["reporterCount"] = unique_count
     
-    db.collection('reports').add(report_data)
-    return {"status": "success", "message": "Report submitted successfully."}
+    new_report_ref = db_client.collection('reports').document()
+    new_report_ref.set(report_data)
+
+    # 4. Auto-Hide & Notification
+    if is_urgent:
+        send_urgent_report_email(new_report_ref.id, report.originalMessageText)
+    
+    return {"status": "success", "message": "Report submitted successfully.", "urgent": is_urgent}
 
 if __name__ == "__main__":
     import uvicorn

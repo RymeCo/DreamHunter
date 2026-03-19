@@ -152,7 +152,7 @@ class AdminService {
   Future<bool> warnUser(String uid, String reason) async {
     try {
       final response = await _client.post(
-        Uri.parse('$baseUrl/admin/users/$uid/warn'),
+        Uri.parse('$baseUrl/admin/users/$uid/warnings'),
         headers: await getAuthHeaders(),
         body: json.encode({'reason': reason}),
       );
@@ -166,7 +166,7 @@ class AdminService {
   Future<bool> updateModeratorStatus(String uid, bool isModerator) async {
     try {
       final response = await _client.patch(
-        Uri.parse('$baseUrl/admin/users/$uid/moderator'),
+        Uri.parse('$baseUrl/admin/users/$uid/role'),
         headers: await getAuthHeaders(),
         body: json.encode({'isModerator': isModerator}),
       );

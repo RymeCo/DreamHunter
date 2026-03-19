@@ -269,8 +269,8 @@ async def mute_user(uid: str, req: UserMuteRequest, admin: dict = Depends(verify
         "mutedUntil": update_data.get("mutedUntil").isoformat() if update_data.get("mutedUntil") else None
     }
 
-@router.patch("/users/{uid}/moderator")
-async def update_user_moderator(uid: str, req: UserModeratorRequest, admin: dict = Depends(verify_admin)):
+@router.patch("/users/{uid}/role")
+async def update_user_role(uid: str, req: UserModeratorRequest, admin: dict = Depends(verify_admin)):
     db = firestore.client()
     user_ref = db.collection('users').document(uid)
     
@@ -304,7 +304,7 @@ async def update_user_moderator(uid: str, req: UserModeratorRequest, admin: dict
     )
     return {"status": "success", "message": f"Moderator status for {uid} set to {req.isModerator}."}
 
-@router.post("/users/{uid}/warn")
+@router.post("/users/{uid}/warnings")
 async def warn_user(uid: str, req: UserWarnRequest, admin: dict = Depends(verify_admin)):
     db = firestore.client()
     user_ref = db.collection('users').document(uid)

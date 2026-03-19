@@ -148,6 +148,11 @@ class ChatService {
   }) async {
     try {
       final reporterId = await getActiveId();
+      
+      if (reporterId == senderId) {
+        debugPrint('Self-reporting blocked in frontend.');
+        return false;
+      }
 
       // Use an unauthenticated client for reports if guest, but BackendService
       // uses authenticated if available. Reports endpoint is public anyway.
