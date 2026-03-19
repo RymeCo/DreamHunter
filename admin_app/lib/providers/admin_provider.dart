@@ -9,12 +9,37 @@ class AdminProvider with ChangeNotifier {
   bool _isLoadingStats = false;
   String? _statsErrorMessage;
 
+  Map<String, dynamic>? _currentUserProfile;
+  bool _isLoadingProfile = false;
+
   Map<String, dynamic>? get statsSummary => _statsSummary;
   bool get isLoadingStats => _isLoadingStats;
   String? get statsErrorMessage => _statsErrorMessage;
 
+  Map<String, dynamic>? get currentUserProfile => _currentUserProfile;
+  bool get isAdmin => _currentUserProfile?['isAdmin'] == true;
+  bool get isModerator => _currentUserProfile?['isModerator'] == true;
+
   AdminProvider() {
     _loadFromCache();
+    _fetchCurrentUserProfile();
+  }
+
+  Future<void> _fetchCurrentUserProfile() async {
+    _isLoadingProfile = true;
+    notifyListeners();
+    try {
+      final user = _adminService.currentUser;
+      if (user != null) {
+        final profile = await _adminService.getUserProfile(user.uid);
+        _currentUserProfile = profile;
+      }
+    } catch (e) {
+      debugPrint('Error fetching current user profile: $e');
+    } finally {
+      _isLoadingProfile = false;
+      notifyListeners();
+    }
   }
 
   Future<void> _loadFromCache() async {

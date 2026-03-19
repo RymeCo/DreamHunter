@@ -23,21 +23,55 @@ class _AutoModScreenState extends State<AutoModScreen> {
   num? _localStrike2DurationHours;
   String? _localStrike3Action;
   num? _localStrike3DurationHours;
+  String? _localStrike4Action;
+  num? _localStrike4DurationHours;
+
+  // Moderator Permissions local state
+  bool? _localModCanHide;
+  bool? _localModCanWarn;
+  bool? _localModCanMute;
 
   void _updateConfig(Map<String, dynamic> currentData) async {
     // Combine local state with current data from DB
     final Map<String, dynamic> configToUpdate = {
-      'moderationLevel': _localModerationLevel ?? currentData['moderationLevel'] ?? 'none',
-      'decayDays': (_localDecayDays ?? currentData['decayDays'] as num? ?? 30).toInt(),
-      'strike1Action': _localStrike1Action ?? currentData['strike1Action'] ?? 'mute',
-      'strike1DurationHours': (_localStrike1DurationHours ?? currentData['strike1DurationHours'] as num? ?? dataOrLegacy(currentData, 'strike1MuteHours', 1)).toInt(),
-      'strike2Action': _localStrike2Action ?? currentData['strike2Action'] ?? 'mute',
-      'strike2DurationHours': (_localStrike2DurationHours ?? currentData['strike2DurationHours'] as num? ?? dataOrLegacy(currentData, 'strike2MuteHours', 24)).toInt(),
-      'strike3Action': _localStrike3Action ?? currentData['strike3Action'] ?? (currentData['strike3Ban'] == true ? 'ban' : 'mute'),
-      'strike3DurationHours': (_localStrike3DurationHours ?? currentData['strike3DurationHours'] as num? ?? 8760).toInt(),
+      'moderationLevel':
+          _localModerationLevel ?? currentData['moderationLevel'] ?? 'none',
+      'decayDays':
+          (_localDecayDays ?? currentData['decayDays'] as num? ?? 30).toInt(),
+      'strike1Action':
+          _localStrike1Action ?? currentData['strike1Action'] ?? 'mute',
+      'strike1DurationHours': (_localStrike1DurationHours ??
+              currentData['strike1DurationHours'] as num? ??
+              dataOrLegacy(currentData, 'strike1MuteHours', 1))
+          .toInt(),
+      'strike2Action':
+          _localStrike2Action ?? currentData['strike2Action'] ?? 'mute',
+      'strike2DurationHours': (_localStrike2DurationHours ??
+              currentData['strike2DurationHours'] as num? ??
+              dataOrLegacy(currentData, 'strike2MuteHours', 24))
+          .toInt(),
+      'strike3Action': _localStrike3Action ??
+          currentData['strike3Action'] ??
+          (currentData['strike3Ban'] == true ? 'ban' : 'mute'),
+      'strike3DurationHours': (_localStrike3DurationHours ??
+              currentData['strike3DurationHours'] as num? ??
+              8760)
+          .toInt(),
+      'strike4Action':
+          _localStrike4Action ?? currentData['strike4Action'] ?? 'mute',
+      'strike4DurationHours': (_localStrike4DurationHours ??
+              currentData['strike4DurationHours'] as num? ??
+              24)
+          .toInt(),
+      // Moderator Permissions
+      'modCanHideMessages':
+          _localModCanHide ?? currentData['modCanHideMessages'] ?? true,
+      'modCanWarn': _localModCanWarn ?? currentData['modCanWarn'] ?? true,
+      'modCanMute': _localModCanMute ?? currentData['modCanMute'] ?? true,
     };
-    
-    configToUpdate['autoModEnabled'] = configToUpdate['moderationLevel'] != 'none';
+
+    configToUpdate['autoModEnabled'] =
+        configToUpdate['moderationLevel'] != 'none';
 
     final success = await _adminService.updateAutoModConfig(configToUpdate);
 
@@ -58,6 +92,11 @@ class _AutoModScreenState extends State<AutoModScreen> {
           _localStrike2DurationHours = null;
           _localStrike3Action = null;
           _localStrike3DurationHours = null;
+          _localStrike4Action = null;
+          _localStrike4DurationHours = null;
+          _localModCanHide = null;
+          _localModCanWarn = null;
+          _localModCanMute = null;
         });
       }
     }
@@ -243,6 +282,32 @@ class _AutoModScreenState extends State<AutoModScreen> {
                       (val) => setState(() => _localStrike3DurationHours = val),
                     ),
 
+                    const Divider(height: 20, color: Colors.white10),
+
+                    const Text(
+                      'Manual Warning Escalation',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.yellowAccent),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Configure automatic action when a player receives multiple manual warnings (Warn feature).',
+                      style: TextStyle(fontSize: 12, color: Colors.white60),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildStrikeConfig(
+                      4,
+                      _localStrike4Action ?? data['strike4Action'] ?? 'mute',
+                      _localStrike4DurationHours ??
+                          (data['strike4DurationHours'] as num? ?? 24),
+                      data,
+                      (val) => setState(() => _localStrike4Action = val),
+                      (val) => setState(() => _localStrike4DurationHours = val),
+                      max: 8760,
+                    ),
+
                     const Divider(height: 40, color: Colors.white24),
 
                     const Text(
@@ -264,6 +329,57 @@ class _AutoModScreenState extends State<AutoModScreen> {
                         setState(() => _localDecayDays = val);
                         _updateConfig(data);
                       },
+                    ),
+
+                    const Divider(height: 40, color: Colors.white24),
+
+                    const Text(
+                      'Moderator Permissions',
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orangeAccent),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Toggle specific powers granted to players with the Moderator role.',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 16),
+                    SwitchListTile(
+                      title: const Text('Can Hide Messages'),
+                      subtitle: const Text(
+                          'Allows moderators to hide any player message from the chat.'),
+                      value: _localModCanHide ??
+                          data['modCanHideMessages'] ??
+                          true,
+                      onChanged: (val) {
+                        setState(() => _localModCanHide = val);
+                        _updateConfig(data);
+                      },
+                      activeThumbColor: Colors.blueAccent,
+                    ),
+                    SwitchListTile(
+                      title: const Text('Can Issue Warnings'),
+                      subtitle: const Text(
+                          'Allows moderators to send formal warnings to players.'),
+                      value: _localModCanWarn ?? data['modCanWarn'] ?? true,
+                      onChanged: (val) {
+                        setState(() => _localModCanWarn = val);
+                        _updateConfig(data);
+                      },
+                      activeThumbColor: Colors.blueAccent,
+                    ),
+                    SwitchListTile(
+                      title: const Text('Can Mute Players'),
+                      subtitle: const Text(
+                          'Allows moderators to apply chat mutes to players.'),
+                      value: _localModCanMute ?? data['modCanMute'] ?? true,
+                      onChanged: (val) {
+                        setState(() => _localModCanMute = val);
+                        _updateConfig(data);
+                      },
+                      activeThumbColor: Colors.blueAccent,
                     ),
                   ],
                 ),
