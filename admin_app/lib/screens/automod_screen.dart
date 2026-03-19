@@ -74,52 +74,54 @@ class _AutoModScreenState extends State<AutoModScreen> {
     Map<String, dynamic> currentData,
     Function(String) onActionChanged,
     Function(int) onDurationChanged, {
-    double max = 720, // Default to 30 days
+    int max = 8760,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            SizedBox(width: 150, child: Text('Strike $strikeNum Action', style: const TextStyle(fontWeight: FontWeight.bold))),
-            DropdownButton<String>(
-              value: action,
-              dropdownColor: const Color(0xFF16162F),
-              items: const [
-                DropdownMenuItem(value: 'mute', child: Text('Chat Mute')),
-                DropdownMenuItem(value: 'ban', child: Text('Global Chat Ban')),
-              ],
-              onChanged: (val) {
-                if (val != null) {
-                  onActionChanged(val);
-                  _updateConfig(currentData);
-                }
-              },
+            Expanded(
+              flex: 2,
+              child: Text(
+                'Strike $strikeNum Action',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 3,
+              child: DropdownButton<String>(
+                value: action,
+                isExpanded: true,
+                dropdownColor: const Color(0xFF16162F),
+                items: const [
+                  DropdownMenuItem(value: 'mute', child: Text('Chat Mute')),
+                  DropdownMenuItem(value: 'ban', child: Text('Global Chat Ban')),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    onActionChanged(val);
+                    _updateConfig(currentData);
+                  }
+                },
+              ),
             ),
           ],
         ),
-        if (action == 'mute')
-          Row(
-            children: [
-              const SizedBox(width: 150, child: Text('Mute Duration (h)')),
-              Expanded(
-                child: Slider(
-                  value: duration.toDouble().clamp(1.0, max),
-                  min: 1,
-                  max: max,
-                  label: '$duration Hours',
-                  onChanged: (val) {
-                    onDurationChanged(val.toInt());
-                  },
-                  onChangeEnd: (_) => _updateConfig(currentData),
-                ),
-              ),
-              Text(
-                '$duration h',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
+        if (action == 'mute') ...[
+          const SizedBox(height: 8),
+          _AutoModInputRow(
+            label: 'Mute Duration (h)',
+            value: duration,
+            unit: 'hours',
+            max: max,
+            onChanged: (val) {
+              onDurationChanged(val);
+              _updateConfig(currentData);
+            },
           ),
+        ],
         const SizedBox(height: 16),
       ],
     );
@@ -181,25 +183,27 @@ class _AutoModScreenState extends State<AutoModScreen> {
                       style: TextStyle(color: Colors.white70),
                     ),
                     const SizedBox(height: 16),
-                    SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(value: 'none', label: Text('None')),
-                        ButtonSegment(value: 'mild', label: Text('Mild')),
-                        ButtonSegment(value: 'aggressive', label: Text('Aggressive')),
-                      ],
-                      selected: {moderationLevel},
-                      onSelectionChanged: (Set<String> newSelection) {
-                        setState(() => _localModerationLevel = newSelection.first);
-                        _updateConfig(data);
-                      },
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                          (states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return Colors.redAccent.withValues(alpha: 0.3);
-                            }
-                            return Colors.transparent;
-                          },
+                    FittedBox(
+                      child: SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(value: 'none', label: Text('None')),
+                          ButtonSegment(value: 'mild', label: Text('Mild')),
+                          ButtonSegment(value: 'aggressive', label: Text('Aggressive')),
+                        ],
+                        selected: {moderationLevel},
+                        onSelectionChanged: (Set<String> newSelection) {
+                          setState(() => _localModerationLevel = newSelection.first);
+                          _updateConfig(data);
+                        },
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                            (states) {
+                              if (states.contains(WidgetState.selected)) {
+                                return Colors.redAccent.withValues(alpha: 0.3);
+                              }
+                              return Colors.transparent;
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -235,7 +239,6 @@ class _AutoModScreenState extends State<AutoModScreen> {
                       data,
                       (val) => setState(() => _localStrike3Action = val),
                       (val) => setState(() => _localStrike3DurationHours = val),
-                      max: 8760, // Allow up to 1 year for Strike 3
                     ),
 
                     const Divider(height: 40, color: Colors.white24),
@@ -250,26 +253,15 @@ class _AutoModScreenState extends State<AutoModScreen> {
                       style: TextStyle(color: Colors.white70),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const SizedBox(width: 150, child: Text('Decay Time (Days)')),
-                        Expanded(
-                          child: Slider(
-                            value: decayDays.toDouble(),
-                            min: 1,
-                            max: 365,
-                            label: '$decayDays Days',
-                            onChanged: (val) {
-                              setState(() => _localDecayDays = val.toInt());
-                            },
-                            onChangeEnd: (_) => _updateConfig(data),
-                          ),
-                        ),
-                        Text(
-                          '$decayDays d',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
+                    _AutoModInputRow(
+                      label: 'Decay Time (Days)',
+                      value: decayDays,
+                      unit: 'days',
+                      max: 365,
+                      onChanged: (val) {
+                        setState(() => _localDecayDays = val);
+                        _updateConfig(data);
+                      },
                     ),
                   ],
                 ),
@@ -278,6 +270,85 @@ class _AutoModScreenState extends State<AutoModScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _AutoModInputRow extends StatefulWidget {
+  final String label;
+  final int value;
+  final String unit;
+  final int max;
+  final Function(int) onChanged;
+
+  const _AutoModInputRow({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.max,
+    required this.onChanged,
+  });
+
+  @override
+  State<_AutoModInputRow> createState() => _AutoModInputRowState();
+}
+
+class _AutoModInputRowState extends State<_AutoModInputRow> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value.toString());
+  }
+
+  @override
+  void didUpdateWidget(_AutoModInputRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value && _controller.text != widget.value.toString()) {
+      _controller.text = widget.value.toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Text(widget.label),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 80,
+          child: TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: Colors.black26,
+            ),
+            onSubmitted: (val) {
+              final int? newVal = int.tryParse(val);
+              if (newVal != null) {
+                widget.onChanged(newVal.clamp(1, widget.max));
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(flex: 1, child: Text(widget.unit)),
+      ],
     );
   }
 }

@@ -62,6 +62,20 @@ async def root():
     """Health check endpoint for Render deployment."""
     return {"status": "ok", "message": "DreamHunter API is running"}
 
+@app.get("/health")
+async def health_check():
+    """Detailed health check for monitoring."""
+    try:
+        # Check Firestore connectivity
+        db.collection('metadata').document('system_config').get()
+        return {
+            "status": "ok",
+            "db": "up",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Service Unavailable: {str(e)}")
+
 # Enable CORS for Flutter web/local development
 app.add_middleware(
     CORSMiddleware,

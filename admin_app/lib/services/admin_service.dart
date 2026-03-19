@@ -217,6 +217,27 @@ class AdminService {
     }
   }
 
+  // --- Stats ---
+
+  Future<Map<String, dynamic>?> getStatsSummary() async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$baseUrl/admin/stats/summary'),
+        headers: await getAuthHeaders(),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorMsg = 'Server returned ${response.statusCode}: ${response.body}';
+        debugPrint(errorMsg);
+        throw Exception(errorMsg);
+      }
+    } catch (e) {
+      debugPrint('Error getting stats summary: $e');
+      rethrow;
+    }
+  }
+
   // --- Audit Logs ---
 
   Future<List<dynamic>> getAuditLogs() async {
@@ -276,6 +297,30 @@ class AdminService {
       return true;
     } catch (e) {
       debugPrint('Error sending system broadcast: $e');
+      return false;
+    }
+  }
+
+  // --- Batch Actions ---
+
+  Future<bool> performBatchAction(
+    List<String> uids,
+    String action, {
+    Map<String, dynamic>? params,
+  }) async {
+    try {
+      final response = await _client.patch(
+        Uri.parse('$baseUrl/admin/users/batch-action'),
+        headers: await getAuthHeaders(),
+        body: json.encode({
+          'uids': uids,
+          'action': action,
+          if (params != null) 'params': params,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error performing batch action: $e');
       return false;
     }
   }
