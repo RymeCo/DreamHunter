@@ -79,12 +79,15 @@ class AdminService {
     String? query,
     bool? isBanned,
     bool? isAdmin,
+    int limit = 20,
+    String? lastId,
   }) async {
     try {
-      String url = '$baseUrl/admin/players/search?';
+      String url = '$baseUrl/admin/players/search?limit=$limit&';
       if (query != null && query.isNotEmpty) url += 'query=$query&';
       if (isBanned != null) url += 'isBanned=$isBanned&';
       if (isAdmin != null) url += 'isAdmin=$isAdmin&';
+      if (lastId != null) url += 'lastId=$lastId&';
 
       final response = await _client.get(
         Uri.parse(url),
@@ -238,7 +241,8 @@ class AdminService {
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
-        final errorMsg = 'Server returned ${response.statusCode}: ${response.body}';
+        final errorMsg =
+            'Server returned ${response.statusCode}: ${response.body}';
         debugPrint(errorMsg);
         throw Exception(errorMsg);
       }
@@ -286,8 +290,11 @@ class AdminService {
     required bool currentAdminLiked,
     required bool currentModLiked,
   }) async {
-    final msgRef =
-        _db.collection('chats').doc(region).collection('messages').doc(messageId);
+    final msgRef = _db
+        .collection('chats')
+        .doc(region)
+        .collection('messages')
+        .doc(messageId);
 
     if (isAdmin) {
       await msgRef.update({'adminLiked': !currentAdminLiked});
@@ -301,8 +308,11 @@ class AdminService {
     String messageId, {
     required bool currentDisliked,
   }) async {
-    final msgRef =
-        _db.collection('chats').doc(region).collection('messages').doc(messageId);
+    final msgRef = _db
+        .collection('chats')
+        .doc(region)
+        .collection('messages')
+        .doc(messageId);
     await msgRef.update({'adminDisliked': !currentDisliked});
   }
 
@@ -352,13 +362,27 @@ class AdminService {
         "isSystemWarning": true,
         "timestamp": FieldValue.serverTimestamp(),
       };
-      
-      await _db.collection('chats').doc(region).collection('messages').add(newMsg);
+
+      await _db
+          .collection('chats')
+          .doc(region)
+          .collection('messages')
+          .add(newMsg);
       return true;
     } catch (e) {
       debugPrint('Error sending system broadcast: $e');
       return false;
     }
+  }
+
+  Future<bool> sendSystemBroadcastToAllRegions(String text) async {
+    final regions = ['english', 'spanish', 'chinese', 'russian', 'tagalog'];
+    bool allSuccess = true;
+    for (final region in regions) {
+      final success = await sendSystemBroadcastToChat(region, text);
+      if (!success) allSuccess = false;
+    }
+    return allSuccess;
   }
 
   // --- Batch Actions ---
@@ -372,11 +396,7 @@ class AdminService {
       final response = await _client.patch(
         Uri.parse('$baseUrl/admin/users/batch-action'),
         headers: await getAuthHeaders(),
-        body: json.encode({
-          'uids': uids,
-          'action': action,
-          'params':? params,
-        }),
+        body: json.encode({'uids': uids, 'action': action, 'params': params}),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -385,4 +405,3 @@ class AdminService {
     }
   }
 }
-

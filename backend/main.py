@@ -1,6 +1,7 @@
 import os
 import json
-from datetime import datetime, timezone
+import re
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Any
 
 from fastapi import FastAPI, HTTPException, Depends, Header
@@ -159,6 +160,98 @@ async def patch_user_display_name(name: str, decoded_token: dict = Depends(verif
     uid = decoded_token['uid']
     db.collection('users').document(uid).update({"displayName": name})
     return {"status": "success", "displayName": name}
+
+@app.post("/chats/{region}/messages")
+async def post_chat_message(region: str, msg: ChatMessage, decoded_token: dict = Depends(verify_firebase_token)):
+    uid = decoded_token['uid']
+    now = datetime.now(timezone.utc)
+    
+    user_ref = db.collection('users').document(uid)
+    user_doc = user_ref.get()
+    
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_data = user_doc.to_dict()
+    
+    # Check if banned
+    if user_data.get('isBanned'):
+        banned_until = user_data.get('bannedUntil')
+        if not banned_until or banned_until.replace(tzinfo=timezone.utc) > now:
+            raise HTTPException(status_code=403, detail="You are banned.")
+            
+    # Check if muted
+    muted_until = user_data.get('mutedUntil')
+    if muted_until:
+        if isinstance(muted_until, str):
+            muted_until = datetime.fromisoformat(muted_until.replace('Z', '+00:00'))
+        
+        if muted_until.replace(tzinfo=timezone.utc) > now:
+            raise HTTPException(status_code=403, detail=f"You are muted until {muted_until.isoformat()}")
+
+    # --- Auto-Mod Logic ---
+    config_doc = db.collection('metadata').document('moderation_config').get()
+    config = config_doc.to_dict() if config_doc.exists else {}
+    
+    banned_words = config.get('bannedWords', [])
+    text = msg.text
+    censored_text = text
+    hit_blacklist = False
+    
+    for word in banned_words:
+        if word.lower() in text.lower():
+            hit_blacklist = True
+            # Simple censorship: replace word with asterisks
+            censored_text = re.sub(re.escape(word), '*' * len(word), censored_text, flags=re.IGNORECASE)
+
+    if hit_blacklist:
+        # Strike logic
+        warnings = user_data.get('warnings', [])
+        
+        # Decay logic: remove old warnings if decayDays is set
+        decay_days = config.get('decayDays', 30)
+        valid_warnings = []
+        for w in warnings:
+            w_time = datetime.fromisoformat(w['timestamp'].replace('Z', '+00:00'))
+            if (now - w_time).days < decay_days:
+                valid_warnings.append(w)
+        
+        new_warning = {
+            "reason": "Automod: Blacklisted word used.",
+            "timestamp": now.isoformat(),
+            "adminUid": "SYSTEM_AUTOMOD"
+        }
+        valid_warnings.append(new_warning)
+        user_ref.update({"warnings": valid_warnings})
+        
+        # Check strike count for automatic actions
+        strike_count = len(valid_warnings)
+        if strike_count >= 3:
+            # Auto-ban or Auto-mute based on config
+            action = config.get('strike3Action', 'mute')
+            duration = config.get('strike3DurationHours', 24)
+            until = now + timedelta(hours=duration)
+            
+            if action == 'ban':
+                user_ref.update({"isBanned": True, "bannedUntil": until})
+            else:
+                user_ref.update({"mutedUntil": until})
+                
+    # Save message to Firestore
+    message_data = {
+        "text": censored_text,
+        "senderUid": uid,
+        "senderName": user_data.get('displayName', 'Dreamer'),
+        "senderDevice": msg.senderDevice,
+        "timestamp": firestore.SERVER_TIMESTAMP,
+        "isAdmin": user_data.get('isAdmin', False),
+        "isModerator": user_data.get('isModerator', False),
+        "region": region
+    }
+    
+    db.collection('chats').document(region).collection('messages').add(message_data)
+    
+    return {"status": "success", "censored": hit_blacklist}
 
 @app.post("/reports")
 async def report_content(report: ReportRequest):

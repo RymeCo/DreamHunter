@@ -5,7 +5,11 @@ import 'package:flutter/services.dart';
 enum SnackBarType { success, error, info }
 
 /// Utility to copy text to clipboard and show a snackbar notification.
-void copyToClipboardWithFeedback(BuildContext context, String text, String label) {
+void copyToClipboardWithFeedback(
+  BuildContext context,
+  String text,
+  String label,
+) {
   Clipboard.setData(ClipboardData(text: text));
   showCustomSnackBar(context, '$label copied!', type: SnackBarType.info);
 }

@@ -1,9 +1,8 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../services/admin_service.dart';
-import '../widgets/liquid_glass_dialog.dart';
-import '../widgets/custom_snackbar.dart';
+import '../widgets/admin_ui_components.dart';
 
 class AuditScreen extends StatefulWidget {
   const AuditScreen({super.key});
@@ -14,427 +13,195 @@ class AuditScreen extends StatefulWidget {
 
 class _AuditScreenState extends State<AuditScreen> {
   final AdminService _adminService = AdminService();
-  List<dynamic> _allLogs = [];
-  List<dynamic> _filteredLogs = [];
-  bool _isLoading = false;
-  String _searchQuery = '';
-  String _selectedCategory = 'All';
-
-  bool _isLive = false;
-  Timer? _liveTimer;
-
-  final List<String> _categories = [
-    'All',
+  String _selectedAction = 'ALL';
+  final List<String> _actionTypes = [
+    'ALL',
     'USER_BANNED',
     'USER_UNBANNED',
     'USER_MUTED',
     'USER_UNMUTED',
-    'MAINTENANCE_TOGGLE',
+    'USER_WARNED',
+    'MODERATOR_ROLE_UPDATE',
     'GLOBAL_BROADCAST',
-    'REPORT_STATUS_UPDATE',
-    'AUTOMOD_CONFIG_UPDATE',
+    'MAINTENANCE_TOGGLE'
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _fetchLogs();
-  }
-
-  @override
-  void dispose() {
-    _liveTimer?.cancel();
-    super.dispose();
-  }
-
-  void _toggleLive(bool val) {
-    setState(() => _isLive = val);
-    if (_isLive) {
-      _liveTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-        _fetchLogs(silent: true);
-      });
-    } else {
-      _liveTimer?.cancel();
-    }
-  }
-
-  Future<void> _fetchLogs({bool silent = false}) async {
-    if (!silent) setState(() => _isLoading = true);
-    try {
-      final results = await _adminService.getAuditLogs();
-      if (!mounted) return;
-      setState(() {
-        _allLogs = results;
-        _applyFilters();
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-    }
-  }
-
-  void _applyFilters() {
-    setState(() {
-      _filteredLogs = _allLogs.where((log) {
-        final action = log['action']?.toString() ?? '';
-        final details = log['details']?.toString().toLowerCase() ?? '';
-        final admin = log['adminEmail']?.toString().toLowerCase() ?? '';
-        final target = log['target']?.toString().toLowerCase() ?? '';
-        final targetName = log['targetName']?.toString().toLowerCase() ?? '';
-        final targetEmail = log['targetEmail']?.toString().toLowerCase() ?? '';
-
-        final matchesCategory =
-            _selectedCategory == 'All' || action == _selectedCategory;
-        final matchesSearch =
-            _searchQuery.isEmpty ||
-            details.contains(_searchQuery.toLowerCase()) ||
-            admin.contains(_searchQuery.toLowerCase()) ||
-            target.contains(_searchQuery.toLowerCase()) ||
-            targetName.contains(_searchQuery.toLowerCase()) ||
-            targetEmail.contains(_searchQuery.toLowerCase());
-
-        return matchesCategory && matchesSearch;
-      }).toList();
-    });
-  }
-
-  void _showLogDetails(Map<String, dynamic> log) {
-    final dateStr = log['timestamp'] ?? '';
-    String formattedDate = dateStr;
-    try {
-      final dt = DateTime.parse(dateStr).toLocal();
-      formattedDate = DateFormat('MMMM d, yyyy - h:mm:ss a').format(dt);
-    } catch (_) {}
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => Center(
-        child: LiquidGlassDialog(
-          width: 450,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Log Details',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const Divider(color: Colors.white24),
-              const SizedBox(height: 16),
-
-              _detailRow('Action', log['action'] ?? 'UNKNOWN', isBadge: true),
-              _detailRow('Date/Time', formattedDate),
-              _detailRow(
-                'Administrator',
-                log['adminEmail'] ?? log['adminUid'] ?? 'System',
-              ),
-
-              if (log['target'] != null) ...[
-                _detailRow(
-                  'Target User (Name)',
-                  log['targetName'] ?? 'Unknown',
-                ),
-                _detailRow(
-                  'Target User (Email)',
-                  log['targetEmail'] ?? 'No Email',
-                ),
-                _detailRow('Target User (UID)', log['target'], showCopy: true),
-              ],
-
-              const SizedBox(height: 16),
-              const Text(
-                'Full Details:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.black38,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
-                ),
-                child: Text(
-                  log['details'] ?? 'No extra details available.',
-                  style: const TextStyle(fontSize: 14, height: 1.5),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _detailRow(
-    String label,
-    String value, {
-    bool isBadge = false,
-    bool showCopy = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.white54,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              if (isBadge)
-                _buildActionBadge(value)
-              else
-                Expanded(
-                  child: Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-
-              if (showCopy)
-                IconButton(
-                  icon: const Icon(
-                    Icons.copy,
-                    size: 18,
-                    color: Colors.blueAccent,
-                  ),
-                  onPressed: () {
-                    copyToClipboardWithFeedback(context, value, 'ID');
-                  },
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Audit Logs',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-              Row(
-                children: [
-                  const Text('Live',
-                      style: TextStyle(color: Colors.greenAccent)),
-                  Switch(
-                    value: _isLive,
-                    onChanged: _toggleLive,
-                    activeThumbColor: Colors.greenAccent,
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.refresh,
-                      size: 28,
-                      color: Colors.amberAccent,
-                    ),
-                    onPressed: () => _fetchLogs(),
-                    tooltip: 'Refresh Logs',
-                  ),
-                ],
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AdminHeader(
+          title: 'System Audit Logs',
+          actions: [
+            _buildActionFilter(),
+          ],
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _buildAuditList(),
           ),
-          const SizedBox(height: 16),
+        ),
+      ],
+    );
+  }
 
-          // Filters & Search
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  decoration: const InputDecoration(
-                    labelText: 'Search logs...',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (val) {
-                    _searchQuery = val;
-                    _applyFilters();
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              DropdownButton<String>(
-                value: _selectedCategory,
-                items: _categories
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() => _selectedCategory = val);
-                    _applyFilters();
-                  }
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredLogs.isEmpty
-                ? const Center(child: Text('No matching audit logs found.'))
-                : ListView.builder(
-                    itemCount: _filteredLogs.length,
-                    itemBuilder: (context, index) {
-                      final log = _filteredLogs[index];
-                      final dateStr = log['timestamp'] ?? '';
-                      String formattedDate = dateStr;
-                      try {
-                        final dt = DateTime.parse(dateStr).toLocal();
-                        formattedDate = DateFormat('MMM d, h:mm a').format(dt);
-                      } catch (_) {}
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: GestureDetector(
-                          onTap: () => _showLogDetails(log),
-                          child: LiquidGlassDialog(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: _buildActionBadge(
-                                          log['action'] ?? 'UNKNOWN',
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      formattedDate,
-                                      style: const TextStyle(
-                                        color: Colors.white54,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Admin: ${log['adminEmail'] ?? log['adminUid'] ?? 'System'}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blueAccent,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (log['target'] != null) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Target: ${log['target']}',
-                                    style: const TextStyle(
-                                      color: Colors.orangeAccent,
-                                      fontSize: 13,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                                const SizedBox(height: 8),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black26,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    log['details'] ?? 'No details provided.',
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
+  Widget _buildActionFilter() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F0F1E),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF2A2A4A)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedAction,
+          dropdownColor: const Color(0xFF1E1E3A),
+          items: _actionTypes
+              .map((type) => DropdownMenuItem(
+                  value: type,
+                  child: Text(type.replaceAll('_', ' '),
+                      style: const TextStyle(
+                          fontSize: 10, fontWeight: FontWeight.bold))))
+              .toList(),
+          onChanged: (val) {
+            if (val != null) setState(() => _selectedAction = val);
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildActionBadge(String action) {
-    Color color;
-    if (action.contains('BAN')) {
-      color = Colors.redAccent;
-    } else if (action.contains('MUTE')) {
-      color = Colors.orangeAccent;
-    } else if (action.contains('MAINTENANCE')) {
-      color = Colors.blueAccent;
-    } else if (action.contains('BROADCAST')) {
-      color = Colors.purpleAccent;
-    } else {
-      color = Colors.greenAccent;
+  Widget _buildAuditList() {
+    return FutureBuilder<List<dynamic>>(
+      future: _adminService.getAuditLogs(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final allLogs = snapshot.data ?? [];
+        final filteredLogs = _selectedAction == 'ALL'
+            ? allLogs
+            : allLogs.where((log) => log['action'] == _selectedAction).toList();
+
+        if (filteredLogs.isEmpty) {
+          return const Center(
+              child: Text('No audit logs found.',
+                  style: TextStyle(color: Colors.white12)));
+        }
+
+        return ListView.builder(
+          itemCount: filteredLogs.length,
+          padding: const EdgeInsets.only(bottom: 24),
+          itemBuilder: (context, index) {
+            final data = filteredLogs[index] as Map<String, dynamic>;
+            return _auditItem(data);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _auditItem(Map<String, dynamic> data) {
+    DateTime timestamp = DateTime.now();
+    if (data['timestamp'] != null) {
+      if (data['timestamp'] is String) {
+        timestamp = DateTime.tryParse(data['timestamp']) ?? DateTime.now();
+      } else if (data['timestamp'] is Timestamp) {
+        timestamp = (data['timestamp'] as Timestamp).toDate();
+      }
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        action,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
+    final dateStr = DateFormat('MMM d, HH:mm:ss').format(timestamp);
+    final action = data['action'] ?? 'UNKNOWN';
+    final adminEmail = data['adminEmail'] ?? 'System';
+    final targetName = data['targetName'] ?? 'Global';
+    final details = data['details'] ?? 'No extra details';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AdminCard(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 40,
+              decoration: BoxDecoration(
+                color: _getActionColor(action),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        action.replaceAll('_', ' '),
+                        style: TextStyle(
+                          color: _getActionColor(action),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(dateStr,
+                          style: const TextStyle(
+                              color: Colors.white24, fontSize: 11)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      Text(adminEmail,
+                          style: const TextStyle(
+                              color: Colors.amberAccent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13)),
+                      const Text('->',
+                          style: TextStyle(color: Colors.white38, fontSize: 13)),
+                      Text(targetName,
+                          style: const TextStyle(
+                              color: Colors.white70,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    details,
+                    style: const TextStyle(
+                        color: Colors.white38,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        overflow: TextOverflow.ellipsis,
       ),
     );
+  }
+
+  Color _getActionColor(String action) {
+    if (action.contains('BAN')) return Colors.redAccent;
+    if (action.contains('MUTE')) return Colors.orangeAccent;
+    if (action.contains('UNBAN')) return Colors.greenAccent;
+    if (action.contains('UNMUTE')) return Colors.blueAccent;
+    if (action.contains('WARN')) return Colors.yellowAccent;
+    if (action.contains('BROADCAST')) return Colors.purpleAccent;
+    if (action.contains('ROLE')) return Colors.cyanAccent;
+    return Colors.white24;
   }
 }

@@ -17,6 +17,12 @@ class UserMuteRequest(BaseModel):
     durationHours: Optional[int] = None # 0 to unmute
     until: Optional[str] = None # ISO format string for custom durations
 
+class UserModeratorRequest(BaseModel):
+    isModerator: bool
+
+class UserWarnRequest(BaseModel):
+    reason: str
+
 class MaintenanceRequest(BaseModel):
     chatMaintenance: Optional[bool] = None
     shopMaintenance: Optional[bool] = None
@@ -29,6 +35,7 @@ class AutoModConfigRequest(BaseModel):
     autoModEnabled: Optional[bool] = None
     moderationLevel: Optional[str] = None
     decayDays: Optional[int] = None
+    bannedWords: Optional[List[str]] = None
     strike1Action: Optional[str] = None
     strike1DurationHours: Optional[int] = None
     strike2Action: Optional[str] = None
@@ -101,20 +108,25 @@ async def search_players(
     query: Optional[str] = None, 
     isBanned: Optional[bool] = None,
     isAdmin: Optional[bool] = None,
+    limit: int = 20,
+    lastId: Optional[str] = None,
     admin: dict = Depends(verify_admin)
 ):
-    """Advanced player search with filtering."""
+    """Advanced player search with filtering and pagination."""
     db = firestore.client()
-    users_ref = db.collection('users')
+    users_ref = db.collection('users').order_by("uid")
     
-    # Apply indexed filters directly in Firestore query
     if isBanned is not None:
         users_ref = users_ref.where("isBanned", "==", isBanned)
     if isAdmin is not None:
         users_ref = users_ref.where("isAdmin", "==", isAdmin)
-        
-    # Limit base results to prevent overhead
-    docs = list(users_ref.limit(200).stream())
+    
+    if lastId:
+        last_doc = db.collection('users').document(lastId).get()
+        if last_doc.exists:
+            users_ref = users_ref.start_after(last_doc)
+
+    docs = list(users_ref.limit(limit).stream())
     results = []
     
     for d in docs:
@@ -124,7 +136,6 @@ async def search_players(
             
         if query:
             q = query.lower()
-            # If search query provided, filter in-memory for flexible match
             if q not in u.get('displayName', '').lower() and \
                q not in u.get('email', '').lower() and \
                q not in u.get('uid', '').lower():
@@ -160,6 +171,11 @@ async def ban_user(uid: str, req: UserBanRequest, admin: dict = Depends(verify_a
         raise HTTPException(status_code=404, detail="User not found")
     
     target_data = user_doc.to_dict()
+    
+    # --- Target Immunity: Superadmins cannot be moderated ---
+    if target_data.get('isAdmin') is True:
+        raise HTTPException(status_code=403, detail="Target is a Superadmin and immune to moderation.")
+        
     target_name = target_data.get('displayName', 'Unknown')
     target_email = target_data.get('email', 'No Email')
 
@@ -204,6 +220,11 @@ async def mute_user(uid: str, req: UserMuteRequest, admin: dict = Depends(verify
         raise HTTPException(status_code=404, detail="User not found")
     
     target_data = user_doc.to_dict()
+    
+    # --- Target Immunity: Superadmins cannot be moderated ---
+    if target_data.get('isAdmin') is True:
+        raise HTTPException(status_code=403, detail="Target is a Superadmin and immune to moderation.")
+        
     target_name = target_data.get('displayName', 'Unknown')
     target_email = target_data.get('email', 'No Email')
 
@@ -247,6 +268,82 @@ async def mute_user(uid: str, req: UserMuteRequest, admin: dict = Depends(verify
         "message": f"User mute updated.",
         "mutedUntil": update_data.get("mutedUntil").isoformat() if update_data.get("mutedUntil") else None
     }
+
+@router.patch("/users/{uid}/moderator")
+async def update_user_moderator(uid: str, req: UserModeratorRequest, admin: dict = Depends(verify_admin)):
+    db = firestore.client()
+    user_ref = db.collection('users').document(uid)
+    
+    user_doc = user_ref.get()
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    target_data = user_doc.to_dict()
+    
+    # --- Target Immunity: Superadmins cannot be moderated ---
+    if target_data.get('isAdmin') is True:
+        raise HTTPException(status_code=403, detail="Target is a Superadmin and immune to moderation.")
+        
+    target_name = target_data.get('displayName', 'Unknown')
+    target_email = target_data.get('email', 'No Email')
+
+    user_ref.update({
+        "isModerator": req.isModerator,
+        "updatedAt": firestore.SERVER_TIMESTAMP
+    })
+    
+    status = "GRANTED" if req.isModerator else "REVOKED"
+    log_audit(
+        admin_uid=admin['uid'], 
+        admin_email=admin.get('email'),
+        action="MODERATOR_ROLE_UPDATE", 
+        target=uid, 
+        target_name=target_name,
+        target_email=target_email,
+        details=f"Moderator powers {status.lower()} by Admin."
+    )
+    return {"status": "success", "message": f"Moderator status for {uid} set to {req.isModerator}."}
+
+@router.post("/users/{uid}/warn")
+async def warn_user(uid: str, req: UserWarnRequest, admin: dict = Depends(verify_admin)):
+    db = firestore.client()
+    user_ref = db.collection('users').document(uid)
+    
+    user_doc = user_ref.get()
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    target_data = user_doc.to_dict()
+    
+    # --- Target Immunity: Superadmins cannot be moderated ---
+    if target_data.get('isAdmin') is True:
+        raise HTTPException(status_code=403, detail="Target is a Superadmin and immune to moderation.")
+        
+    target_name = target_data.get('displayName', 'Unknown')
+    target_email = target_data.get('email', 'No Email')
+
+    warning = {
+        "reason": req.reason,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "adminUid": admin['uid']
+    }
+    
+    # Use arrayUnion to append to the warnings list
+    user_ref.update({
+        "warnings": firestore.ArrayUnion([warning]),
+        "updatedAt": firestore.SERVER_TIMESTAMP
+    })
+    
+    log_audit(
+        admin_uid=admin['uid'], 
+        admin_email=admin.get('email'),
+        action="USER_WARNED", 
+        target=uid, 
+        target_name=target_name,
+        target_email=target_email,
+        details=f"Warning issued: {req.reason}"
+    )
+    return {"status": "success", "message": f"Warning issued to user {uid}."}
 
 @router.patch("/maintenance")
 async def update_maintenance(req: MaintenanceRequest, admin: dict = Depends(verify_admin)):
@@ -392,6 +489,10 @@ async def batch_action(req: BatchActionRequest, admin: dict = Depends(verify_adm
         raise HTTPException(status_code=400, detail="Invalid action")
 
     for uid in req.uids:
+        user_doc = db.collection('users').document(uid).get()
+        if user_doc.exists and user_doc.to_dict().get('isAdmin') is True:
+            continue # Skip superadmins in batch actions
+            
         batch.update(db.collection('users').document(uid), update_data)
         
     batch.commit()
