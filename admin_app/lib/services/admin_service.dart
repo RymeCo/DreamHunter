@@ -290,16 +290,22 @@ class AdminService {
     required bool currentAdminLiked,
     required bool currentModLiked,
   }) async {
-    final msgRef = _db
-        .collection('chats')
-        .doc(region)
-        .collection('messages')
-        .doc(messageId);
-
-    if (isAdmin) {
-      await msgRef.update({'adminLiked': !currentAdminLiked});
-    } else if (isModerator) {
-      await msgRef.update({'modLiked': !currentModLiked});
+    try {
+      // Logic for determining value: toggle the current state based on role
+      final bool newValue = isAdmin ? !currentAdminLiked : !currentModLiked;
+      
+      await _client.post(
+        Uri.parse('$baseUrl/admin/chats/message/action'),
+        headers: await getAuthHeaders(),
+        body: json.encode({
+          'region': region,
+          'messageId': messageId,
+          'action': 'like',
+          'value': newValue
+        }),
+      );
+    } catch (e) {
+      debugPrint('Error toggling like: $e');
     }
   }
 
@@ -308,12 +314,20 @@ class AdminService {
     String messageId, {
     required bool currentDisliked,
   }) async {
-    final msgRef = _db
-        .collection('chats')
-        .doc(region)
-        .collection('messages')
-        .doc(messageId);
-    await msgRef.update({'adminDisliked': !currentDisliked});
+    try {
+      await _client.post(
+        Uri.parse('$baseUrl/admin/chats/message/action'),
+        headers: await getAuthHeaders(),
+        body: json.encode({
+          'region': region,
+          'messageId': messageId,
+          'action': 'hide',
+          'value': !currentDisliked
+        }),
+      );
+    } catch (e) {
+      debugPrint('Error toggling dislike: $e');
+    }
   }
 
   Future<bool> sendGhostMessage(
@@ -322,26 +336,18 @@ class AdminService {
     String ghostName,
   ) async {
     try {
-      final user = _auth.currentUser;
-      if (user == null) return false;
-
-      final newMsg = {
-        "text": text,
-        "senderUid": user.uid,
-        "senderName": ghostName,
-        "senderDevice": "GhostConsole",
-        "isAdmin": false, // Ghost mode
-        "isSystemWarning": false,
-        "isGhost": true,
-        "timestamp": FieldValue.serverTimestamp(),
-      };
-
-      await _db
-          .collection('chats')
-          .doc(region)
-          .collection('messages')
-          .add(newMsg);
-      return true;
+      final response = await _client.post(
+        Uri.parse('$baseUrl/admin/chats/message/send'),
+        headers: await getAuthHeaders(),
+        body: json.encode({
+          'region': region,
+          'text': text,
+          'senderName': ghostName,
+          'isGhost': true,
+          'isSystem': false
+        }),
+      );
+      return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error sending ghost message: $e');
       return false;
@@ -350,25 +356,18 @@ class AdminService {
 
   Future<bool> sendSystemBroadcastToChat(String region, String text) async {
     try {
-      final user = _auth.currentUser;
-      if (user == null) return false;
-
-      final newMsg = {
-        "text": text,
-        "senderUid": user.uid,
-        "senderName": "System",
-        "senderDevice": "AdminConsole",
-        "isAdmin": true,
-        "isSystemWarning": true,
-        "timestamp": FieldValue.serverTimestamp(),
-      };
-
-      await _db
-          .collection('chats')
-          .doc(region)
-          .collection('messages')
-          .add(newMsg);
-      return true;
+      final response = await _client.post(
+        Uri.parse('$baseUrl/admin/chats/message/send'),
+        headers: await getAuthHeaders(),
+        body: json.encode({
+          'region': region,
+          'text': text,
+          'senderName': 'System',
+          'isGhost': false,
+          'isSystem': true
+        }),
+      );
+      return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error sending system broadcast: $e');
       return false;

@@ -48,6 +48,19 @@ class BatchActionRequest(BaseModel):
     action: str # 'ban', 'unban', 'mute', 'unmute'
     params: Optional[dict] = None
 
+class AdminChatMessageRequest(BaseModel):
+    region: str
+    text: str
+    senderName: str
+    isGhost: bool = False
+    isSystem: bool = False
+
+class MessageActionRequest(BaseModel):
+    region: str
+    messageId: str
+    action: str # 'like', 'hide'
+    value: bool
+
 # --- Dependencies ---
 
 async def verify_admin(authorization: Optional[str] = Header(None)):
@@ -512,3 +525,84 @@ async def get_audit_logs(admin: dict = Depends(verify_admin)):
     db = firestore.client()
     docs = list(db.collection('audit_logs').order_by("timestamp", direction=firestore.Query.DESCENDING).limit(100).stream())
     return [d.to_dict() for d in docs]
+
+# --- Secure Chat Management ---
+
+@router.post("/chats/message/send")
+async def send_admin_chat_message(req: AdminChatMessageRequest, admin: dict = Depends(verify_admin)):
+    """Sends a system or ghost message with true anonymization and auditing."""
+    db = firestore.client()
+    uid = admin['uid']
+    
+    # 1. Anonymize Ghost Mode
+    sender_uid = "GHOST_USER" if req.isGhost else uid
+    is_admin_flag = False if req.isGhost else True
+    
+    message_data = {
+        "text": req.text,
+        "senderUid": sender_uid,
+        "senderName": req.senderName,
+        "senderDevice": "AdminConsole",
+        "isAdmin": is_admin_flag,
+        "isSystemWarning": req.isSystem,
+        "isGhost": req.isGhost,
+        "timestamp": firestore.SERVER_TIMESTAMP,
+        "region": req.region
+    }
+    
+    # 2. Save to Firestore
+    msg_ref = db.collection('chats').document(req.region).collection('messages').document()
+    msg_ref.set(message_data)
+    
+    # 3. Audit Logging
+    action_type = "GHOST_MESSAGE" if req.isGhost else "SYSTEM_BROADCAST"
+    log_audit(
+        admin_uid=uid,
+        admin_email=admin.get('email'),
+        action=action_type,
+        target=req.region,
+        details=f"[{req.region}] {req.text}"
+    )
+    
+    return {"status": "success", "messageId": msg_ref.id}
+
+@router.post("/chats/message/action")
+async def perform_message_action(req: MessageActionRequest, admin: dict = Depends(verify_admin)):
+    """Performs a moderation action (Like/Hide) on a chat message with permission checks."""
+    db = firestore.client()
+    uid = admin['uid']
+    
+    # 1. Permission Check for Moderators
+    user_doc = db.collection('users').document(uid).get()
+    user_data = user_doc.to_dict() if user_doc.exists else {}
+    is_superadmin = user_data.get('isAdmin', False)
+    
+    if not is_superadmin:
+        # Check moderation_config for permissions
+        config_doc = db.collection('metadata').document('moderation_config').get()
+        config = config_doc.to_dict() if config_doc.exists else {}
+        
+        if req.action == 'hide' and not config.get('modCanHideMessages', True):
+            raise HTTPException(status_code=403, detail="Moderators do not have permission to hide messages.")
+
+    # 2. Apply Action
+    msg_ref = db.collection('chats').document(req.region).collection('messages').document(req.messageId)
+    
+    field = "adminLiked" if req.action == 'like' else "adminDisliked"
+    # Note: Using 'adminLiked' even for mods to ensure the "Glow" is visible to players
+    msg_ref.update({field: req.value})
+    
+    # 3. Audit Logging
+    action_label = "MESSAGE_HIDDEN" if req.action == 'hide' and req.value else "MESSAGE_UNHIDDEN"
+    if req.action == 'like':
+        action_label = "MESSAGE_LIKED" if req.value else "MESSAGE_UNLIKED"
+        
+    log_audit(
+        admin_uid=uid,
+        admin_email=admin.get('email'),
+        action=action_label,
+        target=req.messageId,
+        details=f"Region: {req.region}, Action: {req.action}, Value: {req.value}"
+    )
+    
+    return {"status": "success"}
