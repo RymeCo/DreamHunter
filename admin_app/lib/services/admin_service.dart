@@ -10,6 +10,8 @@ class AdminService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final http.Client _client = http.Client();
 
+  User? get currentUser => _auth.currentUser;
+
   Future<String?> getIdToken() async {
     final user = _auth.currentUser;
     if (user != null) {
@@ -24,26 +26,6 @@ class AdminService {
       if (token != null) 'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
     };
-  }
-
-  /// Checks if the backend is reachable and returns the latency in ms if successful.
-  /// Returns null if the ping fails.
-  Future<int?> pingServer() async {
-    try {
-      final stopwatch = Stopwatch()..start();
-      final response = await _client
-          .get(Uri.parse(baseUrl))
-          .timeout(const Duration(seconds: 10));
-      stopwatch.stop();
-
-      if (response.statusCode == 200) {
-        return stopwatch.elapsedMilliseconds;
-      }
-      return null;
-    } catch (e) {
-      debugPrint('Server ping failed: $e');
-      return null;
-    }
   }
 
   // --- Maintenance & Broadcast ---
@@ -164,6 +146,34 @@ class AdminService {
     }
   }
 
+  Future<bool> warnUser(String uid, String reason) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$baseUrl/admin/users/$uid/warn'),
+        headers: await getAuthHeaders(),
+        body: json.encode({'reason': reason}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error warning user: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updateModeratorStatus(String uid, bool isModerator) async {
+    try {
+      final response = await _client.patch(
+        Uri.parse('$baseUrl/admin/users/$uid/moderator'),
+        headers: await getAuthHeaders(),
+        body: json.encode({'isModerator': isModerator}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error updating moderator status: $e');
+      return false;
+    }
+  }
+
   // --- Reports ---
 
   Future<List<dynamic>> getReports(String? status) async {
@@ -268,14 +278,64 @@ class AdminService {
         .snapshots();
   }
 
-  Future<void> likeMessage(String region, String messageId) async {
-    final msgRef = _db.collection('chats').doc(region).collection('messages').doc(messageId);
-    await msgRef.update({'adminLiked': true});
+  Future<void> toggleLikeMessage(
+    String region,
+    String messageId, {
+    required bool isAdmin,
+    required bool isModerator,
+    required bool currentAdminLiked,
+    required bool currentModLiked,
+  }) async {
+    final msgRef =
+        _db.collection('chats').doc(region).collection('messages').doc(messageId);
+
+    if (isAdmin) {
+      await msgRef.update({'adminLiked': !currentAdminLiked});
+    } else if (isModerator) {
+      await msgRef.update({'modLiked': !currentModLiked});
+    }
   }
 
-  Future<void> dislikeMessage(String region, String messageId) async {
-    final msgRef = _db.collection('chats').doc(region).collection('messages').doc(messageId);
-    await msgRef.update({'adminDisliked': true});
+  Future<void> toggleDislikeMessage(
+    String region,
+    String messageId, {
+    required bool currentDisliked,
+  }) async {
+    final msgRef =
+        _db.collection('chats').doc(region).collection('messages').doc(messageId);
+    await msgRef.update({'adminDisliked': !currentDisliked});
+  }
+
+  Future<bool> sendGhostMessage(
+    String region,
+    String text,
+    String ghostName,
+  ) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return false;
+
+      final newMsg = {
+        "text": text,
+        "senderUid": user.uid,
+        "senderName": ghostName,
+        "senderDevice": "GhostConsole",
+        "isAdmin": false, // Ghost mode
+        "isSystemWarning": false,
+        "isGhost": true,
+        "timestamp": FieldValue.serverTimestamp(),
+      };
+
+      await _db
+          .collection('chats')
+          .doc(region)
+          .collection('messages')
+          .add(newMsg);
+      return true;
+    } catch (e) {
+      debugPrint('Error sending ghost message: $e');
+      return false;
+    }
   }
 
   Future<bool> sendSystemBroadcastToChat(String region, String text) async {
@@ -315,7 +375,7 @@ class AdminService {
         body: json.encode({
           'uids': uids,
           'action': action,
-          if (params != null) 'params': params,
+          'params':? params,
         }),
       );
       return response.statusCode == 200;

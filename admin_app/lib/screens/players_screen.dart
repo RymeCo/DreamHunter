@@ -196,13 +196,20 @@ class _PlayersScreenState extends State<PlayersScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     if (isAdmin)
-                                      const Icon(Icons.verified, color: Colors.amber, size: 20),
+                                      const Icon(Icons.verified,
+                                          color: Colors.amber, size: 20),
+                                    if (p['isModerator'] == true)
+                                      const Icon(Icons.shield,
+                                          color: Colors.blueAccent, size: 20),
                                     if (isBanned)
-                                      const Icon(Icons.block, color: Colors.red, size: 20),
+                                      const Icon(Icons.block,
+                                          color: Colors.red, size: 20),
                                     if (isMuted)
-                                      const Icon(Icons.volume_off, color: Colors.orange, size: 20),
+                                      const Icon(Icons.volume_off,
+                                          color: Colors.orange, size: 20),
                                     const SizedBox(width: 8),
-                                    const Icon(Icons.chevron_right, color: Colors.white24),
+                                    const Icon(Icons.chevron_right,
+                                        color: Colors.white24),
                                   ],
                                 ),
                                 onLongPress: () => _toggleSelection(uid),
