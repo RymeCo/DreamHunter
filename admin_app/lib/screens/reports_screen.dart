@@ -153,6 +153,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
               children: [
                 _badge(r['categories']?.join(', ') ?? 'General',
                     Colors.orangeAccent),
+                if (r['isUrgent'] == true) ...[
+                  const SizedBox(width: 8),
+                  _badge('URGENT', Colors.redAccent),
+                ],
                 const Spacer(),
                 Text(formattedDate,
                     style: const TextStyle(color: Colors.white38, fontSize: 12)),
