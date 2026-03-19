@@ -302,7 +302,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         x: 0,
                         barRods: [
                           BarChartRodData(
-                            toY: (reportStats['pending'] as int? ?? 0).toDouble(),
+                            toY: (reportStats['pending'] as num? ?? 0).toDouble(),
                             color: Colors.redAccent,
                             width: 25,
                             borderRadius: BorderRadius.circular(4),
@@ -313,7 +313,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         x: 1,
                         barRods: [
                           BarChartRodData(
-                            toY: (reportStats['working'] as int? ?? 0).toDouble(),
+                            toY: (reportStats['working'] as num? ?? 0).toDouble(),
                             color: Colors.orangeAccent,
                             width: 25,
                             borderRadius: BorderRadius.circular(4),
@@ -324,7 +324,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         x: 2,
                         barRods: [
                           BarChartRodData(
-                            toY: (reportStats['resolved'] as int? ?? 0).toDouble(),
+                            toY: (reportStats['resolved'] as num? ?? 0).toDouble(),
                             color: Colors.greenAccent,
                             width: 25,
                             borderRadius: BorderRadius.circular(4),
@@ -360,7 +360,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             LineChartBarData(
                               spots: activityTrends.asMap().entries.map((e) {
                                 return FlSpot(e.key.toDouble(),
-                                    (e.value['messages'] as int? ?? 0).toDouble());
+                                    (e.value['messages'] as num? ?? 0).toDouble());
                               }).toList(),
                               isCurved: false, // Performance: Set to false
                               color: Colors.blueAccent,
@@ -374,7 +374,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             LineChartBarData(
                               spots: activityTrends.asMap().entries.map((e) {
                                 return FlSpot(e.key.toDouble(),
-                                    (e.value['logins'] as int? ?? 0).toDouble());
+                                    (e.value['logins'] as num? ?? 0).toDouble());
                               }).toList(),
                               isCurved: false, // Performance: Set to false
                               color: Colors.purpleAccent,
