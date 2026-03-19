@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../services/admin_service.dart';
 import '../widgets/custom_snackbar.dart';
 import '../widgets/liquid_glass_dialog.dart';
@@ -110,7 +109,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           if (_isLoadingStats)
             const Center(child: CircularProgressIndicator())
           else if (_statsSummary != null) ...[
-            _buildChartsSection(),
+            _buildSpreadsheetSection(),
             const SizedBox(height: 24),
           ] else ...[
             Center(
@@ -276,123 +275,80 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildChartsSection() {
+  Widget _buildSpreadsheetSection() {
     final reportStats = _statsSummary?['reportStats'] as Map<String, dynamic>? ?? {};
-    final activityTrends = _statsSummary?['activityTrends'] as List<dynamic>? ?? [];
+    final systemHealth = _statsSummary?['systemHealth'] as Map<String, dynamic>? ?? {};
+    final userGrowth = _statsSummary?['userGrowth'] as Map<String, dynamic>? ?? {};
 
     return Column(
       children: [
-        LiquidGlassDialog(
-          height: 250,
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              const Text('Reports Status (Pending, Working, Resolved)',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
-              Expanded(
-                child: BarChart(
-                  BarChartData(
-                    gridData: const FlGridData(show: false),
-                    titlesData: const FlTitlesData(show: false),
-                    borderData: FlBorderData(show: false),
-                    barGroups: [
-                      BarChartGroupData(
-                        x: 0,
-                        barRods: [
-                          BarChartRodData(
-                            toY: (reportStats['pending'] as num? ?? 0).toDouble(),
-                            color: Colors.redAccent,
-                            width: 25,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ],
-                      ),
-                      BarChartGroupData(
-                        x: 1,
-                        barRods: [
-                          BarChartRodData(
-                            toY: (reportStats['working'] as num? ?? 0).toDouble(),
-                            color: Colors.orangeAccent,
-                            width: 25,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ],
-                      ),
-                      BarChartGroupData(
-                        x: 2,
-                        barRods: [
-                          BarChartRodData(
-                            toY: (reportStats['resolved'] as num? ?? 0).toDouble(),
-                            color: Colors.greenAccent,
-                            width: 25,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        _buildDataLayer('Support & Reports', [
+          _dataRow('Pending Reports', reportStats['pending'], Colors.redAccent),
+          _dataRow('Active Cases', reportStats['working'], Colors.orangeAccent),
+          _dataRow('Resolved Today', reportStats['resolved'], Colors.greenAccent),
+        ]),
         const SizedBox(height: 16),
-        LiquidGlassDialog(
-          height: 300,
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              const Text('Weekly Activity (Logins & Messages)',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
-              Expanded(
-                child: activityTrends.isEmpty
-                    ? const Center(child: Text('No activity data available'))
-                    : LineChart(
-                        LineChartData(
-                          gridData: const FlGridData(show: false),
-                          titlesData: const FlTitlesData(show: false),
-                          borderData: FlBorderData(show: false),
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: activityTrends.asMap().entries.map((e) {
-                                return FlSpot(e.key.toDouble(),
-                                    (e.value['messages'] as num? ?? 0).toDouble());
-                              }).toList(),
-                              isCurved: false, // Performance: Set to false
-                              color: Colors.blueAccent,
-                              barWidth: 3,
-                              dotData: const FlDotData(show: true),
-                              belowBarData: BarAreaData(
-                                show: true,
-                                color: Colors.blueAccent.withValues(alpha: 0.1),
-                              ),
-                            ),
-                            LineChartBarData(
-                              spots: activityTrends.asMap().entries.map((e) {
-                                return FlSpot(e.key.toDouble(),
-                                    (e.value['logins'] as num? ?? 0).toDouble());
-                              }).toList(),
-                              isCurved: false, // Performance: Set to false
-                              color: Colors.purpleAccent,
-                              barWidth: 3,
-                              dotData: const FlDotData(show: true),
-                              belowBarData: BarAreaData(
-                                show: true,
-                                color: Colors.purpleAccent.withValues(alpha: 0.1),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-              ),
-            ],
-          ),
-        ),
+        _buildDataLayer('System Performance', [
+          _dataRow('API Latency', '${systemHealth['latency'] ?? 0} ms', Colors.blueAccent),
+          _dataRow('Recent Errors', systemHealth['errorCount'], Colors.redAccent),
+          _dataRow('Server Status', systemHealth['status'] ?? 'Unknown', Colors.greenAccent),
+        ]),
+        const SizedBox(height: 16),
+        _buildDataLayer('Platform Growth', [
+          _dataRow('Total Users', userGrowth['total'], Colors.amberAccent),
+          _dataRow('New Today', userGrowth['newToday'], Colors.amberAccent),
+          _dataRow('Daily Active (DAU)', userGrowth['dau'], Colors.amberAccent),
+        ]),
       ],
+    );
+  }
+
+  Widget _buildDataLayer(String title, List<Widget> rows) {
+    return LiquidGlassDialog(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.amberAccent,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...rows,
+        ],
+      ),
+    );
+  }
+
+  Widget _dataRow(String label, dynamic value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 15)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              value.toString(),
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
