@@ -12,15 +12,14 @@ import 'screens/reports_screen.dart';
 import 'screens/automod_screen.dart';
 import 'screens/audit_screen.dart';
 import 'screens/live_chat_screen.dart';
+import 'widgets/admin_ui_components.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AdminProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => AdminProvider())],
       child: const AdminControlCenter(),
     ),
   );
@@ -32,12 +31,16 @@ class AdminControlCenter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'DreamHunter Superadmin',
+      title: 'DreamHunter Control',
       theme: ThemeData(
         brightness: Brightness.dark,
-        primarySwatch: Colors.deepPurple,
+        primarySwatch: Colors.amber,
         scaffoldBackgroundColor: const Color(0xFF0F0F1E),
         textTheme: GoogleFonts.quicksandTextTheme(ThemeData.dark().textTheme),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF16162F),
+          elevation: 0,
+        ),
       ),
       home: const AuthWrapper(),
       debugShowCheckedModeBanner: false,
@@ -104,50 +107,46 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Container(
+        child: AdminCard(
           width: 400,
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: const Color(0xFF16162F),
-            borderRadius: BorderRadius.circular(16),
-          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'Admin Login',
+                'Admin Access',
                 style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
                   color: Colors.amberAccent,
+                  letterSpacing: -1,
                 ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'DreamHunter Command Center',
+                style: TextStyle(color: Colors.white38, fontSize: 14),
               ),
               const SizedBox(height: 32),
-              TextField(
+              AdminTextField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Email Address',
+                prefixIcon: Icons.email_outlined,
               ),
               const SizedBox(height: 16),
-              TextField(
+              AdminTextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Password',
+                prefixIcon: Icons.lock_outline,
                 obscureText: true,
               ),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
+                child: AdminButton(
                   onPressed: _isLoading ? null : _login,
-                  child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text('Login'),
+                  label: 'AUTHORIZE',
+                  isLoading: _isLoading,
+                  color: Colors.amberAccent,
                 ),
               ),
             ],
@@ -166,87 +165,145 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> {
-  int _selectedIndex = 0;
-
-  final List<Widget> _screens = [
-    const DashboardScreen(),
-    const PlayersScreen(),
-    const ReportsScreen(),
-    const LiveChatScreen(),
-    const AutoModScreen(),
-    const AuditScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Row(
-        children: [
-          NavigationRail(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (int index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-            labelType: NavigationRailLabelType.all,
-            backgroundColor: const Color(0xFF16162F),
-            selectedIconTheme: const IconThemeData(color: Colors.amberAccent),
-            unselectedIconTheme: const IconThemeData(color: Colors.white54),
-            destinations: const [
-              NavigationRailDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: Text('Dashboard'),
+    return DefaultTabController(
+      length: 6,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF16162F),
+          elevation: 0,
+          centerTitle: false,
+          title: const Text(
+            'DreamHunter Control',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 22,
+              letterSpacing: -1,
+              color: Colors.amberAccent,
+            ),
+          ),
+          actions: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
               ),
-              NavigationRailDestination(
-                icon: Icon(Icons.people_outline),
-                selectedIcon: Icon(Icons.people),
-                label: Text('Players'),
+              child: IconButton(
+                icon: const Icon(Icons.logout_rounded,
+                    color: Colors.white70, size: 20),
+                onPressed: () => FirebaseAuth.instance.signOut(),
+                tooltip: 'Logout Session',
               ),
-              NavigationRailDestination(
-                icon: Icon(Icons.report_problem_outlined),
-                selectedIcon: Icon(Icons.report_problem),
-                label: Text('Reports'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.chat_outlined),
-                selectedIcon: Icon(Icons.chat),
-                label: Text('Live Chat'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.security_outlined),
-                selectedIcon: Icon(Icons.security),
-                label: Text('Auto-Mod'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.history_outlined),
-                selectedIcon: Icon(Icons.history),
-                label: Text('Audit'),
-              ),
-            ],
-            trailing: Expanded(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 20.0),
-                  child: IconButton(
-                    icon: const Icon(Icons.logout, color: Colors.white54),
-                    onPressed: () => FirebaseAuth.instance.signOut(),
-                    tooltip: 'Logout',
+            ),
+            const SizedBox(width: 12),
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    width: 1,
                   ),
                 ),
               ),
+              child: const TabBar(
+                isScrollable: true,
+                indicatorColor: Colors.amberAccent,
+                indicatorWeight: 3,
+                labelColor: Colors.amberAccent,
+                unselectedLabelColor: Colors.white38,
+                labelStyle:
+                    TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                unselectedLabelStyle:
+                    TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                dividerColor: Colors.transparent,
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                tabAlignment: TabAlignment.start,
+                tabs: [
+                  Tab(
+                    height: 60,
+                    child: Row(
+                      children: [
+                        Icon(Icons.dashboard_rounded, size: 18),
+                        SizedBox(width: 8),
+                        Text('Dashboard'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    height: 60,
+                    child: Row(
+                      children: [
+                        Icon(Icons.people_alt_rounded, size: 18),
+                        SizedBox(width: 8),
+                        Text('Players'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    height: 60,
+                    child: Row(
+                      children: [
+                        Icon(Icons.gavel_rounded, size: 18),
+                        SizedBox(width: 8),
+                        Text('Reports'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    height: 60,
+                    child: Row(
+                      children: [
+                        Icon(Icons.forum_rounded, size: 18),
+                        SizedBox(width: 8),
+                        Text('Live Chat'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    height: 60,
+                    child: Row(
+                      children: [
+                        Icon(Icons.security_rounded, size: 18),
+                        SizedBox(width: 8),
+                        Text('Auto-Mod'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    height: 60,
+                    child: Row(
+                      children: [
+                        Icon(Icons.history_rounded, size: 18),
+                        SizedBox(width: 8),
+                        Text('Audit'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const VerticalDivider(thickness: 1, width: 1, color: Colors.white10),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              child: IndexedStack(index: _selectedIndex, children: _screens),
-            ),
+        ),
+        body: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF0F0F1E),
           ),
-        ],
+          child: const TabBarView(
+            children: [
+              DashboardScreen(),
+              PlayersScreen(),
+              ReportsScreen(),
+              LiveChatScreen(),
+              AutoModScreen(),
+              AuditScreen(),
+            ],
+          ),
+        ),
       ),
     );
   }

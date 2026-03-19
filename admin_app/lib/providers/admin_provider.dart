@@ -10,7 +10,6 @@ class AdminProvider with ChangeNotifier {
   String? _statsErrorMessage;
 
   Map<String, dynamic>? _currentUserProfile;
-  bool _isLoadingProfile = false;
 
   Map<String, dynamic>? get statsSummary => _statsSummary;
   bool get isLoadingStats => _isLoadingStats;
@@ -21,12 +20,11 @@ class AdminProvider with ChangeNotifier {
   bool get isModerator => _currentUserProfile?['isModerator'] == true;
 
   AdminProvider() {
-    _loadFromCache();
+    _loadFromCache().then((_) => fetchStats());
     _fetchCurrentUserProfile();
   }
 
   Future<void> _fetchCurrentUserProfile() async {
-    _isLoadingProfile = true;
     notifyListeners();
     try {
       final user = _adminService.currentUser;
@@ -37,7 +35,6 @@ class AdminProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('Error fetching current user profile: $e');
     } finally {
-      _isLoadingProfile = false;
       notifyListeners();
     }
   }
@@ -78,5 +75,11 @@ class AdminProvider with ChangeNotifier {
       // Logic for refreshing local system config could be added here if needed
       notifyListeners();
     }
+  }
+
+  /// Triggers a refresh of the dashboard statistics.
+  /// Usually called after administrative actions that affect counts.
+  Future<void> refreshDashboard() async {
+    await fetchStats(forceRefresh: true);
   }
 }

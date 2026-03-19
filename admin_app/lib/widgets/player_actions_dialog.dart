@@ -43,8 +43,11 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
   }
 
   void _toggleBan(String uid, bool currentStatus, {String? until}) async {
-    final success =
-        await _adminService.banUser(uid, !currentStatus, until: until);
+    final success = await _adminService.banUser(
+      uid,
+      !currentStatus,
+      until: until,
+    );
     if (!mounted) return;
 
     if (success) {
@@ -56,6 +59,9 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
         type: SnackBarType.success,
       );
       if (widget.onActionComplete != null) widget.onActionComplete!();
+      if (mounted) {
+        Provider.of<AdminProvider>(context, listen: false).refreshDashboard();
+      }
       Navigator.pop(context, currentStatus ? 'unban' : 'ban');
     }
   }
@@ -71,6 +77,9 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
         type: SnackBarType.success,
       );
       if (widget.onActionComplete != null) widget.onActionComplete!();
+      if (mounted) {
+        Provider.of<AdminProvider>(context, listen: false).refreshDashboard();
+      }
       Navigator.pop(context, hours == 0 ? 'unmute' : 'mute');
     }
   }
@@ -78,8 +87,11 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
   void _warnUser(String uid) async {
     final reason = _warnReasonController.text.trim();
     if (reason.isEmpty) {
-      showCustomSnackBar(context, 'Please provide a reason for the warning.',
-          type: SnackBarType.info);
+      showCustomSnackBar(
+        context,
+        'Please provide a reason for the warning.',
+        type: SnackBarType.info,
+      );
       return;
     }
 
@@ -87,16 +99,24 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     if (!mounted) return;
 
     if (success) {
-      showCustomSnackBar(context, 'Warning issued to player!',
-          type: SnackBarType.success);
+      showCustomSnackBar(
+        context,
+        'Warning issued to player!',
+        type: SnackBarType.success,
+      );
       if (widget.onActionComplete != null) widget.onActionComplete!();
+      if (mounted) {
+        Provider.of<AdminProvider>(context, listen: false).refreshDashboard();
+      }
       Navigator.pop(context, 'warn');
     }
   }
 
   void _toggleModerator(String uid, bool currentStatus) async {
-    final success =
-        await _adminService.updateModeratorStatus(uid, !currentStatus);
+    final success = await _adminService.updateModeratorStatus(
+      uid,
+      !currentStatus,
+    );
     if (!mounted) return;
 
     if (success) {
@@ -135,6 +155,7 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
         final isBanned = widget.player['isBanned'] ?? false;
         final isMuted = widget.player['mutedUntil'] != null;
         final isModerator = widget.player['isModerator'] ?? false;
+        final isTargetAdmin = widget.player['isAdmin'] == true;
         final warnings = widget.player['warnings'] as List? ?? [];
 
         return Center(
@@ -151,7 +172,9 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                       const Text(
                         'Moderate Player',
                         style: TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold),
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(context),
@@ -164,7 +187,9 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: CircleAvatar(
-                      backgroundColor: Colors.deepPurple,
+                      backgroundColor: isTargetAdmin
+                          ? Colors.amber
+                          : Colors.deepPurple,
                       child: Text(displayName[0].toUpperCase()),
                     ),
                     title: Text(
@@ -173,27 +198,60 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                     ),
                     subtitle: Text('UID: $uid'),
                     trailing: IconButton(
-                      icon: const Icon(Icons.copy,
-                          size: 18, color: Colors.blueAccent),
+                      icon: const Icon(
+                        Icons.copy,
+                        size: 18,
+                        color: Colors.blueAccent,
+                      ),
                       onPressed: () =>
                           copyToClipboardWithFeedback(context, uid, 'User ID'),
                     ),
                   ),
+                  if (isTargetAdmin) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.amber.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.shield, color: Colors.amber),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'This user is a Superadmin. Moderation actions are disabled.',
+                              style: TextStyle(
+                                color: Colors.amber,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
 
                   // TIERED POWER SECTION (ADMIN ONLY)
-                  if (provider.isAdmin) ...[
+                  if (provider.isAdmin && !isTargetAdmin) ...[
                     const Text(
                       'Roles & Privileges',
                       style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueAccent),
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     SwitchListTile(
                       title: const Text('Moderator Powers'),
                       subtitle: const Text(
-                          'Allow this player to mute and warn others.'),
+                        'Allow this player to mute and warn others.',
+                      ),
                       value: isModerator,
                       onChanged: (val) => _toggleModerator(uid, isModerator),
                       activeThumbColor: Colors.blueAccent,
@@ -202,11 +260,13 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                     const Divider(height: 40, color: Colors.white10),
                   ],
 
-                  if (provider.isAdmin) ...[
+                  if (provider.isAdmin && !isTargetAdmin) ...[
                     const Text(
                       'Access Control',
                       style: TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.redAccent),
+                        fontWeight: FontWeight.bold,
+                        color: Colors.redAccent,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     if (isBanned)
@@ -217,7 +277,8 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                           icon: const Icon(Icons.restore),
                           label: const Text('UNBAN PLAYER'),
                           style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green),
+                            backgroundColor: Colors.green,
+                          ),
                         ),
                       )
                     else
@@ -229,7 +290,8 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                               icon: const Icon(Icons.block),
                               label: const Text('PERMANENT BAN'),
                               style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.redAccent),
+                                backgroundColor: Colors.redAccent,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -238,8 +300,11 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                               onPressed: () async {
                                 final dt = await _pickCustomDateTime();
                                 if (dt != null) {
-                                  _toggleBan(uid, false,
-                                      until: dt.toUtc().toIso8601String());
+                                  _toggleBan(
+                                    uid,
+                                    false,
+                                    until: dt.toUtc().toIso8601String(),
+                                  );
                                 }
                               },
                               icon: const Icon(Icons.timer),
@@ -252,12 +317,13 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                   ],
 
                   // WARNING SYSTEM
-                  if (canWarn) ...[
+                  if (canWarn && !isTargetAdmin) ...[
                     const Text(
                       'Warning System (Strikes)',
                       style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.yellowAccent),
+                        fontWeight: FontWeight.bold,
+                        color: Colors.yellowAccent,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -276,37 +342,49 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                         ElevatedButton(
                           onPressed: () => _warnUser(uid),
                           style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange),
+                            backgroundColor: Colors.orange,
+                          ),
                           child: const Text('WARN'),
                         ),
                       ],
                     ),
                     if (warnings.isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      Text('Active Strikes: ${warnings.length}',
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      ...warnings.map((w) => Text(
+                      Text(
+                        'Active Strikes: ${warnings.length}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      ...warnings.map(
+                        (w) => Text(
                           '• ${w['reason'] ?? 'No reason'}',
                           style: const TextStyle(
-                              fontSize: 12, color: Colors.white70))),
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ),
                     ],
                     const Divider(height: 40, color: Colors.white10),
                   ],
 
                   // CHAT RESTRICTIONS
-                  if (canMute) ...[
+                  if (canMute && !isTargetAdmin) ...[
                     const Text(
                       'Chat Restrictions',
                       style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orangeAccent),
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orangeAccent,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     if (isMuted) ...[
                       Text(
-                          'Currently muted until: ${widget.player['mutedUntil']}',
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.white70)),
+                        'Currently muted until: ${widget.player['mutedUntil']}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       SizedBox(
                         width: double.infinity,
@@ -328,14 +406,18 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                             onPressed: () async {
                               final dt = await _pickCustomDateTime();
                               if (dt != null) {
-                                _muteUser(uid, null,
-                                    until: dt.toUtc().toIso8601String());
+                                _muteUser(
+                                  uid,
+                                  null,
+                                  until: dt.toUtc().toIso8601String(),
+                                );
                               }
                             },
                             icon: const Icon(Icons.edit_calendar),
                             label: const Text('Custom...'),
                             style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white12),
+                              backgroundColor: Colors.white12,
+                            ),
                           ),
                         ],
                       ),

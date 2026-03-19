@@ -22,9 +22,11 @@ class _ChatDialogState extends State<ChatDialog> {
   late final ChatService _chatService;
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
+
   String _selectedRegion = 'english';
   bool _isChatMaintenance = false;
+  bool _isModerator = false;
+  bool _modCanHideMessages = false;
 
   final Map<String, String> _regions = {
     'english': '🇺🇸 English',
@@ -32,6 +34,7 @@ class _ChatDialogState extends State<ChatDialog> {
     'chinese': '🇨🇳 中文',
     'russian': '🇷🇺 Русский',
     'tagalog': '🇵🇭 Tagalog',
+    'mod-only': '🛡️ Staff Channel',
   };
 
   final Map<String, Map<String, String>> _localizedStrings = {
@@ -47,7 +50,8 @@ class _ChatDialogState extends State<ChatDialog> {
       'empty': 'Aún no hay mensajes. ¡Sé el primero!',
       'hint': 'Escribe un mensaje...',
       'error': 'Error al cargar el chat.',
-      'maintenance': 'El chat está en mantenimiento. Por favor, inténtelo de nuevo más tarde.',
+      'maintenance':
+          'El chat está en mantenimiento. Por favor, inténtelo de nuevo más tarde.',
     },
     'chinese': {
       'title': '全球聊天',
@@ -61,7 +65,8 @@ class _ChatDialogState extends State<ChatDialog> {
       'empty': 'Сообщений пока нет. Будь первым!',
       'hint': 'Введите сообщение...',
       'error': 'Ошибка при загрузке чата.',
-      'maintenance': 'Чат находится на техническом обслуживании. Пожалуйста, попробуйте позже.',
+      'maintenance':
+          'Чат находится на техническом обслуживании. Пожалуйста, попробуйте позже.',
     },
     'tagalog': {
       'title': 'Global Chat',
@@ -69,6 +74,13 @@ class _ChatDialogState extends State<ChatDialog> {
       'hint': 'Mag-type ng mensahe...',
       'error': 'Error sa pag-load ng chat.',
       'maintenance': 'Kasalukuyang inaayos ang chat. Pakisubukang muli mamaya.',
+    },
+    'mod-only': {
+      'title': 'Staff Channel',
+      'empty': 'Secure channel active. Team only.',
+      'hint': 'Discuss player behavior...',
+      'error': 'Error loading staff chat.',
+      'maintenance': 'Staff channel is always active.',
     },
   };
 
@@ -80,6 +92,8 @@ class _ChatDialogState extends State<ChatDialog> {
     _chatService = widget.chatService ?? ChatService();
     _loadInitialRegion();
     _listenToMaintenance();
+    _checkModeratorStatus();
+    _listenToModConfig();
   }
 
   void _listenToMaintenance() {
@@ -91,6 +105,36 @@ class _ChatDialogState extends State<ChatDialog> {
         });
       }
     });
+  }
+
+  void _checkModeratorStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (doc.exists && mounted) {
+        setState(() {
+          _isModerator = doc.data()?['isModerator'] ?? false;
+        });
+      }
+    }
+  }
+
+  void _listenToModConfig() {
+    FirebaseFirestore.instance
+        .collection('metadata')
+        .doc('moderation_config')
+        .snapshots()
+        .listen((snapshot) {
+          if (snapshot.exists && mounted) {
+            final data = snapshot.data() as Map<String, dynamic>;
+            setState(() {
+              _modCanHideMessages = data['modCanHideMessages'] ?? false;
+            });
+          }
+        });
   }
 
   Future<void> _loadInitialRegion() async {
@@ -121,8 +165,11 @@ class _ChatDialogState extends State<ChatDialog> {
                     onLoginSuccess: () {
                       Navigator.pop(context);
                       if (!mounted) return;
-                      showCustomSnackBar(context, 'Login successful!',
-                          type: SnackBarType.success);
+                      showCustomSnackBar(
+                        context,
+                        'Login successful!',
+                        type: SnackBarType.success,
+                      );
                       setState(() {}); // Refresh chat state
                     },
                   )
@@ -134,8 +181,11 @@ class _ChatDialogState extends State<ChatDialog> {
                     onRegisterSuccess: () {
                       Navigator.pop(context);
                       if (!mounted) return;
-                      showCustomSnackBar(context, 'Registration successful!',
-                          type: SnackBarType.success);
+                      showCustomSnackBar(
+                        context,
+                        'Registration successful!',
+                        type: SnackBarType.success,
+                      );
                       setState(() {}); // Refresh chat state
                     },
                   ),
@@ -147,8 +197,13 @@ class _ChatDialogState extends State<ChatDialog> {
 
   void _sendMessage() async {
     if (_isChatMaintenance) {
-      final strings = _localizedStrings[_selectedRegion] ?? _localizedStrings['english']!;
-      showCustomSnackBar(context, strings['maintenance']!, type: SnackBarType.info);
+      final strings =
+          _localizedStrings[_selectedRegion] ?? _localizedStrings['english']!;
+      showCustomSnackBar(
+        context,
+        strings['maintenance']!,
+        type: SnackBarType.info,
+      );
       return;
     }
 
@@ -156,8 +211,11 @@ class _ChatDialogState extends State<ChatDialog> {
     if (text.isEmpty) return;
 
     if (FirebaseAuth.instance.currentUser == null) {
-      showCustomSnackBar(context, 'Please login to chat!',
-          type: SnackBarType.error);
+      showCustomSnackBar(
+        context,
+        'Please login to chat!',
+        type: SnackBarType.error,
+      );
       _showAuthPrompt(_ChatAuthDialogType.login);
       return;
     }
@@ -170,17 +228,27 @@ class _ChatDialogState extends State<ChatDialog> {
         _textController.clear();
       } else {
         if (!mounted) return;
-        showCustomSnackBar(context, 'Failed to send message.',
-            type: SnackBarType.error);
+        showCustomSnackBar(
+          context,
+          'Failed to send message.',
+          type: SnackBarType.error,
+        );
       }
     } catch (e) {
       if (!mounted) return;
       final errorStr = e.toString().toLowerCase();
       if (errorStr.contains('cooldown')) {
-        showCustomSnackBar(context, 'Please wait before sending another message.',
-            type: SnackBarType.info);
+        showCustomSnackBar(
+          context,
+          'Please wait before sending another message.',
+          type: SnackBarType.info,
+        );
       } else if (errorStr.contains('banned') || errorStr.contains('mute')) {
-        showCustomSnackBar(context, e.toString().replaceAll('Exception: ', ''), type: SnackBarType.error);
+        showCustomSnackBar(
+          context,
+          e.toString().replaceAll('Exception: ', ''),
+          type: SnackBarType.error,
+        );
       } else {
         showCustomSnackBar(context, 'Error: $e', type: SnackBarType.error);
       }
@@ -191,10 +259,37 @@ class _ChatDialogState extends State<ChatDialog> {
     }
   }
 
+  void _toggleHideMessage(String messageId, bool currentStatus) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(_selectedRegion)
+          .collection('messages')
+          .doc(messageId)
+          .update({'adminDisliked': !currentStatus});
+
+      if (!mounted) return;
+      showCustomSnackBar(
+        context,
+        currentStatus ? 'Message restored' : 'Message hidden',
+        type: SnackBarType.success,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      showCustomSnackBar(
+        context,
+        'Error updating message visibility',
+        type: SnackBarType.error,
+      );
+    }
+  }
+
   void _showReportDialog(Map<String, dynamic> data, String messageId) async {
     String timestampStr = DateTime.now().toIso8601String();
     if (data['timestamp'] is Timestamp) {
-      timestampStr = (data['timestamp'] as Timestamp).toDate().toIso8601String();
+      timestampStr = (data['timestamp'] as Timestamp)
+          .toDate()
+          .toIso8601String();
     }
 
     if (!mounted) return;
@@ -224,7 +319,8 @@ class _ChatDialogState extends State<ChatDialog> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final dialogWidth = screenWidth > 500 ? 400.0 : screenWidth * 0.9;
-    final strings = _localizedStrings[_selectedRegion] ?? _localizedStrings['english']!;
+    final strings =
+        _localizedStrings[_selectedRegion] ?? _localizedStrings['english']!;
 
     return LiquidGlassDialog(
       width: dialogWidth,
@@ -253,12 +349,15 @@ class _ChatDialogState extends State<ChatDialog> {
                 dropdownColor: const Color.fromRGBO(30, 30, 30, 0.9),
                 style: const TextStyle(color: Colors.white),
                 underline: const SizedBox(),
-                items: _regions.entries.map((e) {
-                  return DropdownMenuItem(
-                    value: e.key,
-                    child: Text(e.value),
-                  );
-                }).toList(),
+                items: _regions.entries
+                    .where((e) => e.key != 'mod-only' || _isModerator)
+                    .map((e) {
+                      return DropdownMenuItem(
+                        value: e.key,
+                        child: Text(e.value),
+                      );
+                    })
+                    .toList(),
                 onChanged: (val) {
                   if (val != null) {
                     setState(() => _selectedRegion = val);
@@ -269,203 +368,321 @@ class _ChatDialogState extends State<ChatDialog> {
             ],
           ),
           const Divider(color: Colors.white24),
-          
+
           // Chat Stream
           Expanded(
-            child: _isChatMaintenance 
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.build_circle_outlined, color: Colors.orangeAccent, size: 64),
-                      const SizedBox(height: 16),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                        child: Text(
-                          strings['maintenance']!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white70, fontSize: 16),
+            child: _isChatMaintenance
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.build_circle_outlined,
+                          color: Colors.orangeAccent,
+                          size: 64,
                         ),
-                      ),
-                    ],
-                  ),
-                )
-              : StreamBuilder<QuerySnapshot>(
-                  stream: _chatService.getChatStream(_selectedRegion),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Center(child: Text(strings['error']!, style: const TextStyle(color: Colors.red)));
-                    }
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator(color: Colors.white54));
-                    }
-
-                    final docs = snapshot.data?.docs ?? [];
-                    
-                    if (docs.isEmpty) {
-                      return Center(child: Text(strings['empty']!, style: const TextStyle(color: Colors.white54)));
-                    }
-
-                    return ListView.builder(
-                      controller: _scrollController,
-                      reverse: true, // Show latest at the bottom
-                      itemCount: docs.length,
-                      itemBuilder: (context, index) {
-                        final data = docs[index].data() as Map<String, dynamic>;
-                        final messageId = docs[index].id;
-                        final text = data['text'] ?? '';
-                        final senderName = data['senderName'] ?? 'Guest';
-                        final likes = data['likes'] ?? 0;
-                        final isAdmin = data['isAdmin'] ?? false;
-                        final isSystemWarning = data['isSystemWarning'] ?? false;
-                        final adminLiked = data['adminLiked'] ?? false;
-                        final adminDisliked = data['adminDisliked'] ?? false;
-                        
-                        final isMe = data['senderUid'] == FirebaseAuth.instance.currentUser?.uid;
-
-                        if (adminDisliked) {
-                          return Container(
-                            margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color.fromRGBO(0, 0, 0, 0.25),
-                              borderRadius: BorderRadius.circular(12),
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Text(
+                            strings['maintenance']!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
                             ),
-                            child: const Center(
-                              child: Text(
-                                'Message removed by Admin',
-                                style: TextStyle(color: Colors.white38, fontStyle: FontStyle.italic, fontSize: 12),
-                              ),
-                            ),
-                          );
-                        }
-
-                        // Determine borders and colors
-                        Color bgColor = isAdmin 
-                            ? const Color.fromRGBO(106, 13, 173, 0.3) // Purple tint for admin
-                            : (isMe ? const Color.fromRGBO(255, 255, 255, 0.15) : const Color.fromRGBO(0, 0, 0, 0.25));
-                        
-                        Border? border;
-                        if (adminLiked) {
-                          border = Border.all(color: Colors.amberAccent, width: 2.0);
-                        } else if (isAdmin) {
-                          border = Border.all(color: Colors.amberAccent.withValues(alpha: 0.5), width: 1.5);
-                        } else if (isMe) {
-                          border = Border.all(color: Colors.white24, width: 1);
-                        }
-
-                        List<BoxShadow>? boxShadow;
-                        if (adminLiked) {
-                          boxShadow = [
-                            BoxShadow(
-                              color: Colors.amberAccent.withValues(alpha: 0.4),
-                              blurRadius: 10,
-                              spreadRadius: 2,
-                            )
-                          ];
-                        } else if (isAdmin) {
-                          boxShadow = [
-                            BoxShadow(
-                              color: Colors.deepPurple.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              spreadRadius: 1,
-                            )
-                          ];
-                        }
-
-                        return Container(
-                          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: bgColor,
-                            borderRadius: BorderRadius.circular(12),
-                            border: border,
-                            boxShadow: boxShadow,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    isSystemWarning ? 'SYSTEM' : senderName, 
-                                    style: TextStyle(
-                                      color: isSystemWarning
-                                          ? Colors.redAccent
-                                          : (isAdmin 
-                                              ? Colors.amberAccent 
-                                              : (isMe ? Colors.blueAccent : Colors.orangeAccent)), 
-                                      fontWeight: FontWeight.bold, 
-                                      fontSize: 12
-                                    )
-                                  ),
-                                  if (isAdmin && !isSystemWarning) ...[
-                                    const SizedBox(width: 4),
-                                    const Icon(Icons.verified, color: Colors.amberAccent, size: 14),
-                                    const SizedBox(width: 4),
-                                    const Text(
-                                      'DreamMaster',
-                                      style: TextStyle(color: Colors.amberAccent, fontSize: 10, fontWeight: FontWeight.w900),
-                                    ),
-                                  ],
-                                  if (adminLiked) ...[
-                                    const Spacer(),
-                                    const Icon(Icons.star, color: Colors.amberAccent, size: 14),
-                                    const SizedBox(width: 4),
-                                    const Text(
-                                      'Admin Liked',
-                                      style: TextStyle(color: Colors.amberAccent, fontSize: 10, fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                text, 
-                                style: TextStyle(
-                                  color: isSystemWarning ? Colors.yellowAccent : Colors.white, 
-                                  fontSize: 14,
-                                  fontStyle: isSystemWarning ? FontStyle.italic : FontStyle.normal,
-                                )
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  // Like Button
-                                  GestureDetector(
-                                    onTap: () {
-                                      if (FirebaseAuth.instance.currentUser == null) {
-                                        showCustomSnackBar(context, 'Please login to like messages.', type: SnackBarType.info);
-                                      } else {
-                                        _chatService.likeMessage(_selectedRegion, messageId);
-                                      }
-                                    },
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.thumb_up_alt_outlined, color: Colors.white54, size: 16),
-                                        const SizedBox(width: 4),
-                                        Text('$likes', style: const TextStyle(color: Colors.white54, fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  // Report Button
-                                  GestureDetector(
-                                    onTap: () => _showReportDialog(data, messageId),
-                                    child: const Icon(Icons.flag_outlined, color: Colors.redAccent, size: 16),
-                                  ),
-                                ],
-                              ),
-                            ],
+                        ),
+                      ],
+                    ),
+                  )
+                : StreamBuilder<QuerySnapshot>(
+                    stream: _chatService.getChatStream(_selectedRegion),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            strings['error']!,
+                            style: const TextStyle(color: Colors.red),
                           ),
                         );
-                      },
-                    );
-                  },
-                ),
+                      }
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white54,
+                          ),
+                        );
+                      }
+
+                      final docs = snapshot.data?.docs ?? [];
+
+                      if (docs.isEmpty) {
+                        return Center(
+                          child: Text(
+                            strings['empty']!,
+                            style: const TextStyle(color: Colors.white54),
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        controller: _scrollController,
+                        reverse: true, // Show latest at the bottom
+                        itemCount: docs.length,
+                        itemBuilder: (context, index) {
+                          final data =
+                              docs[index].data() as Map<String, dynamic>;
+                          final messageId = docs[index].id;
+                          final text = data['text'] ?? '';
+                          final senderName = data['senderName'] ?? 'Guest';
+                          final likes = data['likes'] ?? 0;
+                          final isAdmin = data['isAdmin'] ?? false;
+                          final isSystemWarning =
+                              data['isSystemWarning'] ?? false;
+                          final adminLiked = data['adminLiked'] ?? false;
+                          final adminDisliked = data['adminDisliked'] ?? false;
+
+                          final isMe =
+                              data['senderUid'] ==
+                              FirebaseAuth.instance.currentUser?.uid;
+
+                          if (adminDisliked && !_isModerator) {
+                            return Container(
+                              margin: const EdgeInsets.symmetric(
+                                vertical: 6,
+                                horizontal: 4,
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color.fromRGBO(0, 0, 0, 0.25),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'Message removed by Admin',
+                                  style: TextStyle(
+                                    color: Colors.white38,
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          // Determine borders and colors
+                          Color bgColor = isAdmin
+                              ? const Color.fromRGBO(
+                                  106,
+                                  13,
+                                  173,
+                                  0.3,
+                                ) // Purple tint for admin
+                              : (isMe
+                                    ? const Color.fromRGBO(255, 255, 255, 0.15)
+                                    : const Color.fromRGBO(0, 0, 0, 0.25));
+
+                          Border? border;
+                          if (adminLiked) {
+                            border = Border.all(
+                              color: Colors.amberAccent,
+                              width: 2.0,
+                            );
+                          } else if (isAdmin) {
+                            border = Border.all(
+                              color: Colors.amberAccent.withValues(alpha: 0.5),
+                              width: 1.5,
+                            );
+                          } else if (isMe) {
+                            border = Border.all(
+                              color: Colors.white24,
+                              width: 1,
+                            );
+                          }
+
+                          List<BoxShadow>? boxShadow;
+                          if (adminLiked) {
+                            boxShadow = [
+                              BoxShadow(
+                                color: Colors.amberAccent.withValues(
+                                  alpha: 0.4,
+                                ),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ];
+                          } else if (isAdmin) {
+                            boxShadow = [
+                              BoxShadow(
+                                color: Colors.deepPurple.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ];
+                          }
+
+                          return Container(
+                            margin: const EdgeInsets.symmetric(
+                              vertical: 6,
+                              horizontal: 4,
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: bgColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: border,
+                              boxShadow: boxShadow,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      isSystemWarning ? 'SYSTEM' : senderName,
+                                      style: TextStyle(
+                                        color: isSystemWarning
+                                            ? Colors.redAccent
+                                            : (isAdmin
+                                                  ? Colors.amberAccent
+                                                  : (isMe
+                                                        ? Colors.blueAccent
+                                                        : Colors.orangeAccent)),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    if (isAdmin && !isSystemWarning) ...[
+                                      const SizedBox(width: 4),
+                                      const Icon(
+                                        Icons.verified,
+                                        color: Colors.amberAccent,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Text(
+                                        'DreamMaster',
+                                        style: TextStyle(
+                                          color: Colors.amberAccent,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    ],
+                                    if (adminLiked) ...[
+                                      const Spacer(),
+                                      const Icon(
+                                        Icons.star,
+                                        color: Colors.amberAccent,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Text(
+                                        'Admin Liked',
+                                        style: TextStyle(
+                                          color: Colors.amberAccent,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  text,
+                                  style: TextStyle(
+                                    color: isSystemWarning
+                                        ? Colors.yellowAccent
+                                        : Colors.white,
+                                    fontSize: 14,
+                                    fontStyle: isSystemWarning
+                                        ? FontStyle.italic
+                                        : FontStyle.normal,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    // Like Button
+                                    GestureDetector(
+                                      onTap: () {
+                                        if (FirebaseAuth.instance.currentUser ==
+                                            null) {
+                                          showCustomSnackBar(
+                                            context,
+                                            'Please login to like messages.',
+                                            type: SnackBarType.info,
+                                          );
+                                        } else {
+                                          _chatService.likeMessage(
+                                            _selectedRegion,
+                                            messageId,
+                                          );
+                                        }
+                                      },
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.thumb_up_alt_outlined,
+                                            color: Colors.white54,
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '$likes',
+                                            style: const TextStyle(
+                                              color: Colors.white54,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    // Hide Button (Moderator/Admin)
+                                    if (_isModerator && _modCanHideMessages)
+                                      GestureDetector(
+                                        onTap: () => _toggleHideMessage(
+                                          messageId,
+                                          adminDisliked,
+                                        ),
+                                        child: Icon(
+                                          adminDisliked
+                                              ? Icons.visibility_outlined
+                                              : Icons.thumb_down_alt_outlined,
+                                          color: adminDisliked
+                                              ? Colors.greenAccent
+                                              : Colors.orangeAccent,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    if (_isModerator && _modCanHideMessages)
+                                      const SizedBox(width: 16),
+                                    // Report Button
+                                    if (!isAdmin && !isSystemWarning && !isMe)
+                                      GestureDetector(
+                                        onTap: () =>
+                                            _showReportDialog(data, messageId),
+                                        child: const Icon(
+                                          Icons.flag_outlined,
+                                          color: Colors.redAccent,
+                                          size: 16,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
           ),
-          
+
           // Input Area
           const SizedBox(height: 10),
           Row(
@@ -473,10 +690,18 @@ class _ChatDialogState extends State<ChatDialog> {
               Expanded(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: _isChatMaintenance ? () {
-                    final strings = _localizedStrings[_selectedRegion] ?? _localizedStrings['english']!;
-                    showCustomSnackBar(context, strings['maintenance']!, type: SnackBarType.info);
-                  } : null,
+                  onTap: _isChatMaintenance
+                      ? () {
+                          final strings =
+                              _localizedStrings[_selectedRegion] ??
+                              _localizedStrings['english']!;
+                          showCustomSnackBar(
+                            context,
+                            strings['maintenance']!,
+                            type: SnackBarType.info,
+                          );
+                        }
+                      : null,
                   child: AbsorbPointer(
                     absorbing: _isChatMaintenance,
                     child: TextField(
@@ -484,7 +709,9 @@ class _ChatDialogState extends State<ChatDialog> {
                       enabled: !_isChatMaintenance,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        hintText: _isChatMaintenance ? 'Chat Disabled' : strings['hint']!,
+                        hintText: _isChatMaintenance
+                            ? 'Chat Disabled'
+                            : strings['hint']!,
                         hintStyle: const TextStyle(color: Colors.white38),
                         filled: true,
                         fillColor: Colors.black45,
@@ -492,7 +719,10 @@ class _ChatDialogState extends State<ChatDialog> {
                           borderRadius: BorderRadius.circular(20),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                       ),
                       onSubmitted: (_) => _sendMessage(),
                     ),
@@ -501,22 +731,39 @@ class _ChatDialogState extends State<ChatDialog> {
               ),
               const SizedBox(width: 8),
               GestureDetector(
-                onTap: _isSending ? null : () {
-                  if (_isChatMaintenance) {
-                    final strings = _localizedStrings[_selectedRegion] ?? _localizedStrings['english']!;
-                    showCustomSnackBar(context, strings['maintenance']!, type: SnackBarType.info);
-                  } else {
-                    _sendMessage();
-                  }
-                },
+                onTap: _isSending
+                    ? null
+                    : () {
+                        if (_isChatMaintenance) {
+                          final strings =
+                              _localizedStrings[_selectedRegion] ??
+                              _localizedStrings['english']!;
+                          showCustomSnackBar(
+                            context,
+                            strings['maintenance']!,
+                            type: SnackBarType.info,
+                          );
+                        } else {
+                          _sendMessage();
+                        }
+                      },
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: (_isSending || _isChatMaintenance) ? Colors.grey : Colors.orangeAccent,
+                    color: (_isSending || _isChatMaintenance)
+                        ? Colors.grey
+                        : Colors.orangeAccent,
                     shape: BoxShape.circle,
                   ),
-                  child: _isSending 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  child: _isSending
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
                       : const Icon(Icons.send, color: Colors.white, size: 20),
                 ),
               ),

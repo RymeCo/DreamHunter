@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../providers/admin_provider.dart';
 import '../services/admin_service.dart';
 import '../widgets/custom_snackbar.dart';
-import '../widgets/liquid_glass_dialog.dart';
 import '../widgets/player_actions_dialog.dart';
+import '../widgets/admin_ui_components.dart';
 
 class LiveChatScreen extends StatefulWidget {
   const LiveChatScreen({super.key});
@@ -19,7 +19,14 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   final TextEditingController _msgController = TextEditingController();
 
   String _selectedRegion = 'english';
-  final List<String> _regions = ['english', 'spanish', 'portuguese', 'tagalog'];
+  final List<String> _regions = [
+    'english',
+    'spanish',
+    'chinese',
+    'russian',
+    'tagalog',
+    'mod-only'
+  ];
 
   bool _isGhostMode = false;
   String _ghostName = '';
@@ -36,10 +43,15 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         _ghostName = name;
       }
       success = await _adminService.sendGhostMessage(
-          _selectedRegion, text, _ghostName);
+        _selectedRegion,
+        text,
+        _ghostName,
+      );
     } else {
-      success =
-          await _adminService.sendSystemBroadcastToChat(_selectedRegion, text);
+      success = await _adminService.sendSystemBroadcastToChat(
+        _selectedRegion,
+        text,
+      );
     }
 
     if (mounted) {
@@ -57,22 +69,21 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF16162F),
+        backgroundColor: const Color(0xFF1E1E3A),
         title: const Text('Enter Ghost Display Name'),
-        content: TextField(
-          autofocus: true,
-          decoration:
-              const InputDecoration(hintText: 'e.g. Mysterious Traveler'),
-          onChanged: (val) => name = val,
+        content: AdminTextField(
+          label: 'Ghost Name',
+          hint: 'e.g. Mysterious Traveler',
+          onSubmitted: (val) => Navigator.pop(context, val),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
           ),
-          ElevatedButton(
+          AdminButton(
             onPressed: () => Navigator.pop(context, name),
-            child: const Text('Set Name'),
+            label: 'SET NAME',
           ),
         ],
       ),
@@ -89,13 +100,12 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       final canMute = modConfig['modCanMute'] ?? true;
       final canWarn = modConfig['modCanWarn'] ?? true;
       if (!canMute && !canWarn) {
-        showCustomSnackBar(context, 'You do not have moderation permissions.',
+        showCustomSnackBar(context, 'Insufficient permissions.',
             type: SnackBarType.info);
         return;
       }
     }
 
-    // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -103,28 +113,14 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     );
 
     final profile = await _adminService.getUserProfile(uid);
-
     if (!mounted) return;
-    Navigator.pop(context); // Close loading indicator
+    Navigator.pop(context);
 
     if (profile != null) {
-      final action = await showDialog<String>(
+      await showDialog<String>(
         context: context,
         builder: (context) => PlayerActionsDialog(player: profile),
       );
-
-      if (action != null && mounted) {
-        // If an action was taken, we might want to announce it
-        if (action == 'ban' || action == 'mute') {
-          final playerName = profile['displayName'] ?? 'A player';
-          final actionText = action == 'ban' ? 'banned' : 'muted';
-          _adminService.sendSystemBroadcastToChat(_selectedRegion,
-              '⚠️ [System: $playerName has been $actionText by an Admin for violating chat rules.]');
-        }
-      }
-    } else {
-      showCustomSnackBar(context, 'Could not load player profile.',
-          type: SnackBarType.error);
     }
   }
 
@@ -141,251 +137,255 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                const Text(
-                  'Live Chat Monitor',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Ghost Mode',
-                        style: TextStyle(color: Colors.white70)),
-                    Switch(
-                      value: _isGhostMode,
-                      onChanged: (val) async {
-                        if (val && _ghostName.isEmpty) {
-                          final name = await _askForGhostName();
-                          if (name == null || name.isEmpty) return;
-                          setState(() {
-                            _ghostName = name;
-                            _isGhostMode = true;
-                          });
-                        } else {
-                          setState(() => _isGhostMode = val);
-                        }
-                      },
-                      activeThumbColor: Colors.amberAccent,
-                    ),
-                    const SizedBox(width: 16),
-                    DropdownButton<String>(
-                      value: _selectedRegion,
-                      dropdownColor: const Color(0xFF16162F),
-                      items: _regions
-                          .map((r) => DropdownMenuItem(
-                              value: r, child: Text(r.toUpperCase())))
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedRegion = val);
-                      },
-                    ),
-                  ],
-                ),
+            AdminHeader(
+              title: 'Live Chat Monitor',
+              actions: [
+                _buildGhostModeToggle(),
+                const SizedBox(width: 16),
+                _buildRegionSelector(),
               ],
             ),
-            const SizedBox(height: 16),
             Expanded(
-              child: LiquidGlassDialog(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16.0),
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: _adminService.getLiveChatStream(_selectedRegion),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    final docs = snapshot.data?.docs ?? [];
-                    if (docs.isEmpty) {
-                      return const Center(child: Text('No messages yet.'));
-                    }
-
-                    return ListView.builder(
-                      reverse: true, // Latest at the bottom visually
-                      itemCount: docs.length,
-                      itemBuilder: (context, index) {
-                        final data = docs[index].data() as Map<String, dynamic>;
-                        final messageId = docs[index].id;
-                        final text = data['text'] ?? '';
-                        final originalText = data['originalText'];
-                        final senderName = data['senderName'] ?? 'Unknown';
-                        final senderUid = data['senderUid'] ?? '';
-                        final isAdmin = data['isAdmin'] == true;
-                        final isSystem =
-                            data['isSystemWarning'] == true || isAdmin;
-                        final adminDisliked = data['adminDisliked'] == true;
-                        final adminLiked = data['adminLiked'] == true;
-                        final modLiked = data['modLiked'] == true;
-                        final isGhost = data['isGhost'] == true;
-
-                        if (adminDisliked) {
-                          return const SizedBox
-                              .shrink(); // Hide from admin stream or show tombstone
-                        }
-
-                        Color borderColor = Colors.white12;
-                        if (adminLiked) {
-                          borderColor = Colors.amberAccent;
-                        } else if (modLiked) {
-                          borderColor = Colors.blueAccent;
-                        } else if (isSystem) {
-                          borderColor = Colors.redAccent.withValues(alpha: 0.5);
-                        }
-
-                        return InkWell(
-                          onTap: isSystem
-                              ? null
-                              : () => _openPlayerActions(senderUid, modConfig),
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isSystem
-                                  ? Colors.redAccent.withValues(alpha: 0.1)
-                                  : Colors.black26,
-                              border: Border.all(color: borderColor),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(
-                                            senderName,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: isSystem
-                                                  ? Colors.redAccent
-                                                  : Colors.blueAccent,
-                                            ),
-                                          ),
-                                          if (isGhost) ...[
-                                            const SizedBox(width: 8),
-                                            const Icon(Icons.visibility_off,
-                                                size: 14,
-                                                color: Colors.white38),
-                                          ],
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(text,
-                                          style: TextStyle(
-                                              color: isSystem
-                                                  ? Colors.yellowAccent
-                                                  : Colors.white)),
-                                      if (originalText != null) ...[
-                                        const SizedBox(height: 4),
-                                        Text('Original: $originalText',
-                                            style: const TextStyle(
-                                                color: Colors.white38,
-                                                fontStyle: FontStyle.italic,
-                                                fontSize: 12)),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                if (!isSystem) ...[
-                                  IconButton(
-                                    icon: Icon(Icons.thumb_up,
-                                        color: adminLiked
-                                            ? Colors.amberAccent
-                                            : (modLiked
-                                                ? Colors.blueAccent
-                                                : Colors.greenAccent),
-                                        size: 20),
-                                    onPressed: () =>
-                                        _adminService.toggleLikeMessage(
-                                      _selectedRegion,
-                                      messageId,
-                                      isAdmin: provider.isAdmin,
-                                      isModerator: provider.isModerator,
-                                      currentAdminLiked: adminLiked,
-                                      currentModLiked: modLiked,
-                                    ),
-                                    tooltip: 'Like Message',
-                                  ),
-                                  if (provider.isAdmin ||
-                                      (provider.isModerator &&
-                                          modConfig['modCanHideMessages'] ==
-                                              true))
-                                    IconButton(
-                                      icon: const Icon(Icons.thumb_down,
-                                          color: Colors.redAccent, size: 20),
-                                      onPressed: () =>
-                                          _adminService.toggleDislikeMessage(
-                                        _selectedRegion,
-                                        messageId,
-                                        currentDisliked: adminDisliked,
-                                      ),
-                                      tooltip: 'Hide Message',
-                                    ),
-                                ]
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: AdminCard(
+                  padding: EdgeInsets.zero,
+                  child: _buildChatStream(modConfig, provider),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _msgController,
-                    decoration: InputDecoration(
-                      labelText: _isGhostMode
-                          ? 'Chat as $_ghostName (Ghost Mode)...'
-                          : 'Send System Message...',
-                      border: const OutlineInputBorder(),
-                      filled: true,
-                      fillColor: const Color(0xFF16162F),
-                      suffixIcon: _isGhostMode
-                          ? IconButton(
-                              icon: const Icon(Icons.edit, size: 16),
-                              onPressed: () async {
-                                final name = await _askForGhostName();
-                                if (name != null && name.isNotEmpty) {
-                                  setState(() => _ghostName = name);
-                                }
-                              },
-                            )
-                          : null,
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _sendMessage,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 20),
-                    backgroundColor: _isGhostMode
-                        ? Colors.orangeAccent
-                        : Colors.deepPurpleAccent,
-                  ),
-                  child: Text(_isGhostMode ? 'GHOST CHAT' : 'BROADCAST'),
-                ),
-              ],
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: _buildInputArea(),
             ),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildGhostModeToggle() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text('GHOST MODE',
+            style: TextStyle(color: Colors.white24, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        Switch(
+          value: _isGhostMode,
+          onChanged: (val) async {
+            if (val && _ghostName.isEmpty) {
+              final name = await _askForGhostName();
+              if (name == null || name.isEmpty) return;
+              setState(() {
+                _ghostName = name;
+                _isGhostMode = true;
+              });
+            } else {
+              setState(() => _isGhostMode = val);
+            }
+          },
+          activeThumbColor: Colors.amberAccent,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRegionSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F0F1E),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF2A2A4A)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedRegion,
+          dropdownColor: const Color(0xFF1E1E3A),
+          items: _regions
+              .map((r) => DropdownMenuItem(
+                  value: r,
+                  child: Text(r.toUpperCase(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))))
+              .toList(),
+          onChanged: (val) {
+            if (val != null) setState(() => _selectedRegion = val);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChatStream(
+      Map<String, dynamic> modConfig, AdminProvider provider) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _adminService.getLiveChatStream(_selectedRegion),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final docs = snapshot.data?.docs ?? [];
+        if (docs.isEmpty) {
+          return const Center(
+              child: Text('Quiet in here...',
+                  style: TextStyle(color: Colors.white12)));
+        }
+
+        return ListView.builder(
+          reverse: true,
+          padding: const EdgeInsets.all(20),
+          itemCount: docs.length,
+          itemBuilder: (context, index) {
+            final data = docs[index].data() as Map<String, dynamic>;
+            final messageId = docs[index].id;
+            final text = data['text'] ?? '';
+            final senderName = data['senderName'] ?? 'Unknown';
+            final senderUid = data['senderUid'] ?? '';
+            final isAdminMsg = data['isAdmin'] == true;
+            final isSystem = data['isSystemWarning'] == true || isAdminMsg;
+            final adminDisliked = data['adminDisliked'] == true;
+            final adminLiked = data['adminLiked'] == true;
+
+            if (adminDisliked && !provider.isAdmin && !provider.isModerator) {
+              return const SizedBox.shrink();
+            }
+
+            return RepaintBoundary(
+              key: ValueKey(messageId),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: isSystem
+                            ? null
+                            : () => _openPlayerActions(senderUid, modConfig),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isSystem
+                                ? Colors.redAccent.withValues(alpha: 0.1)
+                                : const Color(0xFF0F0F1E),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: adminLiked
+                                  ? Colors.amberAccent.withValues(alpha: 0.5)
+                                  : const Color(0xFF2A2A4A),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                senderName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                  color: isSystem
+                                      ? Colors.redAccent
+                                      : Colors.blueAccent,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                text,
+                                style: TextStyle(
+                                  color: isSystem
+                                      ? Colors.yellowAccent
+                                          .withValues(alpha: 0.9)
+                                      : Colors.white.withValues(alpha: 0.9),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _chatActions(messageId, data, provider, modConfig),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _chatActions(String messageId, Map<String, dynamic> data,
+      AdminProvider provider, Map<String, dynamic> modConfig) {
+    final adminLiked = data['adminLiked'] == true;
+    final modLiked = data['modLiked'] == true;
+    final adminDisliked = data['adminDisliked'] == true;
+    final isSystem = data['isSystemWarning'] == true || data['isAdmin'] == true;
+
+    return Column(
+      children: [
+        IconButton(
+          icon: Icon(Icons.thumb_up_rounded,
+              size: 16,
+              color: adminLiked
+                  ? Colors.amberAccent
+                  : (modLiked ? Colors.blueAccent : Colors.white10)),
+          onPressed: isSystem
+              ? null
+              : () => _adminService.toggleLikeMessage(
+                    _selectedRegion,
+                    messageId,
+                    isAdmin: provider.isAdmin,
+                    isModerator: provider.isModerator,
+                    currentAdminLiked: adminLiked,
+                    currentModLiked: modLiked,
+                  ),
+          constraints: const BoxConstraints(),
+          padding: const EdgeInsets.all(8),
+        ),
+        if (provider.isAdmin ||
+            (provider.isModerator && modConfig['modCanHideMessages'] == true))
+          IconButton(
+            icon: Icon(
+                adminDisliked
+                    ? Icons.visibility_rounded
+                    : Icons.thumb_down_rounded,
+                size: 16,
+                color: adminDisliked ? Colors.greenAccent : Colors.redAccent.withValues(alpha: 0.2)),
+            onPressed: () => _adminService.toggleDislikeMessage(
+              _selectedRegion,
+              messageId,
+              currentDisliked: adminDisliked,
+            ),
+            constraints: const BoxConstraints(),
+            padding: const EdgeInsets.all(8),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildInputArea() {
+    return Row(
+      children: [
+        Expanded(
+          child: AdminTextField(
+            controller: _msgController,
+            label: _isGhostMode ? 'GHOST CHAT AS $_ghostName' : 'SYSTEM BROADCAST',
+            hint: 'Type message...',
+            prefixIcon: _isGhostMode ? Icons.visibility_off_rounded : Icons.campaign_rounded,
+            onSubmitted: (_) => _sendMessage(),
+          ),
+        ),
+        const SizedBox(width: 16),
+        AdminButton(
+          onPressed: _sendMessage,
+          label: _isGhostMode ? 'GHOST' : 'SEND',
+          color: _isGhostMode ? Colors.orangeAccent : Colors.amberAccent,
+        ),
+      ],
     );
   }
 }

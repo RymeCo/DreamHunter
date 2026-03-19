@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/admin_service.dart';
 import '../widgets/custom_snackbar.dart';
-import '../widgets/liquid_glass_dialog.dart';
+import '../widgets/admin_ui_components.dart';
 
 class AutoModScreen extends StatefulWidget {
   const AutoModScreen({super.key});
@@ -13,159 +13,39 @@ class AutoModScreen extends StatefulWidget {
 
 class _AutoModScreenState extends State<AutoModScreen> {
   final AdminService _adminService = AdminService();
+  final TextEditingController _wordController = TextEditingController();
 
-  // Local state for changes before saving
-  String? _localModerationLevel;
-  num? _localDecayDays;
-  String? _localStrike1Action;
-  num? _localStrike1DurationHours;
-  String? _localStrike2Action;
-  num? _localStrike2DurationHours;
-  String? _localStrike3Action;
-  num? _localStrike3DurationHours;
-  String? _localStrike4Action;
-  num? _localStrike4DurationHours;
+  @override
+  void dispose() {
+    _wordController.dispose();
+    super.dispose();
+  }
 
-  // Moderator Permissions local state
-  bool? _localModCanHide;
-  bool? _localModCanWarn;
-  bool? _localModCanMute;
+  void _addWord(List<String> currentWords) async {
+    final word = _wordController.text.trim().toLowerCase();
+    if (word.isEmpty || currentWords.contains(word)) return;
 
-  void _updateConfig(Map<String, dynamic> currentData) async {
-    // Combine local state with current data from DB
-    final Map<String, dynamic> configToUpdate = {
-      'moderationLevel':
-          _localModerationLevel ?? currentData['moderationLevel'] ?? 'none',
-      'decayDays':
-          (_localDecayDays ?? currentData['decayDays'] as num? ?? 30).toInt(),
-      'strike1Action':
-          _localStrike1Action ?? currentData['strike1Action'] ?? 'mute',
-      'strike1DurationHours': (_localStrike1DurationHours ??
-              currentData['strike1DurationHours'] as num? ??
-              dataOrLegacy(currentData, 'strike1MuteHours', 1))
-          .toInt(),
-      'strike2Action':
-          _localStrike2Action ?? currentData['strike2Action'] ?? 'mute',
-      'strike2DurationHours': (_localStrike2DurationHours ??
-              currentData['strike2DurationHours'] as num? ??
-              dataOrLegacy(currentData, 'strike2MuteHours', 24))
-          .toInt(),
-      'strike3Action': _localStrike3Action ??
-          currentData['strike3Action'] ??
-          (currentData['strike3Ban'] == true ? 'ban' : 'mute'),
-      'strike3DurationHours': (_localStrike3DurationHours ??
-              currentData['strike3DurationHours'] as num? ??
-              8760)
-          .toInt(),
-      'strike4Action':
-          _localStrike4Action ?? currentData['strike4Action'] ?? 'mute',
-      'strike4DurationHours': (_localStrike4DurationHours ??
-              currentData['strike4DurationHours'] as num? ??
-              24)
-          .toInt(),
-      // Moderator Permissions
-      'modCanHideMessages':
-          _localModCanHide ?? currentData['modCanHideMessages'] ?? true,
-      'modCanWarn': _localModCanWarn ?? currentData['modCanWarn'] ?? true,
-      'modCanMute': _localModCanMute ?? currentData['modCanMute'] ?? true,
-    };
-
-    configToUpdate['autoModEnabled'] =
-        configToUpdate['moderationLevel'] != 'none';
-
-    final success = await _adminService.updateAutoModConfig(configToUpdate);
-
+    final updatedWords = List<String>.from(currentWords)..add(word);
+    final success = await _adminService.updateAutoModConfig({'bannedWords': updatedWords});
+    
     if (mounted) {
-      showCustomSnackBar(
-        context,
-        success ? 'Configuration updated!' : 'Failed to update.',
-        type: success ? SnackBarType.success : SnackBarType.error,
-      );
-      // Clear local state after successful update to let Stream take over
       if (success) {
-        setState(() {
-          _localModerationLevel = null;
-          _localDecayDays = null;
-          _localStrike1Action = null;
-          _localStrike1DurationHours = null;
-          _localStrike2Action = null;
-          _localStrike2DurationHours = null;
-          _localStrike3Action = null;
-          _localStrike3DurationHours = null;
-          _localStrike4Action = null;
-          _localStrike4DurationHours = null;
-          _localModCanHide = null;
-          _localModCanWarn = null;
-          _localModCanMute = null;
-        });
+        _wordController.clear();
+        showCustomSnackBar(context, 'Word added to blacklist.',
+            type: SnackBarType.success);
+      } else {
+        showCustomSnackBar(context, 'Failed to update config.',
+            type: SnackBarType.error);
       }
     }
   }
 
-  int dataOrLegacy(Map<String, dynamic> data, String legacyKey, int defaultValue) {
-    final val = data[legacyKey];
-    if (val is num) return val.toInt();
-    return defaultValue;
-  }
-
-  Widget _buildStrikeConfig(
-    int strikeNum,
-    String action,
-    num duration,
-    Map<String, dynamic> currentData,
-    Function(String) onActionChanged,
-    Function(num) onDurationChanged, {
-    int max = 8760,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: Text(
-                'Strike $strikeNum Action',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 3,
-              child: DropdownButton<String>(
-                value: action,
-                isExpanded: true,
-                dropdownColor: const Color(0xFF16162F),
-                items: const [
-                  DropdownMenuItem(value: 'mute', child: Text('Chat Mute')),
-                  DropdownMenuItem(value: 'ban', child: Text('Global Chat Ban')),
-                ],
-                onChanged: (val) {
-                  if (val != null) {
-                    onActionChanged(val);
-                    _updateConfig(currentData);
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-        if (action == 'mute') ...[
-          const SizedBox(height: 8),
-          _AutoModInputRow(
-            label: 'Mute Duration (h)',
-            value: duration.toInt(),
-            unit: 'hours',
-            max: max,
-            onChanged: (val) {
-              onDurationChanged(val);
-              _updateConfig(currentData);
-            },
-          ),
-        ],
-        const SizedBox(height: 16),
-      ],
-    );
+  void _removeWord(String word, List<String> currentWords) async {
+    final updatedWords = List<String>.from(currentWords)..remove(word);
+    final success = await _adminService.updateAutoModConfig({'bannedWords': updatedWords});
+    if (mounted && success) {
+      showCustomSnackBar(context, 'Word removed.', type: SnackBarType.info);
+    }
   }
 
   @override
@@ -173,215 +53,59 @@ class _AutoModScreenState extends State<AutoModScreen> {
     return StreamBuilder<DocumentSnapshot>(
       stream: _adminService.getAutoModConfigStream(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-
         final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
-        final legacyEnabled = data['autoModEnabled'] ?? false;
-
-        // Effective values (local state overrides DB data)
-        final moderationLevel = _localModerationLevel ?? data['moderationLevel'] ?? (legacyEnabled ? 'mild' : 'none');
-        final decayDays = _localDecayDays ?? (data['decayDays'] as num? ?? 30);
-
-        final strike1Action = _localStrike1Action ?? data['strike1Action'] ?? 'mute';
-        final strike1Duration = _localStrike1DurationHours ?? (data['strike1DurationHours'] as num? ?? data['strike1MuteHours'] as num? ?? 1);
-
-        final strike2Action = _localStrike2Action ?? data['strike2Action'] ?? 'mute';
-        final strike2Duration = _localStrike2DurationHours ?? (data['strike2DurationHours'] as num? ?? data['strike2MuteHours'] as num? ?? 24);
-
-        final strike3Action = _localStrike3Action ?? data['strike3Action'] ?? (data['strike3Ban'] == true ? 'ban' : 'mute');
-        final strike3Duration = _localStrike3DurationHours ?? (data['strike3DurationHours'] as num? ?? 8760);
-
+        final bannedWords = List<String>.from(data['bannedWords'] ?? []);
+        
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Auto-Moderation Console',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 24),
+              const AdminHeader(title: 'Auto-Moderation Engine'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final bool isWide = constraints.maxWidth > 900;
 
-              LiquidGlassDialog(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Moderation Level',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'None: Messages are not filtered.\nMild: Severe toxicity is filtered and struck.\nAggressive: Mild toxicity receives 5-min timeout.',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                    const SizedBox(height: 16),
-                    FittedBox(
-                      child: SegmentedButton<String>(
-                        segments: const [
-                          ButtonSegment(value: 'none', label: Text('None')),
-                          ButtonSegment(value: 'mild', label: Text('Mild')),
-                          ButtonSegment(value: 'aggressive', label: Text('Aggressive')),
-                        ],
-                        selected: {moderationLevel},
-                        onSelectionChanged: (Set<String> newSelection) {
-                          setState(() => _localModerationLevel = newSelection.first);
-                          _updateConfig(data);
-                        },
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                            (states) {
-                              if (states.contains(WidgetState.selected)) {
-                                return Colors.redAccent.withValues(alpha: 0.3);
-                              }
-                              return Colors.transparent;
-                            },
+                    return Column(
+                      children: [
+                        if (isWide)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                  flex: 4,
+                                  child: Column(
+                                    children: [
+                                      _buildPermissionsPanel(data),
+                                      const SizedBox(height: 24),
+                                      _buildStrikeSettingsPanel(data),
+                                    ],
+                                  )),
+                              const SizedBox(width: 24),
+                              Expanded(
+                                  flex: 6,
+                                  child: _buildBlacklistPanel(bannedWords)),
+                            ],
+                          )
+                        else
+                          Column(
+                            children: [
+                              _buildPermissionsPanel(data, width: double.infinity),
+                              const SizedBox(height: 24),
+                              _buildStrikeSettingsPanel(data, width: double.infinity),
+                              const SizedBox(height: 24),
+                              _buildBlacklistPanel(bannedWords, width: double.infinity),
+                            ],
                           ),
-                        ),
-                      ),
-                    ),
-
-                    const Divider(height: 40, color: Colors.white24),
-
-                    const Text(
-                      'Strike Configuration',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
-                    ),
-                    const SizedBox(height: 16),
-
-                    _buildStrikeConfig(
-                      1,
-                      strike1Action,
-                      strike1Duration,
-                      data,
-                      (val) => setState(() => _localStrike1Action = val),
-                      (val) => setState(() => _localStrike1DurationHours = val),
-                    ),
-                    _buildStrikeConfig(
-                      2,
-                      strike2Action,
-                      strike2Duration,
-                      data,
-                      (val) => setState(() => _localStrike2Action = val),
-                      (val) => setState(() => _localStrike2DurationHours = val),
-                    ),
-                    _buildStrikeConfig(
-                      3,
-                      strike3Action,
-                      strike3Duration,
-                      data,
-                      (val) => setState(() => _localStrike3Action = val),
-                      (val) => setState(() => _localStrike3DurationHours = val),
-                    ),
-
-                    const Divider(height: 20, color: Colors.white10),
-
-                    const Text(
-                      'Manual Warning Escalation',
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.yellowAccent),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Configure automatic action when a player receives multiple manual warnings (Warn feature).',
-                      style: TextStyle(fontSize: 12, color: Colors.white60),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildStrikeConfig(
-                      4,
-                      _localStrike4Action ?? data['strike4Action'] ?? 'mute',
-                      _localStrike4DurationHours ??
-                          (data['strike4DurationHours'] as num? ?? 24),
-                      data,
-                      (val) => setState(() => _localStrike4Action = val),
-                      (val) => setState(() => _localStrike4DurationHours = val),
-                      max: 8760,
-                    ),
-
-                    const Divider(height: 40, color: Colors.white24),
-
-                    const Text(
-                      'Strike Decay',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Days of good behavior required to reduce a player\'s strike count by 1.',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                    const SizedBox(height: 16),
-                    _AutoModInputRow(
-                      label: 'Decay Time (Days)',
-                      value: decayDays.toInt(),
-                      unit: 'days',
-                      max: 365,
-                      onChanged: (val) {
-                        setState(() => _localDecayDays = val);
-                        _updateConfig(data);
-                      },
-                    ),
-
-                    const Divider(height: 40, color: Colors.white24),
-
-                    const Text(
-                      'Moderator Permissions',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orangeAccent),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Toggle specific powers granted to players with the Moderator role.',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                    const SizedBox(height: 16),
-                    SwitchListTile(
-                      title: const Text('Can Hide Messages'),
-                      subtitle: const Text(
-                          'Allows moderators to hide any player message from the chat.'),
-                      value: _localModCanHide ??
-                          data['modCanHideMessages'] ??
-                          true,
-                      onChanged: (val) {
-                        setState(() => _localModCanHide = val);
-                        _updateConfig(data);
-                      },
-                      activeThumbColor: Colors.blueAccent,
-                    ),
-                    SwitchListTile(
-                      title: const Text('Can Issue Warnings'),
-                      subtitle: const Text(
-                          'Allows moderators to send formal warnings to players.'),
-                      value: _localModCanWarn ?? data['modCanWarn'] ?? true,
-                      onChanged: (val) {
-                        setState(() => _localModCanWarn = val);
-                        _updateConfig(data);
-                      },
-                      activeThumbColor: Colors.blueAccent,
-                    ),
-                    SwitchListTile(
-                      title: const Text('Can Mute Players'),
-                      subtitle: const Text(
-                          'Allows moderators to apply chat mutes to players.'),
-                      value: _localModCanMute ?? data['modCanMute'] ?? true,
-                      onChanged: (val) {
-                        setState(() => _localModCanMute = val);
-                        _updateConfig(data);
-                      },
-                      activeThumbColor: Colors.blueAccent,
-                    ),
-                  ],
+                        const SizedBox(height: 48),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
@@ -390,82 +114,196 @@ class _AutoModScreenState extends State<AutoModScreen> {
       },
     );
   }
-}
 
-class _AutoModInputRow extends StatefulWidget {
-  final String label;
-  final int value;
-  final String unit;
-  final int max;
-  final Function(int) onChanged;
-
-  const _AutoModInputRow({
-    required this.label,
-    required this.value,
-    required this.unit,
-    required this.max,
-    required this.onChanged,
-  });
-
-  @override
-  State<_AutoModInputRow> createState() => _AutoModInputRowState();
-}
-
-class _AutoModInputRowState extends State<_AutoModInputRow> {
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.value.toString());
+  Widget _buildStrikeSettingsPanel(Map<String, dynamic> data, {double? width}) {
+    return AdminCard(
+      width: width,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Strike System & Decay',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          _buildNumberSetting(
+            'Decay Period (Days)',
+            data['decayDays'] ?? 30,
+            (v) => _updateSetting('decayDays', v),
+          ),
+          const Divider(color: Color(0xFF2A2A4A), height: 32),
+          const Text('Automatic Sanctions',
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.amberAccent,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          _buildActionSetting(
+            'On 3 strikes:',
+            data['strike3Action'] ?? 'mute',
+            data['strike3DurationHours'] ?? 24,
+            (action) => _updateSetting('strike3Action', action),
+            (hours) => _updateSetting('strike3DurationHours', hours),
+          ),
+        ],
+      ),
+    );
   }
 
-  @override
-  void didUpdateWidget(_AutoModInputRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.value != widget.value && _controller.text != widget.value.toString()) {
-      _controller.text = widget.value.toString();
+  Widget _buildNumberSetting(
+      String label, int value, ValueChanged<int> onChanged) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 14, color: Colors.white70)),
+        Row(
+          children: [
+            IconButton(
+              onPressed: () => onChanged(value - 1),
+              icon: const Icon(Icons.remove_circle_outline, size: 20),
+            ),
+            Text('$value',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            IconButton(
+              onPressed: () => onChanged(value + 1),
+              icon: const Icon(Icons.add_circle_outline, size: 20),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionSetting(String label, String action, int hours,
+      ValueChanged<String> onAction, ValueChanged<int> onHours) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 14, color: Colors.white70)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            DropdownButton<String>(
+              value: action,
+              dropdownColor: const Color(0xFF1E1E3A),
+              items: ['mute', 'ban']
+                  .map((e) => DropdownMenuItem(value: e, child: Text(e.toUpperCase())))
+                  .toList(),
+              onChanged: (v) => v != null ? onAction(v) : null,
+            ),
+            const SizedBox(width: 16),
+            const Text('for'),
+            const SizedBox(width: 16),
+            DropdownButton<int>(
+              value: hours,
+              dropdownColor: const Color(0xFF1E1E3A),
+              items: [1, 6, 12, 24, 48, 72, 168]
+                  .map((e) => DropdownMenuItem(value: e, child: Text('$e hrs')))
+                  .toList(),
+              onChanged: (v) => v != null ? onHours(v) : null,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _updateSetting(String field, dynamic value) async {
+    final success = await _adminService.updateAutoModConfig({field: value});
+    if (mounted && success) {
+      showCustomSnackBar(context, 'Auto-Mod settings updated.',
+          type: SnackBarType.success);
     }
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  Widget _buildPermissionsPanel(Map<String, dynamic> data, {double? width}) {
+    return AdminCard(
+      width: width,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Moderator Permissions',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          _modToggle('Allow Muting', data['modCanMute'] ?? true, 'modCanMute'),
+          const Divider(color: Color(0xFF2A2A4A), height: 24),
+          _modToggle('Allow Warning', data['modCanWarn'] ?? true, 'modCanWarn'),
+          const Divider(color: Color(0xFF2A2A4A), height: 24),
+          _modToggle('Allow Hiding Messages', data['modCanHideMessages'] ?? true, 'modCanHideMessages'),
+          const Divider(color: Color(0xFF2A2A4A), height: 24),
+          _modToggle('Allow Role Management', data['modCanManageRoles'] ?? false, 'modCanManageRoles'),
+        ],
+      ),
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          flex: 2,
-          child: Text(widget.label),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 80,
-          child: TextField(
-            controller: _controller,
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.center,
-            decoration: const InputDecoration(
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-              border: OutlineInputBorder(),
-              filled: true,
-              fillColor: Colors.black26,
-            ),
-            onSubmitted: (val) {
-              final int? newVal = int.tryParse(val);
-              if (newVal != null) {
-                widget.onChanged(newVal.clamp(1, widget.max));
-              }
-            },
+  Widget _buildBlacklistPanel(List<String> bannedWords, {double? width}) {
+    return AdminCard(
+      width: width,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Global Word Blacklist',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: AdminTextField(
+                  controller: _wordController,
+                  label: 'Blacklist Word',
+                  hint: 'Enter offensive term...',
+                  onSubmitted: (_) => _addWord(bannedWords),
+                ),
+              ),
+              const SizedBox(width: 12),
+              AdminButton(onPressed: () => _addWord(bannedWords), label: 'ADD'),
+            ],
           ),
+          const SizedBox(height: 24),
+          const Text('CURRENTLY BLOCKED',
+              style: TextStyle(fontSize: 10, color: Colors.white24, fontWeight: FontWeight.bold, letterSpacing: 1)),
+          const SizedBox(height: 12),
+          Container(
+            height: 300,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F0F1E),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF2A2A4A)),
+            ),
+            child: bannedWords.isEmpty
+                ? const Center(child: Text('No words blacklisted.', style: TextStyle(color: Colors.white12)))
+                : ListView.builder(
+                    itemCount: bannedWords.length,
+                    itemBuilder: (context, index) {
+                      final word = bannedWords[index];
+                      return ListTile(
+                        dense: true,
+                        title: Text(word, style: const TextStyle(fontSize: 14)),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 18, color: Colors.redAccent),
+                          onPressed: () => _removeWord(word, bannedWords),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _modToggle(String label, bool value, String field) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(child: Text(label, style: const TextStyle(fontSize: 14, color: Colors.white70))),
+        const SizedBox(width: 12),
+        Switch(
+          value: value,
+          onChanged: (v) => _updateSetting(field, v),
+          activeThumbColor: Colors.amberAccent,
+          activeTrackColor: Colors.amberAccent.withValues(alpha: 0.2),
         ),
-        const SizedBox(width: 8),
-        Expanded(flex: 1, child: Text(widget.unit)),
       ],
     );
   }
