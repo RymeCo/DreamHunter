@@ -271,7 +271,7 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                   // ECONOMY MANAGEMENT (ADMIN ONLY)
                   if (provider.isAdmin && !isTargetAdmin) ...[
                     const Text(
-                      'Economy Management',
+                      'Economy & Progress Management',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.amberAccent,
@@ -288,6 +288,11 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                         Text(
                           'Hell: ${widget.player['lastKnownHellStones'] ?? 0}',
                           style: const TextStyle(fontSize: 11, color: Colors.white54),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Playtime: ${_formatPlaytime(widget.player['playtime'] ?? 0)}',
+                          style: const TextStyle(fontSize: 11, color: Colors.cyanAccent),
                         ),
                       ],
                     ),
@@ -502,6 +507,23 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
         );
       },
     );
+  }
+
+  String _formatPlaytime(dynamic seconds) {
+    if (seconds == null) return '0h';
+    final int sec = seconds is int ? seconds : int.tryParse(seconds.toString()) ?? 0;
+    
+    final days = sec ~/ 86400;
+    final hours = (sec % 86400) ~/ 3600;
+    final minutes = (sec % 3600) ~/ 60;
+    
+    if (days > 0) {
+      return '${days}d ${hours}h';
+    } else if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    } else {
+      return '${minutes}m';
+    }
   }
 
   Widget _muteBtn(String uid, String label, int hours) {

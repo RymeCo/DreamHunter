@@ -4,18 +4,20 @@ import 'package:uuid/uuid.dart';
 
 class OfflineTransaction {
   final String id;
-  final String type; // 'PURCHASE', 'CONVERSION', 'EARN'
+  final String type; // 'PURCHASE', 'CONVERSION', 'EARN', 'PLAYTIME'
   final String? itemId;
   final int dreamDelta;
   final int hellDelta;
+  final int playtimeDelta; // In seconds
   final String timestamp;
 
   OfflineTransaction({
     required this.id,
     required this.type,
     this.itemId,
-    required this.dreamDelta,
-    required this.hellDelta,
+    this.dreamDelta = 0,
+    this.hellDelta = 0,
+    this.playtimeDelta = 0,
     required this.timestamp,
   });
 
@@ -25,6 +27,7 @@ class OfflineTransaction {
     'itemId': itemId,
     'dreamDelta': dreamDelta,
     'hellDelta': hellDelta,
+    'playtimeDelta': playtimeDelta,
     'timestamp': timestamp,
   };
 
@@ -32,8 +35,9 @@ class OfflineTransaction {
     id: json['id'],
     type: json['type'],
     itemId: json['itemId'],
-    dreamDelta: json['dreamDelta'],
-    hellDelta: json['hellDelta'],
+    dreamDelta: json['dreamDelta'] ?? 0,
+    hellDelta: json['hellDelta'] ?? 0,
+    playtimeDelta: json['playtimeDelta'] ?? 0,
     timestamp: json['timestamp'],
   );
 }
@@ -43,11 +47,12 @@ class OfflineCache {
   static const String _transactionQueueKey = 'transaction_queue';
   static const _uuid = Uuid();
 
-  static Future<void> saveCurrency(int dreamCoins, int hellStones) async {
+  static Future<void> saveCurrency(int dreamCoins, int hellStones, [int playtime = 0]) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_currencyKey, json.encode({
       'dreamCoins': dreamCoins,
       'hellStones': hellStones,
+      'playtime': playtime,
     }));
   }
 
@@ -59,6 +64,7 @@ class OfflineCache {
       return {
         'dreamCoins': data['dreamCoins'] as int,
         'hellStones': data['hellStones'] as int,
+        'playtime': data['playtime'] as int? ?? 0,
       };
     }
     return null;
@@ -69,6 +75,7 @@ class OfflineCache {
     String? itemId,
     int dreamDelta = 0,
     int hellDelta = 0,
+    int playtimeDelta = 0,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final queue = await getTransactionQueue();
@@ -79,17 +86,19 @@ class OfflineCache {
       itemId: itemId,
       dreamDelta: dreamDelta,
       hellDelta: hellDelta,
+      playtimeDelta: playtimeDelta,
       timestamp: DateTime.now().toUtc().toIsoformat(),
     );
     
     queue.add(transaction);
     await prefs.setString(_transactionQueueKey, json.encode(queue.map((t) => t.toJson()).toList()));
     
-    // Also update local currency immediately
-    final current = await getCurrency() ?? {'dreamCoins': 0, 'hellStones': 0};
+    // Also update local currency/playtime immediately
+    final current = await getCurrency() ?? {'dreamCoins': 0, 'hellStones': 0, 'playtime': 0};
     await saveCurrency(
       current['dreamCoins']! + dreamDelta,
       current['hellStones']! + hellDelta,
+      current['playtime']! + playtimeDelta,
     );
   }
 

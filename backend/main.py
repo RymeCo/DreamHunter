@@ -208,6 +208,7 @@ async def get_user_profile_data(decoded_token: dict = Depends(verify_firebase_to
         "warnings": [],
         "dreamCoins": 0,
         "hellStones": 0,
+        "playtime": 0, # In seconds
         "lastKnownDreamCoins": 0,
         "lastKnownHellStones": 0,
         "lastSyncTimestamp": now.isoformat(),
@@ -424,10 +425,11 @@ async def report_content(report: ReportRequest):
 
 class OfflineTransaction(BaseModel):
     id: str
-    type: str # PURCHASE, CONVERSION, EARN
+    type: str # PURCHASE, CONVERSION, EARN, PLAYTIME
     itemId: Optional[str] = None
-    dreamDelta: int
-    hellDelta: int
+    dreamDelta: int = 0
+    hellDelta: int = 0
+    playtimeDelta: int = 0 # In seconds
     timestamp: str
 
 class ReconcileRequest(BaseModel):
@@ -445,6 +447,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
     data = doc.to_dict()
     current_dream = data.get('dreamCoins', 0)
     current_hell = data.get('hellStones', 0)
+    current_playtime = data.get('playtime', 0)
     inventory = data.get('inventory', [])
     processed_ids = set(data.get('processedTransactionIds', []))
     
@@ -466,6 +469,9 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         if t.type == 'PURCHASE' and t.itemId:
             if t.itemId not in inventory:
                 inventory.append(t.itemId)
+
+        if t.type == 'PLAYTIME':
+            current_playtime += t.playtimeDelta
         
         current_dream += t.dreamDelta
         current_hell += t.hellDelta
@@ -494,6 +500,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
     user_ref.update({
         "dreamCoins": current_dream,
         "hellStones": current_hell,
+        "playtime": current_playtime,
         "lastKnownDreamCoins": current_dream,
         "lastKnownHellStones": current_hell,
         "lastSyncTimestamp": now.isoformat(),
@@ -505,6 +512,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         "status": "success", 
         "dreamCoins": current_dream, 
         "hellStones": current_hell,
+        "playtime": current_playtime,
         "inventory": inventory
     }
 
