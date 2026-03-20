@@ -50,89 +50,124 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isNarrow = MediaQuery.of(context).size.width < 1100;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const AdminHeader(title: 'Shop Catalog Management'),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Form to add items
-              Expanded(
-                flex: 1,
-                child: AdminCard(
-                  child: Column(
-                    children: [
-                      const Text('ADD NEW ITEM', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amberAccent)),
-                      const SizedBox(height: 16),
-                      AdminTextField(controller: _nameController, label: 'Item Name'),
-                      const SizedBox(height: 16),
-                      AdminTextField(
-                        controller: _priceController, 
-                        label: 'Price',
-                      ),
-                      const SizedBox(height: 16),
-                      _buildDropdown('Category', _selectedType, ['character', 'powerup', 'item'], (val) {
-                        setState(() => _selectedType = val!);
-                      }),
-                      const SizedBox(height: 16),
-                      _buildDropdown('Currency', _selectedCurrency, ['coins', 'tokens'], (val) {
-                        setState(() => _selectedCurrency = val!);
-                      }),
-                      const SizedBox(height: 16),
-                      AdminTextField(controller: _descController, label: 'Description', maxLines: 2),
-                      const SizedBox(height: 24),
-                      AdminButton(onPressed: _addShopItem, label: 'PUBLISH TO SHOP', icon: Icons.publish_rounded),
-                    ],
-                  ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          child: isNarrow
+              ? Column(
+                  children: [
+                    _buildAddForm(),
+                    const SizedBox(height: 24),
+                    _buildCatalogList(),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 1, child: _buildAddForm()),
+                    const SizedBox(width: 24),
+                    Expanded(flex: 2, child: _buildCatalogList()),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 24),
-              // List of current items
-              Expanded(
-                flex: 2,
-                child: AdminCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('CURRENT CATALOG', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amberAccent)),
-                      const SizedBox(height: 16),
-                      StreamBuilder<QuerySnapshot>(
-                        stream: _db.collection('shop_items').snapshots(),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-                          final items = snapshot.data!.docs;
-                          if (items.isEmpty) return const Center(child: Text('Catalog is empty.'));
-
-                          return ListView.separated(
-                            shrinkWrap: true,
-                            itemCount: items.length,
-                            separatorBuilder: (context, index) => const Divider(color: Colors.white10),
-                            itemBuilder: (context, index) {
-                              final item = items[index].data() as Map<String, dynamic>;
-                              final id = items[index].id;
-                              return ListTile(
-                                title: Text(item['name'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                subtitle: Text('${item['type']} • ${item['price']} ${item['currencyType']}'),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                                  onPressed: () => _db.collection('shop_items').doc(id).delete(),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAddForm() {
+    return AdminCard(
+      child: Column(
+        children: [
+          const Text('ADD NEW ITEM',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, color: Colors.amberAccent)),
+          const SizedBox(height: 16),
+          AdminTextField(controller: _nameController, label: 'Item Name'),
+          const SizedBox(height: 16),
+          AdminTextField(
+            controller: _priceController,
+            label: 'Price',
+          ),
+          const SizedBox(height: 16),
+          _buildDropdown(
+              'Category', _selectedType, ['character', 'powerup', 'item'], (val) {
+            setState(() => _selectedType = val!);
+          }),
+          const SizedBox(height: 16),
+          _buildDropdown('Currency', _selectedCurrency, ['coins', 'tokens'],
+              (val) {
+            setState(() => _selectedCurrency = val!);
+          }),
+          const SizedBox(height: 16),
+          AdminTextField(
+              controller: _descController, label: 'Description', maxLines: 2),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: AdminButton(
+              onPressed: _addShopItem,
+              label: 'PUBLISH TO SHOP',
+              icon: Icons.publish_rounded,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCatalogList() {
+    return AdminCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('CURRENT CATALOG',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, color: Colors.amberAccent)),
+          const SizedBox(height: 16),
+          StreamBuilder<QuerySnapshot>(
+            stream: _db.collection('shop_items').snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final items = snapshot.data!.docs;
+              if (items.isEmpty) {
+                return const Center(child: Text('Catalog is empty.'));
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: items.length,
+                separatorBuilder: (context, index) =>
+                    const Divider(color: Colors.white10),
+                itemBuilder: (context, index) {
+                  final item = items[index].data() as Map<String, dynamic>;
+                  final id = items[index].id;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(item['name'] ?? 'Unknown',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                        '${item['type']} • ${item['price']} ${item['currencyType']}'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline,
+                          color: Colors.redAccent),
+                      onPressed: () =>
+                          _db.collection('shop_items').doc(id).delete(),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 

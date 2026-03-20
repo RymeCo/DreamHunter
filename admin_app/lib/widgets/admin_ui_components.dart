@@ -128,9 +128,13 @@ class AdminButton extends StatelessWidget {
                   Icon(icon, size: 16),
                   const SizedBox(width: 8),
                 ],
-                Text(
-                  label,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                 ),
               ],
             ),
