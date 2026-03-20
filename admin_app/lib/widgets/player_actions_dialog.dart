@@ -145,6 +145,9 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
         type: SnackBarType.success,
       );
       if (widget.onActionComplete != null) widget.onActionComplete!();
+      if (mounted) {
+        Provider.of<AdminProvider>(context, listen: false).refreshDashboard();
+      }
       Navigator.pop(context);
     }
   }
