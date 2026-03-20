@@ -300,6 +300,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _showPurchaseDialog() {
+    showGeneralDialog(
+      context: context,
+      barrierLabel: "PurchaseDialog",
+      barrierDismissible: true,
+      barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Center(
+          child: LiquidGlassDialog(
+            width: 350,
+            height: 400,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.stars_rounded, color: Colors.lightBlueAccent, size: 80),
+                const SizedBox(height: 24),
+                const Text(
+                  'GHOST TOKENS',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    'Purchase premium tokens to unlock exclusive characters and items!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.lightBlueAccent.withValues(alpha: 0.8),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('BACK TO GAME', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  '(In-game purchases coming soon)',
+                  style: TextStyle(color: Colors.white24, fontSize: 10),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -342,72 +401,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
             height: double.infinity,
           ),
 
-          // --- Sleek Horizontal Currency HUD (Top-Left) ---
+          // --- Compact Vertical Currency HUD (Top-Left, Aligned with Menu) ---
           Positioned(
-            top: 55,
+            top: 16, // Level with AppBar button padding
             left: 20,
-            child: StreamBuilder<DocumentSnapshot>(
-              stream: _userService.getUserStats(),
-              builder: (context, snapshot) {
-                int coins = 0;
-                int tokens = 0;
+            child: SafeArea(
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: _userService.getUserStats(),
+                builder: (context, snapshot) {
+                  int coins = 0;
+                  int tokens = 0;
 
-                if (_isLoggedIn && snapshot.hasData && snapshot.data!.exists) {
-                  final userData = snapshot.data!.data() as Map<String, dynamic>;
-                  coins = userData['ghostCoins'] ?? 0;
-                  tokens = userData['ghostTokens'] ?? 0;
-                }
+                  if (_isLoggedIn && snapshot.hasData && snapshot.data!.exists) {
+                    final userData = snapshot.data!.data() as Map<String, dynamic>;
+                    coins = userData['ghostCoins'] ?? 0;
+                    tokens = userData['ghostTokens'] ?? 0;
+                  }
 
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF16162F).withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(
-                      color: const Color(0xFF4A4A8A).withValues(alpha: 0.5),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF6A1B9A).withValues(alpha: 0.2),
-                        blurRadius: 15,
-                        spreadRadius: 2,
-                      )
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Ghost Coins
-                      _buildCurrencyItem(
+                      _buildCurrencyChip(
                         icon: Icons.monetization_on_rounded,
                         value: '$coins',
                         color: Colors.amberAccent,
                       ),
-                      const SizedBox(width: 12),
-                      // Separator
-                      Container(
-                        width: 1.5,
-                        height: 20,
-                        color: Colors.white10,
-                      ),
-                      const SizedBox(width: 12),
-                      // Ghost Tokens
-                      _buildCurrencyItem(
+                      const SizedBox(height: 6), // Tight spacing
+                      // Ghost Tokens with Plus Button
+                      _buildCurrencyChip(
                         icon: Icons.stars_rounded,
                         value: '$tokens',
                         color: Colors.lightBlueAccent,
+                        onPlusTap: _showPurchaseDialog,
                       ),
                     ],
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
 
           // Global Broadcast Banner
           Positioned(
-            top: 160, // Below Currency HUD
+            top: 160, 
             left: 20,
             right: 20,
             child: StreamBuilder<DocumentSnapshot>(
@@ -558,26 +595,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildCurrencyItem({
+  Widget _buildCurrencyChip({
     required IconData icon,
     required String value,
     required Color color,
+    VoidCallback? onPlusTap,
   }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: color, size: 18),
-        const SizedBox(width: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: 15,
-            letterSpacing: 0.5,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF16162F).withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.1),
+            blurRadius: 6,
+            spreadRadius: 1,
+          )
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 14,
+            ),
           ),
-        ),
-      ],
+          if (onPlusTap != null) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: onPlusTap,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.add, color: color, size: 14),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
