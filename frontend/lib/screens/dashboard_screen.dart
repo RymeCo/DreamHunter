@@ -1,4 +1,6 @@
 import 'package:dreamhunter/services/user_service.dart';
+import 'package:dreamhunter/services/backend_service.dart';
+import 'package:dreamhunter/services/offline_cache.dart';
 import 'package:dreamhunter/widgets/shop_dialog.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'dart:async';
@@ -27,10 +29,12 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late StreamSubscription<User?> _authStateSubscription;
+  Timer? _syncTimer;
   bool _isLoggedIn = false;
   bool _isBackendReady = false;
   AuthDialogType _currentDialogType = AuthDialogType.login;
   final UserService _userService = UserService();
+  final BackendService _backendService = BackendService();
 
   @override
   void initState() {
@@ -43,10 +47,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {
           _isLoggedIn = user != null;
         });
+        if (_isLoggedIn) {
+          _startSyncTimer();
+        } else {
+          _stopSyncTimer();
+        }
       }
     });
 
     _pingBackend();
+    if (_isLoggedIn) _startSyncTimer();
+  }
+
+  void _startSyncTimer() {
+    _syncTimer?.cancel();
+    _syncTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
+      _syncEconomyWithBackend();
+    });
+    // Also sync immediately on start
+    _syncEconomyWithBackend();
+  }
+
+  void _stopSyncTimer() {
+    _syncTimer?.cancel();
+    _syncTimer = null;
+  }
+
+  Future<void> _syncEconomyWithBackend() async {
+    if (!_isLoggedIn || !_isBackendReady) return;
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (!doc.exists) return;
+
+      final data = doc.data() as Map<String, dynamic>;
+      final int dreamCoins = data['dreamCoins'] ?? 0;
+      final int hellStones = data['hellStones'] ?? 0;
+
+      // Sync with backend
+      final result = await _backendService.syncEconomy(dreamCoins, hellStones);
+      
+      if (result != null && mounted) {
+        if (result['status'] == 'anomaly_detected') {
+          showCustomSnackBar(
+            context, 
+            'Economy anomaly detected. Reverting to last safe state.',
+            type: SnackBarType.info,
+          );
+        }
+        // Update local cache
+        await OfflineCache.saveCurrency(
+          result['dreamCoins'] ?? dreamCoins, 
+          result['hellStones'] ?? hellStones,
+        );
+      }
+    } catch (e) {
+      debugPrint('Sync failed: $e');
+    }
   }
 
   Future<void> _pingBackend() async {
@@ -55,7 +115,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           .get(Uri.parse('https://dreamhunter-api.onrender.com/'))
           .timeout(const Duration(seconds: 30));
       if (response.statusCode == 200) {
-        if (mounted) setState(() => _isBackendReady = true);
+        if (mounted) {
+          setState(() => _isBackendReady = true);
+          if (_isLoggedIn) _startSyncTimer();
+        }
       }
     } catch (_) {
       if (mounted) setState(() => _isBackendReady = false);
@@ -65,6 +128,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _authStateSubscription.cancel();
+    _stopSyncTimer();
     super.dispose();
   }
 
@@ -313,10 +377,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.stars_rounded, color: Colors.lightBlueAccent, size: 80),
+                const Icon(Icons.diamond_rounded, color: Colors.redAccent, size: 80),
                 const SizedBox(height: 24),
                 const Text(
-                  'GHOST TOKENS',
+                  'HELL STONES',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24,
@@ -328,7 +392,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 32),
                   child: Text(
-                    'Purchase premium tokens to unlock exclusive characters and items!',
+                    'Purchase premium stones to unlock exclusive characters and items!',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
@@ -337,7 +401,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.lightBlueAccent.withValues(alpha: 0.8),
+                    backgroundColor: Colors.redAccent.withValues(alpha: 0.8),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -372,7 +436,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.monetization_on_rounded, color: Colors.amberAccent, size: 80),
+                const Icon(Icons.toll_rounded, color: Colors.amberAccent, size: 80),
                 const SizedBox(height: 24),
                 const Text(
                   'COIN EXCHANGE',
@@ -387,7 +451,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 32),
                   child: Text(
-                    'Exchange your premium Ghost Tokens for common Ghost Coins!',
+                    'Exchange your premium Hell Stones for common Dream Coins!',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
@@ -436,8 +500,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               if (_isLoggedIn && snapshot.hasData && snapshot.data!.exists) {
                 final userData = snapshot.data!.data() as Map<String, dynamic>;
-                coins = userData['ghostCoins'] ?? 0;
-                tokens = userData['ghostTokens'] ?? 0;
+                coins = userData['dreamCoins'] ?? 0;
+                tokens = userData['hellStones'] ?? 0;
               }
 
               return Column(
@@ -445,16 +509,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildCurrencyChip(
-                    icon: Icons.monetization_on_rounded,
+                    icon: Icons.toll_rounded,
                     value: '$coins',
                     color: Colors.amberAccent,
                     onPlusTap: _showCoinExchangeDialog,
                   ),
                   const SizedBox(height: 4),
                   _buildCurrencyChip(
-                    icon: Icons.stars_rounded,
+                    icon: Icons.diamond_rounded,
                     value: '$tokens',
-                    color: Colors.lightBlueAccent,
+                    color: Colors.redAccent,
                     onPlusTap: _showPurchaseDialog,
                   ),
                 ],
@@ -640,20 +704,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required Color color,
     VoidCallback? onPlusTap,
   }) {
-    return Container(
+    return LiquidGlassDialog(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFF16162F).withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.1),
-            blurRadius: 6,
-            spreadRadius: 1,
-          )
-        ],
-      ),
+      borderRadius: 12,
+      blurSigma: 4,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

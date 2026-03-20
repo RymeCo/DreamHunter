@@ -89,4 +89,35 @@ class BackendService {
       return false;
     }
   }
+
+  /// Synchronizes local economy state with the backend
+  Future<Map<String, dynamic>?> syncEconomy(int dreamCoins, int hellStones) async {
+    try {
+      final response = await post(
+        '/economy/sync',
+        body: {'dreamCoins': dreamCoins, 'hellStones': hellStones},
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error syncing economy: $e');
+      return null;
+    }
+  }
+
+  /// Converts Hell Stones to Dream Coins
+  Future<Map<String, dynamic>?> convertCurrency(int hellStones) async {
+    try {
+      final response = await post('/economy/convert?hell_stones=$hellStones');
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error converting currency: $e');
+      return null;
+    }
+  }
 }

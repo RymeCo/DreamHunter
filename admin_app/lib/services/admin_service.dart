@@ -39,13 +39,10 @@ class AdminService {
     bool? shopMaintenance,
   ) async {
     try {
-      final Map<String, dynamic> bodyData = {};
-      if (chatMaintenance != null) {
-        bodyData['chatMaintenance'] = chatMaintenance;
-      }
-      if (shopMaintenance != null) {
-        bodyData['shopMaintenance'] = shopMaintenance;
-      }
+      final Map<String, dynamic> bodyData = {
+        'chatMaintenance': ?chatMaintenance,
+        'shopMaintenance': ?shopMaintenance,
+      };
 
       final response = await _client.patch(
         Uri.parse('$baseUrl/admin/maintenance'),
@@ -74,23 +71,6 @@ class AdminService {
   }
 
   // --- Player Management ---
-
-  Future<bool> updatePlayerCurrency(String uid, {int? ghostCoins, int? ghostTokens}) async {
-    try {
-      final response = await _client.patch(
-        Uri.parse('$baseUrl/admin/users/$uid/currency'),
-        headers: await getAuthHeaders(),
-        body: json.encode({
-          if (ghostCoins != null) 'ghostCoins': ghostCoins,
-          if (ghostTokens != null) 'ghostTokens': ghostTokens,
-        }),
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('Error updating player currency: $e');
-      return false;
-    }
-  }
 
   Future<List<dynamic>> searchPlayers({
     String? query,
@@ -176,6 +156,27 @@ class AdminService {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error warning user: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updatePlayerCurrency(
+    String uid, {
+    int? dreamCoins,
+    int? hellStones,
+  }) async {
+    try {
+      final response = await _client.patch(
+        Uri.parse('$baseUrl/admin/users/$uid/currency'),
+        headers: await getAuthHeaders(),
+        body: json.encode({
+          'dreamCoins': ?dreamCoins,
+          'hellStones': ?hellStones,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error updating currency: $e');
       return false;
     }
   }

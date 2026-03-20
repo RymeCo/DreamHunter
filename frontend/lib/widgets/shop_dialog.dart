@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dreamhunter/services/user_service.dart';
-import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
-import 'package:dreamhunter/widgets/custom_snackbar.dart';
+import 'liquid_glass_dialog.dart';
 
 class ShopDialog extends StatefulWidget {
   const ShopDialog({super.key});
@@ -13,7 +10,6 @@ class ShopDialog extends StatefulWidget {
 
 class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final UserService _userService = UserService();
 
   @override
   void initState() {
@@ -31,88 +27,68 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Center(
       child: LiquidGlassDialog(
-        width: 450, // Slightly wider to avoid cramping
-        height: 700, // Slightly taller
+        width: MediaQuery.of(context).size.width * 0.85,
+        height: MediaQuery.of(context).size.height * 0.7,
+        padding: EdgeInsets.zero,
         child: Column(
           children: [
-            // Header with Currency HUD
-            Container(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-              child: Column(
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'GHOST SHOP',
+                    'DREAM SHOP',
                     style: TextStyle(
-                      color: Colors.amberAccent,
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 3,
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  // Real-time Currency HUD inside Shop
-                  StreamBuilder<DocumentSnapshot>(
-                    stream: _userService.getUserStats(),
-                    builder: (context, snapshot) {
-                      final userData = snapshot.data?.data() as Map<String, dynamic>? ?? {};
-                      final coins = userData['ghostCoins'] ?? 0;
-                      final tokens = userData['ghostTokens'] ?? 0;
-
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildCurrencyDisplay(
-                            icon: Icons.monetization_on_rounded,
-                            value: '$coins',
-                            color: Colors.amberAccent,
-                          ),
-                          const SizedBox(width: 16),
-                          _buildCurrencyDisplay(
-                            icon: Icons.stars_rounded,
-                            value: '$tokens',
-                            color: Colors.lightBlueAccent,
-                          ),
-                        ],
-                      );
-                    },
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
             
+            // Tab Bar
             TabBar(
               controller: _tabController,
               indicatorColor: Colors.amberAccent,
-              indicatorWeight: 3,
               labelColor: Colors.amberAccent,
-              unselectedLabelColor: Colors.white38,
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+              unselectedLabelColor: Colors.white60,
               tabs: const [
-                Tab(text: 'CHARACTERS'),
-                Tab(text: 'POWER-UPS'),
-                Tab(text: 'ITEMS'),
+                Tab(text: 'Essential Gear'),
+                Tab(text: 'Ethereal Boosts'),
+                Tab(text: 'Arcane Relics'),
               ],
             ),
-            const SizedBox(height: 8),
+            
+            // Tab View
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildShopCategory('character'),
-                  _buildShopCategory('powerup'),
-                  _buildShopCategory('item'),
+                  _buildShopCategory([
+                    _ShopItem('Health Potion', 'Restore 50 HP', 150, Icons.healing),
+                    _ShopItem('Energy Bar', 'Speed boost for 30s', 200, Icons.bolt),
+                    _ShopItem('Map Fragment', 'Reveal nearby ghosts', 100, Icons.map),
+                  ]),
+                  _buildShopCategory([
+                    _ShopItem('Ghost Veil', 'Invisibility for 10s', 500, Icons.visibility_off),
+                    _ShopItem('Spirit Shield', 'Ignore next hit', 750, Icons.shield),
+                    _ShopItem('Gold Magnet', 'Auto-collect coins', 600, Icons.attractions),
+                  ]),
+                  _buildShopCategory([
+                    _ShopItem('Night Vision', 'Permanent dark sight', 5000, Icons.nights_stay),
+                    _ShopItem('Dream Walker', 'Walk through walls', 10000, Icons.auto_fix_high),
+                    _ShopItem('Soul Tether', 'Half respawn time', 3500, Icons.link),
+                  ]),
                 ],
-              ),
-            ),
-            // Close Button at bottom
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16, top: 8),
-              child: TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'CLOSE SHOP',
-                  style: TextStyle(color: Colors.white38, fontWeight: FontWeight.bold),
-                ),
               ),
             ),
           ],
@@ -121,191 +97,79 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildCurrencyDisplay({
-    required IconData icon,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+  Widget _buildShopCategory(List<_ShopItem> items) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(20),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 200,
+        childAspectRatio: 0.75,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white12),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildShopCategory(String type) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _userService.getShopItems(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Colors.amberAccent));
-        }
-
-        final allItems = snapshot.data?.docs ?? [];
-        final filteredItems = allItems.where((doc) => doc['type'] == type).toList();
-
-        if (filteredItems.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.shopping_basket_outlined, size: 64, color: Colors.white.withValues(alpha: 0.1)),
-                const SizedBox(height: 16),
-                Text(
-                  'No ${type}s available yet.',
-                  style: const TextStyle(color: Colors.white38, fontSize: 16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(item.icon, size: 48, color: Colors.amberAccent),
+              const SizedBox(height: 12),
+              Text(
+                item.name,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  '(Placeholder: Add items in Admin App)',
-                  style: TextStyle(color: Colors.white10, fontSize: 12),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item.description,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white60, fontSize: 12),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.amberAccent.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ],
-            ),
-          );
-        }
-
-        return GridView.builder(
-          padding: const EdgeInsets.all(20), // Increased padding to avoid cramping
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.78,
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 20,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.toll_rounded, size: 14, color: Colors.amberAccent),
+                    const SizedBox(width: 4),
+                    Text(
+                      item.price.toString(),
+                      style: const TextStyle(
+                        color: Colors.amberAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          itemCount: filteredItems.length,
-          itemBuilder: (context, index) {
-            final item = filteredItems[index].data() as Map<String, dynamic>;
-            return _buildShopItemCard(item);
-          },
         );
       },
     );
   }
+}
 
-  Widget _buildShopItemCard(Map<String, dynamic> item) {
-    final bool isToken = item['currencyType'] == 'tokens';
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16), // Softer corners
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                _getIconForType(item['type']),
-                size: 40,
-                color: Colors.white24,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Text(
-              item['name'] ?? 'Unknown',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white, 
-                fontWeight: FontWeight.bold, 
-                fontSize: 14,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12, top: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  isToken ? Icons.stars_rounded : Icons.monetization_on_rounded,
-                  size: 16,
-                  color: isToken ? Colors.lightBlueAccent : Colors.amberAccent,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '${item['price'] ?? 0}',
-                  style: TextStyle(
-                    color: isToken ? Colors.lightBlueAccent : Colors.amberAccent,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => showCustomSnackBar(context, 'Purchase system coming soon!'),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
-                  ),
-                ),
-                child: const Text(
-                  'GET',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white, 
-                    fontWeight: FontWeight.w900, 
-                    fontSize: 13,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+class _ShopItem {
+  final String name;
+  final String description;
+  final int price;
+  final IconData icon;
 
-  IconData _getIconForType(String? type) {
-    switch (type) {
-      case 'character': return Icons.person_rounded;
-      case 'powerup': return Icons.bolt_rounded;
-      case 'item': return Icons.category_rounded;
-      default: return Icons.help_outline_rounded;
-    }
-  }
+  _ShopItem(this.name, this.description, this.price, this.icon);
 }

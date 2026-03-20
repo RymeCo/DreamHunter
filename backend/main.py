@@ -103,6 +103,14 @@ class ReportRequest(BaseModel):
     categories: List[str]
     reporterEmail: Optional[str] = None
 
+class SyncRequest(BaseModel):
+    dreamCoins: int
+    hellStones: int
+
+# --- Economy Constants ---
+MAX_DREAM_COINS_PER_HOUR = 5000
+HELL_TO_DREAM_RATE = 100
+
 # --- Dependencies ---
 
 async def verify_firebase_token(authorization: Optional[str] = Header(None)):
@@ -198,8 +206,11 @@ async def get_user_profile_data(decoded_token: dict = Depends(verify_firebase_to
         "isAdmin": False,
         "isModerator": False,
         "warnings": [],
-        "ghostCoins": 500,
-        "ghostTokens": 10,
+        "dreamCoins": 0,
+        "hellStones": 0,
+        "lastKnownDreamCoins": 0,
+        "lastKnownHellStones": 0,
+        "lastSyncTimestamp": now.isoformat()
     }
     
     db_profile = default_profile.copy()
@@ -208,44 +219,7 @@ async def get_user_profile_data(decoded_token: dict = Depends(verify_firebase_to
     
     return default_profile
 
-# --- Admin & Store Management ---
-
-class CurrencyUpdate(BaseModel):
-    ghostCoins: Optional[int] = None
-    ghostTokens: Optional[int] = None
-
-@app.patch("/admin/users/{uid}/currency")
-async def update_player_currency(uid: str, update: CurrencyUpdate, decoded_token: dict = Depends(verify_firebase_token)):
-    # Verify Admin Status
-    admin_uid = decoded_token['uid']
-    admin_ref = db.collection('users').document(admin_uid)
-    admin_doc = admin_ref.get()
-    
-    if not admin_doc.exists or not admin_doc.to_dict().get('isAdmin', False):
-        raise HTTPException(status_code=403, detail="Admin privileges required.")
-    
-    user_ref = db.collection('users').document(uid)
-    if not user_ref.get().exists:
-        raise HTTPException(status_code=404, detail="Player not found.")
-    
-    update_data = {}
-    if update.ghostCoins is not None:
-        update_data['ghostCoins'] = update.ghostCoins
-    if update.ghostTokens is not None:
-        update_data['ghostTokens'] = update.ghostTokens
-    
-    if update_data:
-        user_ref.update(update_data)
-        # Log to Audit
-        db.collection('audit_logs').add({
-            'action': 'UPDATE_CURRENCY',
-            'targetUid': uid,
-            'adminUid': admin_uid,
-            'details': update_data,
-            'timestamp': firestore.SERVER_TIMESTAMP
-        })
-    
-    return {"status": "success", "updatedFields": update_data}
+# --- Store Management ---
 
 class ShopItemRequest(BaseModel):
     name: str
@@ -445,6 +419,95 @@ async def report_content(report: ReportRequest):
         send_urgent_report_email(new_report_ref.id, report.originalMessageText)
     
     return {"status": "success", "message": "Report submitted successfully.", "urgent": is_urgent}
+
+@app.post("/economy/sync")
+async def sync_economy(req: SyncRequest, decoded_token: dict = Depends(verify_firebase_token)):
+    uid = decoded_token['uid']
+    now = datetime.now(timezone.utc)
+    
+    user_ref = db.collection('users').document(uid)
+    doc = user_ref.get()
+    
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    data = doc.to_dict()
+    
+    # --- Security Validation ---
+    last_sync_str = data.get('lastSyncTimestamp')
+    last_dream = data.get('lastKnownDreamCoins', 0)
+    
+    if last_sync_str:
+        last_sync = datetime.fromisoformat(last_sync_str.replace('Z', '+00:00'))
+        hours_passed = (now - last_sync).total_seconds() / 3600.0
+        time_delta_hours = max(hours_passed, 0.016) # min 1 minute
+        
+        max_allowed = last_dream + int(MAX_DREAM_COINS_PER_HOUR * time_delta_hours)
+        
+        if req.dreamCoins > (max_allowed + 500):
+            from admin import log_audit
+            log_audit(
+                admin_uid="SYSTEM_SECURITY",
+                action="ECONOMY_ANOMALY",
+                target=uid,
+                details=f"Anomaly: {req.dreamCoins} requested. Max: {max_allowed}. Reverting to {last_dream}.",
+                target_name=data.get('displayName'),
+                target_email=data.get('email')
+            )
+            # Revert to last known safe state
+            user_ref.update({
+                "dreamCoins": last_dream,
+                "lastSyncTimestamp": now.isoformat()
+            })
+            return {
+                "status": "anomaly_detected", 
+                "message": "Unusual activity detected.",
+                "dreamCoins": last_dream,
+                "hellStones": data.get('hellStones', 0)
+            }
+
+    # If safe, update
+    user_ref.update({
+        "dreamCoins": req.dreamCoins,
+        "hellStones": req.hellStones,
+        "lastKnownDreamCoins": req.dreamCoins,
+        "lastKnownHellStones": req.hellStones,
+        "lastSyncTimestamp": now.isoformat()
+    })
+    
+    return {"status": "success", "dreamCoins": req.dreamCoins, "hellStones": req.hellStones}
+
+@app.post("/economy/convert")
+async def convert_currency(hell_stones: int, decoded_token: dict = Depends(verify_firebase_token)):
+    if hell_stones <= 0:
+        raise HTTPException(status_code=400, detail="Invalid amount")
+        
+    uid = decoded_token['uid']
+    user_ref = db.collection('users').document(uid)
+    doc = user_ref.get()
+    
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    data = doc.to_dict()
+    current_hell = data.get('hellStones', 0)
+    current_dream = data.get('dreamCoins', 0)
+    
+    if current_hell < hell_stones:
+        raise HTTPException(status_code=400, detail="Insufficient Hell Stones")
+        
+    new_hell = current_hell - hell_stones
+    new_dream = current_dream + (hell_stones * HELL_TO_DREAM_RATE)
+    
+    user_ref.update({
+        "hellStones": new_hell,
+        "dreamCoins": new_dream,
+        "lastKnownDreamCoins": new_dream,
+        "lastKnownHellStones": new_hell,
+        "lastSyncTimestamp": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"status": "success", "dreamCoins": new_dream, "hellStones": new_hell}
 
 if __name__ == "__main__":
     import uvicorn

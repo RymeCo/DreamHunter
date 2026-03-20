@@ -23,6 +23,23 @@ class PlayerActionsDialog extends StatefulWidget {
 class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
   final AdminService _adminService = AdminService();
   final TextEditingController _warnReasonController = TextEditingController();
+  final TextEditingController _dreamController = TextEditingController();
+  final TextEditingController _hellController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _dreamController.text = (widget.player['dreamCoins'] ?? widget.player['ghostCoins'] ?? 0).toString();
+    _hellController.text = (widget.player['hellStones'] ?? widget.player['ghostTokens'] ?? 0).toString();
+  }
+
+  @override
+  void dispose() {
+    _warnReasonController.dispose();
+    _dreamController.dispose();
+    _hellController.dispose();
+    super.dispose();
+  }
 
   Future<DateTime?> _pickCustomDateTime() async {
     final date = await showDatePicker(
@@ -62,7 +79,7 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
       if (mounted) {
         Provider.of<AdminProvider>(context, listen: false).refreshDashboard();
       }
-      Navigator.pop(context, currentStatus ? 'unban' : 'ban');
+      Navigator.pop(context);
     }
   }
 
@@ -80,7 +97,7 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
       if (mounted) {
         Provider.of<AdminProvider>(context, listen: false).refreshDashboard();
       }
-      Navigator.pop(context, hours == 0 ? 'unmute' : 'mute');
+      Navigator.pop(context);
     }
   }
 
@@ -108,7 +125,7 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
       if (mounted) {
         Provider.of<AdminProvider>(context, listen: false).refreshDashboard();
       }
-      Navigator.pop(context, 'warn');
+      Navigator.pop(context);
     }
   }
 
@@ -128,48 +145,39 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
         type: SnackBarType.success,
       );
       if (widget.onActionComplete != null) widget.onActionComplete!();
-      Navigator.pop(context, 'moderator');
-    }
-  }
-
-  void _updateCurrency(String uid) async {
-    final coinsStr = _coinsController.text.trim();
-    final tokensStr = _tokensController.text.trim();
-    
-    final int? coins = coinsStr.isNotEmpty ? int.tryParse(coinsStr) : null;
-    final int? tokens = tokensStr.isNotEmpty ? int.tryParse(tokensStr) : null;
-
-    if (coins == null && tokens == null) {
-      showCustomSnackBar(context, 'Please enter a valid number.', type: SnackBarType.info);
-      return;
-    }
-
-    final success = await _adminService.updatePlayerCurrency(uid, ghostCoins: coins, ghostTokens: tokens);
-    if (!mounted) return;
-
-    if (success) {
-      showCustomSnackBar(context, 'Currency updated successfully!', type: SnackBarType.success);
-      if (widget.onActionComplete != null) widget.onActionComplete!();
       Navigator.pop(context);
     }
   }
 
-  final TextEditingController _coinsController = TextEditingController();
-  final TextEditingController _tokensController = TextEditingController();
+  void _updateCurrency(String uid) async {
+    final dream = int.tryParse(_dreamController.text.trim());
+    final hell = int.tryParse(_hellController.text.trim());
 
-  @override
-  void initState() {
-    super.initState();
-    _coinsController.text = (widget.player['ghostCoins'] ?? 0).toString();
-    _tokensController.text = (widget.player['ghostTokens'] ?? 0).toString();
-  }
+    if (dream == null && hell == null) {
+      showCustomSnackBar(
+        context,
+        'Please enter valid numbers for currency.',
+        type: SnackBarType.info,
+      );
+      return;
+    }
 
-  @override
-  void dispose() {
-    _warnReasonController.dispose();
-    _coinsController.dispose();
-    _tokensController.dispose();
-    super.dispose();
+    final success = await _adminService.updatePlayerCurrency(
+      uid,
+      dreamCoins: dream,
+      hellStones: hell,
+    );
+    if (!mounted) return;
+
+    if (success) {
+      showCustomSnackBar(
+        context,
+        'Currency updated successfully!',
+        type: SnackBarType.success,
+      );
+      if (widget.onActionComplete != null) widget.onActionComplete!();
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -224,54 +232,17 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                       backgroundColor: isTargetAdmin
                           ? Colors.amber
                           : Colors.deepPurple,
-                      child: Text(displayName[0].toUpperCase()),
+                      child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U'),
                     ),
                     title: Text(
                       displayName,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text('UID: $uid'),
-                    trailing: IconButton(
-                      icon: const Icon(
-                        Icons.copy,
-                        size: 18,
-                        color: Colors.blueAccent,
-                      ),
-                      onPressed: () =>
-                          copyToClipboardWithFeedback(context, uid, 'User ID'),
-                    ),
                   ),
-                  if (isTargetAdmin) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.amber.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.shield, color: Colors.amber),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'This user is a Superadmin. Moderation actions are disabled.',
-                              style: TextStyle(
-                                color: Colors.amber,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                   const SizedBox(height: 20),
 
-                  // TIERED POWER SECTION (ADMIN ONLY)
+                  // ROLES & PRIVILEGES (ADMIN ONLY)
                   if (provider.isAdmin && !isTargetAdmin) ...[
                     const Text(
                       'Roles & Privileges',
@@ -294,6 +265,70 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                     const Divider(height: 40, color: Colors.white10),
                   ],
 
+                  // ECONOMY MANAGEMENT (ADMIN ONLY)
+                  if (provider.isAdmin && !isTargetAdmin) ...[
+                    const Text(
+                      'Economy Management',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amberAccent,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          'Last Safe Dream: ${widget.player['lastKnownDreamCoins'] ?? 0}',
+                          style: const TextStyle(fontSize: 11, color: Colors.white54),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Hell: ${widget.player['lastKnownHellStones'] ?? 0}',
+                          style: const TextStyle(fontSize: 11, color: Colors.white54),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _dreamController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Dream Coins',
+                              isDense: true,
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _hellController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Hell Stones',
+                              isDense: true,
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () => _updateCurrency(uid),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber,
+                            foregroundColor: Colors.black,
+                          ),
+                          child: const Text('UPDATE'),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 40, color: Colors.white10),
+                  ],
+
+                  // ACCESS CONTROL (ADMIN ONLY)
                   if (provider.isAdmin && !isTargetAdmin) ...[
                     const Text(
                       'Access Control',
@@ -347,7 +382,7 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                           ),
                         ],
                       ),
-                    const SizedBox(height: 24),
+                    const Divider(height: 40, color: Colors.white10),
                   ],
 
                   // WARNING SYSTEM
@@ -455,59 +490,6 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                           ),
                         ],
                       ),
-                    const Divider(height: 40, color: Colors.white10),
-                  ],
-
-                  // CURRENCY MANAGEMENT (ADMIN ONLY)
-                  if (provider.isAdmin && !isTargetAdmin) ...[
-                    const Text(
-                      'Economy Management',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amberAccent,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _coinsController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Ghost Coins',
-                              isDense: true,
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _tokensController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Ghost Tokens',
-                              isDense: true,
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _updateCurrency(uid),
-                        icon: const Icon(Icons.save),
-                        label: const Text('UPDATE CURRENCY'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber,
-                          foregroundColor: Colors.black,
-                        ),
-                      ),
-                    ),
                   ],
                   const SizedBox(height: 16),
                 ],

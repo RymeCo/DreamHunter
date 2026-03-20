@@ -23,6 +23,10 @@ class UserModeratorRequest(BaseModel):
 class UserWarnRequest(BaseModel):
     reason: str
 
+class UserCurrencyRequest(BaseModel):
+    dreamCoins: Optional[int] = None
+    hellStones: Optional[int] = None
+
 class MaintenanceRequest(BaseModel):
     chatMaintenance: Optional[bool] = None
     shopMaintenance: Optional[bool] = None
@@ -357,6 +361,39 @@ async def warn_user(uid: str, req: UserWarnRequest, admin: dict = Depends(verify
         details=f"Warning issued: {req.reason}"
     )
     return {"status": "success", "message": f"Warning issued to user {uid}."}
+
+@router.patch("/users/{uid}/currency")
+async def update_user_currency(uid: str, req: UserCurrencyRequest, admin: dict = Depends(verify_admin)):
+    db = firestore.client()
+    user_ref = db.collection('users').document(uid)
+    
+    user_doc = user_ref.get()
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    target_data = user_doc.to_dict()
+    
+    update_data = {"updatedAt": firestore.SERVER_TIMESTAMP}
+    if req.dreamCoins is not None:
+        update_data["dreamCoins"] = req.dreamCoins
+        update_data["lastKnownDreamCoins"] = req.dreamCoins
+    if req.hellStones is not None:
+        update_data["hellStones"] = req.hellStones
+        update_data["lastKnownHellStones"] = req.hellStones
+
+    user_ref.update(update_data)
+    
+    log_audit(
+        admin_uid=admin['uid'],
+        admin_email=admin.get('email'),
+        action="USER_CURRENCY_UPDATE",
+        target=uid,
+        target_name=target_data.get('displayName'),
+        target_email=target_data.get('email'),
+        details=f"Currency updated: DreamCoins={req.dreamCoins}, HellStones={req.hellStones}"
+    )
+    
+    return {"status": "success", "message": "Currency updated successfully."}
 
 @router.patch("/maintenance")
 async def update_maintenance(req: MaintenanceRequest, admin: dict = Depends(verify_admin)):
