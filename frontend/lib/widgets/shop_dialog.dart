@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/offline_cache.dart';
 import 'custom_snackbar.dart';
 import 'liquid_glass_dialog.dart';
+import 'confirmation_dialog.dart';
 
 class ShopDialog extends StatefulWidget {
   const ShopDialog({super.key});
@@ -36,6 +37,21 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
       return;
     }
 
+    if (item.price > 500) {
+      if (!mounted) return;
+      final confirmed = await ConfirmationDialog.show(
+        context,
+        title: 'Confirm Purchase?',
+        message: 'Spend ${item.price} coins on ${item.name}?',
+        confirmLabel: 'BUY NOW',
+      );
+      if (confirmed != true) return;
+    }
+
+    await _processPurchase(item);
+  }
+
+  Future<void> _processPurchase(_ShopItem item) async {
     await OfflineCache.addTransaction(
       type: 'PURCHASE',
       itemId: item.name,
