@@ -80,12 +80,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final transactions = await OfflineCache.getTransactionQueue();
       if (transactions.isEmpty) return;
 
+      final List<String> sentIds = transactions.map((t) => t.id).toList();
+
       final result = await _backendService.reconcileEconomy(
         transactions.map((t) => t.toJson()).toList()
       );
       
       if (result != null && result['status'] == 'success') {
-        await OfflineCache.clearTransactionQueue();
+        await OfflineCache.clearTransactionQueue(ids: sentIds);
         // Update local balance from server to be safe
         await OfflineCache.saveCurrency(
           result['dreamCoins'] as int,

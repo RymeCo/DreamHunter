@@ -210,7 +210,9 @@ async def get_user_profile_data(decoded_token: dict = Depends(verify_firebase_to
         "hellStones": 0,
         "lastKnownDreamCoins": 0,
         "lastKnownHellStones": 0,
-        "lastSyncTimestamp": now.isoformat()
+        "lastSyncTimestamp": now.isoformat(),
+        "inventory": [],
+        "processedTransactionIds": []
     }
     
     db_profile = default_profile.copy()
@@ -443,15 +445,27 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
     data = doc.to_dict()
     current_dream = data.get('dreamCoins', 0)
     current_hell = data.get('hellStones', 0)
+    inventory = data.get('inventory', [])
+    processed_ids = set(data.get('processedTransactionIds', []))
     
     # Sort transactions by timestamp
     transactions = sorted(req.transactions, key=lambda t: t.timestamp)
     
     # Process each transaction
     total_earned = 0
+    newly_processed = []
+    
     for t in transactions:
+        # Idempotency: Skip if already processed
+        if t.id in processed_ids:
+            continue
+            
         if t.type == 'EARN':
             total_earned += t.dreamDelta
+        
+        if t.type == 'PURCHASE' and t.itemId:
+            if t.itemId not in inventory:
+                inventory.append(t.itemId)
         
         current_dream += t.dreamDelta
         current_hell += t.hellDelta
@@ -460,9 +474,11 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         if current_dream < 0 or current_hell < 0:
             raise HTTPException(status_code=400, detail=f"Insufficient funds during reconciliation at {t.timestamp}")
 
-    # Security: Earn cap check (simple version for now)
-    # In a real app, we'd check timestamps against the last sync
-    if total_earned > 10000: # Arbitrary large cap for batch
+        processed_ids.add(t.id)
+        newly_processed.append(t.id)
+
+    # Security: Earn cap check
+    if total_earned > 10000:
         from admin import log_audit
         log_audit(
             admin_uid="SYSTEM_SECURITY",
@@ -480,13 +496,16 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         "hellStones": current_hell,
         "lastKnownDreamCoins": current_dream,
         "lastKnownHellStones": current_hell,
-        "lastSyncTimestamp": now.isoformat()
+        "lastSyncTimestamp": now.isoformat(),
+        "inventory": inventory,
+        "processedTransactionIds": firestore.ArrayUnion(newly_processed)
     })
     
     return {
         "status": "success", 
         "dreamCoins": current_dream, 
-        "hellStones": current_hell
+        "hellStones": current_hell,
+        "inventory": inventory
     }
 
 @app.post("/economy/sync")

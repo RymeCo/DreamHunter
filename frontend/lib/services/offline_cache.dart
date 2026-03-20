@@ -103,9 +103,15 @@ class OfflineCache {
     return [];
   }
 
-  static Future<void> clearTransactionQueue() async {
+  static Future<void> clearTransactionQueue({List<String>? ids}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_transactionQueueKey);
+    if (ids == null) {
+      await prefs.remove(_transactionQueueKey);
+    } else {
+      final queue = await getTransactionQueue();
+      queue.removeWhere((t) => ids.contains(t.id));
+      await prefs.setString(_transactionQueueKey, json.encode(queue.map((t) => t.toJson()).toList()));
+    }
   }
 
   static Future<void> saveStatsSummary(String key, Map<String, dynamic> stats) async {
