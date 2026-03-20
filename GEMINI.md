@@ -41,6 +41,10 @@ For every new task:
 ## Asset Management
 Always register new assets in `frontend/pubspec.yaml` under the appropriate category to ensure the Flame engine can load them correctly.
 
+## Deployment & Environments
+- **Render Deployment**: Render is configured to monitor the `development` branch. 
+- **Mandate**: Backend changes (Python/FastAPI) ONLY take effect on the live production server after they are merged into `development`. Changes remaining in `SCRUM-XX` task branches will NOT be reflected on the live site.
+
 ## SCRUM Finalization
 - **Post-Merge Cleanup**: Once a PR is successfully merged into `development`, immediately delete the local task branch and the remote branch to keep the repository clean.
 - **Workflow Integrity**: A SCRUM task is only "Done" when the feature is merged and the branch is removed from both local and origin.
