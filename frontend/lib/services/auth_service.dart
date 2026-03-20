@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'backend_service.dart';
+import 'offline_cache.dart';
 
 /// A centralized service for managing authentication and Firebase interactions.
 ///
@@ -33,8 +34,15 @@ class AuthService {
       password: password,
     );
     
-    // Sync with FastAPI backend
-    await _backend.syncUserProfile();
+    // Sync with FastAPI backend and update local cache
+    final profile = await _backend.syncUserProfile();
+    if (profile != null) {
+      await OfflineCache.saveCurrency(
+        profile['dreamCoins'] ?? 0,
+        profile['hellStones'] ?? 0,
+        profile['playtime'] ?? 0,
+      );
+    }
     
     return userCredential;
   }
@@ -98,8 +106,8 @@ class AuthService {
         'isBanned': false,
         'mutedUntil': null,
         'isAdmin': false,
-        'ghostCoins': 500,
-        'ghostTokens': 10,
+        'dreamCoins': 500,
+        'hellStones': 10,
         'inventory': [],
       });
     });

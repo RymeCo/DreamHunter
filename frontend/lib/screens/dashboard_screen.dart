@@ -30,6 +30,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late StreamSubscription<User?> _authStateSubscription;
+  StreamSubscription<DocumentSnapshot>? _statsSubscription;
   Timer? _syncTimer;
   bool _isLoggedIn = false;
   bool _isBackendReady = false;
@@ -50,14 +51,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
         if (_isLoggedIn) {
           _startSyncTimer();
+          _subscribeToUserStats();
         } else {
           _stopSyncTimer();
+          _statsSubscription?.cancel();
         }
       }
     });
 
     _pingBackend();
-    if (_isLoggedIn) _startSyncTimer();
+    if (_isLoggedIn) {
+      _startSyncTimer();
+      _subscribeToUserStats();
+    }
+  }
+
+  void _subscribeToUserStats() {
+    _statsSubscription?.cancel();
+    _statsSubscription = _userService.getUserStats().listen((snapshot) async {
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final queue = await OfflineCache.getTransactionQueue();
+        if (queue.isEmpty) {
+          // If no pending offline transactions, keep local cache hot with cloud data
+          await OfflineCache.saveCurrency(
+            data['dreamCoins'] ?? 0,
+            data['hellStones'] ?? 0,
+            data['playtime'] ?? 0,
+          );
+          if (mounted) setState(() {}); // Refresh UI with hot cache
+        }
+      }
+    });
   }
 
   void _startSyncTimer() {
@@ -79,7 +104,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     try {
       final transactions = await OfflineCache.getTransactionQueue();
-      if (transactions.isEmpty) return;
+      
+      if (transactions.isEmpty) {
+        // Just pull the latest profile to keep local cache hot
+        final profile = await _backendService.syncUserProfile();
+        if (profile != null) {
+          await OfflineCache.saveCurrency(
+            profile['dreamCoins'] ?? 0,
+            profile['hellStones'] ?? 0,
+            profile['playtime'] ?? 0,
+          );
+          if (mounted) setState(() {});
+        }
+        return;
+      }
 
       final List<String> sentIds = transactions.map((t) => t.id).toList();
 
@@ -89,11 +127,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       
       if (result != null && result['status'] == 'success') {
         await OfflineCache.clearTransactionQueue(ids: sentIds);
-        // Update local balance from server to be safe
+        // Update local balance and playtime from server to be safe
         await OfflineCache.saveCurrency(
           result['dreamCoins'] as int,
           result['hellStones'] as int,
+          result['playtime'] as int? ?? 0,
         );
+        if (mounted) setState(() {});
       }
     } catch (e) {
       debugPrint('Reconciliation failed: $e');
@@ -108,7 +148,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (response.statusCode == 200) {
         if (mounted) {
           setState(() => _isBackendReady = true);
-          if (_isLoggedIn) _startSyncTimer();
+          if (_isLoggedIn) {
+            _syncProfileWithBackend(); // Initial pull
+            _startSyncTimer();
+          }
         }
       }
     } catch (_) {
@@ -116,9 +159,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _syncProfileWithBackend() async {
+    if (!_isLoggedIn || !_isBackendReady) return;
+    
+    // Pull the latest profile to initialize the local cache
+    final profile = await _backendService.syncUserProfile();
+    if (profile != null) {
+      final queue = await OfflineCache.getTransactionQueue();
+      if (queue.isEmpty) {
+        // Only overwrite if we don't have pending offline changes
+        await OfflineCache.saveCurrency(
+          profile['dreamCoins'] ?? 0,
+          profile['hellStones'] ?? 0,
+          profile['playtime'] ?? 0,
+        );
+        if (mounted) setState(() {}); // Refresh UI
+      }
+    }
+  }
+
   @override
   void dispose() {
     _authStateSubscription.cancel();
+    _statsSubscription?.cancel();
     _stopSyncTimer();
     super.dispose();
   }
@@ -528,16 +591,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         leadingWidth: 200,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0, top: 8.0),
-          child: StreamBuilder<DocumentSnapshot>(
-            stream: _userService.getUserStats(),
+          child: FutureBuilder<Map<String, int>?>(
+            future: OfflineCache.getCurrency(),
             builder: (context, snapshot) {
               int coins = 0;
               int tokens = 0;
 
-              if (_isLoggedIn && snapshot.hasData && snapshot.data!.exists) {
-                final userData = snapshot.data!.data() as Map<String, dynamic>;
-                coins = userData['dreamCoins'] ?? 0;
-                tokens = userData['hellStones'] ?? 0;
+              if (snapshot.hasData && snapshot.data != null) {
+                coins = snapshot.data!['dreamCoins'] ?? 0;
+                tokens = snapshot.data!['hellStones'] ?? 0;
               }
 
               return Column(
