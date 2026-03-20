@@ -4,6 +4,7 @@ import '../providers/admin_provider.dart';
 import '../services/admin_service.dart';
 import '../widgets/custom_snackbar.dart';
 import '../widgets/admin_ui_components.dart';
+import 'leaderboard_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -76,6 +77,19 @@ class _DashboardScreenState extends State<DashboardScreen>
           AdminHeader(
             title: 'System Overview',
             actions: [
+              AdminButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const LeaderboardScreen()),
+                  );
+                },
+                label: 'LEADERBOARDS',
+                icon: Icons.leaderboard_rounded,
+                color: Colors.amberAccent,
+              ),
+              const SizedBox(width: 8),
               RotationTransition(
                 turns: _refreshIconController,
                 child: IconButton(
