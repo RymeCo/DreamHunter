@@ -1,3 +1,5 @@
+import 'package:dreamhunter/services/user_service.dart';
+import 'package:dreamhunter/widgets/shop_dialog.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'dart:async';
 import 'dart:io';
@@ -28,6 +30,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoggedIn = false;
   bool _isBackendReady = false;
   AuthDialogType _currentDialogType = AuthDialogType.login;
+  final UserService _userService = UserService();
 
   @override
   void initState() {
@@ -306,6 +309,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         toolbarHeight: 120,
+        leadingWidth: 250,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0, top: 16.0),
+          child: StreamBuilder<DocumentSnapshot>(
+            stream: _userService.getUserStats(),
+            builder: (context, snapshot) {
+              if (!_isLoggedIn) return const SizedBox.shrink();
+              
+              final userData = snapshot.data?.data() as Map<String, dynamic>? ?? {};
+              final coins = userData['ghostCoins'] ?? 0;
+              final tokens = userData['ghostTokens'] ?? 0;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildCurrencyChip(
+                    icon: Icons.monetization_on_rounded,
+                    value: '$coins',
+                    color: Colors.amberAccent,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildCurrencyChip(
+                    icon: Icons.stars_rounded,
+                    value: '$tokens',
+                    color: Colors.lightBlueAccent,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -409,11 +443,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Positioned(
             bottom: 0,
             right: -1,
-            child: Image.asset(
-              'assets/images/dashboard/shop_stall.png',
-              fit: BoxFit.contain,
+            child: MakeItButton(
+              imagePath: 'assets/images/dashboard/shop_stall.png',
               width: 200,
               height: 200,
+              onTap: () {
+                showGeneralDialog(
+                  context: context,
+                  barrierLabel: "ShopDialog",
+                  barrierDismissible: true,
+                  barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+                  transitionDuration: const Duration(milliseconds: 300),
+                  pageBuilder: (context, animation, secondaryAnimation) {
+                    return ScaleTransition(
+                      scale: CurvedAnimation(
+                          parent: animation, curve: Curves.easeOutBack),
+                      child: FadeTransition(
+                        opacity: animation,
+                        child: const ShopDialog(),
+                      ),
+                    );
+                  },
+                );
+              },
+              clickResponsiveness: true,
+              onHoverGlow: true,
+              isClickable: true,
             ),
           ),
           Positioned(
@@ -454,6 +509,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
               clickResponsiveness: true,
               onHoverGlow: true,
               isClickable: true,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCurrencyChip({
+    required IconData icon,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.1),
+            blurRadius: 4,
+            spreadRadius: 1,
+          )
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
             ),
           ),
         ],

@@ -12,6 +12,7 @@ import 'screens/reports_screen.dart';
 import 'screens/automod_screen.dart';
 import 'screens/audit_screen.dart';
 import 'screens/live_chat_screen.dart';
+import 'screens/shop_management_screen.dart';
 import 'widgets/admin_ui_components.dart';
 
 void main() async {
@@ -168,7 +169,7 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 6,
+      length: 7,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFF16162F),
@@ -248,6 +249,16 @@ class _MainLayoutState extends State<MainLayout> {
                     height: 60,
                     child: Row(
                       children: [
+                        Icon(Icons.storefront_rounded, size: 18),
+                        SizedBox(width: 8),
+                        Text('Shop'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    height: 60,
+                    child: Row(
+                      children: [
                         Icon(Icons.gavel_rounded, size: 18),
                         SizedBox(width: 8),
                         Text('Reports'),
@@ -297,6 +308,7 @@ class _MainLayoutState extends State<MainLayout> {
             children: [
               DashboardScreen(),
               PlayersScreen(),
+              ShopManagementScreen(),
               ReportsScreen(),
               LiveChatScreen(),
               AutoModScreen(),

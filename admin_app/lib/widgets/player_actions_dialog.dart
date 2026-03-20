@@ -132,9 +132,43 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     }
   }
 
+  void _updateCurrency(String uid) async {
+    final coinsStr = _coinsController.text.trim();
+    final tokensStr = _tokensController.text.trim();
+    
+    final int? coins = coinsStr.isNotEmpty ? int.tryParse(coinsStr) : null;
+    final int? tokens = tokensStr.isNotEmpty ? int.tryParse(tokensStr) : null;
+
+    if (coins == null && tokens == null) {
+      showCustomSnackBar(context, 'Please enter a valid number.', type: SnackBarType.info);
+      return;
+    }
+
+    final success = await _adminService.updatePlayerCurrency(uid, ghostCoins: coins, ghostTokens: tokens);
+    if (!mounted) return;
+
+    if (success) {
+      showCustomSnackBar(context, 'Currency updated successfully!', type: SnackBarType.success);
+      if (widget.onActionComplete != null) widget.onActionComplete!();
+      Navigator.pop(context);
+    }
+  }
+
+  final TextEditingController _coinsController = TextEditingController();
+  final TextEditingController _tokensController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _coinsController.text = (widget.player['ghostCoins'] ?? 0).toString();
+    _tokensController.text = (widget.player['ghostTokens'] ?? 0).toString();
+  }
+
   @override
   void dispose() {
     _warnReasonController.dispose();
+    _coinsController.dispose();
+    _tokensController.dispose();
     super.dispose();
   }
 
@@ -421,6 +455,59 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                           ),
                         ],
                       ),
+                    const Divider(height: 40, color: Colors.white10),
+                  ],
+
+                  // CURRENCY MANAGEMENT (ADMIN ONLY)
+                  if (provider.isAdmin && !isTargetAdmin) ...[
+                    const Text(
+                      'Economy Management',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amberAccent,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _coinsController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Ghost Coins',
+                              isDense: true,
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _tokensController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Ghost Tokens',
+                              isDense: true,
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _updateCurrency(uid),
+                        icon: const Icon(Icons.save),
+                        label: const Text('UPDATE CURRENCY'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber,
+                          foregroundColor: Colors.black,
+                        ),
+                      ),
+                    ),
                   ],
                   const SizedBox(height: 16),
                 ],

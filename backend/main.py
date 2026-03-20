@@ -197,7 +197,9 @@ async def get_user_profile_data(decoded_token: dict = Depends(verify_firebase_to
         "mutedUntil": None,
         "isAdmin": False,
         "isModerator": False,
-        "warnings": []
+        "warnings": [],
+        "ghostCoins": 500,
+        "ghostTokens": 10,
     }
     
     db_profile = default_profile.copy()
@@ -205,6 +207,73 @@ async def get_user_profile_data(decoded_token: dict = Depends(verify_firebase_to
     user_ref.set(db_profile)
     
     return default_profile
+
+# --- Admin & Store Management ---
+
+class CurrencyUpdate(BaseModel):
+    ghostCoins: Optional[int] = None
+    ghostTokens: Optional[int] = None
+
+@app.patch("/admin/users/{uid}/currency")
+async def update_player_currency(uid: str, update: CurrencyUpdate, decoded_token: dict = Depends(verify_firebase_token)):
+    # Verify Admin Status
+    admin_uid = decoded_token['uid']
+    admin_ref = db.collection('users').document(admin_uid)
+    admin_doc = admin_ref.get()
+    
+    if not admin_doc.exists or not admin_doc.to_dict().get('isAdmin', False):
+        raise HTTPException(status_code=403, detail="Admin privileges required.")
+    
+    user_ref = db.collection('users').document(uid)
+    if not user_ref.get().exists:
+        raise HTTPException(status_code=404, detail="Player not found.")
+    
+    update_data = {}
+    if update.ghostCoins is not None:
+        update_data['ghostCoins'] = update.ghostCoins
+    if update.ghostTokens is not None:
+        update_data['ghostTokens'] = update.ghostTokens
+    
+    if update_data:
+        user_ref.update(update_data)
+        # Log to Audit
+        db.collection('audit_logs').add({
+            'action': 'UPDATE_CURRENCY',
+            'targetUid': uid,
+            'adminUid': admin_uid,
+            'details': update_data,
+            'timestamp': firestore.SERVER_TIMESTAMP
+        })
+    
+    return {"status": "success", "updatedFields": update_data}
+
+class ShopItemRequest(BaseModel):
+    name: str
+    type: str # character, powerup, item
+    price: int
+    currencyType: str # coins, tokens
+    assetPath: str
+    description: str
+
+@app.post("/admin/shop")
+async def add_shop_item(item: ShopItemRequest, decoded_token: dict = Depends(verify_firebase_token)):
+    admin_uid = decoded_token['uid']
+    admin_doc = db.collection('users').document(admin_uid).get()
+    if not admin_doc.exists or not admin_doc.to_dict().get('isAdmin', False):
+        raise HTTPException(status_code=403, detail="Admin privileges required.")
+    
+    item_ref = db.collection('shop_items').document()
+    item_data = item.model_dump()
+    item_data['id'] = item_ref.id
+    item_data['createdAt'] = firestore.SERVER_TIMESTAMP
+    
+    item_ref.set(item_data)
+    return {"status": "success", "itemId": item_ref.id}
+
+@app.get("/shop")
+async def get_shop_items():
+    items = db.collection('shop_items').stream()
+    return [item.to_dict() for item in items]
 
 @app.patch("/users/display-name")
 async def patch_user_display_name(name: str, decoded_token: dict = Depends(verify_firebase_token)):

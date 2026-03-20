@@ -98,6 +98,9 @@ class AuthService {
         'isBanned': false,
         'mutedUntil': null,
         'isAdmin': false,
+        'ghostCoins': 500,
+        'ghostTokens': 10,
+        'inventory': [],
       });
     });
 

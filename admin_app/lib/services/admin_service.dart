@@ -75,6 +75,23 @@ class AdminService {
 
   // --- Player Management ---
 
+  Future<bool> updatePlayerCurrency(String uid, {int? ghostCoins, int? ghostTokens}) async {
+    try {
+      final response = await _client.patch(
+        Uri.parse('$baseUrl/admin/users/$uid/currency'),
+        headers: await getAuthHeaders(),
+        body: json.encode({
+          if (ghostCoins != null) 'ghostCoins': ghostCoins,
+          if (ghostTokens != null) 'ghostTokens': ghostTokens,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error updating player currency: $e');
+      return false;
+    }
+  }
+
   Future<List<dynamic>> searchPlayers({
     String? query,
     bool? isBanned,
