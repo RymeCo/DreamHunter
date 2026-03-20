@@ -342,14 +342,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             height: double.infinity,
           ),
 
-          // --- Real-time Currency HUD (Prominent Top-Left) ---
+          // --- Sleek Horizontal Currency HUD (Top-Left) ---
           Positioned(
-            top: 60, // Below typical notification bar
+            top: 55,
             left: 20,
             child: StreamBuilder<DocumentSnapshot>(
               stream: _userService.getUserStats(),
               builder: (context, snapshot) {
-                // If logged in, get real data. If guest, show placeholders.
                 int coins = 0;
                 int tokens = 0;
 
@@ -359,21 +358,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   tokens = userData['ghostTokens'] ?? 0;
                 }
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildCurrencyChip(
-                      icon: Icons.monetization_on_rounded,
-                      value: '$coins',
-                      color: Colors.amberAccent,
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF16162F).withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(
+                      color: const Color(0xFF4A4A8A).withValues(alpha: 0.5),
+                      width: 1.5,
                     ),
-                    const SizedBox(height: 10),
-                    _buildCurrencyChip(
-                      icon: Icons.stars_rounded,
-                      value: '$tokens',
-                      color: Colors.lightBlueAccent,
-                    ),
-                  ],
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF6A1B9A).withValues(alpha: 0.2),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Ghost Coins
+                      _buildCurrencyItem(
+                        icon: Icons.monetization_on_rounded,
+                        value: '$coins',
+                        color: Colors.amberAccent,
+                      ),
+                      const SizedBox(width: 12),
+                      // Separator
+                      Container(
+                        width: 1.5,
+                        height: 20,
+                        color: Colors.white10,
+                      ),
+                      const SizedBox(width: 12),
+                      // Ghost Tokens
+                      _buildCurrencyItem(
+                        icon: Icons.stars_rounded,
+                        value: '$tokens',
+                        color: Colors.lightBlueAccent,
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -532,41 +558,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildCurrencyChip({
+  Widget _buildCurrencyItem({
     required IconData icon,
     required String value,
     required Color color,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.15),
-            blurRadius: 8,
-            spreadRadius: 1,
-          )
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 10),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 16,
-              letterSpacing: 0.5,
-            ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 18),
+        const SizedBox(width: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            fontSize: 15,
+            letterSpacing: 0.5,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
