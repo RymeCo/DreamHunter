@@ -12,7 +12,6 @@ class ShopManagementScreen extends StatefulWidget {
 }
 
 class _ShopManagementScreenState extends State<ShopManagementScreen> {
-  final AdminService _adminService = AdminService();
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   final TextEditingController _nameController = TextEditingController();
