@@ -12,10 +12,11 @@ To maintain momentum, all development is performed directly on the **`developmen
 1. **Sync**: Always start by pulling the latest changes: `git pull origin development`.
 2. **Develop**: Implement the requested changes directly on the `development` branch.
 3. **Verify**: Run static analysis (`flutter analyze`) and compilation checks (`py_compile`) before committing.
-4. **Commit**: Commit with the Jira key prefix: `git commit -m "SCRUM-XX: description"`.
-5. **Deployment (Auto-Push)**:
+- **Commit**: Commit with the Jira key prefix: `git commit -m "SCRUM-XX: description"`.
+- **Deployment (Auto-Push)**:
     - If the changes include **Backend (Python/FastAPI)** code, the agent MUST automatically push to origin immediately after committing to trigger the Render deployment.
     - For **Frontend-only** changes, the agent should ask the user before pushing, or push immediately if specifically requested.
+- **Jira Finalization**: Once the task is committed and pushed, the agent MUST update the corresponding Jira ticket (transition to 'Done' or add a comment) to reflect the completion.
 
 ## Project Structure
 - `backend/`: Python (FastAPI/Firebase) backend.

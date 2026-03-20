@@ -46,7 +46,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     });
 
-    // Proactively "ping" the backend to wake it up
     _pingBackend();
   }
 
@@ -54,12 +53,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final response = await http
           .get(Uri.parse('https://dreamhunter-api.onrender.com/'))
-          .timeout(const Duration(seconds: 30)); // Increased timeout for Render cold start
+          .timeout(const Duration(seconds: 30));
       if (response.statusCode == 200) {
         if (mounted) setState(() => _isBackendReady = true);
       }
     } catch (_) {
-      // Backend is likely sleeping or we timed out
       if (mounted) setState(() => _isBackendReady = false);
     }
   }
@@ -359,6 +357,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _showCoinExchangeDialog() {
+    showGeneralDialog(
+      context: context,
+      barrierLabel: "CoinExchangeDialog",
+      barrierDismissible: true,
+      barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Center(
+          child: LiquidGlassDialog(
+            width: 350,
+            height: 400,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.monetization_on_rounded, color: Colors.amberAccent, size: 80),
+                const SizedBox(height: 24),
+                const Text(
+                  'COIN EXCHANGE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    'Exchange your premium Ghost Tokens for common Ghost Coins!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amberAccent.withValues(alpha: 0.8),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('EXCHANGE NOW', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  '(Feature coming in next update)',
+                  style: TextStyle(color: Colors.white24, fontSize: 10),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -391,6 +448,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: Icons.monetization_on_rounded,
                     value: '$coins',
                     color: Colors.amberAccent,
+                    onPlusTap: _showCoinExchangeDialog,
                   ),
                   const SizedBox(height: 4),
                   _buildCurrencyChip(
@@ -429,29 +487,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Stack(
         children: [
-          // Background
           Image.asset(
             'assets/images/dashboard/main_background.png',
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
           ),
-
-          // Global Broadcast Banner
           Positioned(
-            top: 160, 
+            top: 160,
             left: 20,
             right: 20,
             child: StreamBuilder<DocumentSnapshot>(
               stream: ChatService().getGlobalAlert(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData || !snapshot.data!.exists) return const SizedBox.shrink();
-                
                 final data = snapshot.data!.data() as Map<String, dynamic>;
                 final message = data['message'] as String?;
-                
                 if (message == null || message.isEmpty) return const SizedBox.shrink();
-                
                 return Container(
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
                   decoration: BoxDecoration(
@@ -485,8 +537,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               },
             ),
           ),
-
-          // Game Dorm Image
           Positioned(
             bottom: MediaQuery.of(context).size.height * 0.15,
             left: 0,
@@ -499,8 +549,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-
-          // Roulette Man
           Positioned(
             bottom: 0,
             child: Image.asset(
@@ -510,8 +558,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: 200,
             ),
           ),
-
-          // Shop Stall (Clickable)
           Positioned(
             bottom: 0,
             right: -1,
@@ -543,8 +589,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               isClickable: true,
             ),
           ),
-
-          // Chat Signage
           Positioned(
             bottom: MediaQuery.of(context).size.height * 0.19,
             left: 20,
