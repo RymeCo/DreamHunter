@@ -16,6 +16,7 @@ import 'package:dreamhunter/widgets/login_dialog.dart';
 import 'package:dreamhunter/widgets/register_dialog.dart';
 import 'package:dreamhunter/widgets/profile_dialog.dart';
 import 'package:dreamhunter/widgets/chat_dialog.dart';
+import 'package:dreamhunter/widgets/leaderboard_dialog.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 
 enum AuthDialogType { login, register, profile }
@@ -152,6 +153,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           onTap: () {
                             Navigator.pop(context);
                             _showAuthDialog();
+                          },
+                        ),
+                        const Divider(color: Colors.white24),
+                        _buildMenuButton(
+                          icon: Icons.leaderboard_rounded,
+                          label: 'Leaderboard',
+                          onTap: () {
+                            Navigator.pop(context);
+                            showGeneralDialog(
+                              context: context,
+                              barrierLabel: "LeaderboardDialog",
+                              barrierDismissible: true,
+                              barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+                              transitionDuration: const Duration(milliseconds: 300),
+                              pageBuilder: (context, animation, secondaryAnimation) {
+                                return ScaleTransition(
+                                  scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+                                  child: FadeTransition(opacity: animation, child: const LeaderboardDialog()),
+                                );
+                              },
+                            );
                           },
                         ),
                         const Divider(color: Colors.white24),
