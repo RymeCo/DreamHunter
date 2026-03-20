@@ -420,6 +420,75 @@ async def report_content(report: ReportRequest):
     
     return {"status": "success", "message": "Report submitted successfully.", "urgent": is_urgent}
 
+class OfflineTransaction(BaseModel):
+    id: str
+    type: str # PURCHASE, CONVERSION, EARN
+    itemId: Optional[str] = None
+    dreamDelta: int
+    hellDelta: int
+    timestamp: str
+
+class ReconcileRequest(BaseModel):
+    transactions: List[OfflineTransaction]
+
+@app.post("/economy/reconcile")
+async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends(verify_firebase_token)):
+    uid = decoded_token['uid']
+    user_ref = db.collection('users').document(uid)
+    doc = user_ref.get()
+    
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    data = doc.to_dict()
+    current_dream = data.get('dreamCoins', 0)
+    current_hell = data.get('hellStones', 0)
+    
+    # Sort transactions by timestamp
+    transactions = sorted(req.transactions, key=lambda t: t.timestamp)
+    
+    # Process each transaction
+    total_earned = 0
+    for t in transactions:
+        if t.type == 'EARN':
+            total_earned += t.dreamDelta
+        
+        current_dream += t.dreamDelta
+        current_hell += t.hellDelta
+        
+        # Prevent negative balances
+        if current_dream < 0 or current_hell < 0:
+            raise HTTPException(status_code=400, detail=f"Insufficient funds during reconciliation at {t.timestamp}")
+
+    # Security: Earn cap check (simple version for now)
+    # In a real app, we'd check timestamps against the last sync
+    if total_earned > 10000: # Arbitrary large cap for batch
+        from admin import log_audit
+        log_audit(
+            admin_uid="SYSTEM_SECURITY",
+            action="ECONOMY_RECONCILE_ANOMALY",
+            target=uid,
+            details=f"Large earn in batch: {total_earned}. Flagging for review.",
+            target_name=data.get('displayName'),
+            target_email=data.get('email')
+        )
+
+    # Update state
+    now = datetime.now(timezone.utc)
+    user_ref.update({
+        "dreamCoins": current_dream,
+        "hellStones": current_hell,
+        "lastKnownDreamCoins": current_dream,
+        "lastKnownHellStones": current_hell,
+        "lastSyncTimestamp": now.isoformat()
+    })
+    
+    return {
+        "status": "success", 
+        "dreamCoins": current_dream, 
+        "hellStones": current_hell
+    }
+
 @app.post("/economy/sync")
 async def sync_economy(req: SyncRequest, decoded_token: dict = Depends(verify_firebase_token)):
     uid = decoded_token['uid']

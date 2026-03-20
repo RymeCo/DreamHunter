@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/offline_cache.dart';
+import 'custom_snackbar.dart';
 import 'liquid_glass_dialog.dart';
 
 class ShopDialog extends StatefulWidget {
@@ -21,6 +23,28 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _buyItem(_ShopItem item) async {
+    final currency = await OfflineCache.getCurrency();
+    final int currentDream = currency?['dreamCoins'] ?? 0;
+
+    if (currentDream < item.price) {
+      if (mounted) {
+        showCustomSnackBar(context, 'Insufficient Dream Coins!', type: SnackBarType.error);
+      }
+      return;
+    }
+
+    await OfflineCache.addTransaction(
+      type: 'PURCHASE',
+      itemId: item.name,
+      dreamDelta: -item.price,
+    );
+
+    if (mounted) {
+      showCustomSnackBar(context, 'Purchased ${item.name}!', type: SnackBarType.success);
+    }
   }
 
   @override
@@ -109,55 +133,59 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white12),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(item.icon, size: 48, color: Colors.amberAccent),
-              const SizedBox(height: 12),
-              Text(
-                item.name,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+        return InkWell(
+          onTap: () => _buyItem(item),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white12),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(item.icon, size: 48, color: Colors.amberAccent),
+                const SizedBox(height: 12),
+                Text(
+                  item.name,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                item.description,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white60, fontSize: 12),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.amberAccent.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
+                const SizedBox(height: 4),
+                Text(
+                  item.description,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.toll_rounded, size: 14, color: Colors.amberAccent),
-                    const SizedBox(width: 4),
-                    Text(
-                      item.price.toString(),
-                      style: const TextStyle(
-                        color: Colors.amberAccent,
-                        fontWeight: FontWeight.bold,
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.amberAccent.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.toll_rounded, size: 14, color: Colors.amberAccent),
+                      const SizedBox(width: 4),
+                      Text(
+                        item.price.toString(),
+                        style: const TextStyle(
+                          color: Colors.amberAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

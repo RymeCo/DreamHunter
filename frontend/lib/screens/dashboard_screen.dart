@@ -62,10 +62,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _startSyncTimer() {
     _syncTimer?.cancel();
     _syncTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
-      _syncEconomyWithBackend();
+      _reconcileEconomyWithBackend();
     });
     // Also sync immediately on start
-    _syncEconomyWithBackend();
+    _reconcileEconomyWithBackend();
   }
 
   void _stopSyncTimer() {
@@ -73,39 +73,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _syncTimer = null;
   }
 
-  Future<void> _syncEconomyWithBackend() async {
+  Future<void> _reconcileEconomyWithBackend() async {
     if (!_isLoggedIn || !_isBackendReady) return;
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
+      final transactions = await OfflineCache.getTransactionQueue();
+      if (transactions.isEmpty) return;
 
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      if (!doc.exists) return;
-
-      final data = doc.data() as Map<String, dynamic>;
-      final int dreamCoins = data['dreamCoins'] ?? 0;
-      final int hellStones = data['hellStones'] ?? 0;
-
-      // Sync with backend
-      final result = await _backendService.syncEconomy(dreamCoins, hellStones);
+      final result = await _backendService.reconcileEconomy(
+        transactions.map((t) => t.toJson()).toList()
+      );
       
-      if (result != null && mounted) {
-        if (result['status'] == 'anomaly_detected') {
-          showCustomSnackBar(
-            context, 
-            'Economy anomaly detected. Reverting to last safe state.',
-            type: SnackBarType.info,
-          );
-        }
-        // Update local cache
+      if (result != null && result['status'] == 'success') {
+        await OfflineCache.clearTransactionQueue();
+        // Update local balance from server to be safe
         await OfflineCache.saveCurrency(
-          result['dreamCoins'] ?? dreamCoins, 
-          result['hellStones'] ?? hellStones,
+          result['dreamCoins'] as int,
+          result['hellStones'] as int,
         );
       }
     } catch (e) {
-      debugPrint('Sync failed: $e');
+      debugPrint('Reconciliation failed: $e');
     }
   }
 
@@ -421,6 +409,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _convertCurrency() async {
+    final Map<String, int>? currency = await OfflineCache.getCurrency();
+    final int currentHell = currency?['hellStones'] ?? 0;
+    
+    if (currentHell < 1) {
+      if (mounted) {
+        showCustomSnackBar(context, 'Insufficient Hell Stones.', type: SnackBarType.error);
+      }
+      return;
+    }
+
+    // 1 Stone -> 100 Coins
+    await OfflineCache.addTransaction(
+      type: 'CONVERSION',
+      dreamDelta: 100,
+      hellDelta: -1,
+    );
+
+    if (mounted) {
+      Navigator.pop(context);
+      showCustomSnackBar(context, 'Successfully converted 1 Hell Stone!', type: SnackBarType.success);
+    }
+  }
+
   void _showCoinExchangeDialog() {
     showGeneralDialog(
       context: context,
@@ -458,7 +470,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 40),
                 ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: _convertCurrency,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amberAccent.withValues(alpha: 0.8),
                     foregroundColor: Colors.black,
@@ -469,7 +481,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  '(Feature coming in next update)',
+                  '(1 Hell Stone = 100 Dream Coins)',
                   style: TextStyle(color: Colors.white24, fontSize: 10),
                 ),
               ],

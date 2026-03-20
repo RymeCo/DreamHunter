@@ -90,7 +90,24 @@ class BackendService {
     }
   }
 
-  /// Synchronizes local economy state with the backend
+  /// Reconciles offline transactions with the backend
+  Future<Map<String, dynamic>?> reconcileEconomy(List<Map<String, dynamic>> transactions) async {
+    try {
+      final response = await post(
+        '/economy/reconcile',
+        body: {'transactions': transactions},
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error reconciling economy: $e');
+      return null;
+    }
+  }
+
+  /// Synchronizes local economy state with the backend (deprecated - use reconcile)
   Future<Map<String, dynamic>?> syncEconomy(int dreamCoins, int hellStones) async {
     try {
       final response = await post(
