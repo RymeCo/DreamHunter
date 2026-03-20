@@ -308,38 +308,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        toolbarHeight: 120,
-        leadingWidth: 250,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0, top: 16.0),
-          child: StreamBuilder<DocumentSnapshot>(
-            stream: _userService.getUserStats(),
-            builder: (context, snapshot) {
-              if (!_isLoggedIn) return const SizedBox.shrink();
-              
-              final userData = snapshot.data?.data() as Map<String, dynamic>? ?? {};
-              final coins = userData['ghostCoins'] ?? 0;
-              final tokens = userData['ghostTokens'] ?? 0;
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildCurrencyChip(
-                    icon: Icons.monetization_on_rounded,
-                    value: '$coins',
-                    color: Colors.amberAccent,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildCurrencyChip(
-                    icon: Icons.stars_rounded,
-                    value: '$tokens',
-                    color: Colors.lightBlueAccent,
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
+        toolbarHeight: 80,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -365,15 +334,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Stack(
         children: [
+          // Background
           Image.asset(
             'assets/images/dashboard/main_background.png',
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
           ),
+
+          // --- Real-time Currency HUD (Prominent Top-Left) ---
+          Positioned(
+            top: 60, // Below typical notification bar
+            left: 20,
+            child: StreamBuilder<DocumentSnapshot>(
+              stream: _userService.getUserStats(),
+              builder: (context, snapshot) {
+                // If logged in, get real data. If guest, show placeholders.
+                int coins = 0;
+                int tokens = 0;
+
+                if (_isLoggedIn && snapshot.hasData && snapshot.data!.exists) {
+                  final userData = snapshot.data!.data() as Map<String, dynamic>;
+                  coins = userData['ghostCoins'] ?? 0;
+                  tokens = userData['ghostTokens'] ?? 0;
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildCurrencyChip(
+                      icon: Icons.monetization_on_rounded,
+                      value: '$coins',
+                      color: Colors.amberAccent,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildCurrencyChip(
+                      icon: Icons.stars_rounded,
+                      value: '$tokens',
+                      color: Colors.lightBlueAccent,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+
           // Global Broadcast Banner
           Positioned(
-            top: 100,
+            top: 160, // Below Currency HUD
             left: 20,
             right: 20,
             child: StreamBuilder<DocumentSnapshot>(
@@ -419,6 +427,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               },
             ),
           ),
+
+          // Game Dorm Image
           Positioned(
             bottom: MediaQuery.of(context).size.height * 0.15,
             left: 0,
@@ -431,6 +441,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
+
+          // Roulette Man
           Positioned(
             bottom: 0,
             child: Image.asset(
@@ -440,6 +452,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: 200,
             ),
           ),
+
+          // Shop Stall (Clickable)
           Positioned(
             bottom: 0,
             right: -1,
@@ -471,6 +485,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               isClickable: true,
             ),
           ),
+
+          // Chat Signage
           Positioned(
             bottom: MediaQuery.of(context).size.height * 0.19,
             left: 20,
@@ -522,15 +538,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+        color: Colors.black.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.1),
-            blurRadius: 4,
+            color: color.withValues(alpha: 0.15),
+            blurRadius: 8,
             spreadRadius: 1,
           )
         ],
@@ -538,14 +554,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 18),
-          const SizedBox(width: 8),
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 10),
           Text(
             value,
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+              letterSpacing: 0.5,
             ),
           ),
         ],
