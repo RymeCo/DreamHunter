@@ -367,7 +367,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        toolbarHeight: 80,
+        toolbarHeight: 100,
+        leadingWidth: 200,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0, top: 8.0),
+          child: StreamBuilder<DocumentSnapshot>(
+            stream: _userService.getUserStats(),
+            builder: (context, snapshot) {
+              int coins = 0;
+              int tokens = 0;
+
+              if (_isLoggedIn && snapshot.hasData && snapshot.data!.exists) {
+                final userData = snapshot.data!.data() as Map<String, dynamic>;
+                coins = userData['ghostCoins'] ?? 0;
+                tokens = userData['ghostTokens'] ?? 0;
+              }
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildCurrencyChip(
+                    icon: Icons.monetization_on_rounded,
+                    value: '$coins',
+                    color: Colors.amberAccent,
+                  ),
+                  const SizedBox(height: 4),
+                  _buildCurrencyChip(
+                    icon: Icons.stars_rounded,
+                    value: '$tokens',
+                    color: Colors.lightBlueAccent,
+                    onPlusTap: _showPurchaseDialog,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -399,47 +435,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
-          ),
-
-          // --- Compact Vertical Currency HUD (Top-Left, Aligned with Menu) ---
-          Positioned(
-            top: 16, // Level with AppBar button padding
-            left: 20,
-            child: SafeArea(
-              child: StreamBuilder<DocumentSnapshot>(
-                stream: _userService.getUserStats(),
-                builder: (context, snapshot) {
-                  int coins = 0;
-                  int tokens = 0;
-
-                  if (_isLoggedIn && snapshot.hasData && snapshot.data!.exists) {
-                    final userData = snapshot.data!.data() as Map<String, dynamic>;
-                    coins = userData['ghostCoins'] ?? 0;
-                    tokens = userData['ghostTokens'] ?? 0;
-                  }
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Ghost Coins
-                      _buildCurrencyChip(
-                        icon: Icons.monetization_on_rounded,
-                        value: '$coins',
-                        color: Colors.amberAccent,
-                      ),
-                      const SizedBox(height: 6), // Tight spacing
-                      // Ghost Tokens with Plus Button
-                      _buildCurrencyChip(
-                        icon: Icons.stars_rounded,
-                        value: '$tokens',
-                        color: Colors.lightBlueAccent,
-                        onPlusTap: _showPurchaseDialog,
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
           ),
 
           // Global Broadcast Banner
