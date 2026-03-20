@@ -13,6 +13,7 @@ import 'screens/automod_screen.dart';
 import 'screens/audit_screen.dart';
 import 'screens/live_chat_screen.dart';
 import 'screens/shop_management_screen.dart';
+import 'screens/leaderboard_screen.dart';
 import 'widgets/admin_ui_components.dart';
 
 void main() async {
@@ -298,6 +299,67 @@ class _MainLayoutState extends State<MainLayout> {
                 ],
               ),
             ),
+          ),
+        ),
+        drawer: Drawer(
+          backgroundColor: const Color(0xFF0F0F1E),
+          child: Column(
+            children: [
+              DrawerHeader(
+                decoration: const BoxDecoration(
+                  color: Color(0xFF16162F),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.shield_rounded, color: Colors.amberAccent, size: 48),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'DREAMHUNTER',
+                        style: TextStyle(
+                          color: Colors.amberAccent,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 20,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      Text(
+                        'ADMIN CONTROL',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.leaderboard_rounded, color: Colors.amberAccent),
+                title: const Text('Global Leaderboards', style: TextStyle(color: Colors.white70)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LeaderboardScreen()),
+                  );
+                },
+              ),
+              const Spacer(),
+              const Divider(color: Colors.white10),
+              ListTile(
+                leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+                title: const Text('Logout Session', style: TextStyle(color: Colors.redAccent)),
+                onTap: () {
+                  Navigator.pop(context);
+                  FirebaseAuth.instance.signOut();
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
           ),
         ),
         body: Container(
