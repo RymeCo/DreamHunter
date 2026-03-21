@@ -250,7 +250,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               pageBuilder: (context, animation, secondaryAnimation) {
                                 return ScaleTransition(
                                   scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
-                                  child: FadeTransition(opacity: animation, child: const SettingsDialog()),
+                                  child: FadeTransition(
+                                    opacity: animation,
+                                    child: SettingsDialog(
+                                      onLoginRequested: () {
+                                        Navigator.pop(context);
+                                        _showAuthDialog();
+                                      },
+                                    ),
+                                  ),
                                 );
                               },
                             );

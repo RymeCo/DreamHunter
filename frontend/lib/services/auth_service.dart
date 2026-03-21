@@ -118,10 +118,20 @@ class AuthService {
     });
 
     // Sync with FastAPI backend after registration
-    await _backend.syncUserProfile();
+    try {
+      await _backend.syncUserProfile().timeout(const Duration(seconds: 10));
+    } catch (e) {
+      developer.log('Initial sync failed during registration, proceeding...', 
+          error: e, name: 'AuthService');
+    }
     
     // Move any guest transactions to this user before signing out (to be synced later on first login)
-    await OfflineCache.migrateGuestData(userCredential.user!.uid);
+    try {
+      await OfflineCache.migrateGuestData(userCredential.user!.uid);
+    } catch (e) {
+      developer.log('Guest migration failed during registration', 
+          error: e, name: 'AuthService');
+    }
 
     // Sign out to force manual login
     await signOut();

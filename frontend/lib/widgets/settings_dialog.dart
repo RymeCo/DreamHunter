@@ -7,7 +7,8 @@ import 'liquid_glass_dialog.dart';
 import 'custom_snackbar.dart';
 
 class SettingsDialog extends StatefulWidget {
-  const SettingsDialog({super.key});
+  final VoidCallback? onLoginRequested;
+  const SettingsDialog({super.key, this.onLoginRequested});
 
   @override
   State<SettingsDialog> createState() => _SettingsDialogState();
@@ -46,7 +47,11 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
   Future<void> _performManualSync() async {
     if (FirebaseAuth.instance.currentUser == null) {
-      showCustomSnackBar(context, 'Please login to sync your data!', type: SnackBarType.info);
+      showCustomSnackBar(
+        context,
+        'Please log in to use this feature! Use the top right ☰ menu.',
+        type: SnackBarType.info,
+      );
       return;
     }
 

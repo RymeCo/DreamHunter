@@ -26,9 +26,13 @@ class _RegisterDialogState extends State<RegisterDialog> {
       TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final AuthService _authService = AuthService();
+  bool _isLoading = false;
 
   void _register() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
       // Show initial feedback
       showCustomSnackBar(
         context,
@@ -43,15 +47,26 @@ class _RegisterDialogState extends State<RegisterDialog> {
           displayName: _displayNameController.text.trim(),
         );
         if (mounted) {
+          _displayNameController.clear();
+          _emailController.clear();
+          _passwordController.clear();
+          _confirmPasswordController.clear();
+          
           showCustomSnackBar(
             context,
             'Account created! Please log in.',
             type: SnackBarType.success,
           );
+          setState(() {
+            _isLoading = false;
+          });
         }
         widget.onRegisterSuccess();
       } on FirebaseAuthException catch (e) {
         if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
         String message;
         switch (e.code) {
           case 'email-already-in-use':
@@ -69,6 +84,9 @@ class _RegisterDialogState extends State<RegisterDialog> {
         showCustomSnackBar(context, message, type: SnackBarType.error);
       } catch (e) {
         if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
         showCustomSnackBar(context, 'Unexpected error: $e',
             type: SnackBarType.error);
       }
@@ -130,7 +148,7 @@ class _RegisterDialogState extends State<RegisterDialog> {
               ),
               const SizedBox(height: 25),
               ElevatedButton(
-                onPressed: _register,
+                onPressed: _isLoading ? null : _register,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromRGBO(255, 255, 255, 0.3),
                   foregroundColor: Colors.white,
@@ -142,9 +160,17 @@ class _RegisterDialogState extends State<RegisterDialog> {
                         color: Color.fromRGBO(255, 255, 255, 0.5)),
                   ),
                 ),
-                child: const Text('Register',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: _isLoading 
+                    ? const SizedBox(
+                        width: 20, 
+                        height: 20, 
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2, 
+                          color: Colors.white
+                        )
+                      )
+                    : const Text('Register',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
               TextButton(
                 onPressed: widget.onLoginRequested,

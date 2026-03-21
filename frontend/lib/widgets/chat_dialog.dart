@@ -5,10 +5,6 @@ import 'package:dreamhunter/services/chat_service.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/widgets/report_dialog.dart';
-import 'package:dreamhunter/widgets/login_dialog.dart';
-import 'package:dreamhunter/widgets/register_dialog.dart';
-
-enum _ChatAuthDialogType { login, register }
 
 class ChatDialog extends StatefulWidget {
   final ChatService? chatService;
@@ -144,57 +140,6 @@ class _ChatDialogState extends State<ChatDialog> {
     }
   }
 
-  void _showAuthPrompt(_ChatAuthDialogType type) {
-    showGeneralDialog(
-      context: context,
-      barrierLabel: "ChatAuthDialog",
-      barrierDismissible: true,
-      barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Center(
-          child: LiquidGlassDialog(
-            width: 350,
-            height: 600,
-            child: type == _ChatAuthDialogType.login
-                ? LoginDialog(
-                    onRegisterRequested: () {
-                      Navigator.pop(context);
-                      _showAuthPrompt(_ChatAuthDialogType.register);
-                    },
-                    onLoginSuccess: () {
-                      Navigator.pop(context);
-                      if (!mounted) return;
-                      showCustomSnackBar(
-                        context,
-                        'Login successful!',
-                        type: SnackBarType.success,
-                      );
-                      setState(() {}); // Refresh chat state
-                    },
-                  )
-                : RegisterDialog(
-                    onLoginRequested: () {
-                      Navigator.pop(context);
-                      _showAuthPrompt(_ChatAuthDialogType.login);
-                    },
-                    onRegisterSuccess: () {
-                      Navigator.pop(context);
-                      if (!mounted) return;
-                      showCustomSnackBar(
-                        context,
-                        'Registration successful!',
-                        type: SnackBarType.success,
-                      );
-                      setState(() {}); // Refresh chat state
-                    },
-                  ),
-          ),
-        );
-      },
-    );
-  }
-
   void _sendMessage() async {
     if (_isChatMaintenance) {
       final strings =
@@ -213,10 +158,9 @@ class _ChatDialogState extends State<ChatDialog> {
     if (FirebaseAuth.instance.currentUser == null) {
       showCustomSnackBar(
         context,
-        'Please login to chat!',
-        type: SnackBarType.error,
+        'Please log in to use this feature! Use the top right ☰ menu.',
+        type: SnackBarType.info,
       );
-      _showAuthPrompt(_ChatAuthDialogType.login);
       return;
     }
 
@@ -622,7 +566,7 @@ class _ChatDialogState extends State<ChatDialog> {
                                         if (currentUserId == null) {
                                           showCustomSnackBar(
                                             context,
-                                            'Please login to like messages.',
+                                            'Please log in to use this feature!',
                                             type: SnackBarType.info,
                                           );
                                         } else {
