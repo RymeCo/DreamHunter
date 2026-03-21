@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OfflineTransaction {
   final String id;
@@ -52,7 +53,15 @@ class OfflineCache {
   static const String _settingsKey = 'app_settings';
   static const String _inventoryKey = 'cached_inventory';
   static const String _progressKey = 'cached_progress';
+  static const String _lastSyncKey = 'last_sync_timestamp';
+  static const String _lastSyncStatusKey = 'last_sync_status';
   static const _uuid = Uuid();
+
+  /// Helper to get a key scoped to the current user (or guest)
+  static String _getScopedKey(String baseKey, [String? uid]) {
+    final currentUid = uid ?? FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+    return '${currentUid}_$baseKey';
+  }
 
   static Future<void> saveSettings(Map<String, bool> settings) async {
     final prefs = await SharedPreferences.getInstance();
@@ -74,7 +83,7 @@ class OfflineCache {
 
   static Future<void> saveCurrency(int dreamCoins, int hellStones, [int playtime = 0, int freeSpins = 0]) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_currencyKey, json.encode({
+    await prefs.setString(_getScopedKey(_currencyKey), json.encode({
       'dreamCoins': dreamCoins,
       'hellStones': hellStones,
       'playtime': playtime,
@@ -84,7 +93,7 @@ class OfflineCache {
 
   static Future<Map<String, int>?> getCurrency() async {
     final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString(_currencyKey);
+    final cached = prefs.getString(_getScopedKey(_currencyKey));
     if (cached != null) {
       final Map<String, dynamic> data = json.decode(cached);
       return {
@@ -120,7 +129,7 @@ class OfflineCache {
     );
     
     queue.add(transaction);
-    await prefs.setString(_transactionQueueKey, json.encode(queue.map((t) => t.toJson()).toList()));
+    await prefs.setString(_getScopedKey(_transactionQueueKey), json.encode(queue.map((t) => t.toJson()).toList()));
     
     // Also update local currency/playtime immediately
     final current = await getCurrency() ?? {'dreamCoins': 0, 'hellStones': 0, 'playtime': 0, 'freeSpins': 0};
@@ -134,7 +143,7 @@ class OfflineCache {
 
   static Future<List<OfflineTransaction>> getTransactionQueue() async {
     final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString(_transactionQueueKey);
+    final cached = prefs.getString(_getScopedKey(_transactionQueueKey));
     if (cached != null) {
       final List<dynamic> list = json.decode(cached);
       return list.map((item) => OfflineTransaction.fromJson(item)).toList();
@@ -145,37 +154,37 @@ class OfflineCache {
   static Future<void> clearTransactionQueue({List<String>? ids}) async {
     final prefs = await SharedPreferences.getInstance();
     if (ids == null) {
-      await prefs.remove(_transactionQueueKey);
+      await prefs.remove(_getScopedKey(_transactionQueueKey));
     } else {
       final queue = await getTransactionQueue();
       queue.removeWhere((t) => ids.contains(t.id));
-      await prefs.setString(_transactionQueueKey, json.encode(queue.map((t) => t.toJson()).toList()));
+      await prefs.setString(_getScopedKey(_transactionQueueKey), json.encode(queue.map((t) => t.toJson()).toList()));
     }
   }
 
   static Future<void> saveStatsSummary(String key, Map<String, dynamic> stats) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, json.encode(stats));
+    await prefs.setString(_getScopedKey(key), json.encode(stats));
   }
 
   static Future<void> saveInventory(List<String> items) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_inventoryKey, items);
+    await prefs.setStringList(_getScopedKey(_inventoryKey), items);
   }
 
   static Future<List<String>> getInventory() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getStringList(_inventoryKey) ?? [];
+    return prefs.getStringList(_getScopedKey(_inventoryKey)) ?? [];
   }
 
   static Future<void> saveGameProgress(Map<String, dynamic> progress) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_progressKey, json.encode(progress));
+    await prefs.setString(_getScopedKey(_progressKey), json.encode(progress));
   }
 
   static Future<Map<String, dynamic>> getGameProgress() async {
     final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString(_progressKey);
+    final cached = prefs.getString(_getScopedKey(_progressKey));
     if (cached != null) {
       return json.decode(cached) as Map<String, dynamic>;
     }
@@ -201,14 +210,84 @@ class OfflineCache {
     await prefs.remove('metadata_$key');
   }
 
-  static Future<void> clearCache() async {
+  static Future<void> saveLastSync([bool success = true]) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_currencyKey);
-    await prefs.remove(_transactionQueueKey);
-    await prefs.remove(_inventoryKey);
-    await prefs.remove(_progressKey);
+    final now = DateTime.now().toIso8601String();
+    await prefs.setString(_getScopedKey(_lastSyncKey), now);
+    await prefs.setBool(_getScopedKey(_lastSyncStatusKey), success);
+  }
+
+  static Future<Map<String, dynamic>> getLastSyncInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    return {
+      'timestamp': prefs.getString(_getScopedKey(_lastSyncKey)),
+      'success': prefs.getBool(_getScopedKey(_lastSyncStatusKey)) ?? false,
+    };
+  }
+
+  /// Migrates guest data to a new user UID. Used during login/registration.
+  static Future<void> migrateGuestData(String newUid) async {
+    final prefs = await SharedPreferences.getInstance();
+    const guestUid = 'guest';
+
+    final sensitiveKeys = [
+      _currencyKey,
+      _transactionQueueKey,
+      _inventoryKey,
+      _progressKey,
+    ];
+
+    for (final key in sensitiveKeys) {
+      final guestKey = _getScopedKey(key, guestUid);
+      final userKey = _getScopedKey(key, newUid);
+
+      final guestData = prefs.getString(guestKey);
+      final guestList = prefs.getStringList(guestKey);
+      
+      if (guestData != null) {
+        if (key == _transactionQueueKey) {
+          final List guestQueue = json.decode(guestData);
+          final userQueueData = prefs.getString(userKey);
+          final List userQueue = userQueueData != null ? json.decode(userQueueData) : [];
+          userQueue.addAll(guestQueue);
+          await prefs.setString(userKey, json.encode(userQueue));
+        } else {
+          // If user already has data, we don't overwrite it with guest data (cloud is truth)
+          if (!prefs.containsKey(userKey)) {
+             await prefs.setString(userKey, guestData);
+          }
+        }
+        await prefs.remove(guestKey);
+      } else if (guestList != null) {
+        if (!prefs.containsKey(userKey)) {
+          await prefs.setStringList(userKey, guestList);
+        }
+        await prefs.remove(guestKey);
+      }
+    }
+  }
+
+  /// Clears ALL user-specific data from local storage.
+  static Future<void> clearAllUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final keys = prefs.getKeys();
+    final userPrefix = '${uid}_';
+    
+    for (final key in keys) {
+      if (key.startsWith(userPrefix)) {
+        await prefs.remove(key);
+      }
+    }
+  }
+
+  static Future<void> clearCache() async {
+    await clearAllUserData();
   }
 }
+
 
 extension DateTimeIso on DateTime {
   String toIsoformat() => toIso8601String();

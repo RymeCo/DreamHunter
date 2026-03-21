@@ -14,6 +14,7 @@ import 'screens/audit_screen.dart';
 import 'screens/live_chat_screen.dart';
 import 'screens/shop_management_screen.dart';
 import 'screens/leaderboard_screen.dart';
+import 'screens/roulette_management_screen.dart';
 import 'widgets/admin_ui_components.dart';
 
 void main() async {
@@ -345,6 +346,17 @@ class _MainLayoutState extends State<MainLayout> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const LeaderboardScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.refresh_rounded, color: Colors.amberAccent),
+                title: const Text('Roulette & Daily Rewards', style: TextStyle(color: Colors.white70)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const RouletteManagementScreen()),
                   );
                 },
               ),

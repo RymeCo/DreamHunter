@@ -1,6 +1,7 @@
 # Gemini CLI Workflow Mandates
 
 This project follows a streamlined development workflow to ensure high velocity while maintaining clear traceability through Jira.
+## Keep in mind that offline first second online this app is mainly offline & check code for modularity so we can resuse code and dont have copy2 code if nothing then 
 
 ## SCRUM & Jira Automation
 - **Task Initiation**: Whenever the user requests a new feature or task, the agent MUST use the Atlassian MCP server to create a new Jira SCRUM ticket (e.g., `SCRUM-XX`). 
@@ -31,8 +32,3 @@ To maintain momentum, all development is performed directly on the **`developmen
 ## Deployment & Environments
 - **Render Deployment**: Render monitors the `development` branch. 
 - **Mandate**: Backend changes ONLY take effect on the live server after they are pushed to the `development` branch on origin.
-
-## GSD Mode (Get Shit Done)
-**Isolated Automation**: This directory supports GSD automation. 
-- **Toggle**: Use `/gsd:on` to enable auto-commits and `/gsd:off` to disable them.
-- **Workflow**: When GSD is ON, every file change triggers a local git commit with the current active SCRUM key. 

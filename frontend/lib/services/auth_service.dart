@@ -34,6 +34,9 @@ class AuthService {
       password: password,
     );
     
+    // Migrate guest data to this user
+    await OfflineCache.migrateGuestData(userCredential.user!.uid);
+    
     // Sync with FastAPI backend and update local cache
     final profile = await _backend.syncUserProfile();
     if (profile != null) {
@@ -41,6 +44,7 @@ class AuthService {
         profile['dreamCoins'] ?? 0,
         profile['hellStones'] ?? 0,
         profile['playtime'] ?? 0,
+        profile['freeSpins'] ?? 0,
       );
     }
     
@@ -115,12 +119,17 @@ class AuthService {
     // Sync with FastAPI backend after registration
     await _backend.syncUserProfile();
     
+    // Move any guest transactions to this user before signing out (to be synced later on first login)
+    await OfflineCache.migrateGuestData(userCredential.user!.uid);
+
     // Sign out to force manual login
     await signOut();
   }
 
   /// Log out
   Future<void> signOut() async {
+    // Clear local cache for this user before signing out
+    await OfflineCache.clearAllUserData();
     await _auth.signOut();
   }
 

@@ -65,6 +65,22 @@ class MessageActionRequest(BaseModel):
     action: str # 'like', 'hide'
     value: bool
 
+class RouletteReward(BaseModel):
+    id: str
+    name: str
+    type: str # 'item' or 'currency'
+    itemId: Optional[str] = None
+    amount: Optional[int] = None
+    weight: int
+    color: str # Hex string (e.g., 0xFFFF0000)
+
+class RouletteConfigRequest(BaseModel):
+    rewards: List[RouletteReward]
+    dailyFreeSpins: int = 1
+    maxFreeSpins: int = 10
+    spinBuyPrice: int = 50
+    spinBuyCurrency: str = "dreamCoins"
+
 # --- Dependencies ---
 
 async def verify_admin(authorization: Optional[str] = Header(None)):
@@ -643,3 +659,42 @@ async def perform_message_action(req: MessageActionRequest, admin: dict = Depend
     )
     
     return {"status": "success"}
+
+# --- Roulette Configuration ---
+
+@router.get("/roulette/config")
+async def get_roulette_config(admin: dict = Depends(verify_admin)):
+    """Fetches the current roulette configuration."""
+    db = firestore.client()
+    doc = db.collection('metadata').document('roulette_config').get()
+    if doc.exists:
+        return doc.to_dict()
+    
+    # Default config if none exists
+    return {
+        "rewards": [],
+        "dailyFreeSpins": 1,
+        "maxFreeSpins": 10,
+        "spinBuyPrice": 50,
+        "spinBuyCurrency": "dreamCoins"
+    }
+
+@router.post("/roulette/config")
+async def update_roulette_config(req: RouletteConfigRequest, admin: dict = Depends(verify_admin)):
+    """Updates the roulette configuration."""
+    db = firestore.client()
+    uid = admin['uid']
+    
+    # Save to Firestore
+    config_dict = req.dict()
+    db.collection('metadata').document('roulette_config').set(config_dict)
+    
+    # Audit log
+    log_audit(
+        admin_uid=uid,
+        admin_email=admin.get('email'),
+        action="UPDATE_ROULETTE_CONFIG",
+        details=f"Updated roulette rewards and rules. Daily spins: {req.dailyFreeSpins}"
+    )
+    
+    return {"status": "success", "message": "Roulette configuration updated"}

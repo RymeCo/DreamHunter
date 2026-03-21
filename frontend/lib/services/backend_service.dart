@@ -27,31 +27,57 @@ class BackendService {
     };
   }
 
-  /// Helper for authenticated GET requests
-  Future<http.Response> get(String path) async {
-    final headers = await getAuthHeaders();
-    return await _client.get(Uri.parse('$baseUrl$path'), headers: headers);
+  /// Helper for authenticated requests with retry logic
+  Future<http.Response> _authenticatedRequest(
+    String method,
+    String path, {
+    Object? body,
+    int retries = 3,
+  }) async {
+    final url = Uri.parse('$baseUrl$path');
+    int attempt = 0;
+    
+    while (attempt < retries) {
+      try {
+        final headers = await getAuthHeaders();
+        http.Response response;
+        
+        switch (method) {
+          case 'POST':
+            response = await _client.post(url, headers: headers, body: body != null ? json.encode(body) : null);
+            break;
+          case 'PATCH':
+            response = await _client.patch(url, headers: headers, body: body != null ? json.encode(body) : null);
+            break;
+          case 'GET':
+          default:
+            response = await _client.get(url, headers: headers);
+        }
+        
+        // If server is waking up (Render cold start) or other 5xx, retry
+        if (response.statusCode >= 500 && attempt < retries - 1) {
+          attempt++;
+          await Future.delayed(Duration(seconds: 2 * attempt));
+          continue;
+        }
+        return response;
+      } catch (e) {
+        attempt++;
+        if (attempt >= retries) rethrow;
+        await Future.delayed(Duration(seconds: 2 * attempt));
+      }
+    }
+    throw Exception('Request failed after $retries attempts');
   }
+
+  /// Helper for authenticated GET requests
+  Future<http.Response> get(String path) => _authenticatedRequest('GET', path);
 
   /// Helper for authenticated POST requests
-  Future<http.Response> post(String path, {Object? body}) async {
-    final headers = await getAuthHeaders();
-    return await _client.post(
-      Uri.parse('$baseUrl$path'),
-      headers: headers,
-      body: body != null ? json.encode(body) : null,
-    );
-  }
+  Future<http.Response> post(String path, {Object? body}) => _authenticatedRequest('POST', path, body: body);
 
   /// Helper for authenticated PATCH requests
-  Future<http.Response> patch(String path, {Object? body}) async {
-    final headers = await getAuthHeaders();
-    return await _client.patch(
-      Uri.parse('$baseUrl$path'),
-      headers: headers,
-      body: body != null ? json.encode(body) : null,
-    );
-  }
+  Future<http.Response> patch(String path, {Object? body}) => _authenticatedRequest('PATCH', path, body: body);
 
   /// Checks if the backend is reachable
   Future<bool> pingServer() async {
@@ -85,6 +111,7 @@ class BackendService {
     final user = _auth.currentUser;
     if (user == null) return false;
 
+    bool success = false;
     try {
       // 1. Reconcile Economy
       final transactions = await OfflineCache.getTransactionQueue();
@@ -100,8 +127,9 @@ class BackendService {
             result['playtime'] as int? ?? 0,
             result['freeSpins'] as int? ?? 0,
           );
+          success = true;
         } else {
-          return false;
+          success = false;
         }
       } else {
         // Just pull latest profile if no offline transactions
@@ -113,26 +141,30 @@ class BackendService {
             profile['playtime'] ?? 0,
             profile['freeSpins'] ?? 0,
           );
+          success = true;
         }
       }
 
       // 2. Sync Game Progress & Inventory (Optional items that require backend to handle)
-      final progress = await OfflineCache.getGameProgress();
-      final inventory = await OfflineCache.getInventory();
-      
-      // We don't fail the sync if this part fails as it's secondary to currency
-      try {
-        await post('/user/sync-progress', body: {
-          'progress': progress,
-          'inventory': inventory,
-        }).timeout(const Duration(seconds: 10));
-      } catch (e) {
-        debugPrint('Progress sync failed: $e');
+      if (success) {
+        final progress = await OfflineCache.getGameProgress();
+        final inventory = await OfflineCache.getInventory();
+        
+        try {
+          await post('/user/sync-progress', body: {
+            'progress': progress,
+            'inventory': inventory,
+          }).timeout(const Duration(seconds: 15));
+        } catch (e) {
+          debugPrint('Progress sync failed (non-critical): $e');
+        }
       }
 
-      return true;
+      await OfflineCache.saveLastSync(success);
+      return success;
     } catch (e) {
       debugPrint('Full sync failed: $e');
+      await OfflineCache.saveLastSync(false);
       return false;
     }
   }

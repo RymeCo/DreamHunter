@@ -190,6 +190,45 @@ async def get_user_profile_data(decoded_token: dict = Depends(verify_firebase_to
     
     if doc.exists:
         data = doc.to_dict()
+        
+        # --- Daily Free Spin Grant ---
+        now = datetime.now(timezone.utc)
+        last_grant_str = data.get('lastFreeSpinGrant')
+        needs_update = False
+        
+        # Fetch config for grant rules
+        config_ref = db.collection('metadata').document('roulette_config').get()
+        config = config_ref.to_dict() if config_ref.exists else {}
+        daily_grant = config.get('dailyFreeSpins', 1)
+        max_spins = config.get('maxFreeSpins', 10)
+        
+        if last_grant_str:
+            try:
+                # Handle both Z and +00:00 formats
+                clean_last_grant = last_grant_str.replace('Z', '+00:00')
+                last_grant = datetime.fromisoformat(clean_last_grant)
+                # If the current date is different from the last grant date
+                if now.date() > last_grant.date():
+                    current_spins = data.get('freeSpins', 0)
+                    new_spins = min(max_spins, current_spins + daily_grant)
+                    data['freeSpins'] = new_spins
+                    data['lastFreeSpinGrant'] = now.isoformat()
+                    needs_update = True
+            except Exception as e:
+                print(f"Error parsing lastFreeSpinGrant: {e}")
+        else:
+            # Initialize if missing
+            data['freeSpins'] = data.get('freeSpins', daily_grant)
+            data['lastFreeSpinGrant'] = now.isoformat()
+            needs_update = True
+            
+        if needs_update:
+            user_ref.update({
+                'freeSpins': data['freeSpins'],
+                'lastFreeSpinGrant': data['lastFreeSpinGrant']
+            })
+        # --- End Daily Grant ---
+
         if 'uid' not in data:
             data['uid'] = doc.id
         return data
@@ -213,7 +252,9 @@ async def get_user_profile_data(decoded_token: dict = Depends(verify_firebase_to
         "lastKnownHellStones": 0,
         "lastSyncTimestamp": now.isoformat(),
         "inventory": [],
-        "processedTransactionIds": []
+        "processedTransactionIds": [],
+        "freeSpins": 1, # Start with 1 free spin
+        "lastFreeSpinGrant": now.isoformat()
     }
     
     db_profile = default_profile.copy()
@@ -425,11 +466,12 @@ async def report_content(report: ReportRequest):
 
 class OfflineTransaction(BaseModel):
     id: str
-    type: str # PURCHASE, CONVERSION, EARN, PLAYTIME
+    type: str # PURCHASE, CONVERSION, EARN, PLAYTIME, ROULETTE_SPIN, BUY_SPIN, ROULETTE_REWARD
     itemId: Optional[str] = None
     dreamDelta: int = 0
     hellDelta: int = 0
     playtimeDelta: int = 0 # In seconds
+    freeSpinDelta: int = 0 
     timestamp: str
 
 class ReconcileRequest(BaseModel):
@@ -448,6 +490,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
     current_dream = data.get('dreamCoins', 0)
     current_hell = data.get('hellStones', 0)
     current_playtime = data.get('playtime', 0)
+    current_free_spins = data.get('freeSpins', 0)
     inventory = data.get('inventory', [])
     processed_ids = set(data.get('processedTransactionIds', []))
     
@@ -455,7 +498,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
     transactions = sorted(req.transactions, key=lambda t: t.timestamp)
     
     # Process each transaction
-    total_earned = 0
+    gameplay_earned = 0
     newly_processed = []
     
     for t in transactions:
@@ -463,34 +506,61 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         if t.id in processed_ids:
             continue
             
+        # Security: Validate transaction integrity based on type
         if t.type == 'EARN':
-            total_earned += t.dreamDelta
+            if t.dreamDelta < 0 or t.hellDelta != 0:
+                raise HTTPException(status_code=400, detail="Invalid EARN transaction deltas")
+            gameplay_earned += t.dreamDelta
+            
+        elif t.type == 'CONVERSION':
+            # 1 Hell Stone -> 100 Dream Coins
+            # Expected: hellDelta < 0, dreamDelta == abs(hellDelta) * 100
+            if t.hellDelta >= 0 or t.dreamDelta != abs(t.hellDelta) * 100:
+                 raise HTTPException(status_code=400, detail="Invalid CONVERSION rate or deltas")
+                 
+        elif t.type == 'IAP_PURCHASE':
+            # Authorized real-money purchase (bypasses cap)
+            # In a real app, this would verify a receipt token here
+            pass
+                 
+        elif t.type in ['PURCHASE', 'ROULETTE_SPIN', 'BUY_SPIN']:
+            if t.dreamDelta > 0 or t.hellDelta > 0 or t.freeSpinDelta > 0:
+                raise HTTPException(status_code=400, detail=f"Positive delta not allowed for {t.type}")
         
-        if t.type == 'PURCHASE' and t.itemId:
+        elif t.type == 'ROULETTE_REWARD':
+            if t.dreamDelta < 0:
+                raise HTTPException(status_code=400, detail="Negative delta not allowed for ROULETTE_REWARD")
+            # Roulette rewards count as gameplay earnings for security
+            gameplay_earned += t.dreamDelta
+
+        if (t.type == 'PURCHASE' or t.type == 'ROULETTE_REWARD') and t.itemId:
             if t.itemId not in inventory:
                 inventory.append(t.itemId)
 
         if t.type == 'PLAYTIME':
             current_playtime += t.playtimeDelta
-        
+            
+        current_free_spins += t.freeSpinDelta
         current_dream += t.dreamDelta
         current_hell += t.hellDelta
         
         # Prevent negative balances
-        if current_dream < 0 or current_hell < 0:
+        if current_dream < 0 or current_hell < 0 or current_free_spins < 0:
             raise HTTPException(status_code=400, detail=f"Insufficient funds during reconciliation at {t.timestamp}")
 
         processed_ids.add(t.id)
         newly_processed.append(t.id)
 
-    # Security: Earn cap check
-    if total_earned > 10000:
+    # Security: Earn cap check (Gameplay + Roulette)
+    # 15,000 is the threshold for manual review. 
+    # IAP_PURCHASE and CONVERSION are not counted here.
+    if gameplay_earned > 15000:
         from admin import log_audit
         log_audit(
             admin_uid="SYSTEM_SECURITY",
             action="ECONOMY_RECONCILE_ANOMALY",
             target=uid,
-            details=f"Large earn in batch: {total_earned}. Flagging for review.",
+            details=f"Large gameplay earn in batch: {gameplay_earned}. Flagging for review.",
             target_name=data.get('displayName'),
             target_email=data.get('email')
         )
@@ -501,6 +571,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         "dreamCoins": current_dream,
         "hellStones": current_hell,
         "playtime": current_playtime,
+        "freeSpins": current_free_spins,
         "lastKnownDreamCoins": current_dream,
         "lastKnownHellStones": current_hell,
         "lastSyncTimestamp": now.isoformat(),
@@ -513,6 +584,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         "dreamCoins": current_dream, 
         "hellStones": current_hell,
         "playtime": current_playtime,
+        "freeSpins": current_free_spins,
         "inventory": inventory
     }
 
@@ -610,3 +682,4 @@ if __name__ == "__main__":
     # Render provides the PORT environment variable
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+
