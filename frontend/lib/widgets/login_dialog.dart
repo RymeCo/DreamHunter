@@ -23,9 +23,14 @@ class _LoginDialogState extends State<LoginDialog> {
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final AuthService _authService = AuthService();
+  bool _isLoading = false;
 
   void _login() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
       // Show initial feedback
       showCustomSnackBar(
         context,
@@ -39,15 +44,16 @@ class _LoginDialogState extends State<LoginDialog> {
           _passwordController.text.trim(),
         );
         if (mounted) {
-          showCustomSnackBar(
-            context,
-            'Successfully logged in. Welcome back!',
-            type: SnackBarType.success,
-          );
+          setState(() {
+            _isLoading = false;
+          });
+          widget.onLoginSuccess();
         }
-        widget.onLoginSuccess();
       } on FirebaseAuthException catch (e) {
         if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
         String message;
         switch (e.code) {
           case 'user-not-found':
@@ -65,8 +71,14 @@ class _LoginDialogState extends State<LoginDialog> {
         showCustomSnackBar(context, message, type: SnackBarType.error);
       } catch (e) {
         if (!mounted) return;
-        showCustomSnackBar(context, 'Unexpected error: $e',
-            type: SnackBarType.error);
+        setState(() {
+          _isLoading = false;
+        });
+        showCustomSnackBar(
+          context,
+          'Unexpected error: $e',
+          type: SnackBarType.error,
+        );
       }
     }
   }
@@ -87,6 +99,7 @@ class _LoginDialogState extends State<LoginDialog> {
                 style: const TextStyle(color: Colors.white),
                 decoration: AuthUIHelper.inputDecoration('Email'),
                 validator: AuthUIHelper.validateEmail,
+                enabled: !_isLoading,
               ),
               const SizedBox(height: 15),
               TextFormField(
@@ -95,30 +108,48 @@ class _LoginDialogState extends State<LoginDialog> {
                 obscureText: true,
                 decoration: AuthUIHelper.inputDecoration('Password'),
                 validator: AuthUIHelper.validatePassword,
+                enabled: !_isLoading,
               ),
               const SizedBox(height: 25),
               ElevatedButton(
-                onPressed: _login,
+                onPressed: _isLoading ? null : _login,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromRGBO(255, 255, 255, 0.3),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 40, vertical: 15),
+                    horizontal: 40,
+                    vertical: 15,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                     side: const BorderSide(
-                        color: Color.fromRGBO(255, 255, 255, 0.5)),
+                      color: Color.fromRGBO(255, 255, 255, 0.5),
+                    ),
                   ),
                 ),
-                child: const Text('Login',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Login',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
               TextButton(
                 onPressed: widget.onRegisterRequested,
-                child: const Text("Don't have an account? Register",
-                    style:
-                        TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8))),
+                child: const Text(
+                  "Don't have an account? Register",
+                  style: TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8)),
+                ),
               ),
             ],
           ),

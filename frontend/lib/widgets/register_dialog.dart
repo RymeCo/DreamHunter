@@ -51,12 +51,7 @@ class _RegisterDialogState extends State<RegisterDialog> {
           _emailController.clear();
           _passwordController.clear();
           _confirmPasswordController.clear();
-          
-          showCustomSnackBar(
-            context,
-            'Account created! Please log in.',
-            type: SnackBarType.success,
-          );
+
           setState(() {
             _isLoading = false;
           });
@@ -87,8 +82,11 @@ class _RegisterDialogState extends State<RegisterDialog> {
         setState(() {
           _isLoading = false;
         });
-        showCustomSnackBar(context, 'Unexpected error: $e',
-            type: SnackBarType.error);
+        showCustomSnackBar(
+          context,
+          'Unexpected error: $e',
+          type: SnackBarType.error,
+        );
       }
     }
   }
@@ -153,30 +151,39 @@ class _RegisterDialogState extends State<RegisterDialog> {
                   backgroundColor: const Color.fromRGBO(255, 255, 255, 0.3),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 40, vertical: 15),
+                    horizontal: 40,
+                    vertical: 15,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                     side: const BorderSide(
-                        color: Color.fromRGBO(255, 255, 255, 0.5)),
+                      color: Color.fromRGBO(255, 255, 255, 0.5),
+                    ),
                   ),
                 ),
-                child: _isLoading 
+                child: _isLoading
                     ? const SizedBox(
-                        width: 20, 
-                        height: 20, 
+                        width: 20,
+                        height: 20,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2, 
-                          color: Colors.white
-                        )
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
-                    : const Text('Register',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    : const Text(
+                        'Register',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
               TextButton(
                 onPressed: widget.onLoginRequested,
-                child: const Text('Already have an account? Login',
-                    style:
-                        TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8))),
+                child: const Text(
+                  'Already have an account? Login',
+                  style: TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8)),
+                ),
               ),
             ],
           ),

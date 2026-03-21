@@ -166,7 +166,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _syncProfileWithBackend() async {
     if (!_isLoggedIn || !_isBackendReady) return;
-    
+
     await _backendService.performFullSync();
     await _userService.updateShopCache();
     if (mounted) setState(() {}); // Refresh UI with hot cache
@@ -225,13 +225,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               barrierLabel: "LeaderboardDialog",
                               barrierDismissible: true,
                               barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
-                              transitionDuration: const Duration(milliseconds: 300),
-                              pageBuilder: (context, animation, secondaryAnimation) {
-                                return ScaleTransition(
-                                  scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
-                                  child: FadeTransition(opacity: animation, child: const LeaderboardDialog()),
-                                );
-                              },
+                              transitionDuration: const Duration(
+                                milliseconds: 300,
+                              ),
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) {
+                                    return ScaleTransition(
+                                      scale: CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves.easeOutBack,
+                                      ),
+                                      child: FadeTransition(
+                                        opacity: animation,
+                                        child: const LeaderboardDialog(),
+                                      ),
+                                    );
+                                  },
                             );
                           },
                         ),
@@ -246,21 +255,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               barrierLabel: "SettingsDialog",
                               barrierDismissible: true,
                               barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
-                              transitionDuration: const Duration(milliseconds: 300),
-                              pageBuilder: (context, animation, secondaryAnimation) {
-                                return ScaleTransition(
-                                  scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
-                                  child: FadeTransition(
-                                    opacity: animation,
-                                    child: SettingsDialog(
-                                      onLoginRequested: () {
-                                        Navigator.pop(context);
-                                        _showAuthDialog();
-                                      },
-                                    ),
-                                  ),
-                                );
-                              },
+                              transitionDuration: const Duration(
+                                milliseconds: 300,
+                              ),
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) {
+                                    return ScaleTransition(
+                                      scale: CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves.easeOutBack,
+                                      ),
+                                      child: FadeTransition(
+                                        opacity: animation,
+                                        child: SettingsDialog(
+                                          onLoginRequested: () {
+                                            Navigator.pop(context);
+                                            _showAuthDialog();
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
                             );
                           },
                         ),
@@ -487,7 +502,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.diamond_rounded, color: Colors.redAccent, size: 80),
+                const Icon(
+                  Icons.diamond_rounded,
+                  color: Colors.redAccent,
+                  size: 80,
+                ),
                 const SizedBox(height: 24),
                 const Text(
                   'HELL STONES',
@@ -513,10 +532,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.redAccent.withValues(alpha: 0.8),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 15,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  child: const Text('BACK TO GAME', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'BACK TO GAME',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -534,10 +561,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _convertCurrency() async {
     final Map<String, int> currency = await OfflineCache.getCurrency();
     final int currentHell = currency['hellStones'] ?? 0;
-    
+
     if (currentHell < 1) {
       if (mounted) {
-        showCustomSnackBar(context, 'Insufficient Hell Stones.', type: SnackBarType.error);
+        showCustomSnackBar(
+          context,
+          'Insufficient Hell Stones.',
+          type: SnackBarType.error,
+        );
       }
       return;
     }
@@ -551,7 +582,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (mounted) {
       Navigator.pop(context);
-      showCustomSnackBar(context, 'Successfully converted 1 Hell Stone!', type: SnackBarType.success);
+      showCustomSnackBar(
+        context,
+        'Successfully converted 1 Hell Stone!',
+        type: SnackBarType.success,
+      );
     }
   }
 
@@ -570,7 +605,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.toll_rounded, color: Colors.amberAccent, size: 80),
+                const Icon(
+                  Icons.toll_rounded,
+                  color: Colors.amberAccent,
+                  size: 80,
+                ),
                 const SizedBox(height: 24),
                 const Text(
                   'COIN EXCHANGE',
@@ -596,10 +635,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amberAccent.withValues(alpha: 0.8),
                     foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 15,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  child: const Text('EXCHANGE NOW', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'EXCHANGE NOW',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -627,7 +674,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0, top: 8.0),
           child: StreamBuilder<Map<String, int>>(
-            stream: Stream.periodic(const Duration(seconds: 1)).asyncMap((_) => OfflineCache.getCurrency()),
+            stream: Stream.periodic(
+              const Duration(seconds: 1),
+            ).asyncMap((_) => OfflineCache.getCurrency()),
             builder: (context, snapshot) {
               int coins = snapshot.data?['dreamCoins'] ?? 500;
               int tokens = snapshot.data?['hellStones'] ?? 10;
@@ -685,13 +734,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             width: double.infinity,
             height: double.infinity,
           ),
-          if (_cachedGlobalAlert != null && (_cachedGlobalAlert!['message'] as String).isNotEmpty)
+          if (_cachedGlobalAlert != null &&
+              (_cachedGlobalAlert!['message'] as String).isNotEmpty)
             Positioned(
               top: 160,
               left: 20,
               right: 20,
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 20,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.redAccent.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(12),
@@ -700,12 +753,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: Colors.red.withValues(alpha: 0.5),
                       blurRadius: 10,
                       spreadRadius: 2,
-                    )
+                    ),
                   ],
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.white),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.white,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -749,7 +805,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   pageBuilder: (context, animation, secondaryAnimation) {
                     return ScaleTransition(
                       scale: CurvedAnimation(
-                          parent: animation, curve: Curves.easeOutBack),
+                        parent: animation,
+                        curve: Curves.easeOutBack,
+                      ),
                       child: const RouletteDialog(),
                     );
                   },
@@ -774,7 +832,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   pageBuilder: (context, animation, secondaryAnimation) {
                     return ScaleTransition(
                       scale: CurvedAnimation(
-                          parent: animation, curve: Curves.easeOutBack),
+                        parent: animation,
+                        curve: Curves.easeOutBack,
+                      ),
                       child: FadeTransition(
                         opacity: animation,
                         child: const ShopDialog(),
@@ -817,7 +877,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       pageBuilder: (context, animation, secondaryAnimation) {
                         return ScaleTransition(
                           scale: CurvedAnimation(
-                              parent: animation, curve: Curves.easeOutBack),
+                            parent: animation,
+                            curve: Curves.easeOutBack,
+                          ),
                           child: FadeTransition(
                             opacity: animation,
                             child: const Center(child: ChatDialog()),
@@ -834,12 +896,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   top: 0,
                   right: 0,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.cyanAccent.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
-                        BoxShadow(color: Colors.cyanAccent.withValues(alpha: 0.4), blurRadius: 4),
+                        BoxShadow(
+                          color: Colors.cyanAccent.withValues(alpha: 0.4),
+                          blurRadius: 4,
+                        ),
                       ],
                     ),
                     child: const Text(
