@@ -169,7 +169,7 @@ class OfflineCache {
       hellDelta: hellDelta,
       playtimeDelta: playtimeDelta,
       freeSpinDelta: freeSpinDelta,
-      timestamp: DateTime.now().toUtc().toIsoformat(),
+      timestamp: DateTime.now().toUtc().toUtcIso(),
     );
 
     queue.add(transaction);
@@ -208,7 +208,19 @@ class OfflineCache {
       if (taskType != null) {
         for (var task in dailyTasks['tasks']) {
           if (task['type'] == taskType && !(task['completed'] ?? false)) {
-            task['progress'] = (task['progress'] ?? 0) + 1;
+            if (taskType == 'playtime') {
+              // Convert seconds to minutes for progress if needed
+              // Every 60s increment = 1 minute
+              if (playtimeDelta >= 60) {
+                task['progress'] = (task['progress'] ?? 0) + (playtimeDelta ~/ 60);
+              } else {
+                // If it's a playtime task but the delta is too small, don't update this specific task
+                continue;
+              }
+            } else {
+              task['progress'] = (task['progress'] ?? 0) + 1;
+            }
+
             if (task['progress'] >= task['target']) {
               task['progress'] = task['target'];
               task['completed'] = true;
@@ -237,8 +249,9 @@ class OfflineCache {
   }
 
   static String? _getTaskTypeForTransaction(String type) {
-    if (type == 'CHAT') return 'chat'; // I need to make sure 'CHAT' transaction exists or use a new one
+    if (type == 'CHAT') return 'chat';
     if (type == 'ROULETTE_SPIN') return 'spin';
+    if (type == 'PLAYTIME') return 'playtime';
     return null;
   }
 
@@ -437,5 +450,5 @@ class OfflineCache {
 }
 
 extension DateTimeIso on DateTime {
-  String toIsoformat() => toIso8601String();
+  String toUtcIso() => toIso8601String();
 }

@@ -236,6 +236,8 @@ class _ProfileDialogState extends State<ProfileDialog> {
               _buildStatRow(Icons.bolt, 'Level ${_userData?['level'] ?? 1}', Colors.blueAccent),
               const SizedBox(height: 12),
               _buildStatRow(Icons.military_tech, '${_userData?['xp'] ?? 0} XP', Colors.orangeAccent),
+              const SizedBox(height: 12),
+              _buildStatRow(Icons.timer_rounded, _formatPlaytime((_userData?['playtime'] ?? 0) as int), Colors.greenAccent),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -268,6 +270,16 @@ class _ProfileDialogState extends State<ProfileDialog> {
         ],
       ),
     );
+  }
+
+  String _formatPlaytime(int seconds) {
+    int hours = seconds ~/ 3600;
+    int minutes = (seconds % 3600) ~/ 60;
+    if (hours > 0) {
+      return '${hours}h ${minutes}m playtime';
+    } else {
+      return '${minutes}m playtime';
+    }
   }
 
   Widget _buildStatRow(IconData icon, String label, Color color) {

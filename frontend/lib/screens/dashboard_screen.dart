@@ -36,6 +36,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late StreamSubscription<User?> _authStateSubscription;
   StreamSubscription<DocumentSnapshot>? _statsSubscription;
   Timer? _syncTimer;
+  Timer? _playtimeTimer;
   bool _isLoggedIn = false;
   bool _isBackendReady = false;
   Map<String, dynamic>? _cachedGlobalAlert;
@@ -57,9 +58,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
         if (_isLoggedIn) {
           _startSyncTimer();
+          _startPlaytimeTimer();
           _subscribeToUserStats();
         } else {
           _stopSyncTimer();
+          _stopPlaytimeTimer();
           _statsSubscription?.cancel();
         }
       }
@@ -68,8 +71,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _pingBackend();
     if (_isLoggedIn) {
       _startSyncTimer();
+      _startPlaytimeTimer();
       _subscribeToUserStats();
     }
+  }
+
+  void _startPlaytimeTimer() {
+    _playtimeTimer?.cancel();
+    _playtimeTimer = Timer.periodic(const Duration(minutes: 1), (timer) async {
+      // Add 60 seconds to playtime
+      await OfflineCache.addTransaction(
+        type: 'PLAYTIME',
+        playtimeDelta: 60,
+      );
+    });
+  }
+
+  void _stopPlaytimeTimer() {
+    _playtimeTimer?.cancel();
+    _playtimeTimer = null;
   }
 
   void _subscribeToUserStats() {
@@ -179,6 +199,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _authStateSubscription.cancel();
     _statsSubscription?.cancel();
     _stopSyncTimer();
+    _stopPlaytimeTimer();
     super.dispose();
   }
 

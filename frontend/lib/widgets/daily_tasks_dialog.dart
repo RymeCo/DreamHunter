@@ -232,6 +232,8 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
         return Icons.chat_bubble_rounded;
       case 'spin':
         return Icons.casino_rounded;
+      case 'playtime':
+        return Icons.timer_rounded;
       case 'login':
         return Icons.login_rounded;
       default:

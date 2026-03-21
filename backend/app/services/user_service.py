@@ -188,6 +188,16 @@ def _get_default_daily_tasks():
                 "reward": 150,
                 "completed": False,
                 "type": "spin"
+            },
+            {
+                "id": "playtime_task",
+                "title": "Time Traveler",
+                "description": "Play for 10 minutes.",
+                "progress": 0,
+                "target": 10,
+                "reward": 200,
+                "completed": False,
+                "type": "playtime"
             }
         ]
     }
