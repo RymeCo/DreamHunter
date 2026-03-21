@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:developer' as developer;
 import 'backend_service.dart';
 import 'offline_cache.dart';
 
@@ -128,7 +129,15 @@ class AuthService {
 
   /// Log out
   Future<void> signOut() async {
-    // Clear local cache for this user before signing out
+    // 1. Final cloud sync to ensure local progress is backed up
+    try {
+      await _backend.performFullSync();
+    } catch (e) {
+      // We still want to log out even if sync fails (e.g. offline)
+      developer.log('Final sync failed during logout', error: e, name: 'AuthService');
+    }
+
+    // 2. Clear local cache for this user before signing out
     await OfflineCache.clearAllUserData();
     await _auth.signOut();
   }

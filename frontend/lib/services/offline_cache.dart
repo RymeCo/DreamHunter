@@ -226,6 +226,7 @@ class OfflineCache {
   }
 
   /// Migrates guest data to a new user UID. Used during login/registration.
+  /// Note: Guest data is COPIED, not moved, to allow guest session restoration on logout.
   static Future<void> migrateGuestData(String newUid) async {
     final prefs = await SharedPreferences.getInstance();
     const guestUid = 'guest';
@@ -249,20 +250,31 @@ class OfflineCache {
           final List guestQueue = json.decode(guestData);
           final userQueueData = prefs.getString(userKey);
           final List userQueue = userQueueData != null ? json.decode(userQueueData) : [];
-          userQueue.addAll(guestQueue);
+          
+          // Only add transactions that aren't already in the user queue (by ID)
+          final userIds = userQueue.map((t) => t['id'] as String).toSet();
+          for (final t in guestQueue) {
+            if (!userIds.contains(t['id'])) {
+              userQueue.add(t);
+            }
+          }
           await prefs.setString(userKey, json.encode(userQueue));
+          
+          // Clear guest transaction queue so they aren't processed twice, 
+          // but we KEEP guest currency/progress keys for restoration.
+          await prefs.remove(guestKey);
         } else {
           // If user already has data, we don't overwrite it with guest data (cloud is truth)
           if (!prefs.containsKey(userKey)) {
              await prefs.setString(userKey, guestData);
           }
+          // Do NOT remove guestKey here - we want to keep it for when they logout.
         }
-        await prefs.remove(guestKey);
       } else if (guestList != null) {
         if (!prefs.containsKey(userKey)) {
           await prefs.setStringList(userKey, guestList);
         }
-        await prefs.remove(guestKey);
+        // Do NOT remove guestKey here
       }
     }
   }
