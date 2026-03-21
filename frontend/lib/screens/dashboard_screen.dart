@@ -17,7 +17,9 @@ import 'package:dreamhunter/widgets/register_dialog.dart';
 import 'package:dreamhunter/widgets/profile_dialog.dart';
 import 'package:dreamhunter/widgets/chat_dialog.dart';
 import 'package:dreamhunter/widgets/leaderboard_dialog.dart';
+import 'package:dreamhunter/widgets/roulette_dialog.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
+import 'package:dreamhunter/widgets/settings_dialog.dart';
 
 enum AuthDialogType { login, register, profile }
 
@@ -78,6 +80,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             data['dreamCoins'] ?? 0,
             data['hellStones'] ?? 0,
             data['playtime'] ?? 0,
+            data['freeSpins'] ?? 0,
           );
           if (mounted) setState(() {}); // Refresh UI with hot cache
         }
@@ -113,6 +116,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             profile['dreamCoins'] ?? 0,
             profile['hellStones'] ?? 0,
             profile['playtime'] ?? 0,
+            profile['freeSpins'] ?? 0,
           );
           if (mounted) setState(() {});
         }
@@ -132,6 +136,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           result['dreamCoins'] as int,
           result['hellStones'] as int,
           result['playtime'] as int? ?? 0,
+          result['freeSpins'] as int? ?? 0,
         );
         if (mounted) setState(() {});
       }
@@ -172,6 +177,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           profile['dreamCoins'] ?? 0,
           profile['hellStones'] ?? 0,
           profile['playtime'] ?? 0,
+          profile['freeSpins'] ?? 0,
         );
         if (mounted) setState(() {}); // Refresh UI
       }
@@ -245,7 +251,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           label: 'Settings',
                           onTap: () {
                             Navigator.pop(context);
-                            showCustomSnackBar(context, 'Settings coming soon!');
+                            showGeneralDialog(
+                              context: context,
+                              barrierLabel: "SettingsDialog",
+                              barrierDismissible: true,
+                              barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+                              transitionDuration: const Duration(milliseconds: 300),
+                              pageBuilder: (context, animation, secondaryAnimation) {
+                                return ScaleTransition(
+                                  scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+                                  child: FadeTransition(opacity: animation, child: const SettingsDialog()),
+                                );
+                              },
+                            );
                           },
                         ),
                         const Divider(color: Colors.white24),
@@ -713,11 +731,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           Positioned(
             bottom: 0,
-            child: Image.asset(
-              'assets/images/dashboard/roulette_man.png',
-              fit: BoxFit.contain,
+            child: MakeItButton(
+              imagePath: 'assets/images/dashboard/roulette_man.png',
               width: 200,
               height: 200,
+              onTap: () {
+                showGeneralDialog(
+                  context: context,
+                  barrierLabel: "RouletteDialog",
+                  barrierDismissible: true,
+                  barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+                  transitionDuration: const Duration(milliseconds: 300),
+                  pageBuilder: (context, animation, secondaryAnimation) {
+                    return ScaleTransition(
+                      scale: CurvedAnimation(
+                          parent: animation, curve: Curves.easeOutBack),
+                      child: const RouletteDialog(),
+                    );
+                  },
+                );
+              },
             ),
           ),
           Positioned(
