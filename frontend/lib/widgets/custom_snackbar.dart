@@ -3,22 +3,40 @@ import 'package:flutter/material.dart';
 /// Defines the visual style of the snackbar.
 enum SnackBarType { success, error, info }
 
-/// A manager for stylized, game-themed snackbar messages.
-/// Ensures only one snackbar is visible at a time by dismissing previous ones.
-class CustomSnackBar {
-  static OverlayEntry? _currentEntry;
-  static bool _isRemoved = false;
+/// Represents a single snackbar request in the queue.
+class _SnackBarRequest {
+  final String message;
+  final SnackBarType type;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
-  /// Dismisses any active snackbar.
+  _SnackBarRequest({
+    required this.message,
+    required this.type,
+    this.actionLabel,
+    this.onAction,
+  });
+}
+
+/// A manager for stylized, game-themed snackbar messages.
+/// Implements a queue system to ensure messages are shown sequentially.
+class CustomSnackBar {
+  static final List<_SnackBarRequest> _queue = [];
+  static bool _isProcessing = false;
+  static OverlayEntry? _currentEntry;
+
+  /// Dismisses the current snackbar and clears the queue.
   static void dismiss() {
-    if (_currentEntry != null && !_isRemoved) {
-      _isRemoved = true;
+    _queue.clear();
+    if (_currentEntry != null) {
       _currentEntry!.remove();
       _currentEntry = null;
     }
+    _isProcessing = false;
   }
 
   /// Displays a stylized, game-themed snackbar message.
+  /// If another snackbar is showing, this one will be queued.
   ///
   /// ### How to use:
   /// ```dart
@@ -35,19 +53,59 @@ class CustomSnackBar {
     String? actionLabel,
     VoidCallback? onAction,
   }) {
-    // 1. Dismiss any existing snackbar before showing a new one
-    dismiss();
-    _isRemoved = false;
+    // 1. Add to queue
+    _queue.add(_SnackBarRequest(
+      message: message,
+      type: type,
+      actionLabel: actionLabel,
+      onAction: onAction,
+    ));
 
-    final overlay = Overlay.of(context);
-    late final OverlayEntry overlayEntry;
+    // 2. Start processing if not already
+    _processQueue(context);
+  }
 
-    overlayEntry = OverlayEntry(
+  static Future<void> _processQueue(BuildContext context) async {
+    if (_isProcessing || _queue.isEmpty) return;
+
+    _isProcessing = true;
+
+    try {
+      final overlay = Overlay.of(context);
+
+      while (_queue.isNotEmpty) {
+        final request = _queue.removeAt(0);
+        
+        _currentEntry = _createOverlayEntry(request);
+        overlay.insert(_currentEntry!);
+
+        // Wait for the specified duration (2.5 seconds as requested)
+        await Future.delayed(const Duration(milliseconds: 2500));
+
+        if (_currentEntry != null) {
+          _currentEntry!.remove();
+          _currentEntry = null;
+        }
+
+        // Small gap between messages for smoother transitions
+        if (_queue.isNotEmpty) {
+          await Future.delayed(const Duration(milliseconds: 300));
+        }
+      }
+    } catch (e) {
+      debugPrint('Error processing snackbar queue: $e');
+    } finally {
+      _isProcessing = false;
+    }
+  }
+
+  static OverlayEntry _createOverlayEntry(_SnackBarRequest request) {
+    return OverlayEntry(
       builder: (context) {
         Color bgColor;
         IconData icon;
 
-        switch (type) {
+        switch (request.type) {
           case SnackBarType.success:
             bgColor = Colors.greenAccent.withValues(alpha: 0.9);
             icon = Icons.check_circle_outline;
@@ -87,7 +145,7 @@ class CustomSnackBar {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      message,
+                      request.message,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -95,14 +153,18 @@ class CustomSnackBar {
                       ),
                     ),
                   ),
-                  if (actionLabel != null && onAction != null)
+                  if (request.actionLabel != null && request.onAction != null)
                     TextButton(
                       onPressed: () {
-                        onAction();
-                        dismiss();
+                        request.onAction!();
+                        // When action is clicked, we might want to skip the remaining wait
+                        if (_currentEntry != null) {
+                          _currentEntry!.remove();
+                          _currentEntry = null;
+                        }
                       },
                       child: Text(
-                        actionLabel,
+                        request.actionLabel!,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -117,16 +179,6 @@ class CustomSnackBar {
         );
       },
     );
-
-    _currentEntry = overlayEntry;
-    overlay.insert(overlayEntry);
-
-    // Auto-dismiss after a delay
-    Future.delayed(const Duration(seconds: 4), () {
-      if (_currentEntry == overlayEntry) {
-        dismiss();
-      }
-    });
   }
 }
 
