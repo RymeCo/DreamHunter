@@ -154,6 +154,42 @@ async def progress_daily_task(uid: str, task_type: str, amount: int = 1):
         
     return None
 
+async def claim_daily_task(uid: str, task_id: str):
+    """Claims the reward for a completed daily task."""
+    user_ref = db.collection('users').document(uid)
+    doc = user_ref.get()
+    if not doc.exists:
+        return None
+    
+    data = doc.to_dict()
+    daily_tasks = data.get('dailyTasks')
+    if not daily_tasks or 'tasks' not in daily_tasks:
+        return None
+    
+    reward_granted = 0
+    updated = False
+    
+    for task in daily_tasks['tasks']:
+        if task['id'] == task_id and task['progress'] >= task['target'] and not task.get('claimed', False):
+            task['claimed'] = True
+            task['completed'] = True
+            reward_granted = task.get('reward', 0)
+            updated = True
+            break
+            
+    if updated:
+        update_payload = {'dailyTasks': daily_tasks}
+        if reward_granted > 0:
+            update_payload['dreamCoins'] = data.get('dreamCoins', 0) + reward_granted
+            
+        user_ref.update(update_payload)
+        return {
+            "dailyTasks": daily_tasks,
+            "rewardGranted": reward_granted
+        }
+        
+    return None
+
 def _get_default_daily_tasks():
     now = datetime.now(timezone.utc)
     return {
@@ -166,7 +202,7 @@ def _get_default_daily_tasks():
                 "progress": 1,
                 "target": 1,
                 "reward": 50,
-                "completed": True, # Automatically completed if you get here
+                "completed": False, 
                 "type": "login"
             },
             {

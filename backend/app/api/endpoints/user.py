@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Body
 from ...core.firebase import db
 from ..dependencies import verify_firebase_token
-from ...services.user_service import get_or_create_user_profile
+from ...services.user_service import get_or_create_user_profile, claim_daily_task
 
 router = APIRouter(prefix="/user", tags=["Users"])
 
@@ -41,3 +41,11 @@ async def sync_progress(req: dict = Body(...), decoded_token: dict = Depends(ver
         "lastSyncTimestamp": datetime.now(timezone.utc).isoformat()
     })
     return {"status": "success"}
+
+@router.post("/tasks/{task_id}/claim")
+async def post_claim_task(task_id: str, decoded_token: dict = Depends(verify_firebase_token)):
+    uid = decoded_token['uid']
+    result = await claim_daily_task(uid, task_id)
+    if not result:
+        return {"status": "error", "message": "Task not found, not completed, or already claimed."}
+    return {"status": "success", **result}

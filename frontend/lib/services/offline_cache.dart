@@ -254,7 +254,7 @@ class OfflineCache {
 
   static String? _getTaskTypeForTransaction(String type) {
     if (type == 'CHAT') return 'chat';
-    if (type == 'ROULETTE_SPIN') return 'spin';
+    if (type == 'ROULETTE_SPIN' || type == 'BUY_SPIN') return 'spin';
     if (type == 'PLAYTIME') return 'playtime';
     return null;
   }

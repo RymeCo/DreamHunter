@@ -130,7 +130,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
             if t.type == 'PURCHASE':
                 # XP = 10% of DC spent
                 current_xp += abs(t.dreamDelta) // 10
-            elif t.type == 'ROULETTE_SPIN':
+            elif t.type == 'ROULETTE_SPIN' or t.type == 'BUY_SPIN':
                 # XP = 25 per spin
                 current_xp += 25
                 spin_count += 1

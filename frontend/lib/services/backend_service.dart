@@ -207,6 +207,20 @@ class BackendService {
     }
   }
 
+  /// Claims a daily task reward
+  Future<Map<String, dynamic>?> claimDailyTask(String taskId) async {
+    try {
+      final response = await post('/user/tasks/$taskId/claim');
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error claiming task in backend: $e');
+      return null;
+    }
+  }
+
   /// Reconciles offline transactions with the backend
   Future<Map<String, dynamic>?> reconcileEconomy(List<Map<String, dynamic>> transactions) async {
     try {
