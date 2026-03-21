@@ -223,9 +223,19 @@ class _ChatDialogState extends State<ChatDialog> {
     setState(() => _isSending = true);
 
     try {
-      final success = await _chatService.sendMessage(_selectedRegion, text);
-      if (success) {
+      final result = await _chatService.sendMessage(_selectedRegion, text);
+      if (result != null) {
         _textController.clear();
+        
+        // Handle Automod Feedback
+        if (result['censored'] == true && mounted) {
+          final String msg = result['muteMessage'] ?? result['warning'] ?? 'Please watch your language!';
+          showCustomSnackBar(
+            context,
+            msg,
+            type: SnackBarType.error, // Red for warning
+          );
+        }
       } else {
         if (!mounted) return;
         showCustomSnackBar(

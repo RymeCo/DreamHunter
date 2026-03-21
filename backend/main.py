@@ -416,7 +416,17 @@ async def post_chat_message(region: str, msg: ChatMessage, decoded_token: dict =
     
     db.collection('chats').document(region).collection('messages').add(message_data)
     
-    return {"status": "success", "censored": hit_blacklist}
+    response_data = {"status": "success", "censored": hit_blacklist}
+    if hit_blacklist:
+        response_data["warning"] = f"Watch your language! (Warning {len(valid_warnings)}/3)"
+        if strike_count >= 3:
+            action = config.get('strike3Action', 'mute')
+            duration = config.get('strike3DurationHours', 24)
+            response_data["isMuted"] = (action == 'mute')
+            response_data["isBanned"] = (action == 'ban')
+            response_data["muteMessage"] = f"You have been {'banned' if action == 'ban' else 'muted'} for {duration}h due to repeated warnings."
+            
+    return response_data
 
 @app.post("/reports")
 async def report_content(report: ReportRequest):

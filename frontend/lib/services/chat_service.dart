@@ -109,9 +109,9 @@ class ChatService {
   }
 
   /// Sends a message to the FastAPI backend (enforces 1s cooldown and 100-msg limit)
-  Future<bool> sendMessage(String region, String text) async {
+  Future<Map<String, dynamic>?> sendMessage(String region, String text) async {
     final user = _auth.currentUser;
-    if (user == null) return false; // Guests cannot send
+    if (user == null) return null; // Guests cannot send
     
     try {
       final device = await getDeviceInfo();
@@ -129,18 +129,18 @@ class ChatService {
         throw Exception('cooldown');
       }
 
+      final data = json.decode(response.body);
       if (response.statusCode != 200) {
-        final data = json.decode(response.body);
         throw Exception(data['detail'] ?? 'Failed to send message.');
       }
 
-      return true;
+      return data as Map<String, dynamic>;
     } catch (e) {
       if (e.toString().contains('cooldown') || e.toString().contains('muted') || e.toString().contains('banned')) {
         rethrow;
       }
       debugPrint('Error sending message: $e');
-      return false;
+      return null;
     }
   }
 
