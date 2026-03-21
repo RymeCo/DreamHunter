@@ -3,10 +3,12 @@ import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'leveling_service.dart';
 
 class OfflineTransaction {
   final String id;
-  final String type; // 'PURCHASE', 'CONVERSION', 'EARN', 'PLAYTIME', 'ROULETTE_SPIN', 'BUY_SPIN', 'ROULETTE_REWARD', 'IAP_PURCHASE'
+  final String
+  type; // 'PURCHASE', 'CONVERSION', 'EARN', 'PLAYTIME', 'ROULETTE_SPIN', 'BUY_SPIN', 'ROULETTE_REWARD', 'IAP_PURCHASE'
   final String? itemId;
   final int dreamDelta;
   final int hellDelta;
@@ -36,16 +38,17 @@ class OfflineTransaction {
     'timestamp': timestamp,
   };
 
-  factory OfflineTransaction.fromJson(Map<String, dynamic> json) => OfflineTransaction(
-    id: json['id'],
-    type: json['type'],
-    itemId: json['itemId'],
-    dreamDelta: json['dreamDelta'] ?? 0,
-    hellDelta: json['hellDelta'] ?? 0,
-    playtimeDelta: json['playtimeDelta'] ?? 0,
-    freeSpinDelta: json['freeSpinDelta'] ?? 0,
-    timestamp: json['timestamp'],
-  );
+  factory OfflineTransaction.fromJson(Map<String, dynamic> json) =>
+      OfflineTransaction(
+        id: json['id'],
+        type: json['type'],
+        itemId: json['itemId'],
+        dreamDelta: json['dreamDelta'] ?? 0,
+        hellDelta: json['hellDelta'] ?? 0,
+        playtimeDelta: json['playtimeDelta'] ?? 0,
+        freeSpinDelta: json['freeSpinDelta'] ?? 0,
+        timestamp: json['timestamp'],
+      );
 }
 
 class OfflineCache {
@@ -82,14 +85,26 @@ class OfflineCache {
     return {'music': true, 'sfx': true};
   }
 
-  static Future<void> saveCurrency(int dreamCoins, int hellStones, [int playtime = 0, int freeSpins = 0]) async {
+  static Future<void> saveCurrency(
+    int dreamCoins,
+    int hellStones, [
+    int playtime = 0,
+    int freeSpins = 0,
+    int xp = 0,
+    int level = 1,
+  ]) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_getScopedKey(_currencyKey), json.encode({
-      'dreamCoins': dreamCoins,
-      'hellStones': hellStones,
-      'playtime': playtime,
-      'freeSpins': freeSpins,
-    }));
+    await prefs.setString(
+      _getScopedKey(_currencyKey),
+      json.encode({
+        'dreamCoins': dreamCoins,
+        'hellStones': hellStones,
+        'playtime': playtime,
+        'freeSpins': freeSpins,
+        'xp': xp,
+        'level': level,
+      }),
+    );
   }
 
   static Future<Map<String, int>> getCurrency() async {
@@ -102,6 +117,8 @@ class OfflineCache {
         'hellStones': data['hellStones'] as int,
         'playtime': data['playtime'] as int? ?? 0,
         'freeSpins': data['freeSpins'] as int? ?? 0,
+        'xp': data['xp'] as int? ?? 0,
+        'level': data['level'] as int? ?? 1,
       };
     }
     // Hardcoded starting currency for new guests/users
@@ -110,6 +127,8 @@ class OfflineCache {
       'hellStones': 10,
       'playtime': 0,
       'freeSpins': 0,
+      'xp': 0,
+      'level': 1,
     };
   }
 
@@ -123,7 +142,7 @@ class OfflineCache {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final queue = await getTransactionQueue();
-    
+
     final transaction = OfflineTransaction(
       id: _uuid.v4(),
       type: type,
@@ -134,17 +153,31 @@ class OfflineCache {
       freeSpinDelta: freeSpinDelta,
       timestamp: DateTime.now().toUtc().toIsoformat(),
     );
-    
+
     queue.add(transaction);
-    await prefs.setString(_getScopedKey(_transactionQueueKey), json.encode(queue.map((t) => t.toJson()).toList()));
-    
-    // Also update local currency/playtime immediately
+    await prefs.setString(
+      _getScopedKey(_transactionQueueKey),
+      json.encode(queue.map((t) => t.toJson()).toList()),
+    );
+
+    // Also update local currency/playtime/XP immediately
     final current = await getCurrency();
+    final xpReward = LevelingService.getXPReward(
+      type,
+      dreamDelta: dreamDelta,
+      hellDelta: hellDelta,
+    );
+
+    final newXP = (current['xp'] ?? 0) + xpReward;
+    final newLevel = LevelingService.getLevel(newXP);
+
     await saveCurrency(
       current['dreamCoins']! + dreamDelta,
       current['hellStones']! + hellDelta,
-      current['playtime']! + playtimeDelta,
-      current['freeSpins']! + freeSpinDelta,
+      (current['playtime'] ?? 0) + playtimeDelta,
+      (current['freeSpins'] ?? 0) + freeSpinDelta,
+      newXP,
+      newLevel,
     );
   }
 
@@ -165,11 +198,17 @@ class OfflineCache {
     } else {
       final queue = await getTransactionQueue();
       queue.removeWhere((t) => ids.contains(t.id));
-      await prefs.setString(_getScopedKey(_transactionQueueKey), json.encode(queue.map((t) => t.toJson()).toList()));
+      await prefs.setString(
+        _getScopedKey(_transactionQueueKey),
+        json.encode(queue.map((t) => t.toJson()).toList()),
+      );
     }
   }
 
-  static Future<void> saveStatsSummary(String key, Map<String, dynamic> stats) async {
+  static Future<void> saveStatsSummary(
+    String key,
+    Map<String, dynamic> stats,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_getScopedKey(key), json.encode(stats));
   }
@@ -198,7 +237,10 @@ class OfflineCache {
     return {};
   }
 
-  static Future<void> saveMetadata(String key, Map<String, dynamic> metadata) async {
+  static Future<void> saveMetadata(
+    String key,
+    Map<String, dynamic> metadata,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('metadata_$key', json.encode(metadata));
   }
@@ -252,16 +294,19 @@ class OfflineCache {
 
         final guestData = prefs.getString(guestKey);
         final guestList = prefs.getStringList(guestKey);
-        
+
         if (guestData != null) {
           if (key == _transactionQueueKey) {
             dynamic decoded = json.decode(guestData);
             if (decoded is! List) {
-              developer.log('Corrupted guest transaction queue (not a list), skipping migration for this key', name: 'OfflineCache');
+              developer.log(
+                'Corrupted guest transaction queue (not a list), skipping migration for this key',
+                name: 'OfflineCache',
+              );
               continue;
             }
             final List guestQueue = decoded;
-            
+
             final userQueueData = prefs.getString(userKey);
             List userQueue = [];
             if (userQueueData != null) {
@@ -270,23 +315,25 @@ class OfflineCache {
                 userQueue = userDecoded;
               }
             }
-            
+
             // Only add transactions that aren't already in the user queue (by ID)
-            final userIds = userQueue.map((t) => (t as Map<String, dynamic>)['id'] as String).toSet();
+            final userIds = userQueue
+                .map((t) => (t as Map<String, dynamic>)['id'] as String)
+                .toSet();
             for (final t in guestQueue) {
               if (t is Map<String, dynamic> && !userIds.contains(t['id'])) {
                 userQueue.add(t);
               }
             }
             await prefs.setString(userKey, json.encode(userQueue));
-            
-            // Clear guest transaction queue so they aren't processed twice, 
+
+            // Clear guest transaction queue so they aren't processed twice,
             // but we KEEP guest currency/progress keys for restoration.
             await prefs.remove(guestKey);
           } else {
             // If user already has data, we don't overwrite it with guest data (cloud is truth)
             if (!prefs.containsKey(userKey)) {
-               await prefs.setString(userKey, guestData);
+              await prefs.setString(userKey, guestData);
             }
             // Do NOT remove guestKey here - we want to keep it for when they logout.
           }
@@ -297,7 +344,12 @@ class OfflineCache {
           // Do NOT remove guestKey here
         }
       } catch (e, stack) {
-        developer.log('Error migrating guest data for key $key', error: e, stackTrace: stack, name: 'OfflineCache');
+        developer.log(
+          'Error migrating guest data for key $key',
+          error: e,
+          stackTrace: stack,
+          name: 'OfflineCache',
+        );
       }
     }
   }
@@ -310,7 +362,7 @@ class OfflineCache {
 
     final keys = prefs.getKeys();
     final userPrefix = '${uid}_';
-    
+
     for (final key in keys) {
       if (key.startsWith(userPrefix)) {
         await prefs.remove(key);
@@ -322,7 +374,6 @@ class OfflineCache {
     await clearAllUserData();
   }
 }
-
 
 extension DateTimeIso on DateTime {
   String toIsoformat() => toIso8601String();

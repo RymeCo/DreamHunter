@@ -15,6 +15,7 @@ import 'package:dreamhunter/widgets/clickable_image.dart';
 import 'package:dreamhunter/widgets/login_dialog.dart';
 import 'package:dreamhunter/widgets/register_dialog.dart';
 import 'package:dreamhunter/widgets/profile_dialog.dart';
+import 'package:dreamhunter/services/leveling_service.dart';
 import 'package:dreamhunter/widgets/chat_dialog.dart';
 import 'package:dreamhunter/widgets/leaderboard_dialog.dart';
 import 'package:dreamhunter/widgets/roulette_dialog.dart';
@@ -573,6 +574,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return;
     }
 
+    final Map<String, int> oldCurrency = await OfflineCache.getCurrency();
+    final int oldLevel = oldCurrency['level'] ?? 1;
+
     // 1 Stone -> 100 Coins
     await OfflineCache.addTransaction(
       type: 'CONVERSION',
@@ -580,13 +584,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
       hellDelta: -1,
     );
 
+    final Map<String, int> newCurrency = await OfflineCache.getCurrency();
+    final int newLevel = newCurrency['level'] ?? 1;
+
     if (mounted) {
       Navigator.pop(context);
-      showCustomSnackBar(
-        context,
-        'Successfully converted 1 Hell Stone!',
-        type: SnackBarType.success,
-      );
+
+      if (newLevel > oldLevel) {
+        showCustomSnackBar(
+          context,
+          'LEVEL UP! You are now Level $newLevel!',
+          type: SnackBarType.success,
+        );
+      } else {
+        showCustomSnackBar(
+          context,
+          'Successfully converted 1 Hell Stone! +50 XP',
+          type: SnackBarType.success,
+        );
+      }
     }
   }
 
@@ -669,10 +685,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        toolbarHeight: 100,
-        leadingWidth: 200,
+        toolbarHeight: 120,
+        leadingWidth: 220,
         leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0, top: 8.0),
+          padding: const EdgeInsets.only(left: 16.0, top: 12.0),
           child: StreamBuilder<Map<String, int>>(
             stream: Stream.periodic(
               const Duration(seconds: 1),
@@ -680,11 +696,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
             builder: (context, snapshot) {
               int coins = snapshot.data?['dreamCoins'] ?? 500;
               int tokens = snapshot.data?['hellStones'] ?? 10;
+              int xp = snapshot.data?['xp'] ?? 0;
+              int level = snapshot.data?['level'] ?? 1;
+              double progress = LevelingService.getLevelProgress(xp);
 
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Text(
+                          'Lvl $level',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Container(
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.black26,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              backgroundColor: Colors.transparent,
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                Colors.blueAccent,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   _buildCurrencyChip(
                     icon: Icons.toll_rounded,
                     value: '$coins',

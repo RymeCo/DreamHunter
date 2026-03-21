@@ -126,7 +126,15 @@ class BackendService {
             result['hellStones'] as int,
             result['playtime'] as int? ?? 0,
             result['freeSpins'] as int? ?? 0,
+            result['xp'] as int? ?? 0,
+            result['level'] as int? ?? 1,
           );
+          
+          if (result['levelUp'] == true) {
+             // We can't easily show a snackbar from here without context, 
+             // but we'll return a special status or just let the HUD update.
+             debugPrint('Level Up detected during sync!');
+          }
           success = true;
         } else {
           success = false;
@@ -140,6 +148,8 @@ class BackendService {
             profile['hellStones'] ?? 0,
             profile['playtime'] ?? 0,
             profile['freeSpins'] ?? 0,
+            profile['xp'] ?? 0,
+            profile['level'] ?? 1,
           );
           success = true;
         }
