@@ -62,8 +62,8 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
   }
 
   void _buyItem(_ShopItem item) async {
-    final currency = await OfflineCache.getCurrency();
-    final int currentDream = currency?['dreamCoins'] ?? 0;
+    final Map<String, int> currency = await OfflineCache.getCurrency();
+    final int currentDream = currency['dreamCoins'] ?? 0;
 
     if (currentDream < item.price) {
       if (mounted) {

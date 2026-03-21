@@ -91,7 +91,7 @@ class OfflineCache {
     }));
   }
 
-  static Future<Map<String, int>?> getCurrency() async {
+  static Future<Map<String, int>> getCurrency() async {
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(_getScopedKey(_currencyKey));
     if (cached != null) {
@@ -103,7 +103,13 @@ class OfflineCache {
         'freeSpins': data['freeSpins'] as int? ?? 0,
       };
     }
-    return null;
+    // Hardcoded starting currency for new guests/users
+    return {
+      'dreamCoins': 500,
+      'hellStones': 10,
+      'playtime': 0,
+      'freeSpins': 0,
+    };
   }
 
   static Future<void> addTransaction({
@@ -132,7 +138,7 @@ class OfflineCache {
     await prefs.setString(_getScopedKey(_transactionQueueKey), json.encode(queue.map((t) => t.toJson()).toList()));
     
     // Also update local currency/playtime immediately
-    final current = await getCurrency() ?? {'dreamCoins': 0, 'hellStones': 0, 'playtime': 0, 'freeSpins': 0};
+    final current = await getCurrency();
     await saveCurrency(
       current['dreamCoins']! + dreamDelta,
       current['hellStones']! + hellDelta,

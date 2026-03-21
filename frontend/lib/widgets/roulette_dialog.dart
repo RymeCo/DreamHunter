@@ -69,8 +69,8 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
   Future<void> _loadData() async {
     try {
       // 1. Load basic currency from offline cache immediately
-      final currency = await OfflineCache.getCurrency();
-      if (mounted && currency != null) {
+      final Map<String, int> currency = await OfflineCache.getCurrency();
+      if (mounted) {
         setState(() {
           _dreamCoins = currency['dreamCoins'] ?? 0;
           _freeSpins = currency['freeSpins'] ?? 0;

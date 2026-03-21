@@ -524,8 +524,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _convertCurrency() async {
-    final Map<String, int>? currency = await OfflineCache.getCurrency();
-    final int currentHell = currency?['hellStones'] ?? 0;
+    final Map<String, int> currency = await OfflineCache.getCurrency();
+    final int currentHell = currency['hellStones'] ?? 0;
     
     if (currentHell < 1) {
       if (mounted) {
@@ -618,16 +618,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         leadingWidth: 200,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0, top: 8.0),
-          child: StreamBuilder<Map<String, int>?>(
+          child: StreamBuilder<Map<String, int>>(
             stream: Stream.periodic(const Duration(seconds: 1)).asyncMap((_) => OfflineCache.getCurrency()),
             builder: (context, snapshot) {
-              int coins = 0;
-              int tokens = 0;
-
-              if (snapshot.hasData && snapshot.data != null) {
-                coins = snapshot.data!['dreamCoins'] ?? 0;
-                tokens = snapshot.data!['hellStones'] ?? 0;
-              }
+              int coins = snapshot.data?['dreamCoins'] ?? 500;
+              int tokens = snapshot.data?['hellStones'] ?? 10;
 
               return Column(
                 mainAxisSize: MainAxisSize.min,
