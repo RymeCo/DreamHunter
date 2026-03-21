@@ -36,6 +36,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Timer? _syncTimer;
   bool _isLoggedIn = false;
   bool _isBackendReady = false;
+  Map<String, dynamic>? _cachedGlobalAlert;
   AuthDialogType _currentDialogType = AuthDialogType.login;
   final UserService _userService = UserService();
   final BackendService _backendService = BackendService();
@@ -44,6 +45,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _isLoggedIn = FirebaseAuth.instance.currentUser != null;
+    _loadCachedData();
     _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((
       user,
     ) {
@@ -82,10 +84,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
             data['playtime'] ?? 0,
             data['freeSpins'] ?? 0,
           );
-          if (mounted) setState(() {}); // Refresh UI with hot cache
         }
       }
     });
+
+    // Also listen to global alerts to cache them
+    ChatService().getGlobalAlert().listen((snapshot) async {
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        await OfflineCache.saveMetadata('global_alert', data);
+        if (mounted) {
+          setState(() {
+            _cachedGlobalAlert = data;
+          });
+        }
+      } else {
+        await OfflineCache.clearMetadata('global_alert');
+        if (mounted) {
+          setState(() {
+            _cachedGlobalAlert = null;
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _loadCachedData() async {
+    final alert = await OfflineCache.getMetadata('global_alert');
+    if (mounted) {
+      setState(() {
+        _cachedGlobalAlert = alert;
+      });
+    }
   }
 
   void _startSyncTimer() {
@@ -179,9 +209,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           profile['playtime'] ?? 0,
           profile['freeSpins'] ?? 0,
         );
-        if (mounted) setState(() {}); // Refresh UI
       }
     }
+    
+    // Also update shop cache
+    await _userService.updateShopCache();
+    if (mounted) setState(() {}); // Refresh UI with hot cache
   }
 
   @override
@@ -609,8 +642,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         leadingWidth: 200,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0, top: 8.0),
-          child: FutureBuilder<Map<String, int>?>(
-            future: OfflineCache.getCurrency(),
+          child: StreamBuilder<Map<String, int>?>(
+            stream: Stream.periodic(const Duration(seconds: 1)).asyncMap((_) => OfflineCache.getCurrency()),
             builder: (context, snapshot) {
               int coins = 0;
               int tokens = 0;
@@ -673,50 +706,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
             width: double.infinity,
             height: double.infinity,
           ),
-          Positioned(
-            top: 160,
-            left: 20,
-            right: 20,
-            child: StreamBuilder<DocumentSnapshot>(
-              stream: ChatService().getGlobalAlert(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData || !snapshot.data!.exists) return const SizedBox.shrink();
-                final data = snapshot.data!.data() as Map<String, dynamic>;
-                final message = data['message'] as String?;
-                if (message == null || message.isEmpty) return const SizedBox.shrink();
-                return Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.withValues(alpha: 0.5),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      )
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.warning_amber_rounded, color: Colors.white),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          message,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+          if (_cachedGlobalAlert != null && (_cachedGlobalAlert!['message'] as String).isNotEmpty)
+            Positioned(
+              top: 160,
+              left: 20,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.red.withValues(alpha: 0.5),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    )
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _cachedGlobalAlert!['message'] as String,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
-                    ],
-                  ),
-                );
-              },
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
           Positioned(
             bottom: MediaQuery.of(context).size.height * 0.15,
             left: 0,

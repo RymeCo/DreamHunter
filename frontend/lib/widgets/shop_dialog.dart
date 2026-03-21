@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/offline_cache.dart';
+import '../services/user_service.dart';
 import 'custom_snackbar.dart';
 import 'liquid_glass_dialog.dart';
 import 'confirmation_dialog.dart';
@@ -13,11 +14,45 @@ class ShopDialog extends StatefulWidget {
 
 class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final UserService _userService = UserService();
+  List<_ShopItem> _allItem = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadItems();
+  }
+
+  Future<void> _loadItems() async {
+    try {
+      final cachedItems = await _userService.getCachedShopItems();
+      if (cachedItems.isNotEmpty) {
+        _allItem = cachedItems.map((item) => _ShopItem.fromMap(item)).toList();
+      } else {
+        // Hardcoded fallbacks if no cache
+        _allItem = [
+          _ShopItem('Health Potion', 'Restore 50 HP', 150, Icons.healing, 'Essential Gear'),
+          _ShopItem('Energy Bar', 'Speed boost for 30s', 200, Icons.bolt, 'Essential Gear'),
+          _ShopItem('Map Fragment', 'Reveal nearby ghosts', 100, Icons.map, 'Essential Gear'),
+          _ShopItem('Ghost Veil', 'Invisibility for 10s', 500, Icons.visibility_off, 'Ethereal Boosts'),
+          _ShopItem('Spirit Shield', 'Ignore next hit', 750, Icons.shield, 'Ethereal Boosts'),
+          _ShopItem('Gold Magnet', 'Auto-collect coins', 600, Icons.attractions, 'Ethereal Boosts'),
+          _ShopItem('Night Vision', 'Permanent dark sight', 5000, Icons.nights_stay, 'Arcane Relics'),
+          _ShopItem('Dream Walker', 'Walk through walls', 10000, Icons.auto_fix_high, 'Arcane Relics'),
+          _ShopItem('Soul Tether', 'Half respawn time', 3500, Icons.link, 'Arcane Relics'),
+        ];
+      }
+    } catch (e) {
+      debugPrint('Error loading shop items: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -65,6 +100,10 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Center(
       child: LiquidGlassDialog(
         width: MediaQuery.of(context).size.width * 0.85,
@@ -113,21 +152,9 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildShopCategory([
-                    _ShopItem('Health Potion', 'Restore 50 HP', 150, Icons.healing),
-                    _ShopItem('Energy Bar', 'Speed boost for 30s', 200, Icons.bolt),
-                    _ShopItem('Map Fragment', 'Reveal nearby ghosts', 100, Icons.map),
-                  ]),
-                  _buildShopCategory([
-                    _ShopItem('Ghost Veil', 'Invisibility for 10s', 500, Icons.visibility_off),
-                    _ShopItem('Spirit Shield', 'Ignore next hit', 750, Icons.shield),
-                    _ShopItem('Gold Magnet', 'Auto-collect coins', 600, Icons.attractions),
-                  ]),
-                  _buildShopCategory([
-                    _ShopItem('Night Vision', 'Permanent dark sight', 5000, Icons.nights_stay),
-                    _ShopItem('Dream Walker', 'Walk through walls', 10000, Icons.auto_fix_high),
-                    _ShopItem('Soul Tether', 'Half respawn time', 3500, Icons.link),
-                  ]),
+                  _buildShopCategory(_allItem.where((i) => i.category == 'Essential Gear').toList()),
+                  _buildShopCategory(_allItem.where((i) => i.category == 'Ethereal Boosts').toList()),
+                  _buildShopCategory(_allItem.where((i) => i.category == 'Arcane Relics').toList()),
                 ],
               ),
             ),
@@ -138,6 +165,9 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
   }
 
   Widget _buildShopCategory(List<_ShopItem> items) {
+    if (items.isEmpty) {
+      return const Center(child: Text('No items in this category', style: TextStyle(color: Colors.white38)));
+    }
     return GridView.builder(
       padding: const EdgeInsets.all(20),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -214,6 +244,32 @@ class _ShopItem {
   final String description;
   final int price;
   final IconData icon;
+  final String category;
 
-  _ShopItem(this.name, this.description, this.price, this.icon);
+  _ShopItem(this.name, this.description, this.price, this.icon, this.category);
+
+  factory _ShopItem.fromMap(Map<String, dynamic> map) {
+    return _ShopItem(
+      map['name'] ?? 'Unknown',
+      map['description'] ?? '',
+      (map['price'] as num?)?.toInt() ?? 0,
+      _getIconData(map['icon']),
+      map['category'] ?? 'Essential Gear',
+    );
+  }
+
+  static IconData _getIconData(String? iconName) {
+    switch (iconName) {
+      case 'healing': return Icons.healing;
+      case 'bolt': return Icons.bolt;
+      case 'map': return Icons.map;
+      case 'visibility_off': return Icons.visibility_off;
+      case 'shield': return Icons.shield;
+      case 'attractions': return Icons.attractions;
+      case 'nights_stay': return Icons.nights_stay;
+      case 'auto_fix_high': return Icons.auto_fix_high;
+      case 'link': return Icons.link;
+      default: return Icons.shopping_bag;
+    }
+  }
 }

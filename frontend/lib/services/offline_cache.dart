@@ -170,6 +170,11 @@ class OfflineCache {
     return null;
   }
 
+  static Future<void> clearMetadata(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('metadata_$key');
+  }
+
   static Future<void> clearCache() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_currencyKey);
