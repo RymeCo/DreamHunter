@@ -35,6 +35,10 @@ class _RegisterDialogState extends State<RegisterDialog> {
           password: _passwordController.text.trim(),
           displayName: _displayNameController.text.trim(),
         );
+        if (mounted) {
+          showCustomSnackBar(context, 'Account created! Please log in.',
+              type: SnackBarType.success);
+        }
         widget.onRegisterSuccess();
       } on FirebaseAuthException catch (e) {
         if (!mounted) return;

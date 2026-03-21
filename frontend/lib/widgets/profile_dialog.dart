@@ -1,4 +1,5 @@
 import 'package:dreamhunter/services/auth_service.dart';
+import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -92,6 +93,10 @@ class ProfileDialog extends StatelessWidget {
             ElevatedButton(
               onPressed: () async {
                 await authService.signOut();
+                if (context.mounted) {
+                  showCustomSnackBar(context, 'Successfully logged out.',
+                      type: SnackBarType.success);
+                }
                 onLogoutRequested();
               },
               style: ElevatedButton.styleFrom(

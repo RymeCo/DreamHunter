@@ -31,6 +31,10 @@ class _LoginDialogState extends State<LoginDialog> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
+        if (mounted) {
+          showCustomSnackBar(context, 'Successfully logged in. Welcome back!',
+              type: SnackBarType.success);
+        }
         widget.onLoginSuccess();
       } on FirebaseAuthException catch (e) {
         if (!mounted) return;
