@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/admin_provider.dart';
 import '../widgets/admin_ui_components.dart';
 
 class LeaderboardScreen extends StatelessWidget {
@@ -27,9 +29,9 @@ class LeaderboardScreen extends StatelessWidget {
         ),
         body: const TabBarView(
           children: [
-            LeaderboardListPlaceholder(title: 'Level Rank'),
-            LeaderboardListPlaceholder(title: 'Most Coins'),
-            LeaderboardListPlaceholder(title: 'Most Playtime'),
+            LeaderboardList(type: 'level'),
+            LeaderboardList(type: 'coins'),
+            LeaderboardList(type: 'playtime'),
           ],
         ),
       ),
@@ -37,10 +39,24 @@ class LeaderboardScreen extends StatelessWidget {
   }
 }
 
-class LeaderboardListPlaceholder extends StatelessWidget {
-  final String title;
+class LeaderboardList extends StatefulWidget {
+  final String type;
 
-  const LeaderboardListPlaceholder({super.key, required this.title});
+  const LeaderboardList({super.key, required this.type});
+
+  @override
+  State<LeaderboardList> createState() => _LeaderboardListState();
+}
+
+class _LeaderboardListState extends State<LeaderboardList> {
+  late Future<List<dynamic>?> _leaderboardFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final adminProvider = Provider.of<AdminProvider>(context, listen: false);
+    _leaderboardFuture = adminProvider.service.getLeaderboard(widget.type);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +66,7 @@ class LeaderboardListPlaceholder extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Top Players by $title',
+            'Top Players by ${widget.type[0].toUpperCase()}${widget.type.substring(1)}',
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -61,46 +77,77 @@ class LeaderboardListPlaceholder extends StatelessWidget {
           Expanded(
             child: AdminCard(
               width: double.infinity,
-              child: ListView.separated(
-                itemCount: 10,
-                separatorBuilder: (context, index) => const Divider(
-                  color: Color(0xFF2A2A4A),
-                  height: 1,
-                ),
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      backgroundColor: _getRankColor(index),
-                      radius: 16,
+              child: FutureBuilder<List<dynamic>?>(
+                future: _leaderboardFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.amberAccent),
+                    );
+                  }
+
+                  if (snapshot.hasError || snapshot.data == null) {
+                    return const Center(
                       child: Text(
-                        '${index + 1}',
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                        'Failed to load leaderboard',
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    );
+                  }
+
+                  final data = snapshot.data!;
+                  if (data.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No players found',
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    itemCount: data.length,
+                    separatorBuilder: (context, index) => const Divider(
+                      color: Color(0xFF2A2A4A),
+                      height: 1,
+                    ),
+                    itemBuilder: (context, index) {
+                      final entry = data[index] as Map<String, dynamic>;
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          backgroundColor: _getRankColor(index),
+                          radius: 16,
+                          child: Text(
+                            '${index + 1}',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    title: Text(
-                      'Player_${index + 1024}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'UID: user_id_placeholder_$index',
-                      style: const TextStyle(color: Colors.white38, fontSize: 11),
-                    ),
-                    trailing: Text(
-                      _getPlaceholderValue(title, index),
-                      style: const TextStyle(
-                        color: Colors.amberAccent,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+                        title: Text(
+                          entry['displayName'] ?? 'Unknown',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'UID: ${entry['uid']}',
+                          style: const TextStyle(color: Colors.white38, fontSize: 11),
+                        ),
+                        trailing: Text(
+                          _getDisplayValue(widget.type, entry),
+                          style: const TextStyle(
+                            color: Colors.amberAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -118,10 +165,10 @@ class LeaderboardListPlaceholder extends StatelessWidget {
     return Colors.white24;
   }
 
-  String _getPlaceholderValue(String title, int index) {
-    if (title == 'Level Rank') return 'LVL ${50 - index}';
-    if (title == 'Most Coins') return '${(10 - index) * 1000} DC';
-    if (title == 'Most Playtime') return '${24 - index}h';
+  String _getDisplayValue(String type, Map<String, dynamic> entry) {
+    if (type == 'level') return 'LVL ${entry['level'] ?? 1}';
+    if (type == 'coins') return '${entry['dreamCoins'] ?? 0} DC';
+    if (type == 'playtime') return '${(entry['playtime'] ?? 0) ~/ 3600}h';
     return '0';
   }
 }

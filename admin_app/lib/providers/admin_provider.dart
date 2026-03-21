@@ -5,6 +5,8 @@ import '../services/offline_cache.dart';
 class AdminProvider with ChangeNotifier {
   final AdminService _adminService = AdminService();
 
+  AdminService get service => _adminService;
+
   Map<String, dynamic>? _statsSummary;
   bool _isLoadingStats = false;
   String? _statsErrorMessage;

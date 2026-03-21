@@ -238,7 +238,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       ),
                                       child: FadeTransition(
                                         opacity: animation,
-                                        child: const LeaderboardDialog(),
+                                        child: LeaderboardDialog(backendService: _backendService),
                                       ),
                                     );
                                   },

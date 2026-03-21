@@ -237,4 +237,18 @@ class BackendService {
       return null;
     }
   }
+
+  /// Fetches the leaderboard data
+  Future<List<dynamic>?> getLeaderboard(String criteria, {int limit = 10}) async {
+    try {
+      final response = await get('/leaderboard/top?by=$criteria&limit=$limit');
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching leaderboard: $e');
+      return null;
+    }
+  }
 }

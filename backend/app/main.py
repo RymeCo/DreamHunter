@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import settings
 from .core.firebase import db
-from .api.endpoints import user, economy, chat, admin
+from .api.endpoints import user, economy, chat, admin, leaderboard
 
 class CustomJSONResponse(JSONResponse):
     def render(self, content: Any) -> bytes:
@@ -45,6 +45,7 @@ app.include_router(user.router)
 app.include_router(economy.router)
 app.include_router(chat.router)
 app.include_router(admin.router)
+app.include_router(leaderboard.router)
 
 @app.get("/")
 @app.head("/")
