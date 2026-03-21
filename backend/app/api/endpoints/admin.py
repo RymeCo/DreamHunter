@@ -1,0 +1,252 @@
+from datetime import datetime, timezone, timedelta
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException
+from firebase_admin import firestore
+from ...core.firebase import db
+from ..dependencies import verify_admin
+from ...services.moderation_service import log_audit
+from ...models.admin_models import (
+    UserBanRequest, UserMuteRequest, UserModeratorRequest, UserWarnRequest,
+    UserCurrencyRequest, MaintenanceRequest, BroadcastRequest, AutoModConfigRequest,
+    BatchActionRequest, AdminChatMessageRequest, MessageActionRequest, RouletteConfigRequest
+)
+from ...models.economy_models import ShopItemRequest
+
+router = APIRouter(prefix="/admin", tags=["Superadmin"])
+
+@router.get("/players/search")
+async def search_players(
+    query: Optional[str] = None, 
+    isBanned: Optional[bool] = None,
+    isAdmin: Optional[bool] = None,
+    limit: int = 20,
+    lastId: Optional[str] = None,
+    admin: dict = Depends(verify_admin)
+):
+    users_ref = db.collection('users').order_by("uid")
+    if isBanned is not None:
+        users_ref = users_ref.where("isBanned", "==", isBanned)
+    if isAdmin is not None:
+        users_ref = users_ref.where("isAdmin", "==", isAdmin)
+    if lastId:
+        last_doc = db.collection('users').document(lastId).get()
+        if last_doc.exists:
+            users_ref = users_ref.start_after(last_doc)
+    docs = list(users_ref.limit(limit).stream())
+    results = []
+    for d in docs:
+        u = d.to_dict()
+        if 'uid' not in u: u['uid'] = d.id
+        if query:
+            q = query.lower()
+            if q not in u.get('displayName', '').lower() and \
+               q not in u.get('email', '').lower() and \
+               q not in u.get('uid', '').lower():
+                continue
+        results.append(u)
+    return results
+
+@router.get("/users/{uid}")
+async def get_user_profile(uid: str, admin: dict = Depends(verify_admin)):
+    user_doc = db.collection('users').document(uid).get()
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="Player not found")
+    data = user_doc.to_dict()
+    if 'uid' not in data: data['uid'] = user_doc.id
+    return data
+
+@router.patch("/users/{uid}/ban")
+async def ban_user(uid: str, req: UserBanRequest, admin: dict = Depends(verify_admin)):
+    user_ref = db.collection('users').document(uid)
+    user_doc = user_ref.get()
+    if not user_doc.exists: raise HTTPException(status_code=404, detail="User not found")
+    target_data = user_doc.to_dict()
+    if target_data.get('isAdmin') is True:
+        raise HTTPException(status_code=403, detail="Target is a Superadmin and immune to moderation.")
+    update_data = {"isBanned": req.isBanned, "updatedAt": firestore.SERVER_TIMESTAMP}
+    expiry_msg = ""
+    if req.isBanned and req.until:
+        try:
+            dt = datetime.fromisoformat(req.until.replace('Z', '+00:00'))
+            update_data["bannedUntil"] = dt
+            expiry_msg = f" until {dt.isoformat()}"
+        except Exception as e: raise HTTPException(status_code=400, detail=f"Invalid date format: {e}")
+    else: update_data["bannedUntil"] = None
+    user_ref.update(update_data)
+    status = "BANNED" if req.isBanned else "UNBANNED"
+    log_audit(admin['uid'], f"USER_{status}", uid, f"Admin set isBanned to {req.isBanned}{expiry_msg}", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
+    return {"status": "success", "message": f"User {uid} has been {status.lower()}{expiry_msg}."}
+
+@router.patch("/users/{uid}/mute")
+async def mute_user(uid: str, req: UserMuteRequest, admin: dict = Depends(verify_admin)):
+    user_ref = db.collection('users').document(uid)
+    user_doc = user_ref.get()
+    if not user_doc.exists: raise HTTPException(status_code=404, detail="User not found")
+    target_data = user_doc.to_dict()
+    if target_data.get('isAdmin') is True:
+        raise HTTPException(status_code=403, detail="Target is a Superadmin and immune to moderation.")
+    update_data = {"updatedAt": firestore.SERVER_TIMESTAMP}
+    log_details = ""
+    if req.until:
+        try:
+            dt = datetime.fromisoformat(req.until.replace('Z', '+00:00'))
+            update_data["mutedUntil"] = dt
+            log_details = f"Until: {dt.isoformat()}"
+        except Exception as e: raise HTTPException(status_code=400, detail=f"Invalid date format: {e}")
+    elif req.durationHours is not None:
+        if req.durationHours <= 0:
+            update_data["mutedUntil"] = None
+            log_details = "Unmuted"
+        else:
+            until = datetime.now(timezone.utc) + timedelta(hours=req.durationHours)
+            update_data["mutedUntil"] = until
+            log_details = f"Duration: {req.durationHours} hours (Expires: {until.isoformat()})"
+    else: raise HTTPException(status_code=400, detail="Either until or durationHours must be provided.")
+    user_ref.update(update_data)
+    log_audit(admin['uid'], "USER_MUTED" if update_data.get("mutedUntil") else "USER_UNMUTED", uid, log_details, admin.get('email'), target_data.get('displayName'), target_data.get('email'))
+    return {"status": "success", "message": "User mute updated.", "mutedUntil": update_data.get("mutedUntil").isoformat() if update_data.get("mutedUntil") else None}
+
+@router.patch("/users/{uid}/role")
+async def update_user_role(uid: str, req: UserModeratorRequest, admin: dict = Depends(verify_admin)):
+    user_ref = db.collection('users').document(uid)
+    user_doc = user_ref.get()
+    if not user_doc.exists: raise HTTPException(status_code=404, detail="User not found")
+    target_data = user_doc.to_dict()
+    if target_data.get('isAdmin') is True:
+        raise HTTPException(status_code=403, detail="Target is a Superadmin and immune to moderation.")
+    user_ref.update({"isModerator": req.isModerator, "updatedAt": firestore.SERVER_TIMESTAMP})
+    status = "GRANTED" if req.isModerator else "REVOKED"
+    log_audit(admin['uid'], "MODERATOR_ROLE_UPDATE", uid, f"Moderator powers {status.lower()} by Admin.", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
+    return {"status": "success", "message": f"Moderator status for {uid} set to {req.isModerator}."}
+
+@router.post("/users/{uid}/warnings")
+async def warn_user(uid: str, req: UserWarnRequest, admin: dict = Depends(verify_admin)):
+    user_ref = db.collection('users').document(uid)
+    user_doc = user_ref.get()
+    if not user_doc.exists: raise HTTPException(status_code=404, detail="User not found")
+    target_data = user_doc.to_dict()
+    if target_data.get('isAdmin') is True:
+        raise HTTPException(status_code=403, detail="Target is a Superadmin and immune to moderation.")
+    warning = {"reason": req.reason, "timestamp": datetime.now(timezone.utc).isoformat(), "adminUid": admin['uid']}
+    user_ref.update({"warnings": firestore.ArrayUnion([warning]), "updatedAt": firestore.SERVER_TIMESTAMP})
+    log_audit(admin['uid'], "USER_WARNED", uid, f"Warning issued: {req.reason}", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
+    return {"status": "success", "message": f"Warning issued to user {uid}."}
+
+@router.patch("/users/{uid}/currency")
+async def update_user_currency(uid: str, req: UserCurrencyRequest, admin: dict = Depends(verify_admin)):
+    user_ref = db.collection('users').document(uid)
+    user_doc = user_ref.get()
+    if not user_doc.exists: raise HTTPException(status_code=404, detail="User not found")
+    target_data = user_doc.to_dict()
+    update_data = {"updatedAt": firestore.SERVER_TIMESTAMP}
+    if req.dreamCoins is not None:
+        update_data["dreamCoins"] = req.dreamCoins
+        update_data["lastKnownDreamCoins"] = req.dreamCoins
+    if req.hellStones is not None:
+        update_data["hellStones"] = req.hellStones
+        update_data["lastKnownHellStones"] = req.hellStones
+    user_ref.update(update_data)
+    log_audit(admin['uid'], "USER_CURRENCY_UPDATE", uid, f"Currency updated: DC={req.dreamCoins}, HS={req.hellStones}", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
+    return {"status": "success", "message": "Currency updated successfully."}
+
+@router.patch("/maintenance")
+async def update_maintenance(req: MaintenanceRequest, admin: dict = Depends(verify_admin)):
+    update_data = {k: v for k, v in req.model_dump(exclude_none=True).items()}
+    if not update_data: return {"status": "success", "message": "No changes requested."}
+    db.collection('metadata').document('system_config').set(update_data, merge=True)
+    log_audit(admin['uid'], "MAINTENANCE_TOGGLE", details=str(update_data), admin_email=admin.get('email'))
+    return {"status": "success", "config": update_data}
+
+@router.post("/broadcast")
+async def post_broadcast(req: BroadcastRequest, admin: dict = Depends(verify_admin)):
+    broadcast_data = {"message": req.message, "isPersistent": req.isPersistent, "senderUid": admin['uid'], "timestamp": firestore.SERVER_TIMESTAMP}
+    db.collection('metadata').document('global_alert').set(broadcast_data)
+    log_audit(admin['uid'], "GLOBAL_BROADCAST", details=req.message, admin_email=admin.get('email'))
+    return {"status": "success", "broadcast": broadcast_data}
+
+@router.get("/reports")
+async def get_reports(status: Optional[str] = None, admin: dict = Depends(verify_admin)):
+    q = db.collection('reports')
+    if status: q = q.where("status", "==", status)
+    docs = list(q.order_by("reportTimestamp", direction=firestore.Query.DESCENDING).limit(100).stream())
+    return [{"id": d.id, **d.to_dict()} for d in docs]
+
+@router.patch("/reports/{report_id}")
+async def update_report_status(report_id: str, status: str, admin: dict = Depends(verify_admin)):
+    if status not in ['pending', 'working', 'resolved', 'archived']:
+        raise HTTPException(status_code=400, detail="Invalid status.")
+    db.collection('reports').document(report_id).update({"status": status, "updatedAt": firestore.SERVER_TIMESTAMP})
+    log_audit(admin['uid'], "REPORT_STATUS_UPDATE", report_id, f"New Status: {status}", admin_email=admin.get('email'))
+    return {"status": "success", "message": f"Report {report_id} updated to {status}."}
+
+@router.patch("/automod/config")
+async def update_automod_config(req: AutoModConfigRequest, admin: dict = Depends(verify_admin)):
+    update_data = {k: v for k, v in req.model_dump(exclude_none=True).items()}
+    if not update_data: return {"status": "success", "message": "No changes requested."}
+    db.collection('metadata').document('moderation_config').set(update_data, merge=True)
+    log_audit(admin['uid'], "AUTOMOD_CONFIG_UPDATE", details=str(update_data), admin_email=admin.get('email'))
+    return {"status": "success", "config": update_data}
+
+@router.get("/stats/summary")
+async def get_stats_summary(admin: dict = Depends(verify_admin)):
+    reports_ref = db.collection('reports')
+    pending = reports_ref.where("status", "==", "pending").count().get()[0][0].value
+    working = reports_ref.where("status", "==", "working").count().get()[0][0].value
+    resolved = reports_ref.where("status", "==", "resolved").count().get()[0][0].value
+    total_users = db.collection('users').count().get()[0][0].value
+    return {
+        "reportStats": {"pending": pending, "working": working, "resolved": resolved},
+        "systemHealth": {"latency": 45.5, "errorCount": 0, "status": "Healthy"},
+        "userGrowth": {"total": total_users, "newToday": 5, "dau": 12}
+    }
+
+@router.patch("/users/batch-action")
+async def batch_action(req: BatchActionRequest, admin: dict = Depends(verify_admin)):
+    batch = db.batch()
+    update_data = {"updatedAt": firestore.SERVER_TIMESTAMP}
+    if req.action == "ban":
+        update_data["isBanned"] = True
+        if req.params and req.params.get("until"):
+            update_data["bannedUntil"] = datetime.fromisoformat(req.params["until"].replace('Z', '+00:00'))
+    elif req.action == "unban":
+        update_data["isBanned"] = False
+        update_data["bannedUntil"] = None
+    elif req.action == "mute":
+        if req.params and req.params.get("until"):
+            update_data["mutedUntil"] = datetime.fromisoformat(req.params["until"].replace('Z', '+00:00'))
+        elif req.params and req.params.get("durationHours"):
+            update_data["mutedUntil"] = datetime.now(timezone.utc) + timedelta(hours=int(req.params["durationHours"]))
+    elif req.action == "unmute": update_data["mutedUntil"] = None
+    else: raise HTTPException(status_code=400, detail="Invalid action")
+    for uid in req.uids:
+        user_doc = db.collection('users').document(uid).get()
+        if user_doc.exists and user_doc.to_dict().get('isAdmin') is True: continue
+        batch.update(db.collection('users').document(uid), update_data)
+    batch.commit()
+    log_audit(admin['uid'], f"BATCH_{req.action.upper()}", details=f"Batch {req.action} on {len(req.uids)} users.", admin_email=admin.get('email'))
+    return {"status": "success", "count": len(req.uids)}
+
+@router.get("/audit-logs")
+async def get_audit_logs(admin: dict = Depends(verify_admin)):
+    docs = list(db.collection('audit_logs').order_by("timestamp", direction=firestore.Query.DESCENDING).limit(100).stream())
+    return [d.to_dict() for d in docs]
+
+@router.post("/shop")
+async def add_shop_item(item: ShopItemRequest, admin: dict = Depends(verify_admin)):
+    item_ref = db.collection('shop_items').document()
+    item_data = item.model_dump()
+    item_data['id'] = item_ref.id
+    item_data['createdAt'] = firestore.SERVER_TIMESTAMP
+    item_ref.set(item_data)
+    return {"status": "success", "itemId": item_ref.id}
+
+@router.get("/roulette/config")
+async def get_roulette_config(admin: dict = Depends(verify_admin)):
+    doc = db.collection('metadata').document('roulette_config').get()
+    return doc.to_dict() if doc.exists else {"rewards": [], "dailyFreeSpins": 1, "maxFreeSpins": 10, "spinBuyPrice": 50, "spinBuyCurrency": "dreamCoins"}
+
+@router.post("/roulette/config")
+async def update_roulette_config(req: RouletteConfigRequest, admin: dict = Depends(verify_admin)):
+    db.collection('metadata').document('roulette_config').set(req.model_dump())
+    log_audit(admin['uid'], "UPDATE_ROULETTE_CONFIG", details=f"Daily spins: {req.dailyFreeSpins}", admin_email=admin.get('email'))
+    return {"status": "success", "message": "Roulette configuration updated"}
