@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/offline_cache.dart';
+import '../services/backend_service.dart';
 import 'liquid_glass_dialog.dart';
+import 'custom_snackbar.dart';
 
 class SettingsDialog extends StatefulWidget {
   const SettingsDialog({super.key});
@@ -14,6 +17,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
   bool _musicEnabled = true;
   bool _sfxEnabled = true;
   bool _isLoading = true;
+  bool _isSyncing = false;
+  final BackendService _backendService = BackendService();
 
   @override
   void initState() {
@@ -39,6 +44,26 @@ class _SettingsDialogState extends State<SettingsDialog> {
     });
   }
 
+  Future<void> _performManualSync() async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      showCustomSnackBar(context, 'Please login to sync your data!', type: SnackBarType.info);
+      return;
+    }
+
+    setState(() => _isSyncing = true);
+    
+    final success = await _backendService.performFullSync();
+    
+    if (mounted) {
+      setState(() => _isSyncing = false);
+      if (success) {
+        showCustomSnackBar(context, 'Cloud sync successful!', type: SnackBarType.success);
+      } else {
+        showCustomSnackBar(context, 'Sync failed. Check your connection.', type: SnackBarType.error);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -47,7 +72,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
     return Center(
       child: LiquidGlassDialog(
-        width: 320,
+        width: 350,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -88,7 +113,60 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 _updateSettings();
               },
             ),
+            
             const SizedBox(height: 16),
+            const Divider(color: Colors.white24, height: 10),
+            const SizedBox(height: 8),
+            
+            // Cloud Sync Section
+            Row(
+              children: [
+                const Icon(Icons.cloud_sync_rounded, color: Colors.cyanAccent, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'CLOUD SYNC',
+                  style: GoogleFonts.oswald(
+                    color: Colors.cyanAccent,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: _isSyncing ? null : _performManualSync,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.cyanAccent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3)),
+                ),
+                child: Center(
+                  child: _isSyncing 
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent))
+                    : Text(
+                        'BACKUP DATA TO CLOUD',
+                        style: GoogleFonts.oswald(
+                          color: Colors.cyanAccent,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Last sync: Just now or never',
+              style: GoogleFonts.openSans(color: Colors.white24, fontSize: 10),
+            ),
+            
+            const SizedBox(height: 24),
             Text(
               'V 0.1.0',
               style: GoogleFonts.openSans(

@@ -16,7 +16,38 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
   late AnimationController _controller;
   Animation<double>? _animation;
   
-  List<Map<String, dynamic>> _rewards = [];
+  static const List<Map<String, dynamic>> _defaultRewards = [
+    {
+      'name': '10 DC',
+      'type': 'currency',
+      'amount': 10,
+      'weight': 50,
+      'color': '0xCC9C27B0' // Deep Purple
+    },
+    {
+      'name': '50 DC',
+      'type': 'currency',
+      'amount': 50,
+      'weight': 20,
+      'color': '0xCC00BCD4' // Cyan
+    },
+    {
+      'name': 'LUCK',
+      'type': 'currency',
+      'amount': 0,
+      'weight': 25,
+      'color': '0xCCFFD740' // Amber
+    },
+    {
+      'name': '100 DC',
+      'type': 'currency',
+      'amount': 100,
+      'weight': 5,
+      'color': '0xCCFF4081' // Pink
+    },
+  ];
+
+  List<Map<String, dynamic>> _rewards = _defaultRewards;
   Map<String, dynamic>? _config;
   int _freeSpins = 0;
   int _dreamCoins = 0;
@@ -37,78 +68,51 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
 
   Future<void> _loadData() async {
     try {
-      // Try to fetch from Firestore first
-      DocumentSnapshot? configDoc;
+      // 1. Load basic currency from offline cache immediately
+      final currency = await OfflineCache.getCurrency();
+      if (mounted && currency != null) {
+        setState(() {
+          _dreamCoins = currency['dreamCoins'] ?? 0;
+          _freeSpins = currency['freeSpins'] ?? 0;
+        });
+      }
+
+      // 2. Try to fetch dynamic config from Firestore if online
       try {
-        configDoc = await FirebaseFirestore.instance
+        final configDoc = await FirebaseFirestore.instance
             .collection('metadata')
             .doc('roulette_config')
             .get()
-            .timeout(const Duration(seconds: 5));
+            .timeout(const Duration(seconds: 3));
         
         if (configDoc.exists) {
           final data = configDoc.data() as Map<String, dynamic>;
           await OfflineCache.saveMetadata('roulette_config', data);
-          _config = data;
+          if (mounted) {
+            setState(() {
+              _config = data;
+              _rewards = List<Map<String, dynamic>>.from(data['rewards'] ?? _defaultRewards);
+            });
+          }
         }
       } catch (e) {
-        // Fallback to local cache if Firestore fails (offline)
-        _config = await OfflineCache.getMetadata('roulette_config');
+        // Fallback to local cache of previous online config
+        final cachedConfig = await OfflineCache.getMetadata('roulette_config');
+        if (mounted && cachedConfig != null) {
+          setState(() {
+            _config = cachedConfig;
+            _rewards = List<Map<String, dynamic>>.from(cachedConfig['rewards'] ?? _defaultRewards);
+          });
+        }
       }
-
-      final currency = await OfflineCache.getCurrency();
 
       if (mounted) {
         setState(() {
-          if (_config != null) {
-            _rewards = List<Map<String, dynamic>>.from(_config!['rewards'] ?? []);
-          }
-
-          if (_rewards.isEmpty) {
-            _rewards = [
-              {
-                'name': '10 DC',
-                'type': 'currency',
-                'amount': 10,
-                'weight': 5,
-                'color': '0xCC9C27B0' // Deep Purple
-              },
-              {
-                'name': '50 DC',
-                'type': 'currency',
-                'amount': 50,
-                'weight': 2,
-                'color': '0xCC00BCD4' // Cyan
-              },
-              {
-                'name': 'LUCK',
-                'type': 'currency',
-                'amount': 0,
-                'weight': 10,
-                'color': '0xCCFFD740' // Amber
-              },
-              {
-                'name': '100 DC',
-                'type': 'currency',
-                'amount': 100,
-                'weight': 1,
-                'color': '0xCCFF4081' // Pink
-              },
-            ];
-          }
-
-          if (currency != null) {
-            _dreamCoins = currency['dreamCoins'] ?? 0;
-            _freeSpins = currency['freeSpins'] ?? 0;
-          }
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
-        showCustomSnackBar(context, 'Error loading roulette: $e',
-            type: SnackBarType.error);
-        // We no longer pop here to allow fallback to defaults if everything fails
         setState(() => _isLoading = false);
       }
     }

@@ -50,6 +50,8 @@ class OfflineCache {
   static const String _currencyKey = 'cached_currency';
   static const String _transactionQueueKey = 'transaction_queue';
   static const String _settingsKey = 'app_settings';
+  static const String _inventoryKey = 'cached_inventory';
+  static const String _progressKey = 'cached_progress';
   static const _uuid = Uuid();
 
   static Future<void> saveSettings(Map<String, bool> settings) async {
@@ -156,6 +158,30 @@ class OfflineCache {
     await prefs.setString(key, json.encode(stats));
   }
 
+  static Future<void> saveInventory(List<String> items) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_inventoryKey, items);
+  }
+
+  static Future<List<String>> getInventory() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(_inventoryKey) ?? [];
+  }
+
+  static Future<void> saveGameProgress(Map<String, dynamic> progress) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_progressKey, json.encode(progress));
+  }
+
+  static Future<Map<String, dynamic>> getGameProgress() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString(_progressKey);
+    if (cached != null) {
+      return json.decode(cached) as Map<String, dynamic>;
+    }
+    return {};
+  }
+
   static Future<void> saveMetadata(String key, Map<String, dynamic> metadata) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('metadata_$key', json.encode(metadata));
@@ -179,6 +205,8 @@ class OfflineCache {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_currencyKey);
     await prefs.remove(_transactionQueueKey);
+    await prefs.remove(_inventoryKey);
+    await prefs.remove(_progressKey);
   }
 }
 

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'offline_cache.dart';
 
 class BackendService {
   static const String baseUrl = 'https://dreamhunter-api.onrender.com';
@@ -76,6 +77,63 @@ class BackendService {
     } catch (e) {
       debugPrint('Error syncing with backend: $e');
       return null;
+    }
+  }
+
+  /// Performs a full cloud sync: Reconciles economy and updates profile/progress
+  Future<bool> performFullSync() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
+    try {
+      // 1. Reconcile Economy
+      final transactions = await OfflineCache.getTransactionQueue();
+      if (transactions.isNotEmpty) {
+        final List<String> sentIds = transactions.map((t) => t.id).toList();
+        final result = await reconcileEconomy(transactions.map((t) => t.toJson()).toList());
+        
+        if (result != null && result['status'] == 'success') {
+          await OfflineCache.clearTransactionQueue(ids: sentIds);
+          await OfflineCache.saveCurrency(
+            result['dreamCoins'] as int,
+            result['hellStones'] as int,
+            result['playtime'] as int? ?? 0,
+            result['freeSpins'] as int? ?? 0,
+          );
+        } else {
+          return false;
+        }
+      } else {
+        // Just pull latest profile if no offline transactions
+        final profile = await syncUserProfile();
+        if (profile != null) {
+          await OfflineCache.saveCurrency(
+            profile['dreamCoins'] ?? 0,
+            profile['hellStones'] ?? 0,
+            profile['playtime'] ?? 0,
+            profile['freeSpins'] ?? 0,
+          );
+        }
+      }
+
+      // 2. Sync Game Progress & Inventory (Optional items that require backend to handle)
+      final progress = await OfflineCache.getGameProgress();
+      final inventory = await OfflineCache.getInventory();
+      
+      // We don't fail the sync if this part fails as it's secondary to currency
+      try {
+        await post('/user/sync-progress', body: {
+          'progress': progress,
+          'inventory': inventory,
+        }).timeout(const Duration(seconds: 10));
+      } catch (e) {
+        debugPrint('Progress sync failed: $e');
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Full sync failed: $e');
+      return false;
     }
   }
 

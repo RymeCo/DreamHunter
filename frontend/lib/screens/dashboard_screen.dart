@@ -136,42 +136,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (!_isLoggedIn || !_isBackendReady) return;
 
     try {
-      final transactions = await OfflineCache.getTransactionQueue();
-      
-      if (transactions.isEmpty) {
-        // Just pull the latest profile to keep local cache hot
-        final profile = await _backendService.syncUserProfile();
-        if (profile != null) {
-          await OfflineCache.saveCurrency(
-            profile['dreamCoins'] ?? 0,
-            profile['hellStones'] ?? 0,
-            profile['playtime'] ?? 0,
-            profile['freeSpins'] ?? 0,
-          );
-          if (mounted) setState(() {});
-        }
-        return;
-      }
-
-      final List<String> sentIds = transactions.map((t) => t.id).toList();
-
-      final result = await _backendService.reconcileEconomy(
-        transactions.map((t) => t.toJson()).toList()
-      );
-      
-      if (result != null && result['status'] == 'success') {
-        await OfflineCache.clearTransactionQueue(ids: sentIds);
-        // Update local balance and playtime from server to be safe
-        await OfflineCache.saveCurrency(
-          result['dreamCoins'] as int,
-          result['hellStones'] as int,
-          result['playtime'] as int? ?? 0,
-          result['freeSpins'] as int? ?? 0,
-        );
-        if (mounted) setState(() {});
+      final success = await _backendService.performFullSync();
+      if (success && mounted) {
+        setState(() {});
       }
     } catch (e) {
-      debugPrint('Reconciliation failed: $e');
+      debugPrint('Background sync failed: $e');
     }
   }
 
@@ -197,22 +167,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _syncProfileWithBackend() async {
     if (!_isLoggedIn || !_isBackendReady) return;
     
-    // Pull the latest profile to initialize the local cache
-    final profile = await _backendService.syncUserProfile();
-    if (profile != null) {
-      final queue = await OfflineCache.getTransactionQueue();
-      if (queue.isEmpty) {
-        // Only overwrite if we don't have pending offline changes
-        await OfflineCache.saveCurrency(
-          profile['dreamCoins'] ?? 0,
-          profile['hellStones'] ?? 0,
-          profile['playtime'] ?? 0,
-          profile['freeSpins'] ?? 0,
-        );
-      }
-    }
-    
-    // Also update shop cache
+    await _backendService.performFullSync();
     await _userService.updateShopCache();
     if (mounted) setState(() {}); // Refresh UI with hot cache
   }
@@ -252,6 +207,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _buildMenuButton(
                           icon: _isLoggedIn ? Icons.person : Icons.login,
                           label: _isLoggedIn ? 'Profile' : 'Login',
+                          isOnlineOnly: true,
                           onTap: () {
                             Navigator.pop(context);
                             _showAuthDialog();
@@ -261,6 +217,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _buildMenuButton(
                           icon: Icons.leaderboard_rounded,
                           label: 'Leaderboard',
+                          isOnlineOnly: true,
                           onTap: () {
                             Navigator.pop(context);
                             showGeneralDialog(
@@ -327,6 +284,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    bool isOnlineOnly = false,
   }) {
     return Material(
       color: Colors.transparent,
@@ -339,12 +297,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Icon(icon, color: Colors.white, size: 24),
               const SizedBox(width: 12),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (isOnlineOnly)
+                      const Text(
+                        'REQUIRES INTERNET',
+                        style: TextStyle(
+                          color: Colors.white24,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
@@ -812,41 +788,69 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Positioned(
             bottom: MediaQuery.of(context).size.height * 0.19,
             left: 20,
-            child: MakeItButton(
-              imagePath: 'assets/images/dashboard/signage.png',
-              width: 110,
-              height: 110,
-              onTap: () {
-                if (!_isBackendReady) {
-                  showCustomSnackBar(
-                    context,
-                    'Backend is waking up... please wait 30-60 seconds.',
-                    type: SnackBarType.info,
-                  );
-                  _pingBackend();
-                  return;
-                }
-                showGeneralDialog(
-                  context: context,
-                  barrierLabel: "ChatDialog",
-                  barrierDismissible: true,
-                  barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
-                  transitionDuration: const Duration(milliseconds: 300),
-                  pageBuilder: (context, animation, secondaryAnimation) {
-                    return ScaleTransition(
-                      scale: CurvedAnimation(
-                          parent: animation, curve: Curves.easeOutBack),
-                      child: FadeTransition(
-                        opacity: animation,
-                        child: const Center(child: ChatDialog()),
-                      ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                MakeItButton(
+                  imagePath: 'assets/images/dashboard/signage.png',
+                  width: 110,
+                  height: 110,
+                  onTap: () {
+                    if (!_isBackendReady) {
+                      showCustomSnackBar(
+                        context,
+                        'Backend is waking up... please wait 30-60 seconds.',
+                        type: SnackBarType.info,
+                      );
+                      _pingBackend();
+                      return;
+                    }
+                    showGeneralDialog(
+                      context: context,
+                      barrierLabel: "ChatDialog",
+                      barrierDismissible: true,
+                      barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+                      transitionDuration: const Duration(milliseconds: 300),
+                      pageBuilder: (context, animation, secondaryAnimation) {
+                        return ScaleTransition(
+                          scale: CurvedAnimation(
+                              parent: animation, curve: Curves.easeOutBack),
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: const Center(child: ChatDialog()),
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-              clickResponsiveness: true,
-              onHoverGlow: true,
-              isClickable: true,
+                  clickResponsiveness: true,
+                  onHoverGlow: true,
+                  isClickable: true,
+                ),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.cyanAccent.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(color: Colors.cyanAccent.withValues(alpha: 0.4), blurRadius: 4),
+                      ],
+                    ),
+                    child: const Text(
+                      'ONLINE',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
