@@ -29,6 +29,13 @@ class _RegisterDialogState extends State<RegisterDialog> {
 
   void _register() async {
     if (_formKey.currentState!.validate()) {
+      // Show initial feedback
+      showCustomSnackBar(
+        context,
+        'Creating account... Please wait as your data is loading and becoming live.',
+        type: SnackBarType.info,
+      );
+
       try {
         await _authService.register(
           email: _emailController.text.trim(),
@@ -36,8 +43,11 @@ class _RegisterDialogState extends State<RegisterDialog> {
           displayName: _displayNameController.text.trim(),
         );
         if (mounted) {
-          showCustomSnackBar(context, 'Account created! Please log in.',
-              type: SnackBarType.success);
+          showCustomSnackBar(
+            context,
+            'Account created! Please log in.',
+            type: SnackBarType.success,
+          );
         }
         widget.onRegisterSuccess();
       } on FirebaseAuthException catch (e) {

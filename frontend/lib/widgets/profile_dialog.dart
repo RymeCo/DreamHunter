@@ -92,6 +92,13 @@ class ProfileDialog extends StatelessWidget {
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () async {
+                if (context.mounted) {
+                  showCustomSnackBar(
+                    context,
+                    'Logging out... Backing up your progress to the cloud.',
+                    type: SnackBarType.info,
+                  );
+                }
                 await authService.signOut();
                 if (context.mounted) {
                   showCustomSnackBar(

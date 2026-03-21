@@ -26,14 +26,24 @@ class _LoginDialogState extends State<LoginDialog> {
 
   void _login() async {
     if (_formKey.currentState!.validate()) {
+      // Show initial feedback
+      showCustomSnackBar(
+        context,
+        'Logging in... Please wait as your data is loading and becoming live.',
+        type: SnackBarType.info,
+      );
+
       try {
         await _authService.signIn(
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
         if (mounted) {
-          showCustomSnackBar(context, 'Successfully logged in. Welcome back!',
-              type: SnackBarType.success);
+          showCustomSnackBar(
+            context,
+            'Successfully logged in. Welcome back!',
+            type: SnackBarType.success,
+          );
         }
         widget.onLoginSuccess();
       } on FirebaseAuthException catch (e) {
