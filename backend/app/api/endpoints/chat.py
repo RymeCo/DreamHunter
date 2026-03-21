@@ -6,6 +6,7 @@ from ...core.firebase import db
 from ..dependencies import verify_firebase_token
 from ...models.economy_models import ChatMessage, ReportRequest
 from ...services.moderation_service import log_audit, send_urgent_report_email
+from ...services.user_service import progress_daily_task
 
 router = APIRouter(tags=["Chat & Social"])
 
@@ -21,6 +22,9 @@ async def post_chat_message(region: str, msg: ChatMessage, decoded_token: dict =
         raise HTTPException(status_code=404, detail="User not found")
     
     user_data = user_doc.to_dict()
+    
+    # Progress daily task for chat
+    task_result = await progress_daily_task(uid, "chat")
     
     # Check if banned
     if user_data.get('isBanned'):

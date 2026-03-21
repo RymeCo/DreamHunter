@@ -6,6 +6,7 @@ from ...core.config import settings
 from ..dependencies import verify_firebase_token
 from ...models.economy_models import SyncRequest, ReconcileRequest, ReconcileResponse, ConversionResponse
 from ...services.moderation_service import log_audit
+from ...services.user_service import progress_daily_task
 
 router = APIRouter(prefix="/economy", tags=["Economy"])
 
@@ -98,6 +99,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
     # Process each transaction
     gameplay_earned = 0
     newly_processed = []
+    spin_count = 0
     
     for t in transactions:
         if t.id in processed_ids:
@@ -130,6 +132,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
             elif t.type == 'ROULETTE_SPIN':
                 # XP = 25 per spin
                 current_xp += 25
+                spin_count += 1
         
         elif t.type == 'ROULETTE_REWARD':
             if t.dreamDelta < 0:
@@ -152,6 +155,9 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
 
         processed_ids.add(t.id)
         newly_processed.append(t.id)
+
+    if spin_count > 0:
+        await progress_daily_task(uid, "spin", amount=spin_count)
 
     # Recalculate level
     new_level = calculate_level(current_xp)

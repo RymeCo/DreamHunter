@@ -1,137 +1,272 @@
-import 'package:dreamhunter/services/auth_service.dart';
-import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/auth_service.dart';
+import '../services/backend_service.dart';
+import '../services/offline_cache.dart';
+import 'liquid_glass_dialog.dart';
+import 'custom_snackbar.dart';
 
-/// A dialog that displays the current player's profile information.
-/// Uses [AuthService] for logout and [FirebaseFirestore] for extra player data.
-class ProfileDialog extends StatelessWidget {
+class ProfileDialog extends StatefulWidget {
+  final BackendService backendService;
   final VoidCallback onLogoutRequested;
 
-  const ProfileDialog({super.key, required this.onLogoutRequested});
+  const ProfileDialog({
+    super.key,
+    required this.backendService,
+    required this.onLogoutRequested,
+  });
+
+  @override
+  State<ProfileDialog> createState() => _ProfileDialogState();
+}
+
+class _ProfileDialogState extends State<ProfileDialog> {
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true;
+
+  final List<String> _predefinedAvatars = [
+    'assets/images/dashboard/profile.png',
+    'assets/images/dashboard/profile_logo.png',
+    'assets/images/dashboard/small_circle_figure.png',
+    'assets/images/dashboard/roulette_man.png',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final data = await OfflineCache.getCurrency();
+    if (mounted) {
+      setState(() {
+        _userData = data;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showAvatarSelection() {
+    showGeneralDialog(
+      context: context,
+      barrierLabel: "AvatarSelection",
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Center(
+          child: ScaleTransition(
+            scale: animation,
+            child: LiquidGlassDialog(
+              width: 350,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Select Avatar',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemCount: _predefinedAvatars.length,
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () async {
+                          Navigator.pop(context);
+                          await _updateAvatar(index);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: (_userData?['avatarId'] ?? 0) == index
+                                  ? Colors.blueAccent
+                                  : Colors.white24,
+                              width: 2,
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            backgroundColor: Colors.white10,
+                            backgroundImage: AssetImage(_predefinedAvatars[index]),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _updateAvatar(int id) async {
+    setState(() => _isLoading = true);
+    final success = await widget.backendService.updateAvatar(id);
+    if (success) {
+      final current = await OfflineCache.getCurrency();
+      await OfflineCache.saveCurrency(
+        current['dreamCoins']!,
+        current['hellStones']!,
+        current['playtime']!,
+        current['freeSpins']!,
+        current['xp']!,
+        current['level']!,
+        id,
+      );
+      await _loadUserData();
+      if (mounted) {
+        showCustomSnackBar(context, 'Avatar updated!', type: SnackBarType.success);
+      }
+    } else {
+      if (mounted) {
+        showCustomSnackBar(context, 'Failed to update avatar.', type: SnackBarType.error);
+      }
+    }
+    if (mounted) setState(() => _isLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final AuthService authService = AuthService();
-    final user = authService.currentUser;
-    final String displayName = user?.displayName ?? 'No Name';
-    final String email = user?.email ?? 'No Email';
+    final user = AuthService().currentUser;
+    final String displayName = user?.displayName ?? 'Dreamer';
+    final int avatarId = _userData?['avatarId'] ?? 0;
+    final String avatarPath = avatarId < _predefinedAvatars.length 
+        ? _predefinedAvatars[avatarId] 
+        : _predefinedAvatars[0];
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Text(
-              'Profile',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-            FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(user?.uid)
-                  .get(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done &&
-                    snapshot.hasData) {
-                  final data = snapshot.data!.data() as Map<String, dynamic>?;
-                  final playerNumber = data?['playerNumber'];
-                  if (playerNumber != null) {
-                    return Text(
-                      'Player #$playerNumber',
-                      style: const TextStyle(
-                        color: Color.fromRGBO(255, 255, 255, 0.6),
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    );
-                  }
-                }
-                return const SizedBox(height: 14);
-              },
-            ),
-            const SizedBox(height: 10),
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: const Color.fromRGBO(255, 255, 255, 0.3),
-              backgroundImage: user?.photoURL != null
-                  ? NetworkImage(user!.photoURL!)
-                  : null,
-              child: user?.photoURL == null
-                  ? const Icon(
-                      Icons.person,
-                      size: 50,
-                      color: Color.fromRGBO(255, 255, 255, 0.7),
-                    )
-                  : null,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              displayName,
-              style: const TextStyle(
-                color: Color.fromRGBO(255, 255, 255, 0.9),
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              email,
-              style: const TextStyle(
-                color: Color.fromRGBO(255, 255, 255, 0.7),
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () async {
-                if (context.mounted) {
-                  showCustomSnackBar(
-                    context,
-                    'Logging out... Backing up your progress to the cloud.',
-                    type: SnackBarType.info,
-                  );
-                }
-                await authService.signOut();
-                if (context.mounted) {
-                  showCustomSnackBar(
-                    context,
-                    'Successfully logged out. Your guest progress is now live!',
-                    type: SnackBarType.success,
-                  );
-                }
-                onLogoutRequested();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromRGBO(255, 255, 255, 0.1),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 15,
+    return LiquidGlassDialog(
+      width: 350,
+      padding: const EdgeInsets.all(24),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Player Profile',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
-                fixedSize: const Size(200, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  side: const BorderSide(
-                    color: Color.fromRGBO(255, 255, 255, 0.3),
+              ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: _showAvatarSelection,
+                child: Stack(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.blueAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.black26,
+                        backgroundImage: AssetImage(avatarPath),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.blueAccent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.edit, size: 16, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                displayName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (user?.email != null)
+                Text(
+                  user!.email!,
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontSize: 14,
+                  ),
+                ),
+              const SizedBox(height: 24),
+              _buildStatRow(Icons.bolt, 'Level ${_userData?['level'] ?? 1}', Colors.blueAccent),
+              const SizedBox(height: 12),
+              _buildStatRow(Icons.military_tech, '${_userData?['xp'] ?? 0} XP', Colors.orangeAccent),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    showCustomSnackBar(context, 'Logging out...', type: SnackBarType.info);
+                    await AuthService().signOut();
+                    widget.onLogoutRequested();
+                  },
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Logout'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
+                    foregroundColor: Colors.redAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: Colors.redAccent, width: 0.5),
+                    ),
                   ),
                 ),
               ),
-              child: const Text(
-                'Logout',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+            ],
+          ),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(color: Colors.blueAccent),
             ),
-          ],
-        ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildStatRow(IconData icon, String label, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

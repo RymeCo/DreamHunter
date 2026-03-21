@@ -57,6 +57,7 @@ class OfflineCache {
   static const String _settingsKey = 'app_settings';
   static const String _inventoryKey = 'cached_inventory';
   static const String _progressKey = 'cached_progress';
+  static const String _dailyTasksKey = 'cached_daily_tasks';
   static const String _lastSyncKey = 'last_sync_timestamp';
   static const String _lastSyncStatusKey = 'last_sync_status';
   static const _uuid = Uuid();
@@ -92,6 +93,8 @@ class OfflineCache {
     int freeSpins = 0,
     int xp = 0,
     int level = 1,
+    int avatarId = 0,
+    Map<String, dynamic>? dailyTasks,
   ]) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
@@ -103,11 +106,15 @@ class OfflineCache {
         'freeSpins': freeSpins,
         'xp': xp,
         'level': level,
+        'avatarId': avatarId,
       }),
     );
+    if (dailyTasks != null) {
+      await prefs.setString(_getScopedKey(_dailyTasksKey), json.encode(dailyTasks));
+    }
   }
 
-  static Future<Map<String, int>> getCurrency() async {
+  static Future<Map<String, dynamic>> getCurrency() async {
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(_getScopedKey(_currencyKey));
     if (cached != null) {
@@ -119,6 +126,7 @@ class OfflineCache {
         'freeSpins': data['freeSpins'] as int? ?? 0,
         'xp': data['xp'] as int? ?? 0,
         'level': data['level'] as int? ?? 1,
+        'avatarId': data['avatarId'] as int? ?? 0,
       };
     }
     // Hardcoded starting currency for new guests/users
@@ -129,7 +137,17 @@ class OfflineCache {
       'freeSpins': 0,
       'xp': 0,
       'level': 1,
+      'avatarId': 0,
     };
+  }
+
+  static Future<Map<String, dynamic>?> getDailyTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString(_getScopedKey(_dailyTasksKey));
+    if (cached != null) {
+      return json.decode(cached) as Map<String, dynamic>;
+    }
+    return null;
   }
 
   static Future<void> addTransaction({
@@ -178,7 +196,50 @@ class OfflineCache {
       (current['freeSpins'] ?? 0) + freeSpinDelta,
       newXP,
       newLevel,
+      current['avatarId'] ?? 0,
     );
+
+    // Update Daily Tasks Progress Offline
+    final dailyTasks = await getDailyTasks();
+    if (dailyTasks != null && dailyTasks['tasks'] != null) {
+      bool tasksUpdated = false;
+      final taskType = _getTaskTypeForTransaction(type);
+      
+      if (taskType != null) {
+        for (var task in dailyTasks['tasks']) {
+          if (task['type'] == taskType && !(task['completed'] ?? false)) {
+            task['progress'] = (task['progress'] ?? 0) + 1;
+            if (task['progress'] >= task['target']) {
+              task['progress'] = task['target'];
+              task['completed'] = true;
+              // Grant reward locally
+              final reward = task['reward'] ?? 0;
+              final latestCurrency = await getCurrency();
+              await saveCurrency(
+                latestCurrency['dreamCoins']! + reward,
+                latestCurrency['hellStones']!,
+                latestCurrency['playtime']!,
+                latestCurrency['freeSpins']!,
+                latestCurrency['xp']!,
+                latestCurrency['level']!,
+                latestCurrency['avatarId']!,
+              );
+            }
+            tasksUpdated = true;
+          }
+        }
+      }
+      
+      if (tasksUpdated) {
+        await prefs.setString(_getScopedKey(_dailyTasksKey), json.encode(dailyTasks));
+      }
+    }
+  }
+
+  static String? _getTaskTypeForTransaction(String type) {
+    if (type == 'CHAT') return 'chat'; // I need to make sure 'CHAT' transaction exists or use a new one
+    if (type == 'ROULETTE_SPIN') return 'spin';
+    return null;
   }
 
   static Future<List<OfflineTransaction>> getTransactionQueue() async {

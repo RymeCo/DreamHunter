@@ -23,6 +23,12 @@ async def patch_user_display_name(name: str, decoded_token: dict = Depends(verif
     db.collection('users').document(uid).update({"displayName": name})
     return {"status": "success", "displayName": name}
 
+@router.patch("/avatar")
+async def patch_user_avatar(avatar_id: int = Body(..., embed=True), decoded_token: dict = Depends(verify_firebase_token)):
+    uid = decoded_token['uid']
+    db.collection('users').document(uid).update({"avatarId": avatar_id})
+    return {"status": "success", "avatarId": avatar_id}
+
 @router.post("/sync-progress")
 async def sync_progress(req: dict = Body(...), decoded_token: dict = Depends(verify_firebase_token)):
     """

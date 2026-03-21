@@ -128,6 +128,8 @@ class BackendService {
             result['freeSpins'] as int? ?? 0,
             result['xp'] as int? ?? 0,
             result['level'] as int? ?? 1,
+            result['avatarId'] as int? ?? 0,
+            result['dailyTasks'] as Map<String, dynamic>?,
           );
           
           if (result['levelUp'] == true) {
@@ -150,6 +152,8 @@ class BackendService {
             profile['freeSpins'] ?? 0,
             profile['xp'] ?? 0,
             profile['level'] ?? 1,
+            profile['avatarId'] ?? 0,
+            profile['dailyTasks'] as Map<String, dynamic>?,
           );
           success = true;
         }
@@ -186,6 +190,17 @@ class BackendService {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error updating name in backend: $e');
+      return false;
+    }
+  }
+
+  /// Updates the user's avatar in the backend
+  Future<bool> updateAvatar(int avatarId) async {
+    try {
+      final response = await patch('/user/avatar', body: {'avatarId': avatarId});
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error updating avatar in backend: $e');
       return false;
     }
   }

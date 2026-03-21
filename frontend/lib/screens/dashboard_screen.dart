@@ -18,6 +18,7 @@ import 'package:dreamhunter/widgets/profile_dialog.dart';
 import 'package:dreamhunter/services/leveling_service.dart';
 import 'package:dreamhunter/widgets/chat_dialog.dart';
 import 'package:dreamhunter/widgets/leaderboard_dialog.dart';
+import 'package:dreamhunter/widgets/daily_tasks_dialog.dart';
 import 'package:dreamhunter/widgets/roulette_dialog.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/settings_dialog.dart';
@@ -211,7 +212,68 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           isOnlineOnly: true,
                           onTap: () {
                             Navigator.pop(context);
-                            _showAuthDialog();
+                            if (_isLoggedIn) {
+                              showGeneralDialog(
+                                context: context,
+                                barrierLabel: "ProfileDialog",
+                                barrierDismissible: true,
+                                barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+                                transitionDuration: const Duration(
+                                  milliseconds: 300,
+                                ),
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) {
+                                  return ScaleTransition(
+                                    scale: CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeOutBack,
+                                    ),
+                                    child: FadeTransition(
+                                      opacity: animation,
+                                      child: ProfileDialog(
+                                        backendService: _backendService,
+                                        onLogoutRequested: () {
+                                          if (mounted) setState(() {});
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            } else {
+                              _showAuthDialog();
+                            }
+                          },
+                        ),
+                        const Divider(color: Colors.white24),
+                        _buildMenuButton(
+                          icon: Icons.task_alt_rounded,
+                          label: 'Daily Tasks',
+                          isOnlineOnly: true,
+                          onTap: () {
+                            Navigator.pop(context);
+                            showGeneralDialog(
+                              context: context,
+                              barrierLabel: "DailyTasksDialog",
+                              barrierDismissible: true,
+                              barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+                              transitionDuration: const Duration(
+                                milliseconds: 300,
+                              ),
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) {
+                                return ScaleTransition(
+                                  scale: CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOutBack,
+                                  ),
+                                  child: FadeTransition(
+                                    opacity: animation,
+                                    child: const DailyTasksDialog(),
+                                  ),
+                                );
+                              },
+                            );
                           },
                         ),
                         const Divider(color: Colors.white24),
@@ -418,6 +480,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 break;
               case AuthDialogType.profile:
                 dialogContent = ProfileDialog(
+                  backendService: _backendService,
                   onLogoutRequested: () {
                     setDialogState(() {
                       _isLoggedIn = false;
@@ -560,7 +623,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _convertCurrency() async {
-    final Map<String, int> currency = await OfflineCache.getCurrency();
+    final Map<String, dynamic> currency = await OfflineCache.getCurrency();
     final int currentHell = currency['hellStones'] ?? 0;
 
     if (currentHell < 1) {
@@ -574,7 +637,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return;
     }
 
-    final Map<String, int> oldCurrency = await OfflineCache.getCurrency();
+    final Map<String, dynamic> oldCurrency = await OfflineCache.getCurrency();
     final int oldLevel = oldCurrency['level'] ?? 1;
 
     // 1 Stone -> 100 Coins
@@ -584,7 +647,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       hellDelta: -1,
     );
 
-    final Map<String, int> newCurrency = await OfflineCache.getCurrency();
+    final Map<String, dynamic> newCurrency = await OfflineCache.getCurrency();
     final int newLevel = newCurrency['level'] ?? 1;
 
     if (mounted) {
@@ -686,10 +749,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         toolbarHeight: 120,
-        leadingWidth: 220,
+        leadingWidth: 280,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0, top: 12.0),
-          child: StreamBuilder<Map<String, int>>(
+          child: StreamBuilder<Map<String, dynamic>>(
             stream: Stream.periodic(
               const Duration(seconds: 1),
             ).asyncMap((_) => OfflineCache.getCurrency()),
@@ -698,70 +761,131 @@ class _DashboardScreenState extends State<DashboardScreen> {
               int tokens = snapshot.data?['hellStones'] ?? 10;
               int xp = snapshot.data?['xp'] ?? 0;
               int level = snapshot.data?['level'] ?? 1;
+              int avatarId = snapshot.data?['avatarId'] ?? 0;
               double progress = LevelingService.getLevelProgress(xp);
 
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+              final List<String> avatars = [
+                'assets/images/dashboard/profile.png',
+                'assets/images/dashboard/profile_logo.png',
+                'assets/images/dashboard/small_circle_figure.png',
+                'assets/images/dashboard/roulette_man.png',
+              ];
+              final String avatarPath = avatarId < avatars.length ? avatars[avatarId] : avatars[0];
+
+              return Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blueAccent.withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        child: Text(
-                          'Lvl $level',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  GestureDetector(
+                    onTap: () {
+                      if (_isLoggedIn) {
+                        showGeneralDialog(
+                          context: context,
+                          barrierLabel: "ProfileDialog",
+                          barrierDismissible: true,
+                          barrierColor: const Color.fromRGBO(0, 0, 0, 0.5),
+                          transitionDuration: const Duration(milliseconds: 300),
+                          pageBuilder: (context, animation, secondaryAnimation) {
+                            return ScaleTransition(
+                              scale: CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeOutBack,
+                              ),
+                              child: FadeTransition(
+                                opacity: animation,
+                                child: ProfileDialog(
+                                  backendService: _backendService,
+                                  onLogoutRequested: () {
+                                    if (mounted) setState(() {});
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      } else {
+                        _showAuthDialog();
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.blueAccent, width: 2),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Container(
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: Colors.black26,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: progress,
-                              backgroundColor: Colors.transparent,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                Colors.blueAccent,
+                      child: CircleAvatar(
+                        radius: 25,
+                        backgroundColor: Colors.black26,
+                        backgroundImage: AssetImage(avatarPath),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blueAccent.withValues(alpha: 0.8),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: Text(
+                                'Lvl $level',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Container(
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Colors.black26,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
+                                    value: progress,
+                                    backgroundColor: Colors.transparent,
+                                    valueColor: const AlwaysStoppedAnimation<Color>(
+                                      Colors.blueAccent,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  _buildCurrencyChip(
-                    icon: Icons.toll_rounded,
-                    value: '$coins',
-                    color: Colors.amberAccent,
-                    onPlusTap: _showCoinExchangeDialog,
-                  ),
-                  const SizedBox(height: 4),
-                  _buildCurrencyChip(
-                    icon: Icons.diamond_rounded,
-                    value: '$tokens',
-                    color: Colors.redAccent,
-                    onPlusTap: _showPurchaseDialog,
+                        const SizedBox(height: 8),
+                        _buildCurrencyChip(
+                          icon: Icons.toll_rounded,
+                          value: '$coins',
+                          color: Colors.amberAccent,
+                          onPlusTap: _showCoinExchangeDialog,
+                        ),
+                        const SizedBox(height: 4),
+                        _buildCurrencyChip(
+                          icon: Icons.diamond_rounded,
+                          value: '$tokens',
+                          color: Colors.redAccent,
+                          onPlusTap: _showPurchaseDialog,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               );
