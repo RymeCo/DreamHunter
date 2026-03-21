@@ -94,8 +94,11 @@ class ProfileDialog extends StatelessWidget {
               onPressed: () async {
                 await authService.signOut();
                 if (context.mounted) {
-                  showCustomSnackBar(context, 'Successfully logged out.',
-                      type: SnackBarType.success);
+                  showCustomSnackBar(
+                    context,
+                    'Successfully logged out. Your guest progress is now live!',
+                    type: SnackBarType.success,
+                  );
                 }
                 onLogoutRequested();
               },
