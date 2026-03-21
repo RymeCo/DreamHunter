@@ -59,6 +59,9 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
       if (mounted) {
         showCustomSnackBar(context, 'Reward claimed: $reward Dream Coins!', type: SnackBarType.success);
       }
+      
+      // Trigger a full sync to ensure all progress is locked in
+      await _backendService.performFullSync();
     } else {
       if (mounted) {
         showCustomSnackBar(context, 'Failed to claim reward. Try again later.', type: SnackBarType.error);

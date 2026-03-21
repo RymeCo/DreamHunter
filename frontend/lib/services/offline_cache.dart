@@ -224,28 +224,16 @@ class OfflineCache {
             } else {
               task['progress'] = (task['progress'] ?? 0) + 1;
             }
+if (task['progress'] >= task['target']) {
+  task['progress'] = task['target'];
+  task['completed'] = true;
+  // User must now manually CLAIM reward to sync with backend.
+}
+tasksUpdated = true;
+}
+}
+}
 
-            if (task['progress'] >= task['target']) {
-              task['progress'] = task['target'];
-              task['completed'] = true;
-              // Grant reward locally
-              final reward = task['reward'] ?? 0;
-              final latestCurrency = await getCurrency();
-              await saveCurrency(
-                latestCurrency['dreamCoins']! + reward,
-                latestCurrency['hellStones']!,
-                latestCurrency['playtime']!,
-                latestCurrency['freeSpins']!,
-                latestCurrency['xp']!,
-                latestCurrency['level']!,
-                latestCurrency['avatarId']!,
-              );
-            }
-            tasksUpdated = true;
-          }
-        }
-      }
-      
       if (tasksUpdated) {
         await prefs.setString(_getScopedKey(_dailyTasksKey), json.encode(dailyTasks));
       }
@@ -363,6 +351,7 @@ class OfflineCache {
       _transactionQueueKey,
       _inventoryKey,
       _progressKey,
+      _dailyTasksKey,
     ];
 
     for (final key in sensitiveKeys) {

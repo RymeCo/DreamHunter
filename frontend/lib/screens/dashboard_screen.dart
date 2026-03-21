@@ -40,6 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoggedIn = false;
   bool _isBackendReady = false;
   Map<String, dynamic>? _cachedGlobalAlert;
+  final Set<String> _notifiedTaskIds = {};
   AuthDialogType _currentDialogType = AuthDialogType.login;
   final UserService _userService = UserService();
   final BackendService _backendService = BackendService();
@@ -84,12 +85,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
         type: 'PLAYTIME',
         playtimeDelta: 60,
       );
+      _checkTaskCompletion();
     });
   }
 
   void _stopPlaytimeTimer() {
     _playtimeTimer?.cancel();
     _playtimeTimer = null;
+  }
+
+  Future<void> _checkTaskCompletion() async {
+    final dailyTasks = await OfflineCache.getDailyTasks();
+    if (dailyTasks == null || dailyTasks['tasks'] == null) return;
+
+    for (var task in (dailyTasks['tasks'] as List)) {
+      final String id = task['id'];
+      final bool isCompleted = (task['progress'] as num) >= (task['target'] as num);
+      final bool isClaimed = task['claimed'] ?? false;
+
+      if (isCompleted && !isClaimed && !_notifiedTaskIds.contains(id)) {
+        _notifiedTaskIds.add(id);
+        if (mounted) {
+          showCustomSnackBar(
+            context,
+            'TASK COMPLETED: ${task['title']}!',
+            type: SnackBarType.success,
+          );
+        }
+      }
+    }
   }
 
   void _subscribeToUserStats() {
@@ -105,7 +129,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             data['hellStones'] ?? 0,
             data['playtime'] ?? 0,
             data['freeSpins'] ?? 0,
+            data['xp'] ?? 0,
+            data['level'] ?? 1,
+            data['avatarId'] ?? 0,
+            data['createdAt'] as String?,
           );
+          _checkTaskCompletion();
         }
       }
     });
@@ -160,6 +189,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final success = await _backendService.performFullSync();
       if (success && mounted) {
+        _checkTaskCompletion();
         setState(() {});
       }
     } catch (e) {

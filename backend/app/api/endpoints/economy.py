@@ -101,6 +101,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
     newly_processed = []
     spin_count = 0
     total_playtime_delta = 0
+    chat_count = 0
     
     for t in transactions:
         if t.id in processed_ids:
@@ -147,6 +148,9 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         if t.type == 'PLAYTIME':
             current_playtime += t.playtimeDelta
             total_playtime_delta += t.playtimeDelta
+        
+        if t.type == 'CHAT':
+            chat_count += 1
             
         current_free_spins += t.freeSpinDelta
         current_dream += t.dreamDelta
@@ -166,6 +170,9 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         minutes = total_playtime_delta // 60
         if minutes > 0:
             await progress_daily_task(uid, "playtime", amount=minutes)
+
+    if chat_count > 0:
+        await progress_daily_task(uid, "chat", amount=chat_count)
 
     # Recalculate level
     new_level = calculate_level(current_xp)
