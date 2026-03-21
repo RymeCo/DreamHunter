@@ -1,0 +1,40 @@
+  1. Player Progression & "The Loop"
+  Currently, you have currency and an inventory, but the "reason" to keep playing
+  daily is still thin:
+   * Experience & Levels: A player level system. Leveling up
+   * Daily/Weekly Quests: Tasks like "Send 5 messages," "Spin the roulette twice," or
+     "Spend 100 DC." This gives players a goal beyond just accumulating coins.everyday task
+   * Achievements: A "Trophy Room" or badges that show up next to the player's name in
+     the chat (e.g., "High Roller" for spending 10k coins).
+
+  2. Social Identity (Beyond Chat)
+  The chat is great, but players love to show off:
+   * Avatar Customization: Currently, you use a default Icons.person. Letting users
+     choose from a set of unlockable avatars (stored in the shop) would be a huge
+     motivator.
+   * Player Titles: Titles like "Dreamer," "Nightmare Hunter," or "Admin's Favorite"
+     that appear in chat.
+   * Friend Lists: The ability to add friends and see their online status or "last
+     seen."
+
+  3. Visual "Juiciness" & Polish
+  The "Glassmorphism" look is premium, but the game could feel more "alive" with:
+   * Particle Effects: When a player wins a big prize on the Roulette or buys a rare
+     item, there should be "confetti" or a "glow" animation./custom png small 3pxl radius circle for confetti
+   * Haptic Feedback: Subtle vibrations on mobile when clicking buttons or when a
+     snackbar pops up.
+   * Dynamic Backgrounds: The main_background.png is static. Adding a parallax effect
+     or moving clouds/stars would make the Dashboard feel much deeper.for plannin
+
+  4. Admin App: Live Intelligence
+  While you can moderate users, the Admin App currently lacks "Strategic Data":
+   * Economy Heatmap: A way to see if players are earning too much or too little money
+     (to help you balance the shop prices).
+
+  5. Robust Error Recovery
+  Since the app is "Offline-First," you have a high risk of "Merge Conflicts" in data:
+   * Conflict Resolution UI: If a user plays on two different devices while offline,
+     what happens when they both sync? You might need a "Which save do you want to
+     keep?" dialog.
+
+

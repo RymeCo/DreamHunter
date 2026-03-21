@@ -146,7 +146,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         "dreamCoins": current_dream,
         "hellStones": current_hell,
         "playtime": current_playtime,
-        "free_spins": current_free_spins, # Fixed typo from previous version
+        "freeSpins": current_free_spins,
         "lastKnownDreamCoins": current_dream,
         "lastKnownHellStones": current_hell,
         "lastSyncTimestamp": now.isoformat(),

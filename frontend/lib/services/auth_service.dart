@@ -30,14 +30,17 @@ class AuthService {
 
   /// Sign in with email and password
   Future<UserCredential> signIn(String email, String password) async {
+    developer.log('Attempting sign in for $email', name: 'AuthService');
     final userCredential = await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
     
+    developer.log('Sign in successful, migrating guest data...', name: 'AuthService');
     // Migrate guest data to this user
     await OfflineCache.migrateGuestData(userCredential.user!.uid);
     
+    developer.log('Syncing user profile with backend...', name: 'AuthService');
     // Sync with FastAPI backend and update local cache
     final profile = await _backend.syncUserProfile();
     if (profile != null) {
@@ -118,6 +121,7 @@ class AuthService {
     });
 
     // Sync with FastAPI backend after registration
+    developer.log('Initial sync with backend after registration...', name: 'AuthService');
     try {
       await _backend.syncUserProfile().timeout(const Duration(seconds: 10));
     } catch (e) {
@@ -126,6 +130,7 @@ class AuthService {
     }
     
     // Move any guest transactions to this user before signing out (to be synced later on first login)
+    developer.log('Migrating guest data to new user ${userCredential.user!.uid}...', name: 'AuthService');
     try {
       await OfflineCache.migrateGuestData(userCredential.user!.uid);
     } catch (e) {
@@ -133,6 +138,7 @@ class AuthService {
           error: e, name: 'AuthService');
     }
 
+    developer.log('Registration complete, signing out...', name: 'AuthService');
     // Sign out to force manual login
     await signOut();
   }

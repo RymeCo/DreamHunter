@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from datetime import datetime, timezone
+from fastapi import APIRouter, Depends, Body
 from ...core.firebase import db
 from ..dependencies import verify_firebase_token
 from ...services.user_service import get_or_create_user_profile
@@ -21,3 +22,16 @@ async def patch_user_display_name(name: str, decoded_token: dict = Depends(verif
     uid = decoded_token['uid']
     db.collection('users').document(uid).update({"displayName": name})
     return {"status": "success", "displayName": name}
+
+@router.post("/sync-progress")
+async def sync_progress(req: dict = Body(...), decoded_token: dict = Depends(verify_firebase_token)):
+    """
+    Updates user progress and inventory from the local cache.
+    """
+    uid = decoded_token['uid']
+    db.collection('users').document(uid).update({
+        "progress": req.get('progress'),
+        "inventory": req.get('inventory'),
+        "lastSyncTimestamp": datetime.now(timezone.utc).isoformat()
+    })
+    return {"status": "success"}

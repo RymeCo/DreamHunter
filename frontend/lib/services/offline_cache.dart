@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -245,42 +246,58 @@ class OfflineCache {
     ];
 
     for (final key in sensitiveKeys) {
-      final guestKey = _getScopedKey(key, guestUid);
-      final userKey = _getScopedKey(key, newUid);
+      try {
+        final guestKey = _getScopedKey(key, guestUid);
+        final userKey = _getScopedKey(key, newUid);
 
-      final guestData = prefs.getString(guestKey);
-      final guestList = prefs.getStringList(guestKey);
-      
-      if (guestData != null) {
-        if (key == _transactionQueueKey) {
-          final List guestQueue = json.decode(guestData);
-          final userQueueData = prefs.getString(userKey);
-          final List userQueue = userQueueData != null ? json.decode(userQueueData) : [];
-          
-          // Only add transactions that aren't already in the user queue (by ID)
-          final userIds = userQueue.map((t) => t['id'] as String).toSet();
-          for (final t in guestQueue) {
-            if (!userIds.contains(t['id'])) {
-              userQueue.add(t);
+        final guestData = prefs.getString(guestKey);
+        final guestList = prefs.getStringList(guestKey);
+        
+        if (guestData != null) {
+          if (key == _transactionQueueKey) {
+            dynamic decoded = json.decode(guestData);
+            if (decoded is! List) {
+              developer.log('Corrupted guest transaction queue (not a list), skipping migration for this key', name: 'OfflineCache');
+              continue;
             }
+            final List guestQueue = decoded;
+            
+            final userQueueData = prefs.getString(userKey);
+            List userQueue = [];
+            if (userQueueData != null) {
+              dynamic userDecoded = json.decode(userQueueData);
+              if (userDecoded is List) {
+                userQueue = userDecoded;
+              }
+            }
+            
+            // Only add transactions that aren't already in the user queue (by ID)
+            final userIds = userQueue.map((t) => (t as Map<String, dynamic>)['id'] as String).toSet();
+            for (final t in guestQueue) {
+              if (t is Map<String, dynamic> && !userIds.contains(t['id'])) {
+                userQueue.add(t);
+              }
+            }
+            await prefs.setString(userKey, json.encode(userQueue));
+            
+            // Clear guest transaction queue so they aren't processed twice, 
+            // but we KEEP guest currency/progress keys for restoration.
+            await prefs.remove(guestKey);
+          } else {
+            // If user already has data, we don't overwrite it with guest data (cloud is truth)
+            if (!prefs.containsKey(userKey)) {
+               await prefs.setString(userKey, guestData);
+            }
+            // Do NOT remove guestKey here - we want to keep it for when they logout.
           }
-          await prefs.setString(userKey, json.encode(userQueue));
-          
-          // Clear guest transaction queue so they aren't processed twice, 
-          // but we KEEP guest currency/progress keys for restoration.
-          await prefs.remove(guestKey);
-        } else {
-          // If user already has data, we don't overwrite it with guest data (cloud is truth)
+        } else if (guestList != null) {
           if (!prefs.containsKey(userKey)) {
-             await prefs.setString(userKey, guestData);
+            await prefs.setStringList(userKey, guestList);
           }
-          // Do NOT remove guestKey here - we want to keep it for when they logout.
+          // Do NOT remove guestKey here
         }
-      } else if (guestList != null) {
-        if (!prefs.containsKey(userKey)) {
-          await prefs.setStringList(userKey, guestList);
-        }
-        // Do NOT remove guestKey here
+      } catch (e, stack) {
+        developer.log('Error migrating guest data for key $key', error: e, stackTrace: stack, name: 'OfflineCache');
       }
     }
   }
