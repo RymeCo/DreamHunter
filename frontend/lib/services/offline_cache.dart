@@ -94,6 +94,7 @@ class OfflineCache {
     int xp = 0,
     int level = 1,
     int avatarId = 0,
+    String? createdAt,
     Map<String, dynamic>? dailyTasks,
   ]) async {
     final prefs = await SharedPreferences.getInstance();
@@ -107,6 +108,7 @@ class OfflineCache {
         'xp': xp,
         'level': level,
         'avatarId': avatarId,
+        'createdAt': createdAt,
       }),
     );
     if (dailyTasks != null) {
@@ -127,6 +129,7 @@ class OfflineCache {
         'xp': data['xp'] as int? ?? 0,
         'level': data['level'] as int? ?? 1,
         'avatarId': data['avatarId'] as int? ?? 0,
+        'createdAt': data['createdAt'] as String?,
       };
     }
     // Hardcoded starting currency for new guests/users
@@ -138,6 +141,7 @@ class OfflineCache {
       'xp': 0,
       'level': 1,
       'avatarId': 0,
+      'createdAt': null,
     };
   }
 

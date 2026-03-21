@@ -238,6 +238,14 @@ class _ProfileDialogState extends State<ProfileDialog> {
               _buildStatRow(Icons.military_tech, '${_userData?['xp'] ?? 0} XP', Colors.orangeAccent),
               const SizedBox(height: 12),
               _buildStatRow(Icons.timer_rounded, _formatPlaytime((_userData?['playtime'] ?? 0) as int), Colors.greenAccent),
+              if (_userData?['createdAt'] != null) ...[
+                const SizedBox(height: 12),
+                _buildStatRow(
+                  Icons.calendar_month_rounded,
+                  'Member since ${_formatDate(_userData!['createdAt'])}',
+                  Colors.purpleAccent,
+                ),
+              ],
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -279,6 +287,19 @@ class _ProfileDialogState extends State<ProfileDialog> {
       return '${hours}h ${minutes}m playtime';
     } else {
       return '${minutes}m playtime';
+    }
+  }
+
+  String _formatDate(String isoDate) {
+    try {
+      final date = DateTime.parse(isoDate);
+      final months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+      return '${months[date.month - 1]} ${date.year}';
+    } catch (e) {
+      return 'Unknown';
     }
   }
 

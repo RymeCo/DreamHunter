@@ -129,6 +129,7 @@ class BackendService {
             result['xp'] as int? ?? 0,
             result['level'] as int? ?? 1,
             result['avatarId'] as int? ?? 0,
+            result['createdAt'] as String?,
             result['dailyTasks'] as Map<String, dynamic>?,
           );
           
@@ -153,6 +154,7 @@ class BackendService {
             profile['xp'] ?? 0,
             profile['level'] ?? 1,
             profile['avatarId'] ?? 0,
+            profile['createdAt'] as String?,
             profile['dailyTasks'] as Map<String, dynamic>?,
           );
           success = true;
