@@ -32,6 +32,25 @@ class OfflineTransaction(BaseModel):
 class ReconcileRequest(BaseModel):
     transactions: List[OfflineTransaction]
 
+class ReconcileResponse(BaseModel):
+    status: str
+    dreamCoins: int
+    hellStones: int
+    xp: int
+    level: int
+    levelUp: bool
+    playtime: int
+    freeSpins: int
+    inventory: List[str]
+
+class ConversionResponse(BaseModel):
+    status: str
+    dreamCoins: int
+    hellStones: int
+    xp: int
+    level: int
+    levelUp: bool
+
 class ShopItemRequest(BaseModel):
     name: str
     type: str # character, powerup, item

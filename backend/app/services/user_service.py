@@ -43,6 +43,16 @@ async def get_or_create_user_profile(uid: str, display_name: str, email: str | N
 
         if 'uid' not in data:
             data['uid'] = doc.id
+        
+        # Ensure xp and level exist for existing users (lazy migration)
+        if 'xp' not in data or 'level' not in data:
+            data['xp'] = data.get('xp', 0)
+            data['level'] = data.get('level', 1)
+            user_ref.update({
+                'xp': data['xp'],
+                'level': data['level']
+            })
+            
         return data
     
     now = datetime.now(timezone.utc)
@@ -59,6 +69,8 @@ async def get_or_create_user_profile(uid: str, display_name: str, email: str | N
         "warnings": [],
         "dreamCoins": 0,
         "hellStones": 0,
+        "xp": 0,
+        "level": 1,
         "playtime": 0,
         "lastKnownDreamCoins": 0,
         "lastKnownHellStones": 0,

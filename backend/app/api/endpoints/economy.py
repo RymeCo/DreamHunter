@@ -4,10 +4,18 @@ from firebase_admin import firestore
 from ...core.firebase import db
 from ...core.config import settings
 from ..dependencies import verify_firebase_token
-from ...models.economy_models import SyncRequest, ReconcileRequest
+from ...models.economy_models import SyncRequest, ReconcileRequest, ReconcileResponse, ConversionResponse
 from ...services.moderation_service import log_audit
 
 router = APIRouter(prefix="/economy", tags=["Economy"])
+
+def calculate_level(xp: int) -> int:
+    """Calculates player level based on total XP using the formula: XP_next = 100 * Level^1.5"""
+    # Inverse formula to find Level from XP: Level = (XP / 100)^(1/1.5)
+    if xp <= 0:
+        return 1
+    level = int((xp / 100)**(1/1.5)) + 1
+    return max(1, level)
 
 @router.post("/sync")
 async def sync_economy(req: SyncRequest, decoded_token: dict = Depends(verify_firebase_token)):
@@ -65,7 +73,7 @@ async def sync_economy(req: SyncRequest, decoded_token: dict = Depends(verify_fi
     
     return {"status": "success", "dreamCoins": req.dreamCoins, "hellStones": req.hellStones}
 
-@router.post("/reconcile")
+@router.post("/reconcile", response_model=ReconcileResponse)
 async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends(verify_firebase_token)):
     uid = decoded_token['uid']
     user_ref = db.collection('users').document(uid)
@@ -79,6 +87,8 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
     current_hell = data.get('hellStones', 0)
     current_playtime = data.get('playtime', 0)
     current_free_spins = data.get('freeSpins', 0)
+    current_xp = data.get('xp', 0)
+    current_level = data.get('level', 1)
     inventory = data.get('inventory', [])
     processed_ids = set(data.get('processedTransactionIds', []))
     
@@ -97,17 +107,29 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
             if t.dreamDelta < 0 or t.hellDelta != 0:
                 raise HTTPException(status_code=400, detail="Invalid EARN transaction deltas")
             gameplay_earned += t.dreamDelta
+            # Minor XP for playing (1% of earned DC)
+            current_xp += max(1, t.dreamDelta // 100)
             
         elif t.type == 'CONVERSION':
             if t.hellDelta >= 0 or t.dreamDelta != abs(t.hellDelta) * settings.HELL_TO_DREAM_RATE:
                  raise HTTPException(status_code=400, detail="Invalid CONVERSION rate or deltas")
+            # XP for conversion: 50 XP per Hell Stone
+            current_xp += abs(t.hellDelta) * 50
                  
         elif t.type == 'IAP_PURCHASE':
-            pass
+            # Major XP for supporting the game
+            current_xp += 500
                  
         elif t.type in ['PURCHASE', 'ROULETTE_SPIN', 'BUY_SPIN']:
             if t.dreamDelta > 0 or t.hellDelta > 0 or t.freeSpinDelta > 0:
                 raise HTTPException(status_code=400, detail=f"Positive delta not allowed for {t.type}")
+            
+            if t.type == 'PURCHASE':
+                # XP = 10% of DC spent
+                current_xp += abs(t.dreamDelta) // 10
+            elif t.type == 'ROULETTE_SPIN':
+                # XP = 25 per spin
+                current_xp += 25
         
         elif t.type == 'ROULETTE_REWARD':
             if t.dreamDelta < 0:
@@ -131,6 +153,10 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         processed_ids.add(t.id)
         newly_processed.append(t.id)
 
+    # Recalculate level
+    new_level = calculate_level(current_xp)
+    leveled_up = new_level > current_level
+
     if gameplay_earned > 15000:
         log_audit(
             admin_uid="SYSTEM_SECURITY",
@@ -147,6 +173,8 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         "hellStones": current_hell,
         "playtime": current_playtime,
         "freeSpins": current_free_spins,
+        "xp": current_xp,
+        "level": new_level,
         "lastKnownDreamCoins": current_dream,
         "lastKnownHellStones": current_hell,
         "lastSyncTimestamp": now.isoformat(),
@@ -158,12 +186,15 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         "status": "success", 
         "dreamCoins": current_dream, 
         "hellStones": current_hell,
+        "xp": current_xp,
+        "level": new_level,
+        "levelUp": leveled_up,
         "playtime": current_playtime,
         "freeSpins": current_free_spins,
         "inventory": inventory
     }
 
-@router.post("/convert")
+@router.post("/convert", response_model=ConversionResponse)
 async def convert_currency(hell_stones: int, decoded_token: dict = Depends(verify_firebase_token)):
     if hell_stones <= 0:
         raise HTTPException(status_code=400, detail="Invalid amount")
@@ -178,6 +209,8 @@ async def convert_currency(hell_stones: int, decoded_token: dict = Depends(verif
     data = doc.to_dict()
     current_hell = data.get('hellStones', 0)
     current_dream = data.get('dreamCoins', 0)
+    current_xp = data.get('xp', 0)
+    current_level = data.get('level', 1)
     
     if current_hell < hell_stones:
         raise HTTPException(status_code=400, detail="Insufficient Hell Stones")
@@ -185,12 +218,26 @@ async def convert_currency(hell_stones: int, decoded_token: dict = Depends(verif
     new_hell = current_hell - hell_stones
     new_dream = current_dream + (hell_stones * settings.HELL_TO_DREAM_RATE)
     
+    # Award XP for conversion (50 XP per Hell Stone)
+    new_xp = current_xp + (hell_stones * 50)
+    new_level = calculate_level(new_xp)
+    leveled_up = new_level > current_level
+    
     user_ref.update({
         "hellStones": new_hell,
         "dreamCoins": new_dream,
+        "xp": new_xp,
+        "level": new_level,
         "lastKnownDreamCoins": new_dream,
         "lastKnownHellStones": new_hell,
         "lastSyncTimestamp": datetime.now(timezone.utc).isoformat()
     })
     
-    return {"status": "success", "dreamCoins": new_dream, "hellStones": new_hell}
+    return {
+        "status": "success", 
+        "dreamCoins": new_dream, 
+        "hellStones": new_hell,
+        "xp": new_xp,
+        "level": new_level,
+        "levelUp": leveled_up
+    }
