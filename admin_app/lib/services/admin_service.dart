@@ -433,6 +433,7 @@ class AdminService {
   }
 
   Future<bool> sendSystemBroadcastToChat(String region, String text) async {
+    final String adminName = currentUser?.displayName ?? 'Administrator';
     try {
       final response = await _authenticatedRequest(
         'POST', 
@@ -440,7 +441,7 @@ class AdminService {
         body: {
           'region': region,
           'text': text,
-          'senderName': 'System',
+          'senderName': 'System Broadcast ($adminName)',
           'isGhost': false,
           'isSystem': true
         }

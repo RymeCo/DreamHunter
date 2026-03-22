@@ -96,7 +96,6 @@ class _DashboardScreenState extends State<DashboardScreen>
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final bool isWide = constraints.maxWidth > 900;
                 final bool isMedium = constraints.maxWidth > 600;
 
                 return Column(
@@ -117,24 +116,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
                     const SizedBox(height: 32),
 
-                    // Panel Grid Logic: side-by-side or stacked
-                    if (isWide)
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(flex: 3, child: _buildBroadcastPanel()),
-                          const SizedBox(width: 24),
-                          Expanded(flex: 2, child: _buildMaintenancePanel(provider)),
-                        ],
-                      )
-                    else
-                      Column(
-                        children: [
-                          _buildBroadcastPanel(width: double.infinity),
-                          const SizedBox(height: 24),
-                          _buildMaintenancePanel(provider, width: double.infinity),
-                        ],
-                      ),
+                    // Panel Grid Logic: Now simplified as Maintenance moved to Service Ops
+                    _buildBroadcastPanel(width: double.infinity),
                     
                     const SizedBox(height: 48),
                   ],
@@ -262,49 +245,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildMaintenancePanel(AdminProvider provider, {double? width}) {
-    return AdminCard(
-      width: width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Maintenance Controls',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          StreamBuilder(
-            stream: _adminService.getSystemConfig(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
-              final chatMaint = data['chatMaintenance'] ?? false;
-              final shopMaint = data['shopMaintenance'] ?? false;
-
-              return Column(
-                children: [
-                  _maintSwitch(
-                    'Global Chat Mode',
-                    chatMaint,
-                    (v) => provider.updateMaintenance(chat: v),
-                  ),
-                  const Divider(height: 24, color: Color(0xFF2A2A4A)),
-                  _maintSwitch(
-                    'Marketplace Mode',
-                    shopMaint,
-                    (v) => provider.updateMaintenance(shop: v),
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _statSection(String title, List<Widget> rows, {double? width}) {
     return AdminCard(
       width: width,
@@ -351,28 +291,6 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
         ],
       ),
-    );
-  }
-
-  Widget _maintSwitch(String label, bool value, ValueChanged<bool> onChanged) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Flexible(
-          child: Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Switch(
-          value: value,
-          onChanged: onChanged,
-          activeTrackColor: Colors.amberAccent.withValues(alpha: 0.2),
-          activeThumbColor: Colors.amberAccent,
-        ),
-      ],
     );
   }
 

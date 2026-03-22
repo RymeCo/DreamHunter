@@ -95,8 +95,9 @@ class _LeaderboardListState extends State<LeaderboardList> with AutomaticKeepAli
 
     // 3. Fetch from network if expired or missing
     debugPrint('Leaderboard ${widget.type} expired or missing. Fetching from network...');
-    // Fix field name for coins
-    final String apiType = widget.type == 'coins' ? 'dreamCoins' : widget.type;
+    
+    // Reverted: Backend expects 'coins', not 'dreamCoins'
+    final String apiType = widget.type; 
     final networkData = await adminProvider.service.getLeaderboard(apiType);
     
     if (networkData != null) {
