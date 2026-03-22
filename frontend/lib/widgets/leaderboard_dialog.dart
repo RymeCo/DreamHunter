@@ -59,7 +59,7 @@ class LeaderboardList extends StatefulWidget {
 }
 
 class _LeaderboardListState extends State<LeaderboardList> {
-  late Future<List<dynamic>?> _leaderboardFuture;
+  late Future<Map<String, dynamic>?> _leaderboardFuture;
 
   @override
   void initState() {
@@ -69,7 +69,7 @@ class _LeaderboardListState extends State<LeaderboardList> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<dynamic>?>(
+    return FutureBuilder<Map<String, dynamic>?>(
       future: _leaderboardFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -85,8 +85,11 @@ class _LeaderboardListState extends State<LeaderboardList> {
           );
         }
 
-        final data = snapshot.data!;
-        if (data.isEmpty) {
+        final response = snapshot.data!;
+        final List<dynamic> topPlayers = response['top'] ?? [];
+        final Map<String, dynamic>? userStanding = response['user'];
+
+        if (topPlayers.isEmpty) {
           return const Center(
             child: Text(
               'No players found',
@@ -95,51 +98,72 @@ class _LeaderboardListState extends State<LeaderboardList> {
           );
         }
 
-        return ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          itemCount: data.length,
-          separatorBuilder: (context, index) => const Divider(color: Colors.white10),
-          itemBuilder: (context, index) {
-            final entry = data[index] as Map<String, dynamic>;
-            return ListTile(
-              leading: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: _getRankColor(index),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    '${index + 1}',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
+        return Column(
+          children: [
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                itemCount: topPlayers.length,
+                separatorBuilder: (context, index) => const Divider(color: Colors.white10),
+                itemBuilder: (context, index) {
+                  final entry = topPlayers[index] as Map<String, dynamic>;
+                  return _buildLeaderboardTile(entry, index: index);
+                },
+              ),
+            ),
+            if (userStanding != null) ...[
+              const Divider(color: Colors.amberAccent, height: 1),
+              Container(
+                color: Colors.white.withValues(alpha: 0.05),
+                child: _buildLeaderboardTile(
+                  userStanding,
+                  index: (userStanding['rank'] as int) - 1,
+                  isCurrentUser: true,
                 ),
               ),
-              title: Text(
-                entry['displayName'] ?? 'Unknown',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              trailing: Text(
-                _getDisplayValue(widget.type, entry),
-                style: const TextStyle(
-                  color: Colors.amberAccent,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 14,
-                ),
-              ),
-            );
-          },
+            ],
+          ],
         );
       },
+    );
+  }
+
+  Widget _buildLeaderboardTile(Map<String, dynamic> entry, {required int index, bool isCurrentUser = false}) {
+    return ListTile(
+      leading: Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: isCurrentUser ? Colors.amberAccent : _getRankColor(index),
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Text(
+            '${index + 1}',
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ),
+      title: Text(
+        isCurrentUser ? '${entry['displayName']} (YOU)' : (entry['displayName'] ?? 'Unknown'),
+        style: TextStyle(
+          color: isCurrentUser ? Colors.amberAccent : Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+      ),
+      trailing: Text(
+        _getDisplayValue(widget.type, entry),
+        style: const TextStyle(
+          color: Colors.amberAccent,
+          fontWeight: FontWeight.w900,
+          fontSize: 14,
+        ),
+      ),
     );
   }
 
