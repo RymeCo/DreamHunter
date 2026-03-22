@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:dreamhunter/services/backend_service.dart';
 import 'package:dreamhunter/services/chat_service.dart';
 import 'package:dreamhunter/services/offline_cache.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
@@ -192,7 +191,7 @@ class _ChatDialogState extends State<ChatDialog> {
         if (mounted) {
           showCustomSnackBar(
             context,
-            result['message'] ?? 'Failed to send message.',
+            result?['message'] ?? 'Failed to send message.',
             type: SnackBarType.error,
           );
         }

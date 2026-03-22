@@ -9,7 +9,8 @@ from ...services.moderation_service import log_audit
 from ...models.admin_models import (
     UserBanRequest, UserMuteRequest, UserModeratorRequest, UserWarnRequest,
     UserCurrencyRequest, MaintenanceRequest, BroadcastRequest, AutoModConfigRequest,
-    BatchActionRequest, AdminChatMessageRequest, MessageActionRequest, RouletteConfigRequest
+    BatchActionRequest, AdminChatMessageRequest, MessageActionRequest, RouletteConfigRequest,
+    UserSaveTweakRequest
 )
 from ...models.economy_models import ShopItemRequest
 
@@ -211,6 +212,66 @@ async def update_user_currency(uid: str, req: UserCurrencyRequest, admin: dict =
     user_ref.update(update_data)
     log_audit(admin['uid'], "USER_CURRENCY_UPDATE", uid, f"Currency updated: DC={coins}, HS={stones}", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
     return {"status": "success", "message": "Currency updated and integrity hash recalculated."}
+
+@router.post("/users/{uid}/tweak")
+async def tweak_user(uid: str, req: UserSaveTweakRequest, admin: dict = Depends(verify_admin)):
+    user_ref = db.collection('users').document(uid)
+    user_doc = user_ref.get()
+    if not user_doc.exists: raise HTTPException(status_code=404, detail="User not found")
+    target_data = user_doc.to_dict()
+
+    # Calculations
+    if req.mode == "add":
+        coins = target_data.get('dreamCoins', 0) + (req.dreamCoins or 0)
+        stones = target_data.get('hellStones', 0) + (req.hellStones or 0)
+        xp = target_data.get('xp', 0) + (req.xp or 0)
+        level = target_data.get('level', 1) + (req.level or 0)
+    else: # Override
+        coins = req.dreamCoins if req.dreamCoins is not None else target_data.get('dreamCoins', 0)
+        stones = req.hellStones if req.hellStones is not None else target_data.get('hellStones', 0)
+        xp = req.xp if req.xp is not None else target_data.get('xp', 0)
+        level = req.level if req.level is not None else target_data.get('level', 1)
+
+    # Integrity
+    new_hash = generate_shadow_hash(coins, stones, xp, level)
+
+    tweak_payload = {
+        "dreamCoins": coins,
+        "hellStones": stones,
+        "xp": xp,
+        "level": level,
+        "mode": req.mode,
+        "reason": req.reason,
+        "adminEmail": admin.get('email'),
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+    update_data = {
+        "dreamCoins": coins,
+        "lastKnownDreamCoins": coins,
+        "hellStones": stones,
+        "lastKnownHellStones": stones,
+        "xp": xp,
+        "level": level,
+        "shadowHash": new_hash,
+        "lastAction": "ADMIN_TWEAK",
+        "tweakData": tweak_payload,
+        "updatedAt": firestore.SERVER_TIMESTAMP
+    }
+
+    user_ref.update(update_data)
+    log_audit(admin['uid'], "USER_SAVE_TWEAK", uid, f"Tweak ({req.mode}): DC={coins}, HS={stones}, XP={xp}, LV={level}", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
+    
+    return {
+        "status": "success", 
+        "message": f"User save tweaked successfully in {req.mode} mode.",
+        "newData": {
+            "dreamCoins": coins,
+            "hellStones": stones,
+            "xp": xp,
+            "level": level
+        }
+    }
 
 @router.post("/users/{uid}/reset-spam")
 async def reset_spam_score(uid: str, admin: dict = Depends(verify_admin)):

@@ -3,7 +3,6 @@ import '../services/admin_service.dart';
 import 'custom_snackbar.dart';
 import 'liquid_glass_panel.dart';
 import 'admin_ui_components.dart';
-import 'dart:convert';
 
 class PlayerActionsDialog extends StatefulWidget {
   final Map<String, dynamic> player;
@@ -26,10 +25,11 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
   final _dreamController = TextEditingController();
   final _hellStonesController = TextEditingController();
   final _warnReasonController = TextEditingController();
+  final _tweakReasonController = TextEditingController(text: "Admin Tweak");
   
+  String _tweakMode = "add"; // "add" or "override"
   bool _forceSync = false;
-  bool _isUpdatingSave = false;
-  bool _isUpdatingCurrency = false;
+  bool _isTweaking = false;
   bool _isBanning = false;
   bool _isMuting = false;
   bool _isResettingSpam = false;
@@ -53,48 +53,66 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     _dreamController.dispose();
     _hellStonesController.dispose();
     _warnReasonController.dispose();
+    _tweakReasonController.dispose();
     super.dispose();
   }
 
-  void _updateSave(String uid) async {
-    setState(() => _isUpdatingSave = true);
-    final level = int.tryParse(_levelController.text.trim());
-    final xp = int.tryParse(_xpController.text.trim());
+  void _tweakUser(String uid) async {
+    final confirmed = await _showTweakConfirmation();
+    if (confirmed != true) {
+      return;
+    }
 
-    final success = await _adminService.updatePlayerSave(
-      uid,
-      level: level,
-      xp: xp,
-      forceSyncNext: _forceSync,
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _isTweaking = true);
+    
+    final success = await _adminService.tweakUser(
+      uid: uid,
+      level: int.tryParse(_levelController.text.trim()),
+      xp: int.tryParse(_xpController.text.trim()),
+      dreamCoins: int.tryParse(_dreamController.text.trim()),
+      hellStones: int.tryParse(_hellStonesController.text.trim()),
+      mode: _tweakMode,
+      reason: _tweakReasonController.text.trim(),
     );
 
     if (mounted) {
-      setState(() => _isUpdatingSave = false);
+      setState(() => _isTweaking = false);
       if (success) {
-        showCustomSnackBar(context, 'Player save updated!', type: SnackBarType.success);
-        if (widget.onActionComplete != null) widget.onActionComplete!();
+        if (mounted) {
+          showCustomSnackBar(context, 'Tweak applied! Player will receive "Admin Surprise".', type: SnackBarType.success);
+        }
+        if (widget.onActionComplete != null) {
+          widget.onActionComplete!();
+        }
       }
     }
   }
 
-  void _updateCurrency(String uid) async {
-    setState(() => _isUpdatingCurrency = true);
-    final dream = int.tryParse(_dreamController.text.trim());
-    final hell = int.tryParse(_hellStonesController.text.trim());
-
-    final success = await _adminService.updatePlayerCurrency(
-      uid,
-      dreamCoins: dream,
-      hellStones: hell,
+  Future<bool?> _showTweakConfirmation() async {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text('Confirm Tweak', style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Mode: ${_tweakMode.toUpperCase()}', style: TextStyle(color: _tweakMode == "add" ? Colors.greenAccent : Colors.redAccent, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text('This will trigger an "Admin Surprise" dialog on the player\'s screen and recalculate their integrity hash.', style: TextStyle(color: Colors.white70, fontSize: 12)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('CONFIRM')),
+        ],
+      ),
     );
-
-    if (mounted) {
-      setState(() => _isUpdatingCurrency = false);
-      if (success) {
-        showCustomSnackBar(context, 'Currency adjusted & Hash Recalculated!', type: SnackBarType.success);
-        if (widget.onActionComplete != null) widget.onActionComplete!();
-      }
-    }
   }
 
   void _toggleBan(String uid, bool isBanned, bool isSuperBanned) async {
@@ -133,11 +151,18 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
       setState(() => _isBanning = false);
       if (success) {
         String msg = "Player Unbanned";
-        if (nextSuper) msg = "Player SUPERBANNED (Offline Only)";
-        else if (nextBanned) msg = "Player PERMANENT BANNED";
+        if (nextSuper) {
+          msg = "Player SUPERBANNED (Offline Only)";
+        } else if (nextBanned) {
+          msg = "Player PERMANENT BANNED";
+        }
         
-        showCustomSnackBar(context, msg, type: SnackBarType.success);
-        if (widget.onActionComplete != null) widget.onActionComplete!();
+        if (mounted) {
+          showCustomSnackBar(context, msg, type: SnackBarType.success);
+        }
+        if (widget.onActionComplete != null) {
+          widget.onActionComplete!();
+        }
         setState(() {
           widget.player['isBanned'] = nextBanned;
           widget.player['isSuperBanned'] = nextSuper;
@@ -152,8 +177,12 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     if (mounted) {
       setState(() => _isMuting = false);
       if (success) {
-        showCustomSnackBar(context, 'Player muted for ${hours}h', type: SnackBarType.success);
-        if (widget.onActionComplete != null) widget.onActionComplete!();
+        if (mounted) {
+          showCustomSnackBar(context, 'Player muted for ${hours}h', type: SnackBarType.success);
+        }
+        if (widget.onActionComplete != null) {
+          widget.onActionComplete!();
+        }
       }
     }
   }
@@ -164,23 +193,37 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     if (mounted) {
       setState(() => _isResettingSpam = false);
       if (success) {
-        showCustomSnackBar(context, 'Spam score reset!', type: SnackBarType.success);
-        if (widget.onActionComplete != null) widget.onActionComplete!();
+        if (mounted) {
+          showCustomSnackBar(context, 'Spam score reset!', type: SnackBarType.success);
+        }
+        if (widget.onActionComplete != null) {
+          widget.onActionComplete!();
+        }
       }
     }
   }
 
   void _warnPlayer(String uid) async {
     final reason = await _showReasonPrompt("Reason for warning");
-    if (reason == null || reason.isEmpty) return;
+    if (reason == null || reason.isEmpty) {
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
 
     setState(() => _isWarning = true);
     final success = await _adminService.warnUser(uid, reason);
     if (mounted) {
       setState(() => _isWarning = false);
       if (success) {
-        showCustomSnackBar(context, 'Warning issued!', type: SnackBarType.success);
-        if (widget.onActionComplete != null) widget.onActionComplete!();
+        if (mounted) {
+          showCustomSnackBar(context, 'Warning issued!', type: SnackBarType.success);
+        }
+        if (widget.onActionComplete != null) {
+          widget.onActionComplete!();
+        }
         setState(() {
           widget.player['strikeCount'] = (widget.player['strikeCount'] ?? 0) + 1;
         });
@@ -194,8 +237,12 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     if (mounted) {
       setState(() => _isUpdatingRole = false);
       if (success) {
-        showCustomSnackBar(context, !currentStatus ? 'Moderator Role Granted' : 'Moderator Role Revoked', type: SnackBarType.success);
-        if (widget.onActionComplete != null) widget.onActionComplete!();
+        if (mounted) {
+          showCustomSnackBar(context, !currentStatus ? 'Moderator Role Granted' : 'Moderator Role Revoked', type: SnackBarType.success);
+        }
+        if (widget.onActionComplete != null) {
+          widget.onActionComplete!();
+        }
         setState(() => widget.player['isModerator'] = !currentStatus);
       }
     }
@@ -203,13 +250,19 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
 
   void _customMute(String uid) async {
     final dt = await _pickCustomDateTime();
-    if (dt == null) return;
+    if (dt == null) {
+      return;
+    }
     
+    if (!mounted) {
+      return;
+    }
+
     final bool currentIsAdmin = _adminService.isAdmin;
     if (!currentIsAdmin) {
       final diff = dt.difference(DateTime.now());
       if (diff.inHours > 24) {
-        showCustomSnackBar(context, 'Moderators can only mute up to 24h. Adjusting...', type: SnackBarType.warning);
+        showCustomSnackBar(context, 'Moderators can only mute up to 24h. Adjusting...', type: SnackBarType.info);
         _quickMute(uid, 24);
         return;
       }
@@ -233,7 +286,13 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (date == null) return null;
+    if (date == null) {
+      return null;
+    }
+    
+    if (!mounted) {
+      return null;
+    }
     
     final time = await showTimePicker(
       context: context,
@@ -326,16 +385,17 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
                         child: const Text('SUPERBANNED', style: TextStyle(color: Colors.orange, fontSize: 8, fontWeight: FontWeight.bold)),
                       )
-                    ] else if (isBanned) ...[
+                      ] else if (isBanned) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.red.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
                         child: const Text('BANNED', style: TextStyle(color: Colors.red, fontSize: 8, fontWeight: FontWeight.bold)),
                       )
+
                     ]
                   ],
                 ),
@@ -344,40 +404,71 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
 
               const SizedBox(height: 16),
 
-              // Economy Injection
-              const Text('ECONOMY INJECTION (Safe Edit)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.cyanAccent, letterSpacing: 1.5)),
+              // Save Tweak (Additive vs Override)
+              const Text('SAVE TWEAK (Admin Surprise)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.cyanAccent, letterSpacing: 1.5)),
               const SizedBox(height: 12),
+              
+              // Mode Selector
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => setState(() => _tweakMode = "add"),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _tweakMode == "add" ? Colors.greenAccent.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: _tweakMode == "add" ? Colors.greenAccent : Colors.white10),
+                        ),
+                        child: Center(child: Text('ADDITIVE', style: TextStyle(color: _tweakMode == "add" ? Colors.greenAccent : Colors.white38, fontWeight: FontWeight.bold, fontSize: 10))),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => setState(() => _tweakMode = "override"),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _tweakMode == "override" ? Colors.redAccent.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: _tweakMode == "override" ? Colors.redAccent : Colors.white10),
+                        ),
+                        child: Center(child: Text('FORCE OVERRIDE', style: TextStyle(color: _tweakMode == "override" ? Colors.redAccent : Colors.white38, fontWeight: FontWeight.bold, fontSize: 10))),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(child: AdminTextField(label: 'Dream Coins', controller: _dreamController, prefixIcon: Icons.cloud_circle)),
                   const SizedBox(width: 12),
                   Expanded(child: AdminTextField(label: 'Hell Stones', controller: _hellStonesController, prefixIcon: Icons.local_fire_department)),
-                  const SizedBox(width: 12),
-                  AdminButton(
-                    onPressed: _isUpdatingCurrency ? null : () => _updateCurrency(uid), 
-                    label: 'INJECT', 
-                    isLoading: _isUpdatingCurrency,
-                    color: Colors.cyanAccent
-                  ),
                 ],
               ),
-
-              const Divider(height: 40, color: Colors.white10),
-
-              // Save State Editor
-              const Text('SAVE STATE EDITOR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.blueAccent, letterSpacing: 1.5)),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(child: AdminTextField(label: 'Level', controller: _levelController, prefixIcon: Icons.trending_up)),
                   const SizedBox(width: 12),
                   Expanded(child: AdminTextField(label: 'XP', controller: _xpController, prefixIcon: Icons.bolt)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: AdminTextField(label: 'Reason', controller: _tweakReasonController, prefixIcon: Icons.edit_note)),
                   const SizedBox(width: 12),
                   AdminButton(
-                    onPressed: _isUpdatingSave ? null : () => _updateSave(uid), 
-                    label: 'SAVE', 
-                    isLoading: _isUpdatingSave,
-                    color: Colors.blueAccent
+                    onPressed: _isTweaking ? null : () => _tweakUser(uid), 
+                    label: 'TWEAK', 
+                    isLoading: _isTweaking,
+                    color: Colors.cyanAccent
                   ),
                 ],
               ),
@@ -462,14 +553,14 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
 
   Widget _customMuteBadgeAction(String uid) {
     return InkWell(
-      onTap: () => _customMute(uid),
+      onTap: _isMuting ? null : () => _customMute(uid),
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.redAccent.withOpacity(0.1),
+          color: Colors.redAccent.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
         ),
         child: const Text('CUSTOM', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12)),
       ),
@@ -478,14 +569,14 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
 
   Widget _muteBadgeAction(String uid, String label, int hours) {
     return InkWell(
-      onTap: () => _quickMute(uid, hours),
+      onTap: _isMuting ? null : () => _quickMute(uid, hours),
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
         child: Text(label, style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold, fontSize: 12)),
       ),

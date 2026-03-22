@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
-import 'dart:developer' as developer;
 
 class AdminService {
   static const String baseUrl = 'https://dreamhunter-api.onrender.com';
@@ -12,6 +11,10 @@ class AdminService {
   final http.Client _client = http.Client();
 
   User? get currentUser => _auth.currentUser;
+
+  /// Temporary isAdmin check for UI branching. 
+  /// In a real app, this should check custom claims or a cached profile.
+  bool get isAdmin => true; // For the prototype, we assume the user of this app is an admin.
 
   Future<String?> getIdToken() async {
     final user = _auth.currentUser;
@@ -232,34 +235,6 @@ class AdminService {
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       debugPrint('Error requesting ban: $e');
-      return false;
-    }
-  }
-
-  Future<bool> warnUser(String uid, String reason) async {
-    try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/admin/users/$uid/warnings'),
-        headers: await getAuthHeaders(),
-        body: json.encode({'reason': reason}),
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('Error warning user: $e');
-      return false;
-    }
-  }
-
-  Future<bool> updateModeratorStatus(String uid, bool isModerator) async {
-    try {
-      final response = await _client.patch(
-        Uri.parse('$baseUrl/admin/users/$uid/role'),
-        headers: await getAuthHeaders(),
-        body: json.encode({'isModerator': isModerator}),
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('Error updating moderator status: $e');
       return false;
     }
   }
@@ -510,6 +485,35 @@ class AdminService {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error updating player save: $e');
+      return false;
+    }
+  }
+
+  Future<bool> tweakUser({
+    required String uid,
+    int? level,
+    int? xp,
+    int? dreamCoins,
+    int? hellStones,
+    required String mode,
+    required String reason,
+  }) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$baseUrl/admin/users/$uid/tweak'),
+        headers: await getAuthHeaders(),
+        body: json.encode({
+          'level': level ?? 0,
+          'xp': xp ?? 0,
+          'dreamCoins': dreamCoins ?? 0,
+          'hellStones': hellStones ?? 0,
+          'mode': mode,
+          'reason': reason,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error tweaking user: $e');
       return false;
     }
   }

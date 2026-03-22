@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -114,8 +114,6 @@ class ChatService {
     if (user == null) return null; // Guests cannot send
     
     try {
-      final device = await getDeviceInfo();
-
       // We use the centralized sendMessage from BackendService to handle the 5s cooldown
       final result = await _backend.sendMessage(text);
 

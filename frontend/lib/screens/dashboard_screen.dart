@@ -16,6 +16,7 @@ import 'package:dreamhunter/widgets/clickable_image.dart';
 import 'package:dreamhunter/widgets/login_dialog.dart';
 import 'package:dreamhunter/widgets/register_dialog.dart';
 import 'package:dreamhunter/widgets/profile_dialog.dart';
+import 'package:dreamhunter/widgets/admin_surprise_dialog.dart';
 import 'package:dreamhunter/services/leveling_service.dart';
 import 'package:dreamhunter/widgets/chat_dialog.dart';
 import 'package:dreamhunter/widgets/leaderboard_dialog.dart';
@@ -147,6 +148,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             null, // dailyTasks are handled separately or if included in snapshot
             false, // forceUpdate = false for background cloud sync
           );
+
+          if (data['lastAction'] == "ADMIN_TWEAK") {
+            final tweak = data['tweakData'] as Map<String, dynamic>?;
+            if (tweak != null) {
+              final String ts = tweak['timestamp'] ?? '';
+              final lastProcessed = await OfflineCache.getMetadata('last_processed_tweak');
+              if (lastProcessed == null || lastProcessed['timestamp'] != ts) {
+                await OfflineCache.saveMetadata('last_processed_tweak', {'timestamp': ts});
+                if (mounted) {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => AdminSurpriseDialog(tweakData: tweak),
+                  );
+                }
+              }
+            }
+          }
+          
           _checkTaskCompletion();
         }
       }

@@ -73,3 +73,11 @@ class RouletteConfigRequest(BaseModel):
     maxFreeSpins: int = 10
     spinBuyPrice: int = 50
     spinBuyCurrency: str = "dreamCoins"
+
+class UserSaveTweakRequest(BaseModel):
+    dreamCoins: Optional[int] = 0
+    hellStones: Optional[int] = 0
+    xp: Optional[int] = 0
+    level: Optional[int] = 0
+    mode: str = "add" # "add" or "override"
+    reason: Optional[str] = "Admin Tweak"
