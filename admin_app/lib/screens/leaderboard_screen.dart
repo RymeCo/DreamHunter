@@ -49,7 +49,7 @@ class LeaderboardList extends StatefulWidget {
 }
 
 class _LeaderboardListState extends State<LeaderboardList> {
-  late Future<List<dynamic>?> _leaderboardFuture;
+  late Future<Map<String, dynamic>?> _leaderboardFuture;
 
   @override
   void initState() {
@@ -77,7 +77,7 @@ class _LeaderboardListState extends State<LeaderboardList> {
           Expanded(
             child: AdminCard(
               width: double.infinity,
-              child: FutureBuilder<List<dynamic>?>(
+              child: FutureBuilder<Map<String, dynamic>?>(
                 future: _leaderboardFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -95,8 +95,10 @@ class _LeaderboardListState extends State<LeaderboardList> {
                     );
                   }
 
-                  final data = snapshot.data!;
-                  if (data.isEmpty) {
+                  final response = snapshot.data!;
+                  final List<dynamic> topPlayers = response['top'] ?? [];
+                  
+                  if (topPlayers.isEmpty) {
                     return const Center(
                       child: Text(
                         'No players found',
@@ -106,13 +108,13 @@ class _LeaderboardListState extends State<LeaderboardList> {
                   }
 
                   return ListView.separated(
-                    itemCount: data.length,
+                    itemCount: topPlayers.length,
                     separatorBuilder: (context, index) => const Divider(
                       color: Color(0xFF2A2A4A),
                       height: 1,
                     ),
                     itemBuilder: (context, index) {
-                      final entry = data[index] as Map<String, dynamic>;
+                      final entry = topPlayers[index] as Map<String, dynamic>;
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: CircleAvatar(

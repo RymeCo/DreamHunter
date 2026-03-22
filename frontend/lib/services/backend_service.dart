@@ -307,7 +307,7 @@ class BackendService {
   }
 
   /// Fetches the leaderboard data
-  Future<Map<String, dynamic>?> getLeaderboard(String criteria, {int limit = 10}) async {
+  Future<Map<String, dynamic>?> getLeaderboard(String criteria, {int limit = 200}) async {
     try {
       final response = await get('/leaderboard/top?by=$criteria&limit=$limit');
       if (response.statusCode == 200) {

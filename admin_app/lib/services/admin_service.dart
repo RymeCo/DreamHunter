@@ -532,7 +532,7 @@ class AdminService {
   }
 
   /// Fetches the leaderboard data
-  Future<List<dynamic>?> getLeaderboard(String criteria, {int limit = 10}) async {
+  Future<Map<String, dynamic>?> getLeaderboard(String criteria, {int limit = 200}) async {
     try {
       final response = await _client.get(
         Uri.parse('$baseUrl/leaderboard/top?by=$criteria&limit=$limit'),
