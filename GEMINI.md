@@ -24,7 +24,7 @@ When a request is broad, complex, or identified as a "multi-step feature":
 To maintain momentum, all development is performed directly on the **`development`** branch.
 1. **Sync**: Always start by pulling the latest changes: `git pull origin development`.
 2. **Develop**: Implement the requested changes directly on the `development` branch.
-3. **Verify**: Run static analysis (`flutter analyze`) and compilation checks (`py_compile`) before committing.
+3. **Verify**: Use the Dart MCP `analyze_files` tool for static analysis (it is faster and more efficient for identifying errors) and run compilation checks (`py_compile`) before committing.
 - **Commit**: Commit with the Jira key prefix: `git commit -m "SCRUM-XX: description"`.
 - **Deployment (Auto-Push)**:
     - If the changes include **Backend (Python/FastAPI)** code, the agent MUST automatically push to origin immediately after committing to trigger the Render deployment.

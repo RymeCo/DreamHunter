@@ -71,14 +71,14 @@ class AdminProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updateMaintenance({bool? chat, bool? shop, bool? sync}) async {
+  Future<void> updateMaintenance({bool? chat, bool? shop, bool? sync, int? leaderboardHours}) async {
     final success = await _adminService.updateMaintenance(
       chatMaintenance: chat,
       shopMaintenance: shop,
       syncMaintenance: sync,
+      leaderboardRefreshHours: leaderboardHours,
     );
     if (success) {
-      // Logic for refreshing local system config could be added here if needed
       notifyListeners();
     }
   }

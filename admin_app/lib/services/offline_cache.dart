@@ -63,6 +63,25 @@ class OfflineCache {
     }
   }
 
+  static Future<void> saveMetadata(String key, Map<String, dynamic> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_getScopedKey(key), json.encode(data));
+  }
+
+  static Future<Map<String, dynamic>?> getMetadata(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString(_getScopedKey(key));
+    if (cached != null) {
+      return json.decode(cached) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  static Future<void> clearMetadata(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_getScopedKey(key));
+  }
+
   static Future<void> clearCache() async {
     await clearAllUserData();
   }

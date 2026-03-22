@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/admin_provider.dart';
+import '../services/offline_cache.dart';
 import '../widgets/admin_ui_components.dart';
 
 class LeaderboardScreen extends StatelessWidget {
@@ -48,30 +49,99 @@ class LeaderboardList extends StatefulWidget {
   State<LeaderboardList> createState() => _LeaderboardListState();
 }
 
-class _LeaderboardListState extends State<LeaderboardList> {
+class _LeaderboardListState extends State<LeaderboardList> with AutomaticKeepAliveClientMixin {
   late Future<Map<String, dynamic>?> _leaderboardFuture;
+  String? _lastUpdatedStr;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
+    _leaderboardFuture = _getLeaderboardWithCache();
+  }
+
+  Future<Map<String, dynamic>?> _getLeaderboardWithCache() async {
     final adminProvider = Provider.of<AdminProvider>(context, listen: false);
-    _leaderboardFuture = adminProvider.service.getLeaderboard(widget.type);
+    final String cacheKey = 'leaderboard_${widget.type}';
+    
+    // 1. Get current config for refresh interval
+    final configDoc = await adminProvider.service.getSystemConfig().first;
+    final config = configDoc.data() as Map<String, dynamic>? ?? {};
+    final int refreshHours = config['leaderboardRefreshHours'] ?? 4;
+    
+    // 2. Check last fetch timestamp from cache
+    final cachedData = await OfflineCache.getMetadata(cacheKey);
+    final now = DateTime.now();
+    
+    if (cachedData != null) {
+      final lastFetchStr = cachedData['last_fetch'] as String?;
+      if (lastFetchStr != null) {
+        final lastFetch = DateTime.parse(lastFetchStr);
+        final diff = now.difference(lastFetch).inHours;
+        
+        if (diff < refreshHours) {
+          debugPrint('Leaderboard ${widget.type} is fresh ($diff hours old). Using cache.');
+          if (mounted) {
+            setState(() {
+              _lastUpdatedStr = _formatDateTime(lastFetch);
+            });
+          }
+          return cachedData['data'] as Map<String, dynamic>;
+        }
+      }
+    }
+
+    // 3. Fetch from network if expired or missing
+    debugPrint('Leaderboard ${widget.type} expired or missing. Fetching from network...');
+    // Fix field name for coins
+    final String apiType = widget.type == 'coins' ? 'dreamCoins' : widget.type;
+    final networkData = await adminProvider.service.getLeaderboard(apiType);
+    
+    if (networkData != null) {
+      await OfflineCache.saveMetadata(cacheKey, {
+        'last_fetch': now.toIso8601String(),
+        'data': networkData,
+      });
+      if (mounted) {
+        setState(() {
+          _lastUpdatedStr = _formatDateTime(now);
+        });
+      }
+    }
+    return networkData;
+  }
+
+  String _formatDateTime(DateTime dt) {
+    return "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Top Players by ${widget.type[0].toUpperCase()}${widget.type.substring(1)}',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white70,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Top Players by ${widget.type[0].toUpperCase()}${widget.type.substring(1)}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white70,
+                ),
+              ),
+              if (_lastUpdatedStr != null)
+                Text(
+                  'Last updated: $_lastUpdatedStr',
+                  style: const TextStyle(color: Colors.white24, fontSize: 10),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
           Expanded(

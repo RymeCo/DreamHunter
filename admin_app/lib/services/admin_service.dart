@@ -32,6 +32,49 @@ class AdminService {
     };
   }
 
+  /// Helper for authenticated requests with retry logic and timeouts
+  Future<http.Response> _authenticatedRequest(
+    String method,
+    String path, {
+    Object? body,
+    int retries = 3,
+  }) async {
+    final url = Uri.parse('$baseUrl$path');
+    int attempt = 0;
+    
+    while (attempt < retries) {
+      try {
+        final headers = await getAuthHeaders();
+        http.Response response;
+        
+        switch (method.toUpperCase()) {
+          case 'POST':
+            response = await _client.post(url, headers: headers, body: body != null ? json.encode(body) : null).timeout(const Duration(seconds: 30));
+            break;
+          case 'PATCH':
+            response = await _client.patch(url, headers: headers, body: body != null ? json.encode(body) : null).timeout(const Duration(seconds: 30));
+            break;
+          case 'GET':
+          default:
+            response = await _client.get(url, headers: headers).timeout(const Duration(seconds: 30));
+        }
+        
+        // If server is waking up (Render cold start) or other 5xx, retry
+        if (response.statusCode >= 500 && attempt < retries - 1) {
+          attempt++;
+          await Future.delayed(Duration(seconds: 2 * attempt));
+          continue;
+        }
+        return response;
+      } catch (e) {
+        attempt++;
+        if (attempt >= retries) rethrow;
+        await Future.delayed(Duration(seconds: 2 * attempt));
+      }
+    }
+    throw Exception('Request failed after $retries attempts');
+  }
+
   // --- Maintenance & Broadcast ---
 
   Stream<DocumentSnapshot> getSystemConfig() {
@@ -42,19 +85,17 @@ class AdminService {
     bool? chatMaintenance,
     bool? shopMaintenance,
     bool? syncMaintenance,
+    int? leaderboardRefreshHours,
   }) async {
     try {
       final Map<String, dynamic> bodyData = {
         'chatMaintenance': chatMaintenance,
         'shopMaintenance': shopMaintenance,
         'syncMaintenance': syncMaintenance,
+        'leaderboardRefreshHours': leaderboardRefreshHours,
       };
 
-      final response = await _client.patch(
-        Uri.parse('$baseUrl/admin/maintenance'),
-        headers: await getAuthHeaders(),
-        body: json.encode(bodyData),
-      );
+      final response = await _authenticatedRequest('PATCH', '/admin/maintenance', body: bodyData);
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error updating maintenance: $e');
@@ -64,10 +105,10 @@ class AdminService {
 
   Future<bool> sendGlobalBroadcast(String message, bool isPersistent) async {
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/admin/broadcast'),
-        headers: await getAuthHeaders(),
-        body: json.encode({'message': message, 'isPersistent': isPersistent}),
+      final response = await _authenticatedRequest(
+        'POST', 
+        '/admin/broadcast', 
+        body: {'message': message, 'isPersistent': isPersistent}
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -86,16 +127,13 @@ class AdminService {
     String? lastId,
   }) async {
     try {
-      String url = '$baseUrl/admin/players/search?limit=$limit&';
-      if (query != null && query.isNotEmpty) url += 'query=$query&';
-      if (isBanned != null) url += 'isBanned=$isBanned&';
-      if (isAdmin != null) url += 'isAdmin=$isAdmin&';
-      if (lastId != null) url += 'lastId=$lastId&';
+      String path = '/admin/players/search?limit=$limit';
+      if (query != null && query.isNotEmpty) path += '&query=$query';
+      if (isBanned != null) path += '&isBanned=$isBanned';
+      if (isAdmin != null) path += '&isAdmin=$isAdmin';
+      if (lastId != null) path += '&lastId=$lastId';
 
-      final response = await _client.get(
-        Uri.parse(url),
-        headers: await getAuthHeaders(),
-      );
+      final response = await _authenticatedRequest('GET', path);
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else if (response.statusCode == 403) {
@@ -110,10 +148,7 @@ class AdminService {
 
   Future<Map<String, dynamic>?> getUserProfile(String uid) async {
     try {
-      final response = await _client.get(
-        Uri.parse('$baseUrl/admin/users/$uid'),
-        headers: await getAuthHeaders(),
-      );
+      final response = await _authenticatedRequest('GET', '/admin/users/$uid');
       if (response.statusCode == 200) {
         return json.decode(response.body);
       }
@@ -126,14 +161,14 @@ class AdminService {
 
   Future<bool> banUser(String uid, bool isBanned, {bool isSuperBanned = false, String? until}) async {
     try {
-      final response = await _client.patch(
-        Uri.parse('$baseUrl/admin/users/$uid/ban'),
-        headers: await getAuthHeaders(),
-        body: json.encode({
+      final response = await _authenticatedRequest(
+        'PATCH', 
+        '/admin/users/$uid/ban', 
+        body: {
           'isBanned': isBanned, 
           'isSuperBanned': isSuperBanned,
           'until': until
-        }),
+        }
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -144,10 +179,10 @@ class AdminService {
 
   Future<bool> muteUser(String uid, int? durationHours, {String? until}) async {
     try {
-      final response = await _client.patch(
-        Uri.parse('$baseUrl/admin/users/$uid/mute'),
-        headers: await getAuthHeaders(),
-        body: json.encode({'durationHours': durationHours, 'until': until}),
+      final response = await _authenticatedRequest(
+        'PATCH', 
+        '/admin/users/$uid/mute', 
+        body: {'durationHours': durationHours, 'until': until}
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -158,10 +193,10 @@ class AdminService {
 
   Future<bool> warnUser(String uid, String reason) async {
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/admin/users/$uid/warnings'),
-        headers: await getAuthHeaders(),
-        body: json.encode({'reason': reason}),
+      final response = await _authenticatedRequest(
+        'POST', 
+        '/admin/users/$uid/warnings', 
+        body: {'reason': reason}
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -176,13 +211,13 @@ class AdminService {
     int? hellStones,
   }) async {
     try {
-      final response = await _client.patch(
-        Uri.parse('$baseUrl/admin/users/$uid/currency'),
-        headers: await getAuthHeaders(),
-        body: json.encode({
+      final response = await _authenticatedRequest(
+        'PATCH', 
+        '/admin/users/$uid/currency', 
+        body: {
           'dreamCoins': dreamCoins,
           'hellStones': hellStones,
-        }),
+        }
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -193,10 +228,10 @@ class AdminService {
 
   Future<bool> updateModeratorStatus(String uid, bool isModerator) async {
     try {
-      final response = await _client.patch(
-        Uri.parse('$baseUrl/admin/users/$uid/role'),
-        headers: await getAuthHeaders(),
-        body: json.encode({'isModerator': isModerator}),
+      final response = await _authenticatedRequest(
+        'PATCH', 
+        '/admin/users/$uid/role', 
+        body: {'isModerator': isModerator}
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -207,10 +242,7 @@ class AdminService {
 
   Future<bool> resetSpamScore(String uid) async {
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/admin/users/$uid/reset-spam'),
-        headers: await getAuthHeaders(),
-      );
+      final response = await _authenticatedRequest('POST', '/admin/users/$uid/reset-spam');
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error resetting spam score: $e');
@@ -220,17 +252,17 @@ class AdminService {
 
   Future<bool> requestBan(String targetUid, {required String reason}) async {
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/admin/reports'),
-        headers: await getAuthHeaders(),
-        body: json.encode({
+      final response = await _authenticatedRequest(
+        'POST', 
+        '/admin/reports', 
+        body: {
           'targetUid': targetUid,
           'reason': reason,
           'type': 'MODERATOR_REQUEST',
           'priority': 'CRITICAL',
           'status': 'pending',
           'reportTimestamp': DateTime.now().toUtc().toIso8601String()
-        }),
+        }
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
@@ -243,12 +275,9 @@ class AdminService {
 
   Future<List<dynamic>> getReports(String? status) async {
     try {
-      String url = '$baseUrl/admin/reports';
-      if (status != null) url += '?status=$status';
-      final response = await _client.get(
-        Uri.parse(url),
-        headers: await getAuthHeaders(),
-      );
+      String path = '/admin/reports';
+      if (status != null) path += '?status=$status';
+      final response = await _authenticatedRequest('GET', path);
       if (response.statusCode == 200) {
         return json.decode(response.body);
       }
@@ -261,10 +290,7 @@ class AdminService {
 
   Future<bool> updateReportStatus(String reportId, String status) async {
     try {
-      final response = await _client.patch(
-        Uri.parse('$baseUrl/admin/reports/$reportId?status=$status'),
-        headers: await getAuthHeaders(),
-      );
+      final response = await _authenticatedRequest('PATCH', '/admin/reports/$reportId?status=$status');
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error updating report status: $e');
@@ -280,11 +306,7 @@ class AdminService {
 
   Future<bool> updateAutoModConfig(Map<String, dynamic> config) async {
     try {
-      final response = await _client.patch(
-        Uri.parse('$baseUrl/admin/automod/config'),
-        headers: await getAuthHeaders(),
-        body: json.encode(config),
-      );
+      final response = await _authenticatedRequest('PATCH', '/admin/automod/config', body: config);
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error updating automod config: $e');
@@ -296,10 +318,7 @@ class AdminService {
 
   Future<Map<String, dynamic>?> getStatsSummary() async {
     try {
-      final response = await _client.get(
-        Uri.parse('$baseUrl/admin/stats/summary'),
-        headers: await getAuthHeaders(),
-      );
+      final response = await _authenticatedRequest('GET', '/admin/stats/summary');
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -318,10 +337,7 @@ class AdminService {
 
   Future<List<dynamic>> getAuditLogs() async {
     try {
-      final response = await _client.get(
-        Uri.parse('$baseUrl/admin/audit-logs'),
-        headers: await getAuthHeaders(),
-      );
+      final response = await _authenticatedRequest('GET', '/admin/audit-logs');
       if (response.statusCode == 200) {
         return json.decode(response.body);
       }
@@ -356,15 +372,15 @@ class AdminService {
       // Logic for determining value: toggle the current state based on role
       final bool newValue = isAdmin ? !currentAdminLiked : !currentModLiked;
       
-      await _client.post(
-        Uri.parse('$baseUrl/admin/chats/message/action'),
-        headers: await getAuthHeaders(),
-        body: json.encode({
+      await _authenticatedRequest(
+        'POST', 
+        '/admin/chats/message/action', 
+        body: {
           'region': region,
           'messageId': messageId,
           'action': 'like',
           'value': newValue
-        }),
+        }
       );
     } catch (e) {
       debugPrint('Error toggling like: $e');
@@ -377,15 +393,15 @@ class AdminService {
     required bool currentDisliked,
   }) async {
     try {
-      await _client.post(
-        Uri.parse('$baseUrl/admin/chats/message/action'),
-        headers: await getAuthHeaders(),
-        body: json.encode({
+      await _authenticatedRequest(
+        'POST', 
+        '/admin/chats/message/action', 
+        body: {
           'region': region,
           'messageId': messageId,
           'action': 'hide',
           'value': !currentDisliked
-        }),
+        }
       );
     } catch (e) {
       debugPrint('Error toggling dislike: $e');
@@ -398,16 +414,16 @@ class AdminService {
     String ghostName,
   ) async {
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/admin/chats/message/send'),
-        headers: await getAuthHeaders(),
-        body: json.encode({
+      final response = await _authenticatedRequest(
+        'POST', 
+        '/admin/chats/message/send', 
+        body: {
           'region': region,
           'text': text,
           'senderName': ghostName,
           'isGhost': true,
           'isSystem': false
-        }),
+        }
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -418,16 +434,16 @@ class AdminService {
 
   Future<bool> sendSystemBroadcastToChat(String region, String text) async {
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/admin/chats/message/send'),
-        headers: await getAuthHeaders(),
-        body: json.encode({
+      final response = await _authenticatedRequest(
+        'POST', 
+        '/admin/chats/message/send', 
+        body: {
           'region': region,
           'text': text,
           'senderName': 'System',
           'isGhost': false,
           'isSystem': true
-        }),
+        }
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -454,10 +470,10 @@ class AdminService {
     Map<String, dynamic>? params,
   }) async {
     try {
-      final response = await _client.patch(
-        Uri.parse('$baseUrl/admin/users/batch-action'),
-        headers: await getAuthHeaders(),
-        body: json.encode({'uids': uids, 'action': action, 'params': params}),
+      final response = await _authenticatedRequest(
+        'PATCH', 
+        '/admin/users/batch-action', 
+        body: {'uids': uids, 'action': action, 'params': params}
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -473,14 +489,14 @@ class AdminService {
     bool? forceSyncNext,
   }) async {
     try {
-      final response = await _client.patch(
-        Uri.parse('$baseUrl/admin/users/$uid/save'),
-        headers: await getAuthHeaders(),
-        body: json.encode({
+      final response = await _authenticatedRequest(
+        'PATCH', 
+        '/admin/users/$uid/save', 
+        body: {
           'level': level,
           'xp': xp,
           'forceSyncNext': forceSyncNext,
-        }),
+        }
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -499,17 +515,17 @@ class AdminService {
     required String reason,
   }) async {
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/admin/users/$uid/tweak'),
-        headers: await getAuthHeaders(),
-        body: json.encode({
+      final response = await _authenticatedRequest(
+        'POST', 
+        '/admin/users/$uid/tweak', 
+        body: {
           'level': level ?? 0,
           'xp': xp ?? 0,
           'dreamCoins': dreamCoins ?? 0,
           'hellStones': hellStones ?? 0,
           'mode': mode,
           'reason': reason,
-        }),
+        }
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -520,10 +536,7 @@ class AdminService {
 
   Future<bool> forcePlayerSync(String uid) async {
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/admin/users/$uid/force-sync'),
-        headers: await getAuthHeaders(),
-      );
+      final response = await _authenticatedRequest('POST', '/admin/users/$uid/force-sync');
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error forcing player sync: $e');
@@ -534,10 +547,7 @@ class AdminService {
   /// Fetches the leaderboard data
   Future<Map<String, dynamic>?> getLeaderboard(String criteria, {int limit = 200}) async {
     try {
-      final response = await _client.get(
-        Uri.parse('$baseUrl/leaderboard/top?by=$criteria&limit=$limit'),
-        headers: await getAuthHeaders(),
-      );
+      final response = await _authenticatedRequest('GET', '/leaderboard/top?by=$criteria&limit=$limit');
       if (response.statusCode == 200) {
         return json.decode(response.body);
       }

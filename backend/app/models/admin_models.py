@@ -23,6 +23,8 @@ class UserCurrencyRequest(BaseModel):
 class MaintenanceRequest(BaseModel):
     chatMaintenance: Optional[bool] = None
     shopMaintenance: Optional[bool] = None
+    syncMaintenance: Optional[bool] = None
+    leaderboardRefreshHours: Optional[int] = None
 
 class BroadcastRequest(BaseModel):
     message: str

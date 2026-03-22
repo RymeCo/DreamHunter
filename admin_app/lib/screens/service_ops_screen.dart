@@ -79,44 +79,111 @@ class _ServiceOpsScreenState extends State<ServiceOpsScreen> {
               final chatMaintenance = config['chatMaintenance'] ?? false;
               final syncMaintenance = config['syncMaintenance'] ?? false;
               final shopMaintenance = config['shopMaintenance'] ?? false;
+              final int leaderboardHours = config['leaderboardRefreshHours'] ?? 4;
 
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final isNarrow = constraints.maxWidth < 600;
-                  return GridView(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 500,
-                      mainAxisExtent: isNarrow ? 100 : 120,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Service Toggle Cards in a Wrap to prevent gaps
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
                     children: [
                       _buildMaintenanceCard(
                         'Chat Service',
-                        'Disables global chat and moderator coordination.',
+                        'Disables global chat.',
                         chatMaintenance,
                         Icons.forum_rounded,
                         (val) => _toggleMaintenance(chat: val),
+                        width: 320,
                       ),
                       _buildMaintenanceCard(
                         'Sync Service',
-                        'Disables cloud save uploads and conflict resolution.',
+                        'Disables cloud saves.',
                         syncMaintenance,
                         Icons.sync_rounded,
                         (val) => _toggleMaintenance(sync: val),
+                        width: 320,
                       ),
                       _buildMaintenanceCard(
                         'Shop Service',
-                        'Disables server-side purchase verification.',
+                        'Disables server shop.',
                         shopMaintenance,
                         Icons.storefront_rounded,
                         (val) => _toggleMaintenance(shop: val),
+                        width: 320,
                       ),
                     ],
-                  );
-                },
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // New System Config Section
+                  AdminCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.settings_applications_rounded, color: Colors.cyanAccent),
+                            SizedBox(width: 12),
+                            Text(
+                              'Global System Config',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.cyanAccent,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Leaderboard Refresh Interval',
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    'How often the global leaderboard is updated on the server.',
+                                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Text(
+                              '${leaderboardHours}h',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.cyanAccent,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 200,
+                              child: Slider(
+                                value: leaderboardHours.toDouble(),
+                                min: 1,
+                                max: 24,
+                                divisions: 23,
+                                activeColor: Colors.cyanAccent,
+                                onChanged: (val) {
+                                  _toggleMaintenance(leaderboardHours: val.toInt());
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               );
             },
           ),
@@ -212,14 +279,17 @@ class _ServiceOpsScreenState extends State<ServiceOpsScreen> {
     String description,
     bool isActive,
     IconData icon,
-    Function(bool) onChanged,
-  ) {
+    Function(bool) onChanged, {
+    double? width,
+  }) {
     return LiquidGlassPanel(
+      width: width,
       padding: const EdgeInsets.all(16),
       color: isActive 
           ? Colors.redAccent.withValues(alpha: 0.1) 
           : Colors.white.withValues(alpha: 0.05),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             padding: const EdgeInsets.all(12),
@@ -268,11 +338,12 @@ class _ServiceOpsScreenState extends State<ServiceOpsScreen> {
     );
   }
 
-  void _toggleMaintenance({bool? chat, bool? shop, bool? sync}) {
+  void _toggleMaintenance({bool? chat, bool? shop, bool? sync, int? leaderboardHours}) {
     Provider.of<AdminProvider>(context, listen: false).updateMaintenance(
       chat: chat,
       shop: shop,
       sync: sync,
+      leaderboardHours: leaderboardHours,
     );
   }
 }

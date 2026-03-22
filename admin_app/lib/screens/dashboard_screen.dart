@@ -89,16 +89,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                 icon: Icons.leaderboard_rounded,
                 color: Colors.amberAccent,
               ),
-              const SizedBox(width: 8),
-              RotationTransition(
-                turns: _refreshIconController,
-                child: IconButton(
-                  onPressed: () => _handleRefresh(provider),
-                  icon: const Icon(Icons.sync_rounded,
-                      size: 22, color: Colors.amberAccent),
-                  tooltip: 'Sync Live Stats',
-                ),
-              ),
             ],
           ),
 
