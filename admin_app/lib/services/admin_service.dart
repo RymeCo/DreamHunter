@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'dart:developer' as developer;
 
 class AdminService {
   static const String baseUrl = 'https://dreamhunter-api.onrender.com';
@@ -41,9 +42,9 @@ class AdminService {
   }) async {
     try {
       final Map<String, dynamic> bodyData = {
-        'chatMaintenance': ?chatMaintenance,
-        'shopMaintenance': ?shopMaintenance,
-        'syncMaintenance': ?syncMaintenance,
+        'chatMaintenance': chatMaintenance,
+        'shopMaintenance': shopMaintenance,
+        'syncMaintenance': syncMaintenance,
       };
 
       final response = await _client.patch(
@@ -120,12 +121,16 @@ class AdminService {
     }
   }
 
-  Future<bool> banUser(String uid, bool isBanned, {String? until}) async {
+  Future<bool> banUser(String uid, bool isBanned, {bool isSuperBanned = false, String? until}) async {
     try {
       final response = await _client.patch(
         Uri.parse('$baseUrl/admin/users/$uid/ban'),
         headers: await getAuthHeaders(),
-        body: json.encode({'isBanned': isBanned, 'until': until}),
+        body: json.encode({
+          'isBanned': isBanned, 
+          'isSuperBanned': isSuperBanned,
+          'until': until
+        }),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -172,8 +177,8 @@ class AdminService {
         Uri.parse('$baseUrl/admin/users/$uid/currency'),
         headers: await getAuthHeaders(),
         body: json.encode({
-          'dreamCoins': ?dreamCoins,
-          'hellStones': ?hellStones,
+          'dreamCoins': dreamCoins,
+          'hellStones': hellStones,
         }),
       );
       return response.statusCode == 200;

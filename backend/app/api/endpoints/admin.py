@@ -70,7 +70,13 @@ async def ban_user(uid: str, req: UserBanRequest, admin: dict = Depends(verify_a
     target_data = user_doc.to_dict()
     if target_data.get('isAdmin') is True:
         raise HTTPException(status_code=403, detail="Target is a Superadmin and immune to moderation.")
-    update_data = {"isBanned": req.isBanned, "updatedAt": firestore.SERVER_TIMESTAMP}
+    
+    update_data = {
+        "isBanned": req.isBanned, 
+        "isSuperBanned": req.isSuperBanned,
+        "updatedAt": firestore.SERVER_TIMESTAMP
+    }
+    
     expiry_msg = ""
     if req.isBanned and req.until:
         try:
@@ -78,11 +84,18 @@ async def ban_user(uid: str, req: UserBanRequest, admin: dict = Depends(verify_a
             update_data["bannedUntil"] = dt
             expiry_msg = f" until {dt.isoformat()}"
         except Exception as e: raise HTTPException(status_code=400, detail=f"Invalid date format: {e}")
-    else: update_data["bannedUntil"] = None
+    else: 
+        update_data["bannedUntil"] = None
+    
     user_ref.update(update_data)
-    status = "BANNED" if req.isBanned else "UNBANNED"
-    log_audit(admin['uid'], f"USER_{status}", uid, f"Admin set isBanned to {req.isBanned}{expiry_msg}", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
-    return {"status": "success", "message": f"User {uid} has been {status.lower()}{expiry_msg}."}
+    
+    # Log the specific type of ban
+    status = "UNBANNED"
+    if req.isSuperBanned: status = "SUPERBANNED"
+    elif req.isBanned: status = "BANNED"
+    
+    log_audit(admin['uid'], f"USER_{status}", uid, f"Admin set {status} state{expiry_msg}", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
+    return {"status": "success", "message": f"User {uid} status updated to {status}{expiry_msg}."}
 
 @router.patch("/users/{uid}/mute")
 async def mute_user(uid: str, req: UserMuteRequest, admin: dict = Depends(verify_admin)):

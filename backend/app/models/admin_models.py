@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class UserBanRequest(BaseModel):
     isBanned: bool
+    isSuperBanned: Optional[bool] = False
     until: Optional[str] = None
 
 class UserMuteRequest(BaseModel):

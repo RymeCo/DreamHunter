@@ -35,9 +35,13 @@
 - [ ] **Auto-Mod:** Strike system (3 warnings -> 24h mute).
 - [ ] **Notifications:** Use `lastAction` + Custom Snackbar on player frontend.
 
-### Task 10: Save Tweak Logic (SCRUM-110)
-- [ ] **Admin App:** "Tweak Summary" dialog before applying save changes.
-- [ ] **Logic:** Online check prompt; `save_tweak_pending` flag for offline users.
+### Task 10: Save Tweak & Admin Surprise Flow (SCRUM-110)
+- [ ] **Admin App:** Implement "Tweak Mode" selector (Additive vs. Force Override).
+- [ ] **Admin App:** "Tweak Summary" confirmation dialog with Online Status indicator.
+- [ ] **Backend:** Implement `POST /admin/users/{uid}/tweak` that triggers the `ADMIN_TWEAK` lastAction.
+- [ ] **Frontend (Player):** Create `AdminSurpriseDialog` (Liquid Glass).
+- [ ] **Frontend (Player):** Background logic to merge `tweak_data` into local save (Protection: don't downgrade level unless 'Override' is forced).
+- [ ] **Frontend (Player):** Ensure surprise only triggers for logged-in users, not guests.
 
 ### Task 11: Leaderboard Repair (SCRUM-111)
 - [ ] **Debug:** Check Firestore indexes and query logic for Leaderboards.

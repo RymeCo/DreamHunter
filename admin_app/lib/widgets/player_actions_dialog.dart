@@ -94,17 +94,37 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     }
   }
 
-  void _toggleBan(String uid, bool currentStatus) async {
+  void _toggleBan(String uid, bool isBanned, bool isSuperBanned) async {
     setState(() => _isBanning = true);
-    final success = await _adminService.banUser(uid, !currentStatus);
+    // Logic: Unban -> Ban -> Superban -> Unban
+    bool nextBanned = false;
+    bool nextSuper = false;
+
+    if (!isBanned && !isSuperBanned) {
+      nextBanned = true;
+      nextSuper = false;
+    } else if (isBanned && !isSuperBanned) {
+      nextBanned = true;
+      nextSuper = true;
+    } else {
+      nextBanned = false;
+      nextSuper = false;
+    }
+
+    final success = await _adminService.banUser(uid, nextBanned, isSuperBanned: nextSuper);
 
     if (mounted) {
       setState(() => _isBanning = false);
       if (success) {
-        showCustomSnackBar(context, !currentStatus ? 'Player Banned' : 'Player Unbanned', type: SnackBarType.success);
+        String msg = "Player Unbanned";
+        if (nextSuper) msg = "Player SUPERBANNED (Offline Only)";
+        else if (nextBanned) msg = "Player PERMANENT BANNED";
+        
+        showCustomSnackBar(context, msg, type: SnackBarType.success);
         if (widget.onActionComplete != null) widget.onActionComplete!();
         setState(() {
-          widget.player['isBanned'] = !currentStatus;
+          widget.player['isBanned'] = nextBanned;
+          widget.player['isSuperBanned'] = nextSuper;
         });
       }
     }
@@ -139,8 +159,22 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     final uid = widget.player['uid'] ?? '';
     final displayName = widget.player['displayName'] ?? 'Unknown Player';
     final isBanned = widget.player['isBanned'] ?? false;
+    final isSuperBanned = widget.player['isSuperBanned'] ?? false;
     final spamScore = widget.player['spamScore'] ?? 0;
     final isFlagged = widget.player['isFlagged'] ?? false;
+
+    String banLabel = "PERMANENT BAN";
+    Color banColor = Colors.redAccent;
+    IconData banIcon = Icons.gavel;
+    if (isSuperBanned) {
+      banLabel = "UNBAN PLAYER";
+      banColor = Colors.greenAccent;
+      banIcon = Icons.restore;
+    } else if (isBanned) {
+      banLabel = "UPGRADE TO SUPERBAN";
+      banColor = Colors.deepOrangeAccent;
+      banIcon = Icons.security;
+    }
 
     return Center(
       child: LiquidGlassPanel(
@@ -167,10 +201,29 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: CircleAvatar(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: isSuperBanned ? Colors.orange : (isBanned ? Colors.red : Colors.deepPurple),
                   child: Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : '?'),
                 ),
-                title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                title: Row(
+                  children: [
+                    Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    if (isSuperBanned) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                        child: const Text('SUPERBANNED', style: TextStyle(color: Colors.orange, fontSize: 8, fontWeight: FontWeight.bold)),
+                      )
+                    ] else if (isBanned) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.red.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                        child: const Text('BANNED', style: TextStyle(color: Colors.red, fontSize: 8, fontWeight: FontWeight.bold)),
+                      )
+                    ]
+                  ],
+                ),
                 subtitle: Text('UID: $uid', style: const TextStyle(fontSize: 10, color: Colors.white38)),
               ),
 
@@ -236,11 +289,11 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                 runSpacing: 8,
                 children: [
                   AdminButton(
-                    onPressed: _isBanning ? null : () => _toggleBan(uid, isBanned), 
-                    label: isBanned ? 'UNBAN PLAYER' : 'PERMANENT BAN', 
-                    icon: isBanned ? Icons.restore : Icons.gavel, 
+                    onPressed: _isBanning ? null : () => _toggleBan(uid, isBanned, isSuperBanned), 
+                    label: banLabel, 
+                    icon: banIcon, 
                     isLoading: _isBanning,
-                    color: isBanned ? Colors.greenAccent : Colors.redAccent
+                    color: banColor
                   ),
                   AdminButton(
                     onPressed: _isResettingSpam ? null : () => _resetSpam(uid), 
