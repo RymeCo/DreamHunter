@@ -215,6 +215,27 @@ class AdminService {
     }
   }
 
+  Future<bool> requestBan(String targetUid, {required String reason}) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$baseUrl/admin/reports'),
+        headers: await getAuthHeaders(),
+        body: json.encode({
+          'targetUid': targetUid,
+          'reason': reason,
+          'type': 'MODERATOR_REQUEST',
+          'priority': 'CRITICAL',
+          'status': 'pending',
+          'reportTimestamp': DateTime.now().toUtc().toIso8601String()
+        }),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      debugPrint('Error requesting ban: $e');
+      return false;
+    }
+  }
+
   // --- Reports ---
 
   Future<List<dynamic>> getReports(String? status) async {

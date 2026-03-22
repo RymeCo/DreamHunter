@@ -95,6 +95,23 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
   }
 
   void _toggleBan(String uid, bool isBanned, bool isSuperBanned) async {
+    // Check if the current logged in user is Admin or Moderator
+    final bool currentIsAdmin = _adminService.isAdmin;
+
+    if (!currentIsAdmin) {
+      // Moderator logic: Request Ban instead of direct action
+      setState(() => _isBanning = true);
+      // We'll add this to admin_service soon
+      final success = await _adminService.requestBan(uid, reason: "Moderator Request: ${widget.player['displayName']}");
+      if (mounted) {
+        setState(() => _isBanning = false);
+        if (success) {
+          showCustomSnackBar(context, 'Ban Request Sent to Admins', type: SnackBarType.success);
+        }
+      }
+      return;
+    }
+
     setState(() => _isBanning = true);
     // Logic: Unban -> Ban -> Superban -> Unban
     bool nextBanned = false;
