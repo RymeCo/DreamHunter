@@ -12,9 +12,7 @@ import 'screens/reports_screen.dart';
 import 'screens/automod_screen.dart';
 import 'screens/audit_screen.dart';
 import 'screens/live_chat_screen.dart';
-import 'screens/shop_management_screen.dart';
 import 'screens/service_ops_screen.dart';
-import 'screens/config_editor_screen.dart';
 import 'widgets/admin_ui_components.dart';
 import 'widgets/liquid_glass_panel.dart';
 
@@ -172,7 +170,7 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 9,
+      length: 7,
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: PreferredSize(
@@ -261,16 +259,6 @@ class _MainLayoutState extends State<MainLayout> {
                         height: 50,
                         child: Row(
                           children: [
-                            Icon(Icons.storefront_rounded, size: 18),
-                            SizedBox(width: 8),
-                            Text('Shop'),
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        height: 50,
-                        child: Row(
-                          children: [
                             Icon(Icons.gavel_rounded, size: 18),
                             SizedBox(width: 8),
                             Text('Reports'),
@@ -317,16 +305,6 @@ class _MainLayoutState extends State<MainLayout> {
                           ],
                         ),
                       ),
-                      Tab(
-                        height: 50,
-                        child: Row(
-                          children: [
-                            Icon(Icons.tune_rounded, size: 18),
-                            SizedBox(width: 8),
-                            Text('Config'),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -349,13 +327,11 @@ class _MainLayoutState extends State<MainLayout> {
               children: [
                 DashboardScreen(),
                 PlayersScreen(),
-                ShopManagementScreen(),
                 ReportsScreen(),
                 LiveChatScreen(),
                 AutoModScreen(),
                 AuditScreen(),
                 ServiceOpsScreen(),
-                ConfigEditorScreen(),
               ],
             ),
           ),

@@ -82,14 +82,16 @@ class _ServiceOpsScreenState extends State<ServiceOpsScreen> {
 
               return LayoutBuilder(
                 builder: (context, constraints) {
-                  final crossAxisCount = constraints.maxWidth > 900 ? 3 : (constraints.maxWidth > 600 ? 2 : 1);
-                  return GridView.count(
+                  final isNarrow = constraints.maxWidth < 600;
+                  return GridView(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: crossAxisCount,
-                    childAspectRatio: 2.5,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 500,
+                      mainAxisExtent: isNarrow ? 100 : 120,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
                     children: [
                       _buildMaintenanceCard(
                         'Chat Service',
@@ -152,24 +154,51 @@ class _ServiceOpsScreenState extends State<ServiceOpsScreen> {
                   prefixIcon: Icons.message_rounded,
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Switch(
-                      value: _isPersistent,
-                      onChanged: (val) => setState(() => _isPersistent = val),
-                      activeThumbColor: Colors.amberAccent,
-                    ),
-                    const Text('Persistent (Show until closed by user)'),
-                    const Spacer(),
-                    AdminButton(
-                      onPressed: _isBroadcasting ? null : _sendBroadcast,
-                      label: 'TRANSMIT',
-                      icon: Icons.send_rounded,
-                      isLoading: _isBroadcasting,
-                      color: Colors.amberAccent,
-                    ),
-                  ],
-                ),
+                LayoutBuilder(builder: (context, bConstraints) {
+                  if (bConstraints.maxWidth < 500) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Switch(
+                              value: _isPersistent,
+                              onChanged: (val) => setState(() => _isPersistent = val),
+                              activeThumbColor: Colors.amberAccent,
+                            ),
+                            const Expanded(child: Text('Persistent (Show until closed)')),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        AdminButton(
+                          onPressed: _isBroadcasting ? null : _sendBroadcast,
+                          label: 'TRANSMIT BROADCAST',
+                          icon: Icons.send_rounded,
+                          isLoading: _isBroadcasting,
+                          color: Colors.amberAccent,
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Switch(
+                        value: _isPersistent,
+                        onChanged: (val) => setState(() => _isPersistent = val),
+                        activeThumbColor: Colors.amberAccent,
+                      ),
+                      const Text('Persistent (Show until closed by user)'),
+                      const Spacer(),
+                      AdminButton(
+                        onPressed: _isBroadcasting ? null : _sendBroadcast,
+                        label: 'TRANSMIT',
+                        icon: Icons.send_rounded,
+                        isLoading: _isBroadcasting,
+                        color: Colors.amberAccent,
+                      ),
+                    ],
+                  );
+                }),
               ],
             ),
           ),

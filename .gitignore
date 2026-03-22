@@ -15,3 +15,7 @@ note.txt
 .gemini/commands/gsd/
 
 gha-creds-*.json
+
+# Backend
+__pycache__/
+*.pyc
