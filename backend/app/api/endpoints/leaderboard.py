@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from typing import List, Optional
 from firebase_admin import firestore
 from ...core.firebase import db
-from ..dependencies import verify_firebase_token
+from ..dependencies import optional_firebase_token
 
 router = APIRouter(prefix="/leaderboard", tags=["Leaderboard"])
 
@@ -10,12 +10,11 @@ router = APIRouter(prefix="/leaderboard", tags=["Leaderboard"])
 async def get_top_players(
     by: str = Query("level", enum=["level", "coins", "playtime"]),
     limit: int = 10,
-    decoded_token: dict = Depends(verify_firebase_token)
+    decoded_token: Optional[dict] = Depends(optional_firebase_token)
 ):
     """
     Returns the top players ranked by the specified criteria AND the current user's standing.
     """
-    uid = decoded_token['uid']
     field_map = {
         "level": "level",
         "coins": "dreamCoins",
@@ -46,6 +45,11 @@ async def get_top_players(
         })
         rank += 1
         
+    # If not logged in, just return the top players
+    if not decoded_token:
+        return {"top": top_players, "user": None}
+
+    uid = decoded_token['uid']
     # Now get the current user's standing
     user_doc = db.collection('users').document(uid).get()
     if not user_doc.exists:

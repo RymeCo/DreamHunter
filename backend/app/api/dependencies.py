@@ -19,6 +19,21 @@ async def verify_firebase_token(authorization: Optional[str] = Header(None)):
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired Firebase token")
 
+async def optional_firebase_token(authorization: Optional[str] = Header(None)):
+    """
+    Optional dependency to verify the Firebase ID Token.
+    Returns decoded token if valid, otherwise returns None.
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    
+    token = authorization.split("Bearer ")[1]
+    try:
+        decoded_token = auth.verify_id_token(token)
+        return decoded_token
+    except Exception:
+        return None
+
 async def verify_admin(decoded_token: dict = Depends(verify_firebase_token)):
     """
     Dependency to check if the user is an admin.
