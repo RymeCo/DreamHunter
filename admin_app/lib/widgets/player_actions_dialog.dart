@@ -20,16 +20,26 @@ class PlayerActionsDialog extends StatefulWidget {
 
 class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
   final AdminService _adminService = AdminService();
-  final TextEditingController _levelController = TextEditingController();
-  final TextEditingController _xpController = TextEditingController();
-  final TextEditingController _warnReasonController = TextEditingController();
+  final _levelController = TextEditingController();
+  final _xpController = TextEditingController();
+  final _dreamController = TextEditingController();
+  final _hellStonesController = TextEditingController();
+  final _warnReasonController = TextEditingController();
+  
   bool _forceSync = false;
+  bool _isUpdatingSave = false;
+  bool _isUpdatingCurrency = false;
+  bool _isBanning = false;
+  bool _isMuting = false;
+  bool _isResettingSpam = false;
 
   @override
   void initState() {
     super.initState();
     _levelController.text = (widget.player['level'] ?? 1).toString();
     _xpController.text = (widget.player['xp'] ?? 0).toString();
+    _dreamController.text = (widget.player['dreamCoins'] ?? 0).toString();
+    _hellStonesController.text = (widget.player['hellStones'] ?? 0).toString();
     _forceSync = widget.player['forceSyncNext'] ?? false;
   }
 
@@ -37,29 +47,14 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
   void dispose() {
     _levelController.dispose();
     _xpController.dispose();
+    _dreamController.dispose();
+    _hellStonesController.dispose();
     _warnReasonController.dispose();
     super.dispose();
   }
 
-  Future<DateTime?> _pickCustomDateTime() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
-    );
-    if (date == null || !mounted) return null;
-
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (time == null) return null;
-
-    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
-  }
-
   void _updateSave(String uid) async {
+    setState(() => _isUpdatingSave = true);
     final level = int.tryParse(_levelController.text.trim());
     final xp = int.tryParse(_xpController.text.trim());
 
@@ -70,45 +65,72 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
       forceSyncNext: _forceSync,
     );
 
-    if (success && mounted) {
-      showCustomSnackBar(context, 'Player save state updated!', type: SnackBarType.success);
-      if (widget.onActionComplete != null) widget.onActionComplete!();
-      Navigator.pop(context);
+    if (mounted) {
+      setState(() => _isUpdatingSave = false);
+      if (success) {
+        showCustomSnackBar(context, 'Player save updated!', type: SnackBarType.success);
+        if (widget.onActionComplete != null) widget.onActionComplete!();
+      }
     }
   }
 
-  void _quickBan(String uid, bool isPermanent) async {
-    final dt = isPermanent ? null : await _pickCustomDateTime();
-    if (!isPermanent && dt == null) return;
+  void _updateCurrency(String uid) async {
+    setState(() => _isUpdatingCurrency = true);
+    final dream = int.tryParse(_dreamController.text.trim());
+    final hell = int.tryParse(_hellStonesController.text.trim());
 
-    final success = await _adminService.banUser(
+    final success = await _adminService.updatePlayerCurrency(
       uid,
-      true,
-      until: dt?.toUtc().toIso8601String(),
+      dreamCoins: dream,
+      hellStones: hell,
     );
 
-    if (success && mounted) {
-      showCustomSnackBar(context, isPermanent ? 'Player Perm-Banned' : 'Player Temp-Banned', type: SnackBarType.success);
-      if (widget.onActionComplete != null) widget.onActionComplete!();
-      Navigator.pop(context);
+    if (mounted) {
+      setState(() => _isUpdatingCurrency = false);
+      if (success) {
+        showCustomSnackBar(context, 'Currency adjusted & Hash Recalculated!', type: SnackBarType.success);
+        if (widget.onActionComplete != null) widget.onActionComplete!();
+      }
+    }
+  }
+
+  void _toggleBan(String uid, bool currentStatus) async {
+    setState(() => _isBanning = true);
+    final success = await _adminService.banUser(uid, !currentStatus);
+
+    if (mounted) {
+      setState(() => _isBanning = false);
+      if (success) {
+        showCustomSnackBar(context, !currentStatus ? 'Player Banned' : 'Player Unbanned', type: SnackBarType.success);
+        if (widget.onActionComplete != null) widget.onActionComplete!();
+        setState(() {
+          widget.player['isBanned'] = !currentStatus;
+        });
+      }
     }
   }
 
   void _quickMute(String uid, int hours) async {
+    setState(() => _isMuting = true);
     final success = await _adminService.muteUser(uid, hours);
-    if (success && mounted) {
-      showCustomSnackBar(context, 'Player muted for ${hours}h', type: SnackBarType.success);
-      if (widget.onActionComplete != null) widget.onActionComplete!();
-      Navigator.pop(context);
+    if (mounted) {
+      setState(() => _isMuting = false);
+      if (success) {
+        showCustomSnackBar(context, 'Player muted for ${hours}h', type: SnackBarType.success);
+        if (widget.onActionComplete != null) widget.onActionComplete!();
+      }
     }
   }
 
   void _resetSpam(String uid) async {
+    setState(() => _isResettingSpam = true);
     final success = await _adminService.resetSpamScore(uid);
-    if (success && mounted) {
-      showCustomSnackBar(context, 'Spam score reset!', type: SnackBarType.success);
-      if (widget.onActionComplete != null) widget.onActionComplete!();
-      Navigator.pop(context);
+    if (mounted) {
+      setState(() => _isResettingSpam = false);
+      if (success) {
+        showCustomSnackBar(context, 'Spam score reset!', type: SnackBarType.success);
+        if (widget.onActionComplete != null) widget.onActionComplete!();
+      }
     }
   }
 
@@ -116,14 +138,13 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
   Widget build(BuildContext context) {
     final uid = widget.player['uid'] ?? '';
     final displayName = widget.player['displayName'] ?? 'Unknown Player';
-    final dreamCoins = widget.player['dreamCoins'] ?? 0;
-    final hellStones = widget.player['hellStones'] ?? 0;
+    final isBanned = widget.player['isBanned'] ?? false;
     final spamScore = widget.player['spamScore'] ?? 0;
     final isFlagged = widget.player['isFlagged'] ?? false;
 
     return Center(
       child: LiquidGlassPanel(
-        width: 500,
+        width: 550,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -142,7 +163,7 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
               ),
               const Divider(color: Colors.white10),
 
-              // Player Identity & Locked Economy
+              // Player Identity
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: CircleAvatar(
@@ -151,17 +172,29 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                 ),
                 title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                 subtitle: Text('UID: $uid', style: const TextStyle(fontSize: 10, color: Colors.white38)),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _economyBadge(Icons.cloud_circle, '$dreamCoins', Colors.cyanAccent),
-                    const SizedBox(width: 8),
-                    _economyBadge(Icons.local_fire_department, '$hellStones', Colors.orangeAccent),
-                  ],
-                ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+
+              // Economy Injection
+              const Text('ECONOMY INJECTION (Safe Edit)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.cyanAccent, letterSpacing: 1.5)),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: AdminTextField(label: 'Dream Coins', controller: _dreamController, prefixIcon: Icons.cloud_circle)),
+                  const SizedBox(width: 12),
+                  Expanded(child: AdminTextField(label: 'Hell Stones', controller: _hellStonesController, prefixIcon: Icons.local_fire_department)),
+                  const SizedBox(width: 12),
+                  AdminButton(
+                    onPressed: _isUpdatingCurrency ? null : () => _updateCurrency(uid), 
+                    label: 'INJECT', 
+                    isLoading: _isUpdatingCurrency,
+                    color: Colors.cyanAccent
+                  ),
+                ],
+              ),
+
+              const Divider(height: 40, color: Colors.white10),
 
               // Save State Editor
               const Text('SAVE STATE EDITOR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.blueAccent, letterSpacing: 1.5)),
@@ -171,9 +204,16 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                   Expanded(child: AdminTextField(label: 'Level', controller: _levelController, prefixIcon: Icons.trending_up)),
                   const SizedBox(width: 12),
                   Expanded(child: AdminTextField(label: 'XP', controller: _xpController, prefixIcon: Icons.bolt)),
+                  const SizedBox(width: 12),
+                  AdminButton(
+                    onPressed: _isUpdatingSave ? null : () => _updateSave(uid), 
+                    label: 'SAVE', 
+                    isLoading: _isUpdatingSave,
+                    color: Colors.blueAccent
+                  ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -185,8 +225,6 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              AdminButton(onPressed: () => _updateSave(uid), label: 'APPLY SAVE TWEAKS', icon: Icons.save_rounded, color: Colors.blueAccent),
 
               const Divider(height: 40, color: Colors.white10),
 
@@ -197,15 +235,26 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  AdminButton(onPressed: () => _quickBan(uid, true), label: 'PERM BAN', icon: Icons.gavel, color: Colors.redAccent),
-                  AdminButton(onPressed: () => _quickBan(uid, false), label: 'TEMP BAN', icon: Icons.timer, color: Colors.orange),
-                  AdminButton(onPressed: () => _resetSpam(uid), label: 'RESET SPAM ($spamScore)', icon: Icons.refresh, color: Colors.cyanAccent),
+                  AdminButton(
+                    onPressed: _isBanning ? null : () => _toggleBan(uid, isBanned), 
+                    label: isBanned ? 'UNBAN PLAYER' : 'PERMANENT BAN', 
+                    icon: isBanned ? Icons.restore : Icons.gavel, 
+                    isLoading: _isBanning,
+                    color: isBanned ? Colors.greenAccent : Colors.redAccent
+                  ),
+                  AdminButton(
+                    onPressed: _isResettingSpam ? null : () => _resetSpam(uid), 
+                    label: 'RESET SPAM ($spamScore)', 
+                    icon: Icons.refresh, 
+                    isLoading: _isResettingSpam,
+                    color: Colors.cyanAccent
+                  ),
                 ],
               ),
 
               const SizedBox(height: 20),
 
-              // Quick Mutes
+              // Chat Restrictions
               const Text('CHAT RESTRICTIONS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.orangeAccent, letterSpacing: 1.5)),
               const SizedBox(height: 12),
               Wrap(

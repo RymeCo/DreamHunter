@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,6 +14,12 @@ from ...models.admin_models import (
 from ...models.economy_models import ShopItemRequest
 
 router = APIRouter(prefix="/admin", tags=["Superadmin"])
+
+INTEGRITY_SALT = "DREAM_HUNTER_SECURE_2026_!#@_S@LT_v1"
+
+def generate_shadow_hash(coins: int, stones: int, xp: int, level: int) -> str:
+    data = f"{coins}:{stones}:{xp}:{level}:{INTEGRITY_SALT}"
+    return hashlib.sha256(data.encode()).hexdigest()
 
 @router.get("/players/search")
 async def search_players(
@@ -138,16 +145,28 @@ async def update_user_currency(uid: str, req: UserCurrencyRequest, admin: dict =
     user_doc = user_ref.get()
     if not user_doc.exists: raise HTTPException(status_code=404, detail="User not found")
     target_data = user_doc.to_dict()
-    update_data = {"updatedAt": firestore.SERVER_TIMESTAMP}
-    if req.dreamCoins is not None:
-        update_data["dreamCoins"] = req.dreamCoins
-        update_data["lastKnownDreamCoins"] = req.dreamCoins
-    if req.hellStones is not None:
-        update_data["hellStones"] = req.hellStones
-        update_data["lastKnownHellStones"] = req.hellStones
+    
+    coins = req.dreamCoins if req.dreamCoins is not None else target_data.get('dreamCoins', 0)
+    stones = req.hellStones if req.hellStones is not None else target_data.get('hellStones', 0)
+    xp = target_data.get('xp', 0)
+    level = target_data.get('level', 1)
+    
+    # Recalculate shadowHash to bypass integrity checks
+    new_hash = generate_shadow_hash(coins, stones, xp, level)
+    
+    update_data = {
+        "dreamCoins": coins,
+        "lastKnownDreamCoins": coins,
+        "hellStones": stones,
+        "lastKnownHellStones": stones,
+        "shadowHash": new_hash,
+        "lastAction": "Your balance has been adjusted by an administrator.",
+        "updatedAt": firestore.SERVER_TIMESTAMP
+    }
+    
     user_ref.update(update_data)
-    log_audit(admin['uid'], "USER_CURRENCY_UPDATE", uid, f"Currency updated: DC={req.dreamCoins}, HS={req.hellStones}", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
-    return {"status": "success", "message": "Currency updated successfully."}
+    log_audit(admin['uid'], "USER_CURRENCY_UPDATE", uid, f"Currency updated: DC={coins}, HS={stones}", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
+    return {"status": "success", "message": "Currency updated and integrity hash recalculated."}
 
 @router.post("/users/{uid}/reset-spam")
 async def reset_spam_score(uid: str, admin: dict = Depends(verify_admin)):
