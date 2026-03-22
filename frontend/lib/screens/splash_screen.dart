@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:dreamhunter/widgets/loading_screen.dart';
+import 'package:dreamhunter/widgets/game_widgets.dart';
 import 'package:dreamhunter/screens/dashboard_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -17,7 +17,6 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Use addPostFrameCallback to ensure context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeAppData();
     });
@@ -35,31 +34,27 @@ class _SplashScreenState extends State<SplashScreen> {
       'assets/images/game/environment/dorm.png',
     ];
 
-    // Pre-cache images in parallel and update progress
     int loadedCount = 0;
-    await Future.wait(imagesToPrecache.map((path) async {
+    for (var path in imagesToPrecache) {
       try {
         await precacheImage(AssetImage(path), context);
       } catch (e) {
         debugPrint('Failed to precache: $path - $e');
-      } finally {
-        if (mounted) {
-          loadedCount++;
-          setState(() {
-            _progress = (loadedCount) / (imagesToPrecache.length + 1);
-          });
-        }
       }
-    }));
+      if (mounted) {
+        loadedCount++;
+        setState(() {
+          _progress = (loadedCount) / (imagesToPrecache.length + 1);
+        });
+      }
+    }
 
-    // Ensure we wait at least 2 seconds total for the logo display
     final endTime = DateTime.now();
     final elapsed = endTime.difference(startTime).inMilliseconds;
     const minimumWait = 2000;
 
     if (elapsed < minimumWait) {
       final remaining = minimumWait - elapsed;
-      // Increment progress smoothly during the remaining wait
       final steps = 20;
       for (int i = 1; i <= steps; i++) {
         await Future.delayed(Duration(milliseconds: remaining ~/ steps));
@@ -72,19 +67,19 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     if (!mounted) return;
+    setState(() => _progress = 1.0);
 
-    setState(() {
-      _progress = 1.0;
-    });
-
-    // Short delay at 100% for smooth transition
     await Future.delayed(const Duration(milliseconds: 300));
-
     if (!mounted) return;
 
-    // Transition to Dashboard
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 800),
+      ),
     );
   }
 
@@ -93,43 +88,29 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 0.5, sigmaY: 1.0),
-            child: Image.asset(
-              'assets/images/dashboard/background_1.png',
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
+          // Background with blur
+          Positioned.fill(
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 0.5, sigmaY: 1.0),
+              child: Image.asset(
+                'assets/images/dashboard/background_1.png',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
+          // Centered Logo and Loading
           Positioned(
-            top: 50.0,
+            top: MediaQuery.of(context).size.height * 0.15,
             left: 0,
             right: 0,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
-                  child: Image.asset(
-                    'assets/images/core/splash_logo.png',
-                    width: 600.0,
-                    height: 600.0,
-                    color: const Color.fromRGBO(169, 13, 200, 0.5),
-                    colorBlendMode: BlendMode.srcATop,
-                  ),
-                ),
-                Image.asset(
-                  'assets/images/core/splash_logo.png',
-                  width: 600.0,
-                  height: 600.0,
-                  color: const Color.fromRGBO(228, 159, 240, 0.8),
-                  colorBlendMode: BlendMode.modulate,
-                ),
-              ],
-            ),
+            child: const AppLogo(size: 550),
           ),
-          LoadingScreen(progress: _progress),
+          Positioned(
+            bottom: 40,
+            left: 40,
+            right: 40,
+            child: GameLoadingBar(progress: _progress),
+          ),
         ],
       ),
     );
