@@ -49,6 +49,12 @@ class AuthService {
         profile['hellStones'] ?? 0,
         profile['playtime'] ?? 0,
         profile['freeSpins'] ?? 0,
+        profile['xp'] ?? 0,
+        profile['level'] ?? 1,
+        profile['avatarId'] ?? 0,
+        profile['createdAt'] as String?,
+        profile['dailyTasks'] as Map<String, dynamic>?,
+        true, // forceUpdate = true
       );
     }
     

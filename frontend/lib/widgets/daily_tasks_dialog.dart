@@ -7,7 +7,8 @@ import 'custom_snackbar.dart';
 import 'game_widgets.dart';
 
 class DailyTasksDialog extends StatefulWidget {
-  const DailyTasksDialog({super.key});
+  final VoidCallback? onTaskClaimed;
+  const DailyTasksDialog({super.key, this.onTaskClaimed});
 
   @override
   State<DailyTasksDialog> createState() => _DailyTasksDialogState();
@@ -54,9 +55,11 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
         current['avatarId'] ?? 0,
         current['createdAt'],
         dailyTasks,
+        true, // forceUpdate = true
       );
 
       await _loadTasks();
+      widget.onTaskClaimed?.call();
       if (mounted) {
         showCustomSnackBar(context, 'Reward claimed: $reward Dream Coins!', type: SnackBarType.success);
       }
@@ -125,14 +128,22 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
                 )
               else
                 Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: (_dailyTasks!['tasks'] as List).length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final task = (_dailyTasks!['tasks'] as List)[index];
-                      return _buildTaskItem(task);
-                    },
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: (_dailyTasks!['tasks'] as List).length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final task = (_dailyTasks!['tasks'] as List)[index];
+                            return _buildTaskItem(task);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
             ],

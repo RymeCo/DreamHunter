@@ -144,6 +144,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             data['level'] ?? 1,
             data['avatarId'] ?? 0,
             createdAtStr,
+            null, // dailyTasks are handled separately or if included in snapshot
+            false, // forceUpdate = false for background cloud sync
           );
           _checkTaskCompletion();
         }

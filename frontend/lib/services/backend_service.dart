@@ -132,6 +132,7 @@ class BackendService {
             result['avatarId'] as int? ?? 0,
             result['createdAt'] as String?,
             result['dailyTasks'] as Map<String, dynamic>?,
+            true, // forceUpdate = true since we just cleared the queue
           );
           
           if (result['levelUp'] == true) {
@@ -157,6 +158,7 @@ class BackendService {
             profile['avatarId'] ?? 0,
             profile['createdAt'] as String?,
             profile['dailyTasks'] as Map<String, dynamic>?,
+            true, // forceUpdate = true
           );
           success = true;
         }

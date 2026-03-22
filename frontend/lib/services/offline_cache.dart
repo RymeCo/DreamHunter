@@ -61,13 +61,24 @@ class OfflineCache {
   static const String _dailyTasksKey = BackendConfig.dailyTasksKey;
   static const String _lastSyncKey = BackendConfig.lastSyncKey;
   static const String _lastSyncStatusKey = BackendConfig.lastSyncStatusKey;
-  static const String _statsSummaryKey = BackendConfig.statsSummaryKey;
+  static const String _notifiedTasksKey = 'notified_tasks_cache';
   static const _uuid = Uuid();
 
   /// Helper to get a key scoped to the current user (or guest)
   static String _getScopedKey(String baseKey, [String? uid]) {
     final currentUid = uid ?? FirebaseAuth.instance.currentUser?.uid ?? 'guest';
     return '${currentUid}_$baseKey';
+  }
+
+  static Future<void> saveNotifiedTaskIds(Set<String> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_getScopedKey(_notifiedTasksKey), ids.toList());
+  }
+
+  static Future<Set<String>> getNotifiedTaskIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_getScopedKey(_notifiedTasksKey)) ?? [];
+    return list.toSet();
   }
 
   static Future<void> saveSettings(Map<String, bool> settings) async {
@@ -98,8 +109,20 @@ class OfflineCache {
     int avatarId = 0,
     String? createdAt,
     Map<String, dynamic>? dailyTasks,
+    bool forceUpdate = false,
   ]) async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // Only save if we are forcing update OR if transaction queue is empty
+    // This prevents cloud sync from overwriting fresh local changes during reconcile
+    if (!forceUpdate) {
+      final queue = await getTransactionQueue();
+      if (queue.isNotEmpty) {
+        // We have pending local changes, don't let cloud data overwrite them.
+        return;
+      }
+    }
+
     await prefs.setString(
       _getScopedKey(_currencyKey),
       json.encode({
@@ -114,6 +137,14 @@ class OfflineCache {
       }),
     );
     if (dailyTasks != null) {
+      final oldTasksStr = prefs.getString(_getScopedKey(_dailyTasksKey));
+      if (oldTasksStr != null) {
+        final oldTasks = json.decode(oldTasksStr) as Map<String, dynamic>;
+        // If the entire task set ID is different, it's a new day
+        if (oldTasks['id'] != dailyTasks['id']) {
+          await prefs.remove(_getScopedKey(_notifiedTasksKey));
+        }
+      }
       await prefs.setString(_getScopedKey(_dailyTasksKey), json.encode(dailyTasks));
     }
   }
@@ -203,6 +234,9 @@ class OfflineCache {
       newXP,
       newLevel,
       current['avatarId'] ?? 0,
+      current['createdAt'],
+      null,
+      true, // forceUpdate = true for immediate local transaction feedback
     );
 
     // Update Daily Tasks Progress Offline
