@@ -25,7 +25,8 @@ async def get_top_players(
         
         # Query Firestore for the top players
         if by == "level":
-            users_ref = db.collection('users').order_by("level", direction=firestore.Query.DESCENDING).order_by("xp", direction=firestore.Query.DESCENDING)
+            # Simplified: just order by level to avoid index issues with xp
+            users_ref = db.collection('users').order_by("level", direction=firestore.Query.DESCENDING)
         else:
             users_ref = db.collection('users').order_by(sort_field, direction=firestore.Query.DESCENDING)
         
@@ -63,12 +64,15 @@ async def get_top_players(
         if by == "level":
             user_xp = user_data.get("xp", 0)
             # Count users with higher level OR same level but higher XP
-            higher_level_count = db.collection('users').where("level", ">", user_data.get("level", 1)).count().get()
-            same_level_higher_xp_count = db.collection('users').where("level", "==", user_data.get("level", 1)).where("xp", ">", user_xp).count().get()
-            user_rank = higher_level_count[0][0].value + same_level_higher_xp_count[0][0].value + 1
+            higher_level_res = db.collection('users').where("level", ">", user_data.get("level", 1)).count().get()
+            same_level_higher_xp_res = db.collection('users').where("level", "==", user_data.get("level", 1)).where("xp", ">", user_xp).count().get()
+            
+            higher_level_count = higher_level_res[0].value
+            same_level_higher_xp_count = same_level_higher_xp_res[0].value
+            user_rank = higher_level_count + same_level_higher_xp_count + 1
         else:
-            higher_val_count = db.collection('users').where(sort_field, ">", user_val).count().get()
-            user_rank = higher_val_count[0][0].value + 1
+            higher_val_res = db.collection('users').where(sort_field, ">", user_val).count().get()
+            user_rank = higher_val_res[0].value + 1
             
         user_standing = {
             "rank": user_rank,

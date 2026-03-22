@@ -378,30 +378,35 @@ async def get_stats_summary(admin: dict = Depends(verify_admin)):
     last_24h = now - timedelta(hours=24)
 
     reports_ref = db.collection('reports')
-    pending = reports_ref.where("status", "==", "pending").count().get()[0][0].value
-    working = reports_ref.where("status", "==", "working").count().get()[0][0].value
-    resolved = reports_ref.where("status", "==", "resolved").count().get()[0][0].value
+    pending = reports_ref.where("status", "==", "pending").count().get()[0].value
+    working = reports_ref.where("status", "==", "working").count().get()[0].value
+    resolved = reports_ref.where("status", "==", "resolved").count().get()[0].value
     
-    total_users = db.collection('users').count().get()[0][0].value
+    total_users = db.collection('users').count().get()[0].value
     
     # Calculate real growth
-    # Note: Using stream() or count() depends on indexing. Assuming indices exist for createdAt/updatedAt
     try:
-        new_today = db.collection('users').where("createdAt", ">=", today_start).count().get()[0][0].value
+        new_today_res = db.collection('users').where("createdAt", ">=", today_start).count().get()
+        new_today = new_today_res[0].value
     except:
-        new_today = 0 # Fallback if index missing
+        new_today = 0
         
     try:
-        dau = db.collection('users').where("updatedAt", ">=", last_24h).count().get()[0][0].value
+        dau_res = db.collection('users').where("updatedAt", ">=", last_24h).count().get()
+        dau = dau_res[0].value
     except:
         dau = 0
 
-    # System Health Simulation (Dynamic-ish)
+    # System Health Simulation
     import random
     latency = 20.0 + random.uniform(5.0, 35.0)
     
     # Count errors in logs
-    error_count = db.collection('audit_logs').where("timestamp", ">=", last_24h).where("action", "==", "ERROR").count().get()[0][0].value
+    try:
+        error_res = db.collection('audit_logs').where("timestamp", ">=", last_24h).where("action", "==", "ERROR").count().get()
+        error_count = error_res[0].value
+    except:
+        error_count = 0
 
     return {
         "reportStats": {"pending": pending, "working": working, "resolved": resolved},
