@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'liquid_glass_panel.dart';
 
-/// A solid, simplistic card container for the Admin UI.
+/// A glass-themed card container for the Admin UI.
 class AdminCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -21,19 +22,12 @@ class AdminCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return LiquidGlassPanel(
       width: width,
       height: height,
       padding: padding ?? const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        // Solid theme color - no transparency/glass for stability and speed
-        color: color ?? const Color(0xFF1E1E3A),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: borderColor ?? const Color(0xFF2A2A4A),
-          width: 1,
-        ),
-      ),
+      color: color,
+      borderColor: borderColor,
       child: child,
     );
   }
@@ -82,7 +76,7 @@ class AdminHeader extends StatelessWidget {
   }
 }
 
-/// A simplistic, fast-loading button for admin actions.
+/// A glowing glass button for admin actions.
 class AdminButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final String label;
@@ -103,46 +97,58 @@ class AdminButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeColor = color ?? Colors.amberAccent;
     
-    return ElevatedButton(
-      onPressed: isLoading ? null : onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: themeColor.withValues(alpha: 0.1),
-        foregroundColor: themeColor,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(color: themeColor.withValues(alpha: 0.3)),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: themeColor.withValues(alpha: 0.1),
+            blurRadius: 8,
+            spreadRadius: 1,
+          ),
+        ],
       ),
-      child: isLoading
-          ? const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[
-                  Icon(icon, size: 16),
-                  const SizedBox(width: 8),
-                ],
-                Flexible(
-                  child: Text(
-                    label,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white.withValues(alpha: 0.05),
+          foregroundColor: themeColor,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: themeColor.withValues(alpha: 0.3)),
+          ),
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amberAccent),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 16),
+                    const SizedBox(width: 8),
+                  ],
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
     );
   }
 }
 
-/// A clean, standard text field for admin inputs.
+/// A glass-styled text field for admin inputs.
 class AdminTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String label;
@@ -177,14 +183,14 @@ class AdminTextField extends StatelessWidget {
         labelStyle: const TextStyle(color: Colors.white38),
         prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18, color: Colors.white38) : null,
         filled: true,
-        fillColor: const Color(0xFF0F0F1E),
+        fillColor: Colors.white.withValues(alpha: 0.03),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF2A2A4A)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF2A2A4A)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dreamhunter/services/backend_service.dart';
 import 'package:dreamhunter/services/chat_service.dart';
 import 'package:dreamhunter/services/offline_cache.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
@@ -171,49 +172,34 @@ class _ChatDialogState extends State<ChatDialog> {
     setState(() => _isSending = true);
 
     try {
+      // ChatService now uses BackendService.sendMessage which handles the 5s cooldown
       final result = await _chatService.sendMessage(_selectedRegion, text);
-      if (result != null) {
+      
+      if (result != null && result['status'] == 'success') {
         _textController.clear();
         
-        // Track chat task and reward XP
+        // Track chat task and reward XP locally
         await OfflineCache.addTransaction(type: 'CHAT');
         widget.onMessageSent?.call();
 
-        // Handle Automod Feedback
+        // Handle Automod Feedback (censoring etc)
         if (result['censored'] == true && mounted) {
           final String msg = result['muteMessage'] ?? result['warning'] ?? 'Please watch your language!';
-          showCustomSnackBar(
-            context,
-            msg,
-            type: SnackBarType.error, // Red for warning
-          );
+          showCustomSnackBar(context, msg, type: SnackBarType.error);
         }
       } else {
-        if (!mounted) return;
-        showCustomSnackBar(
-          context,
-          'Failed to send message.',
-          type: SnackBarType.error,
-        );
+        // Handle Cooldown or Flagging errors from BackendService
+        if (mounted) {
+          showCustomSnackBar(
+            context,
+            result['message'] ?? 'Failed to send message.',
+            type: SnackBarType.error,
+          );
+        }
       }
     } catch (e) {
       if (!mounted) return;
-      final errorStr = e.toString().toLowerCase();
-      if (errorStr.contains('cooldown')) {
-        showCustomSnackBar(
-          context,
-          'Please wait before sending another message.',
-          type: SnackBarType.info,
-        );
-      } else if (errorStr.contains('banned') || errorStr.contains('mute')) {
-        showCustomSnackBar(
-          context,
-          e.toString().replaceAll('Exception: ', ''),
-          type: SnackBarType.error,
-        );
-      } else {
-        showCustomSnackBar(context, 'Error: $e', type: SnackBarType.error);
-      }
+      showCustomSnackBar(context, 'Error: $e', type: SnackBarType.error);
     }
 
     if (mounted) {

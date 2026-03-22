@@ -83,6 +83,8 @@ class _AutoModScreenState extends State<AutoModScreen> {
                                     children: [
                                       _buildPermissionsPanel(data),
                                       const SizedBox(height: 24),
+                                      _buildChatSpeedPanel(data),
+                                      const SizedBox(height: 24),
                                       _buildStrikeSettingsPanel(data),
                                     ],
                                   )),
@@ -96,6 +98,8 @@ class _AutoModScreenState extends State<AutoModScreen> {
                           Column(
                             children: [
                               _buildPermissionsPanel(data, width: double.infinity),
+                              const SizedBox(height: 24),
+                              _buildChatSpeedPanel(data, width: double.infinity),
                               const SizedBox(height: 24),
                               _buildStrikeSettingsPanel(data, width: double.infinity),
                               const SizedBox(height: 24),
@@ -112,6 +116,30 @@ class _AutoModScreenState extends State<AutoModScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildChatSpeedPanel(Map<String, dynamic> data, {double? width}) {
+    return AdminCard(
+      width: width,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Chat Speed & Anti-Spam',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          _buildNumberSetting(
+            'Message Cooldown (Sec)',
+            data['chatCooldown'] ?? 5,
+            (v) => _updateSetting('chatCooldown', v < 1 ? 1 : v),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Users bypassing this limit 3 times will be automatically flagged and muted.',
+            style: TextStyle(fontSize: 12, color: Colors.white38),
+          ),
+        ],
+      ),
     );
   }
 

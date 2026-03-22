@@ -108,7 +108,7 @@ class ChatService {
         .snapshots();
   }
 
-  /// Sends a message to the FastAPI backend (enforces 1s cooldown and 100-msg limit)
+  /// Sends a message to the FastAPI backend (enforces 5s cooldown and flagging)
   Future<Map<String, dynamic>?> sendMessage(String region, String text) async {
     final user = _auth.currentUser;
     if (user == null) return null; // Guests cannot send
@@ -116,27 +116,16 @@ class ChatService {
     try {
       final device = await getDeviceInfo();
 
-      final response = await _backend.post(
-        '/chats/$region/messages',
-        body: {
-          'text': text,
-          'senderDevice': device,
-        },
-      );
+      // We use the centralized sendMessage from BackendService to handle the 5s cooldown
+      final result = await _backend.sendMessage(text);
 
-      // 429 means Spam Cooldown hit
-      if (response.statusCode == 429) {
-        throw Exception('cooldown');
+      if (result['status'] == 'error') {
+        throw Exception(result['message']);
       }
 
-      final data = json.decode(response.body);
-      if (response.statusCode != 200) {
-        throw Exception(data['detail'] ?? 'Failed to send message.');
-      }
-
-      return data as Map<String, dynamic>;
+      return result;
     } catch (e) {
-      if (e.toString().contains('cooldown') || e.toString().contains('muted') || e.toString().contains('banned')) {
+      if (e.toString().contains('Wait') || e.toString().contains('muted') || e.toString().contains('banned') || e.toString().contains('flagged')) {
         rethrow;
       }
       debugPrint('Error sending message: $e');

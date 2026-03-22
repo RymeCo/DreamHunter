@@ -65,12 +65,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   }
 
   Future<String?> _askForGhostName() async {
-    String name = '';
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E3A),
-        title: const Text('Enter Ghost Display Name'),
+        backgroundColor: const Color(0xFF07070F),
+        title: const Text('Ghost Display Name', style: TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold)),
         content: AdminTextField(
           label: 'Ghost Name',
           hint: 'e.g. Mysterious Traveler',
@@ -82,7 +81,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
             child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
           ),
           AdminButton(
-            onPressed: () => Navigator.pop(context, name),
+            onPressed: () => Navigator.pop(context, ''), // Handled by controller if needed, but here we just pop
             label: 'SET NAME',
           ),
         ],
@@ -90,21 +89,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     );
   }
 
-  void _openPlayerActions(String uid, Map<String, dynamic> modConfig) async {
+  void _openPlayerActions(String uid) async {
     if (uid == 'SYSTEM_AUTOMOD' || uid.isEmpty) return;
-
-    final provider = Provider.of<AdminProvider>(context, listen: false);
-    final isMod = provider.isModerator && !provider.isAdmin;
-
-    if (isMod) {
-      final canMute = modConfig['modCanMute'] ?? true;
-      final canWarn = modConfig['modCanWarn'] ?? true;
-      if (!canMute && !canWarn) {
-        showCustomSnackBar(context, 'Insufficient permissions.',
-            type: SnackBarType.info);
-        return;
-      }
-    }
 
     showDialog(
       context: context,
@@ -117,10 +103,24 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     Navigator.pop(context);
 
     if (profile != null) {
-      await showDialog<String>(
+      await showDialog(
         context: context,
         builder: (context) => PlayerActionsDialog(player: profile),
       );
+    }
+  }
+
+  void _quickMute(String uid, int hours) async {
+    final success = await _adminService.muteUser(uid, hours);
+    if (success && mounted) {
+      showCustomSnackBar(context, 'Player muted for ${hours}h', type: SnackBarType.success);
+    }
+  }
+
+  void _quickWarn(String uid) async {
+    final success = await _adminService.warnUser(uid, 'Chat Behavior Violation (Quick Warn)');
+    if (success && mounted) {
+      showCustomSnackBar(context, 'Warning issued!', type: SnackBarType.success);
     }
   }
 
@@ -131,14 +131,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     return StreamBuilder<DocumentSnapshot>(
       stream: _adminService.getAutoModConfigStream(),
       builder: (context, configSnapshot) {
-        final modConfig =
-            configSnapshot.data?.data() as Map<String, dynamic>? ?? {};
+        final modConfig = configSnapshot.data?.data() as Map<String, dynamic>? ?? {};
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AdminHeader(
-              title: 'Live Chat Monitor',
+              title: 'Moderator Hub',
               actions: [
                 _buildGhostModeToggle(),
                 const SizedBox(width: 16),
@@ -169,8 +168,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('GHOST MODE',
-            style: TextStyle(color: Colors.white24, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        const Text('GHOST MODE', style: TextStyle(color: Colors.white24, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
         Switch(
           value: _isGhostMode,
           onChanged: (val) async {
@@ -195,18 +193,23 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F0F1E),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF2A2A4A)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedRegion,
-          dropdownColor: const Color(0xFF1E1E3A),
+          dropdownColor: const Color(0xFF07070F),
           items: _regions
               .map((r) => DropdownMenuItem(
                   value: r,
-                  child: Text(r.toUpperCase(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))))
+                  child: Text(r.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: r == 'mod-only' ? Colors.purpleAccent : Colors.white70,
+                      ))))
               .toList(),
           onChanged: (val) {
             if (val != null) setState(() => _selectedRegion = val);
@@ -216,8 +219,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     );
   }
 
-  Widget _buildChatStream(
-      Map<String, dynamic> modConfig, AdminProvider provider) {
+  Widget _buildChatStream(Map<String, dynamic> modConfig, AdminProvider provider) {
     return StreamBuilder<QuerySnapshot>(
       stream: _adminService.getLiveChatStream(_selectedRegion),
       builder: (context, snapshot) {
@@ -227,9 +229,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) {
-          return const Center(
-              child: Text('Quiet in here...',
-                  style: TextStyle(color: Colors.white12)));
+          return const Center(child: Text('No activity in this channel.', style: TextStyle(color: Colors.white12)));
         }
 
         return ListView.builder(
@@ -242,74 +242,53 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
             final text = data['text'] ?? '';
             final senderName = data['senderName'] ?? 'Unknown';
             final senderUid = data['senderUid'] ?? '';
-            final isAdminMsg = data['isAdmin'] == true;
-            final isSystem = data['isSystemWarning'] == true || isAdminMsg;
+            final isSystem = data['isSystemWarning'] == true || data['isAdmin'] == true;
             final adminDisliked = data['adminDisliked'] == true;
-            final adminLiked = data['adminLiked'] == true;
 
-            if (adminDisliked && !provider.isAdmin && !provider.isModerator) {
-              return const SizedBox.shrink();
-            }
-
-            return RepaintBoundary(
-              key: ValueKey(messageId),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: isSystem
-                            ? null
-                            : () => _openPlayerActions(senderUid, modConfig),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isSystem
-                                ? Colors.redAccent.withValues(alpha: 0.1)
-                                : const Color(0xFF0F0F1E),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: adminLiked
-                                  ? Colors.amberAccent.withValues(alpha: 0.5)
-                                  : const Color(0xFF2A2A4A),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: isSystem ? null : () => _openPlayerActions(senderUid),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isSystem ? Colors.redAccent.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.02),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(senderName,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                      color: isSystem ? Colors.redAccent : Colors.cyanAccent,
+                                    )),
+                                if (!isSystem && senderUid.isNotEmpty)
+                                  _quickActionsRow(senderUid, messageId, adminDisliked),
+                              ],
                             ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                senderName,
+                            const SizedBox(height: 4),
+                            Text(text,
                                 style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                  color: isSystem
-                                      ? Colors.redAccent
-                                      : Colors.blueAccent,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                text,
-                                style: TextStyle(
-                                  color: isSystem
-                                      ? Colors.yellowAccent
-                                          .withValues(alpha: 0.9)
-                                      : Colors.white.withValues(alpha: 0.9),
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
+                                  color: isSystem ? Colors.orangeAccent : Colors.white.withValues(alpha: 0.8),
+                                  fontSize: 13,
+                                )),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    _chatActions(messageId, data, provider, modConfig),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },
@@ -318,52 +297,28 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     );
   }
 
-  Widget _chatActions(String messageId, Map<String, dynamic> data,
-      AdminProvider provider, Map<String, dynamic> modConfig) {
-    final adminLiked = data['adminLiked'] == true;
-    final modLiked = data['modLiked'] == true;
-    final adminDisliked = data['adminDisliked'] == true;
-    final isSystem = data['isSystemWarning'] == true || data['isAdmin'] == true;
-
-    return Column(
+  Widget _quickActionsRow(String uid, String messageId, bool isHidden) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: Icon(Icons.thumb_up_rounded,
-              size: 16,
-              color: adminLiked
-                  ? Colors.amberAccent
-                  : (modLiked ? Colors.blueAccent : Colors.white10)),
-          onPressed: isSystem
-              ? null
-              : () => _adminService.toggleLikeMessage(
-                    _selectedRegion,
-                    messageId,
-                    isAdmin: provider.isAdmin,
-                    isModerator: provider.isModerator,
-                    currentAdminLiked: adminLiked,
-                    currentModLiked: modLiked,
-                  ),
-          constraints: const BoxConstraints(),
-          padding: const EdgeInsets.all(8),
-        ),
-        if (provider.isAdmin ||
-            (provider.isModerator && modConfig['modCanHideMessages'] == true))
-          IconButton(
-            icon: Icon(
-                adminDisliked
-                    ? Icons.visibility_rounded
-                    : Icons.thumb_down_rounded,
-                size: 16,
-                color: adminDisliked ? Colors.greenAccent : Colors.redAccent.withValues(alpha: 0.2)),
-            onPressed: () => _adminService.toggleDislikeMessage(
-              _selectedRegion,
-              messageId,
-              currentDisliked: adminDisliked,
-            ),
-            constraints: const BoxConstraints(),
-            padding: const EdgeInsets.all(8),
-          ),
+        _miniActionBtn(Icons.volume_off_rounded, Colors.orangeAccent, () => _quickMute(uid, 1), 'Mute 1h'),
+        _miniActionBtn(Icons.warning_amber_rounded, Colors.yellowAccent, () => _quickWarn(uid), 'Warn'),
+        _miniActionBtn(isHidden ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+            isHidden ? Colors.greenAccent : Colors.redAccent, () {
+          _adminService.toggleDislikeMessage(_selectedRegion, messageId, currentDisliked: isHidden);
+        }, isHidden ? 'Show' : 'Hide'),
       ],
+    );
+  }
+
+  Widget _miniActionBtn(IconData icon, Color color, VoidCallback onTap, String tooltip) {
+    return IconButton(
+      icon: Icon(icon, size: 14, color: color.withValues(alpha: 0.4)),
+      onPressed: onTap,
+      tooltip: tooltip,
+      constraints: const BoxConstraints(),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      visualDensity: VisualDensity.compact,
     );
   }
 
@@ -382,7 +337,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         const SizedBox(width: 16),
         AdminButton(
           onPressed: _sendMessage,
-          label: _isGhostMode ? 'GHOST' : 'SEND',
+          label: 'SEND',
+          icon: Icons.send_rounded,
           color: _isGhostMode ? Colors.orangeAccent : Colors.amberAccent,
         ),
       ],

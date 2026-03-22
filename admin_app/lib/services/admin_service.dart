@@ -34,14 +34,16 @@ class AdminService {
     return _db.collection('metadata').doc('system_config').snapshots();
   }
 
-  Future<bool> updateMaintenance(
+  Future<bool> updateMaintenance({
     bool? chatMaintenance,
     bool? shopMaintenance,
-  ) async {
+    bool? syncMaintenance,
+  }) async {
     try {
       final Map<String, dynamic> bodyData = {
         'chatMaintenance': ?chatMaintenance,
         'shopMaintenance': ?shopMaintenance,
+        'syncMaintenance': ?syncMaintenance,
       };
 
       final response = await _client.patch(
@@ -191,6 +193,19 @@ class AdminService {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error updating moderator status: $e');
+      return false;
+    }
+  }
+
+  Future<bool> resetSpamScore(String uid) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$baseUrl/admin/users/$uid/reset-spam'),
+        headers: await getAuthHeaders(),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error resetting spam score: $e');
       return false;
     }
   }
@@ -418,6 +433,42 @@ class AdminService {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error performing batch action: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updatePlayerSave(
+    String uid, {
+    int? level,
+    int? xp,
+    bool? forceSyncNext,
+  }) async {
+    try {
+      final response = await _client.patch(
+        Uri.parse('$baseUrl/admin/users/$uid/save'),
+        headers: await getAuthHeaders(),
+        body: json.encode({
+          'level': level,
+          'xp': xp,
+          'forceSyncNext': forceSyncNext,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error updating player save: $e');
+      return false;
+    }
+  }
+
+  Future<bool> forcePlayerSync(String uid) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$baseUrl/admin/users/$uid/force-sync'),
+        headers: await getAuthHeaders(),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error forcing player sync: $e');
       return false;
     }
   }

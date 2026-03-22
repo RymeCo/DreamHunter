@@ -13,9 +13,10 @@ import 'screens/automod_screen.dart';
 import 'screens/audit_screen.dart';
 import 'screens/live_chat_screen.dart';
 import 'screens/shop_management_screen.dart';
-import 'screens/leaderboard_screen.dart';
-import 'screens/roulette_management_screen.dart';
+import 'screens/service_ops_screen.dart';
+import 'screens/config_editor_screen.dart';
 import 'widgets/admin_ui_components.dart';
+import 'widgets/liquid_glass_panel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,10 +39,10 @@ class AdminControlCenter extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.amber,
-        scaffoldBackgroundColor: const Color(0xFF0F0F1E),
+        scaffoldBackgroundColor: const Color(0xFF07070F), // Darker background for glass effect
         textTheme: GoogleFonts.quicksandTextTheme(ThemeData.dark().textTheme),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF16162F),
+          backgroundColor: Colors.transparent, // Transparent to allow scaffold bg or glass
           elevation: 0,
         ),
       ),
@@ -171,223 +172,192 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 7,
+      length: 9,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF16162F),
-          elevation: 0,
-          centerTitle: false,
-          title: const Text(
-            'DreamHunter Control',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 22,
-              letterSpacing: -1,
-              color: Colors.amberAccent,
-            ),
-          ),
-          actions: [
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.logout_rounded,
-                    color: Colors.white70, size: 20),
-                onPressed: () => FirebaseAuth.instance.signOut(),
-                tooltip: 'Logout Session',
-              ),
-            ),
-            const SizedBox(width: 12),
-          ],
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(60),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    width: 1,
+        extendBodyBehindAppBar: true,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(120),
+          child: LiquidGlassPanel(
+            borderRadius: 0,
+            blurSigma: 15,
+            padding: EdgeInsets.zero,
+            color: Colors.black.withValues(alpha: 0.2),
+            child: Column(
+              children: [
+                AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  centerTitle: false,
+                  title: const Text(
+                    'DreamHunter Control',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 22,
+                      letterSpacing: -1,
+                      color: Colors.amberAccent,
+                    ),
                   ),
+                  actions: [
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.logout_rounded,
+                            color: Colors.white70, size: 20),
+                        onPressed: () => FirebaseAuth.instance.signOut(),
+                        tooltip: 'Logout Session',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
                 ),
-              ),
-              child: const TabBar(
-                isScrollable: true,
-                indicatorColor: Colors.amberAccent,
-                indicatorWeight: 3,
-                labelColor: Colors.amberAccent,
-                unselectedLabelColor: Colors.white38,
-                labelStyle:
-                    TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                unselectedLabelStyle:
-                    TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-                dividerColor: Colors.transparent,
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                tabAlignment: TabAlignment.start,
-                tabs: [
-                  Tab(
-                    height: 60,
-                    child: Row(
-                      children: [
-                        Icon(Icons.dashboard_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text('Dashboard'),
-                      ],
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        width: 1,
+                      ),
                     ),
                   ),
-                  Tab(
-                    height: 60,
-                    child: Row(
-                      children: [
-                        Icon(Icons.people_alt_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text('Players'),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    height: 60,
-                    child: Row(
-                      children: [
-                        Icon(Icons.storefront_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text('Shop'),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    height: 60,
-                    child: Row(
-                      children: [
-                        Icon(Icons.gavel_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text('Reports'),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    height: 60,
-                    child: Row(
-                      children: [
-                        Icon(Icons.forum_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text('Live Chat'),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    height: 60,
-                    child: Row(
-                      children: [
-                        Icon(Icons.security_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text('Auto-Mod'),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    height: 60,
-                    child: Row(
-                      children: [
-                        Icon(Icons.history_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text('Audit'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        drawer: Drawer(
-          backgroundColor: const Color(0xFF0F0F1E),
-          child: Column(
-            children: [
-              DrawerHeader(
-                decoration: const BoxDecoration(
-                  color: Color(0xFF16162F),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.shield_rounded, color: Colors.amberAccent, size: 48),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'DREAMHUNTER',
-                        style: TextStyle(
-                          color: Colors.amberAccent,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 20,
-                          letterSpacing: 2,
+                  child: const TabBar(
+                    isScrollable: true,
+                    indicatorColor: Colors.amberAccent,
+                    indicatorWeight: 3,
+                    labelColor: Colors.amberAccent,
+                    unselectedLabelColor: Colors.white38,
+                    labelStyle:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    unselectedLabelStyle:
+                        TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                    dividerColor: Colors.transparent,
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    tabAlignment: TabAlignment.start,
+                    tabs: [
+                      Tab(
+                        height: 50,
+                        child: Row(
+                          children: [
+                            Icon(Icons.dashboard_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('Dashboard'),
+                          ],
                         ),
                       ),
-                      Text(
-                        'ADMIN CONTROL',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
+                      Tab(
+                        height: 50,
+                        child: Row(
+                          children: [
+                            Icon(Icons.people_alt_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('Players'),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        height: 50,
+                        child: Row(
+                          children: [
+                            Icon(Icons.storefront_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('Shop'),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        height: 50,
+                        child: Row(
+                          children: [
+                            Icon(Icons.gavel_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('Reports'),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        height: 50,
+                        child: Row(
+                          children: [
+                            Icon(Icons.forum_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('Live Chat'),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        height: 50,
+                        child: Row(
+                          children: [
+                            Icon(Icons.security_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('Auto-Mod'),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        height: 50,
+                        child: Row(
+                          children: [
+                            Icon(Icons.history_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('Audit'),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        height: 50,
+                        child: Row(
+                          children: [
+                            Icon(Icons.settings_suggest_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('Service Ops'),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        height: 50,
+                        child: Row(
+                          children: [
+                            Icon(Icons.tune_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('Config'),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.leaderboard_rounded, color: Colors.amberAccent),
-                title: const Text('Global Leaderboards', style: TextStyle(color: Colors.white70)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LeaderboardScreen()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.refresh_rounded, color: Colors.amberAccent),
-                title: const Text('Roulette & Daily Rewards', style: TextStyle(color: Colors.white70)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const RouletteManagementScreen()),
-                  );
-                },
-              ),
-              const Spacer(),
-              const Divider(color: Colors.white10),
-              ListTile(
-                leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-                title: const Text('Logout Session', style: TextStyle(color: Colors.redAccent)),
-                onTap: () {
-                  Navigator.pop(context);
-                  FirebaseAuth.instance.signOut();
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
+              ],
+            ),
           ),
         ),
         body: Container(
           decoration: const BoxDecoration(
-            color: Color(0xFF0F0F1E),
+            image: DecorationImage(
+              image: AssetImage('assets/images/admin_bg.jpg'), // Optional background if provided
+              fit: BoxFit.cover,
+              opacity: 0.2,
+            ),
+            color: Color(0xFF07070F),
           ),
-          child: const TabBarView(
-            children: [
-              DashboardScreen(),
-              PlayersScreen(),
-              ShopManagementScreen(),
-              ReportsScreen(),
-              LiveChatScreen(),
-              AutoModScreen(),
-              AuditScreen(),
-            ],
+          child: const Padding(
+            padding: EdgeInsets.only(top: 120),
+            child: TabBarView(
+              children: [
+                DashboardScreen(),
+                PlayersScreen(),
+                ShopManagementScreen(),
+                ReportsScreen(),
+                LiveChatScreen(),
+                AutoModScreen(),
+                AuditScreen(),
+                ServiceOpsScreen(),
+                ConfigEditorScreen(),
+              ],
+            ),
           ),
         ),
       ),

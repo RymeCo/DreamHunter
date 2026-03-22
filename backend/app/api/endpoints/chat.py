@@ -22,7 +22,43 @@ async def post_chat_message(region: str, msg: ChatMessage, decoded_token: dict =
         raise HTTPException(status_code=404, detail="User not found")
     
     user_data = user_doc.to_dict()
+
+    # --- Rate-Limiting & Anti-Spam (SCRUM-78) ---
+    config_doc = db.collection('metadata').document('moderation_config').get()
+    config = config_doc.to_dict() if config_doc.exists else {}
+    chat_cooldown = config.get('chatCooldown', 5) # Default 5 seconds
+
+    last_msg_time = user_data.get('lastMessageTimestamp')
+    spam_score = user_data.get('spamScore', 0)
+    is_flagged = user_data.get('isFlagged', False)
+
+    if is_flagged:
+        raise HTTPException(status_code=403, detail="You have been flagged for spamming/bypassing limits.")
+
+    if last_msg_time:
+        if isinstance(last_msg_time, str):
+            last_msg_time = datetime.fromisoformat(last_msg_time.replace('Z', '+00:00'))
+        
+        # We allow a small 0.5s grace for network jitter
+        if (now - last_msg_time.replace(tzinfo=timezone.utc)).total_seconds() < (chat_cooldown - 0.5):
+            new_spam_score = spam_score + 1
+            update_fields = {"spamScore": new_spam_score}
+            
+            if new_spam_score > 3:
+                update_fields["isFlagged"] = True
+                user_ref.update(update_fields)
+                raise HTTPException(status_code=403, detail="You have been flagged for spamming/bypassing limits.")
+            
+            user_ref.update(update_fields)
+            raise HTTPException(status_code=429, detail=f"Slow down! Wait {chat_cooldown}s.")
     
+    # Reset spam score slowly if they are being good
+    if spam_score > 0 and (now - last_msg_time.replace(tzinfo=timezone.utc)).total_seconds() > 60:
+        user_ref.update({"spamScore": 0})
+
+    # Update timestamp for this message
+    user_ref.update({"lastMessageTimestamp": now.isoformat()})
+
     # Progress daily task for chat
     task_result = await progress_daily_task(uid, "chat")
     

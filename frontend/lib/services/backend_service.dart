@@ -210,6 +210,40 @@ class BackendService {
     }
   }
 
+  // Chat Anti-Spam (Hardcoded 5s)
+  DateTime? _lastMessageTime;
+
+  /// Sends a message to global chat
+  Future<Map<String, dynamic>> sendMessage(String content) async {
+    final now = DateTime.now();
+    if (_lastMessageTime != null) {
+      final diff = now.difference(_lastMessageTime!).inSeconds;
+      if (diff < 5) {
+        return {
+          'status': 'error',
+          'message': 'Slow down! Wait ${5 - diff}s.',
+          'cooldown': 5 - diff,
+        };
+      }
+    }
+
+    try {
+      final response = await post('/chat/send', body: {'content': content});
+      if (response.statusCode == 200) {
+        _lastMessageTime = now;
+        return json.decode(response.body);
+      } else {
+        final data = json.decode(response.body);
+        return {
+          'status': 'error',
+          'message': data['detail'] ?? 'Failed to send message.',
+        };
+      }
+    } catch (e) {
+      return {'status': 'error', 'message': 'Connection error.'};
+    }
+  }
+
   /// Claims a daily task reward
   Future<Map<String, dynamic>?> claimDailyTask(String taskId) async {
     try {

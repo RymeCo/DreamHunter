@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -62,7 +63,19 @@ class OfflineCache {
   static const String _lastSyncKey = BackendConfig.lastSyncKey;
   static const String _lastSyncStatusKey = BackendConfig.lastSyncStatusKey;
   static const String _notifiedTasksKey = 'notified_tasks_cache';
+  
+  // Simple Integrity Keys
+  static const String _integrityKey = 'shadow_integrity_v1';
+  static const String _secureBackupKey = 'secure_backup_v1';
+  static const String _salt = 'DREAM_HUNTER_SECURE_2026_!#@_S@LT_v1';
+  
   static const _uuid = Uuid();
+
+  /// Generates a SHA-256 checksum for the currency data.
+  static String _generateChecksum(Map<String, dynamic> data) {
+    final String raw = '${data['dreamCoins']}:${data['hellStones']}:${data['xp']}:${data['level']}:$_salt';
+    return sha256.convert(utf8.encode(raw)).toString();
+  }
 
   /// Helper to get a key scoped to the current user (or guest)
   static String _getScopedKey(String baseKey, [String? uid]) {
@@ -123,19 +136,25 @@ class OfflineCache {
       }
     }
 
-    await prefs.setString(
-      _getScopedKey(_currencyKey),
-      json.encode({
-        'dreamCoins': dreamCoins,
-        'hellStones': hellStones,
-        'playtime': playtime,
-        'freeSpins': freeSpins,
-        'xp': xp,
-        'level': level,
-        'avatarId': avatarId,
-        'createdAt': createdAt,
-      }),
-    );
+    final Map<String, dynamic> data = {
+      'dreamCoins': dreamCoins,
+      'hellStones': hellStones,
+      'playtime': playtime,
+      'freeSpins': freeSpins,
+      'xp': xp,
+      'level': level,
+      'avatarId': avatarId,
+      'createdAt': createdAt,
+    };
+
+    final String jsonStr = json.encode(data);
+    final String checksum = _generateChecksum(data);
+
+    // Save main data + Checksum + Secure Backup
+    final scopedKey = _getScopedKey(_currencyKey);
+    await prefs.setString(scopedKey, jsonStr);
+    await prefs.setString(_getScopedKey(_integrityKey), checksum);
+    await prefs.setString(_getScopedKey(_secureBackupKey), jsonStr);
     if (dailyTasks != null) {
       final oldTasksStr = prefs.getString(_getScopedKey(_dailyTasksKey));
       if (oldTasksStr != null) {
@@ -152,18 +171,44 @@ class OfflineCache {
   static Future<Map<String, dynamic>> getCurrency() async {
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(_getScopedKey(_currencyKey));
+    final storedIntegrity = prefs.getString(_getScopedKey(_integrityKey));
+
     if (cached != null) {
-      final Map<String, dynamic> data = json.decode(cached);
-      return {
-        'dreamCoins': data['dreamCoins'] as int,
-        'hellStones': data['hellStones'] as int,
-        'playtime': data['playtime'] as int? ?? 0,
-        'freeSpins': data['freeSpins'] as int? ?? 0,
-        'xp': data['xp'] as int? ?? 0,
-        'level': data['level'] as int? ?? 1,
-        'avatarId': data['avatarId'] as int? ?? 0,
-        'createdAt': data['createdAt'] as String?,
-      };
+      try {
+        final Map<String, dynamic> data = json.decode(cached);
+        
+        // --- OFFLINE INTEGRITY CHECK ---
+        final currentChecksum = _generateChecksum(data);
+        if (storedIntegrity != null && currentChecksum != storedIntegrity) {
+          developer.log('INTEGRITY FAILURE: Local currency data tampered!', name: 'OfflineCache', level: 1000);
+          
+          // Try to recover from Shadow Backup
+          final backup = prefs.getString(_getScopedKey(_secureBackupKey));
+          if (backup != null) {
+            developer.log('REVERTING: Using Secure Backup to restore valid state.', name: 'OfflineCache');
+            return json.decode(backup);
+          }
+          
+          // Emergency Reset to prevent cheated values from staying
+          return {
+            'dreamCoins': 0, 'hellStones': 0, 'playtime': 0, 'freeSpins': 0,
+            'xp': 0, 'level': 1, 'avatarId': 0, 'createdAt': null,
+          };
+        }
+
+        return {
+          'dreamCoins': data['dreamCoins'] as int,
+          'hellStones': data['hellStones'] as int,
+          'playtime': data['playtime'] as int? ?? 0,
+          'freeSpins': data['freeSpins'] as int? ?? 0,
+          'xp': data['xp'] as int? ?? 0,
+          'level': data['level'] as int? ?? 1,
+          'avatarId': data['avatarId'] as int? ?? 0,
+          'createdAt': data['createdAt'] as String?,
+        };
+      } catch (e) {
+        developer.log('Error decoding currency: $e', name: 'OfflineCache');
+      }
     }
     // Hardcoded starting currency for new guests/users
     return {

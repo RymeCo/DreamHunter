@@ -298,13 +298,13 @@ class _DashboardScreenState extends State<DashboardScreen>
                   _maintSwitch(
                     'Global Chat Mode',
                     chatMaint,
-                    (v) => provider.updateMaintenance(v, null),
+                    (v) => provider.updateMaintenance(chat: v),
                   ),
                   const Divider(height: 24, color: Color(0xFF2A2A4A)),
                   _maintSwitch(
                     'Marketplace Mode',
                     shopMaint,
-                    (v) => provider.updateMaintenance(null, v),
+                    (v) => provider.updateMaintenance(shop: v),
                   ),
                 ],
               );

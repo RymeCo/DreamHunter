@@ -149,6 +149,20 @@ async def update_user_currency(uid: str, req: UserCurrencyRequest, admin: dict =
     log_audit(admin['uid'], "USER_CURRENCY_UPDATE", uid, f"Currency updated: DC={req.dreamCoins}, HS={req.hellStones}", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
     return {"status": "success", "message": "Currency updated successfully."}
 
+@router.post("/users/{uid}/reset-spam")
+async def reset_spam_score(uid: str, admin: dict = Depends(verify_admin)):
+    user_ref = db.collection('users').document(uid)
+    user_doc = user_ref.get()
+    if not user_doc.exists: raise HTTPException(status_code=404, detail="User not found")
+    target_data = user_doc.to_dict()
+    user_ref.update({
+        "spamScore": 0,
+        "isFlagged": False,
+        "updatedAt": firestore.SERVER_TIMESTAMP
+    })
+    log_audit(admin['uid'], "RESET_SPAM_SCORE", uid, "Admin reset user spam score and unflagged them.", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
+    return {"status": "success", "message": "Spam score reset and user unflagged."}
+
 @router.patch("/maintenance")
 async def update_maintenance(req: MaintenanceRequest, admin: dict = Depends(verify_admin)):
     update_data = {k: v for k, v in req.model_dump(exclude_none=True).items()}
