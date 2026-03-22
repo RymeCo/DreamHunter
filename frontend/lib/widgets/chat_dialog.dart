@@ -5,6 +5,8 @@ import 'package:dreamhunter/services/chat_service.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/widgets/report_dialog.dart';
+import 'package:dreamhunter/widgets/game_widgets.dart';
+import 'package:dreamhunter/widgets/clickable_image.dart';
 
 class ChatDialog extends StatefulWidget {
   final ChatService? chatService;
@@ -256,6 +258,8 @@ class _ChatDialogState extends State<ChatDialog> {
         return Center(
           child: LiquidGlassDialog(
             width: 350,
+            height: 500,
+            padding: EdgeInsets.zero,
             child: ReportDialog(
               messageId: messageId,
               originalMessageText: data['text'] ?? '',
@@ -279,49 +283,48 @@ class _ChatDialogState extends State<ChatDialog> {
     return LiquidGlassDialog(
       width: dialogWidth,
       height: 600,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Column(
         children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Text(
-                  strings['title']!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              DropdownButton<String>(
-                value: _selectedRegion,
-                dropdownColor: const Color.fromRGBO(30, 30, 30, 0.9),
-                style: const TextStyle(color: Colors.white),
-                underline: const SizedBox(),
-                items: _regions.entries
-                    .where((e) => e.key != 'mod-only' || _isModerator)
-                    .map((e) {
-                      return DropdownMenuItem(
-                        value: e.key,
-                        child: Text(e.value),
-                      );
-                    })
-                    .toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() => _selectedRegion = val);
-                    _chatService.setSelectedRegion(val);
-                  }
-                },
-              ),
-            ],
+          GameDialogHeader(
+            title: strings['title']!,
+            titleColor: Colors.amberAccent,
           ),
-          const Divider(color: Colors.white24),
+          
+          // Region Selector
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const Icon(Icons.language, color: Colors.white54, size: 16),
+                const SizedBox(width: 8),
+                DropdownButton<String>(
+                  value: _selectedRegion,
+                  dropdownColor: const Color.fromRGBO(30, 30, 30, 0.9),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.arrow_drop_down, color: Colors.white38),
+                  items: _regions.entries
+                      .where((e) => e.key != 'mod-only' || _isModerator)
+                      .map((e) {
+                    return DropdownMenuItem(
+                      value: e.key,
+                      child: Text(e.value),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _selectedRegion = val);
+                      _chatService.setSelectedRegion(val);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          const Divider(color: Colors.white10, height: 1),
+          const SizedBox(height: 8),
 
           // Chat Stream
           Expanded(
@@ -683,7 +686,7 @@ class _ChatDialogState extends State<ChatDialog> {
                 ),
               ),
               const SizedBox(width: 8),
-              GestureDetector(
+              GlassButton(
                 onTap: _isSending
                     ? null
                     : () {
@@ -700,25 +703,20 @@ class _ChatDialogState extends State<ChatDialog> {
                           _sendMessage();
                         }
                       },
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: (_isSending || _isChatMaintenance)
-                        ? Colors.grey
-                        : Colors.orangeAccent,
-                    shape: BoxShape.circle,
-                  ),
-                  child: _isSending
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Icon(Icons.send, color: Colors.white, size: 20),
-                ),
+                padding: const EdgeInsets.all(12),
+                borderRadius: 24,
+                glowColor: Colors.orangeAccent,
+                isClickable: !_isSending && !_isChatMaintenance,
+                child: _isSending
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.send, color: Colors.white, size: 20),
               ),
             ],
           ),

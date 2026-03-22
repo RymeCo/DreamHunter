@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'leveling_service.dart';
+import 'backend_config.dart';
 
 class OfflineTransaction {
   final String id;
@@ -52,14 +53,15 @@ class OfflineTransaction {
 }
 
 class OfflineCache {
-  static const String _currencyKey = 'cached_currency';
-  static const String _transactionQueueKey = 'transaction_queue';
-  static const String _settingsKey = 'app_settings';
-  static const String _inventoryKey = 'cached_inventory';
-  static const String _progressKey = 'cached_progress';
-  static const String _dailyTasksKey = 'cached_daily_tasks';
-  static const String _lastSyncKey = 'last_sync_timestamp';
-  static const String _lastSyncStatusKey = 'last_sync_status';
+  static const String _currencyKey = BackendConfig.currencyKey;
+  static const String _transactionQueueKey = BackendConfig.transactionQueueKey;
+  static const String _settingsKey = BackendConfig.settingsKey;
+  static const String _inventoryKey = BackendConfig.inventoryKey;
+  static const String _progressKey = BackendConfig.progressKey;
+  static const String _dailyTasksKey = BackendConfig.dailyTasksKey;
+  static const String _lastSyncKey = BackendConfig.lastSyncKey;
+  static const String _lastSyncStatusKey = BackendConfig.lastSyncStatusKey;
+  static const String _statsSummaryKey = BackendConfig.statsSummaryKey;
   static const _uuid = Uuid();
 
   /// Helper to get a key scoped to the current user (or guest)

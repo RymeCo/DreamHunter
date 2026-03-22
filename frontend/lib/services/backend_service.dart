@@ -3,9 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'offline_cache.dart';
+import 'backend_config.dart';
 
 class BackendService {
-  static const String baseUrl = 'https://dreamhunter-api.onrender.com';
+  static const String baseUrl = BackendConfig.baseUrl;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final http.Client _client;
 

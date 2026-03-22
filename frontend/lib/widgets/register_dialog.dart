@@ -145,38 +145,10 @@ class _RegisterDialogState extends State<RegisterDialog> {
                 },
               ),
               const SizedBox(height: 25),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _register,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(255, 255, 255, 0.3),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 15,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    side: const BorderSide(
-                      color: Color.fromRGBO(255, 255, 255, 0.5),
-                    ),
-                  ),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text(
-                        'Register',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+              AuthUIHelper.primaryButton(
+                label: 'Register',
+                onPressed: _register,
+                isLoading: _isLoading,
               ),
               TextButton(
                 onPressed: widget.onLoginRequested,

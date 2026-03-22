@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/backend_service.dart';
 import '../services/offline_cache.dart';
+import '../services/format_utils.dart';
+import '../game/core/game_constants.dart';
 import 'liquid_glass_dialog.dart';
 import 'custom_snackbar.dart';
+import 'game_widgets.dart';
 
 class ProfileDialog extends StatefulWidget {
   final BackendService backendService;
@@ -22,13 +25,6 @@ class ProfileDialog extends StatefulWidget {
 class _ProfileDialogState extends State<ProfileDialog> {
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
-
-  final List<String> _predefinedAvatars = [
-    'assets/images/dashboard/profile.png',
-    'assets/images/dashboard/profile_logo.png',
-    'assets/images/dashboard/small_circle_figure.png',
-    'assets/images/dashboard/roulette_man.png',
-  ];
 
   @override
   void initState() {
@@ -88,7 +84,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                     ),
-                    itemCount: _predefinedAvatars.length,
+                    itemCount: GameConstants.predefinedAvatars.length,
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onTap: () async {
@@ -107,7 +103,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
                           ),
                           child: CircleAvatar(
                             backgroundColor: Colors.white10,
-                            backgroundImage: AssetImage(_predefinedAvatars[index]),
+                            backgroundImage: AssetImage(GameConstants.predefinedAvatars[index]),
                           ),
                         ),
                       );
@@ -135,6 +131,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
         current['xp']!,
         current['level']!,
         id,
+        current['createdAt'],
       );
       await _loadUserData();
       if (mounted) {
@@ -153,9 +150,9 @@ class _ProfileDialogState extends State<ProfileDialog> {
     final user = AuthService().currentUser;
     final String displayName = user?.displayName ?? 'Dreamer';
     final int avatarId = _userData?['avatarId'] ?? 0;
-    final String avatarPath = avatarId < _predefinedAvatars.length 
-        ? _predefinedAvatars[avatarId] 
-        : _predefinedAvatars[0];
+    final String avatarPath = avatarId < GameConstants.predefinedAvatars.length 
+        ? GameConstants.predefinedAvatars[avatarId] 
+        : GameConstants.predefinedAvatars[0];
 
     return LiquidGlassDialog(
       width: 350,
@@ -233,17 +230,17 @@ class _ProfileDialogState extends State<ProfileDialog> {
                   ),
                 ),
               const SizedBox(height: 24),
-              _buildStatRow(Icons.bolt, 'Level ${_userData?['level'] ?? 1}', Colors.blueAccent),
+              StatRow(icon: Icons.bolt, label: 'Level ${_userData?['level'] ?? 1}', color: Colors.blueAccent),
               const SizedBox(height: 12),
-              _buildStatRow(Icons.military_tech, '${_userData?['xp'] ?? 0} XP', Colors.orangeAccent),
+              StatRow(icon: Icons.military_tech, label: '${_userData?['xp'] ?? 0} XP', color: Colors.orangeAccent),
               const SizedBox(height: 12),
-              _buildStatRow(Icons.timer_rounded, _formatPlaytime((_userData?['playtime'] ?? 0) as int), Colors.greenAccent),
+              StatRow(icon: Icons.timer_rounded, label: FormatUtils.formatPlaytime((_userData?['playtime'] ?? 0) as int), color: Colors.greenAccent),
               if (_userData?['createdAt'] != null) ...[
                 const SizedBox(height: 12),
-                _buildStatRow(
-                  Icons.calendar_month_rounded,
-                  'Member since ${_formatDate(_userData!['createdAt'])}',
-                  Colors.purpleAccent,
+                StatRow(
+                  icon: Icons.calendar_month_rounded,
+                  label: 'Member since ${FormatUtils.formatDate(_userData!['createdAt'])}',
+                  color: Colors.purpleAccent,
                 ),
               ],
               const SizedBox(height: 32),
@@ -277,47 +274,6 @@ class _ProfileDialogState extends State<ProfileDialog> {
             ),
         ],
       ),
-    );
-  }
-
-  String _formatPlaytime(int seconds) {
-    int hours = seconds ~/ 3600;
-    int minutes = (seconds % 3600) ~/ 60;
-    if (hours > 0) {
-      return '${hours}h ${minutes}m playtime';
-    } else {
-      return '${minutes}m playtime';
-    }
-  }
-
-  String _formatDate(String isoDate) {
-    try {
-      final date = DateTime.parse(isoDate);
-      final months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-      ];
-      return '${months[date.month - 1]} ${date.year}';
-    } catch (e) {
-      return 'Unknown';
-    }
-  }
-
-  Widget _buildStatRow(IconData icon, String label, Color color) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 }

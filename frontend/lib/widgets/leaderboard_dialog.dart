@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/backend_service.dart';
+import '../services/format_utils.dart';
 import 'liquid_glass_dialog.dart';
+import 'game_widgets.dart';
 
 class LeaderboardDialog extends StatelessWidget {
   final BackendService backendService;
@@ -17,24 +19,7 @@ class LeaderboardDialog extends StatelessWidget {
           height: 550,
           child: Column(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'LEADERBOARDS',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Colors.white70),
-                  ),
-                ],
-              ),
+              const GameDialogHeader(title: 'LEADERBOARDS'),
               const TabBar(
                 indicatorColor: Colors.amberAccent,
                 labelColor: Colors.amberAccent,
@@ -168,7 +153,9 @@ class _LeaderboardListState extends State<LeaderboardList> {
   String _getDisplayValue(String type, Map<String, dynamic> entry) {
     if (type == 'level') return 'LVL ${entry['level'] ?? 1}';
     if (type == 'coins') return '${entry['dreamCoins'] ?? 0} DC';
-    if (type == 'playtime') return '${(entry['playtime'] ?? 0) ~/ 3600}h';
+    if (type == 'playtime') {
+      return FormatUtils.formatCompactPlaytime(entry['playtime'] ?? 0);
+    }
     return '0';
   }
 }

@@ -7,6 +7,7 @@ This project follows a streamlined development workflow to ensure high velocity 
 - **Task Initiation**: Whenever the user requests a new feature or task, the agent MUST use the Atlassian MCP server to create a new Jira SCRUM ticket (e.g., `SCRUM-XX`). 
 - **Naming**: The agent will automatically generate a descriptive title and description for the ticket based on the user's request.
 - **Traceability**: Every commit message MUST start with the corresponding Jira ticket key (e.g., `SCRUM-XX: implemented feature y`).
+- **Resilient SCRUM Tracking**: If the Atlassian server is unreachable, the agent MUST still proceed with the development and commit. In this case, the agent will check the git log for the last used key (e.g., `SCRUM-67`), increment the number (to `SCRUM-68`), and use it for the commit prefix. The agent MUST explicitly mention in the commit message that Jira was offline. Once connectivity is restored, the agent (or the user) should ensure the corresponding ticket is created to maintain history.
 
 ## Git Workflow (Direct-to-Dev)
 To maintain momentum, all development is performed directly on the **`development`** branch.

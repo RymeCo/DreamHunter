@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../services/offline_cache.dart';
 import '../services/backend_service.dart';
+import '../game/core/game_constants.dart';
 import 'liquid_glass_dialog.dart';
 import 'custom_snackbar.dart';
+import 'game_widgets.dart';
 
 class DailyTasksDialog extends StatefulWidget {
   const DailyTasksDialog({super.key});
@@ -38,7 +40,6 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
     final result = await _backendService.claimDailyTask(taskId);
 
     if (result != null && result['status'] == 'success') {
-      // Update local cache
       final dailyTasks = result['dailyTasks'] as Map<String, dynamic>;
       final reward = result['rewardGranted'] as int;
 
@@ -60,7 +61,6 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
         showCustomSnackBar(context, 'Reward claimed: $reward Dream Coins!', type: SnackBarType.success);
       }
       
-      // Trigger a full sync to ensure all progress is locked in
       await _backendService.performFullSync();
     } else {
       if (mounted) {
@@ -175,7 +175,7 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isClaimed ? Icons.check_circle_rounded : _getIconForType(task['type']),
+              isClaimed ? Icons.check_circle_rounded : GameConstants.getIconForTaskType(task['type']),
               color: isClaimed ? Colors.greenAccent : Colors.blueAccent,
               size: 24,
             ),
@@ -203,39 +203,11 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
                 ),
                 const SizedBox(height: 8),
                 if (!isClaimed)
-                  Stack(
-                    children: [
-                      Container(
-                        height: 6,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.black26,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                      FractionallySizedBox(
-                        widthFactor: percent,
-                        child: Container(
-                          height: 6,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: isCompleted
-                                  ? [Colors.amberAccent, Colors.orange]
-                                  : [Colors.blueAccent, Colors.lightBlueAccent],
-                            ),
-                            borderRadius: BorderRadius.circular(3),
-                            boxShadow: [
-                              BoxShadow(
-                                color: isCompleted
-                                    ? Colors.orange.withValues(alpha: 0.5)
-                                    : Colors.blue.withValues(alpha: 0.5),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                  GameProgressBar(
+                    percent: percent,
+                    gradientColors: isCompleted
+                        ? [Colors.amberAccent, Colors.orange]
+                        : [Colors.blueAccent, Colors.lightBlueAccent],
                   ),
               ],
             ),
@@ -295,19 +267,5 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
         ],
       ),
     );
-  }
-  IconData _getIconForType(String? type) {
-    switch (type) {
-      case 'chat':
-        return Icons.chat_bubble_rounded;
-      case 'spin':
-        return Icons.casino_rounded;
-      case 'playtime':
-        return Icons.timer_rounded;
-      case 'login':
-        return Icons.login_rounded;
-      default:
-        return Icons.task_alt_rounded;
-    }
   }
 }

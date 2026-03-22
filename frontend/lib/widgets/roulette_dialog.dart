@@ -2,6 +2,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'liquid_glass_dialog.dart';
+import 'game_widgets.dart';
+import 'clickable_image.dart';
 import '../services/offline_cache.dart';
 import 'custom_snackbar.dart';
 
@@ -272,24 +274,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
         height: 600,
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'ROULETTE',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.amberAccent,
-                    letterSpacing: 2,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.white38),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
+            const GameDialogHeader(title: 'ROULETTE'),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -398,16 +383,31 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
             Column(
               children: [
                 if (_freeSpins > 0)
-                  _buildActionButton(
-                    label: 'FREE SPIN',
+                  GlassButton(
                     onTap: () => _spin(false),
-                    isEnabled: !_isSpinning,
-                    color: Colors.greenAccent,
-                    icon: Icons.refresh_rounded,
+                    isClickable: !_isSpinning,
+                    glowColor: Colors.greenAccent,
+                    width: double.infinity,
+                    height: 60,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.refresh_rounded, color: Colors.greenAccent, size: 22),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'FREE SPIN',
+                          style: TextStyle(
+                            color: Colors.greenAccent,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   )
                 else
-                  _buildActionButton(
-                    label: 'WATCH AD (+1 SPIN)',
+                  GlassButton(
                     onTap: () {
                       showCustomSnackBar(context, 'Ads coming soon! Placeholder +1 granted.',
                           type: SnackBarType.info);
@@ -420,72 +420,54 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
                         freeSpinDelta: 1,
                       );
                     },
-                    isEnabled: !_isSpinning,
-                    color: Colors.blueAccent,
-                    icon: Icons.play_circle_outline,
+                    isClickable: !_isSpinning,
+                    glowColor: Colors.blueAccent,
+                    width: double.infinity,
+                    height: 60,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.play_circle_outline, color: Colors.blueAccent, size: 22),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'WATCH AD (+1 SPIN)',
+                          style: TextStyle(
+                            color: Colors.blueAccent,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 const SizedBox(height: 12),
-                _buildActionButton(
-                  label: 'BUY SPIN (${(_config?['spinBuyPrice'] ?? 50)} DC)',
+                GlassButton(
                   onTap: () => _spin(true),
-                  isEnabled: !_isSpinning &&
+                  isClickable: !_isSpinning &&
                       _dreamCoins >=
                           ((_config?['spinBuyPrice'] as num?)?.toInt() ?? 50),
-                  color: Colors.amberAccent,
-                  icon: Icons.shopping_cart_rounded,
+                  glowColor: Colors.amberAccent,
+                  width: double.infinity,
+                  height: 60,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.shopping_cart_rounded, color: Colors.amberAccent, size: 22),
+                      const SizedBox(width: 12),
+                      Text(
+                        'BUY SPIN (${(_config?['spinBuyPrice'] ?? 50)} DC)',
+                        style: const TextStyle(
+                          color: Colors.amberAccent,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required String label,
-    required VoidCallback onTap,
-    required bool isEnabled,
-    required Color color,
-    required IconData icon,
-  }) {
-    return InkWell(
-      onTap: isEnabled ? onTap : null,
-      borderRadius: BorderRadius.circular(15),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: isEnabled ? color.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.02),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: isEnabled ? color.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.05),
-            width: 1.5,
-          ),
-          boxShadow: isEnabled ? [
-            BoxShadow(
-              color: color.withValues(alpha: 0.1),
-              blurRadius: 15,
-              spreadRadius: 0,
-            )
-          ] : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: isEnabled ? color : Colors.white.withValues(alpha: 0.1), size: 22),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: TextStyle(
-                color: isEnabled ? color : Colors.white.withValues(alpha: 0.1),
-                fontWeight: FontWeight.w900,
-                fontSize: 15,
-                letterSpacing: 1.5,
-                shadows: isEnabled ? [
-                  Shadow(color: color.withValues(alpha: 0.5), blurRadius: 10),
-                ] : null,
-              ),
             ),
           ],
         ),

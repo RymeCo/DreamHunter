@@ -4,6 +4,7 @@ import '../services/user_service.dart';
 import 'custom_snackbar.dart';
 import 'liquid_glass_dialog.dart';
 import 'confirmation_dialog.dart';
+import 'game_widgets.dart';
 
 class ShopDialog extends StatefulWidget {
   const ShopDialog({super.key});
@@ -111,28 +112,7 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
         padding: EdgeInsets.zero,
         child: Column(
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'DREAM SHOP',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
+            const GameDialogHeader(title: 'DREAM SHOP'),
             
             // Tab Bar
             TabBar(

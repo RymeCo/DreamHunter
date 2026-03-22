@@ -1,61 +1,73 @@
 import 'package:flutter/material.dart';
 
-/// A highly interactive, animated image-based button for indie game UIs.
-/// Supports hover scaling, click feedback, and a glow effect.
+/// A highly interactive, animated "Liquid Glass" button for indie game UIs.
+/// Supports both image-based and text/widget-based content.
 ///
 /// ### How to use:
 /// ```dart
-/// MakeItButton(
-///   imagePath: 'assets/images/dashboard/sandwich.png',
+/// GlassButton(
 ///   onTap: () => print('Button Tapped!'),
-///   width: 50,
-///   height: 50,
-///   onHoverGlow: true,
+///   child: Text('Play'),
+///   glowColor: Colors.blueAccent,
 /// )
 /// ```
-class MakeItButton extends StatefulWidget {
-  /// Path to the asset image.
-  final String imagePath;
+class GlassButton extends StatefulWidget {
+  /// Path to the asset image. Optional if [child] is provided.
+  final String? imagePath;
+
+  /// Content to display inside the button. Optional if [imagePath] is provided.
+  final Widget? child;
 
   /// Callback function when the button is tapped.
   final VoidCallback? onTap;
 
-  /// Width of the button.
-  final double width;
+  /// Width of the button. Defaults to null (shrink wrap).
+  final double? width;
 
-  /// Height of the button.
-  final double height;
+  /// Height of the button. Defaults to null (shrink wrap).
+  final double? height;
 
-  /// Whether the button scales down slightly when pressed.
+  /// Whether the button scales up slightly when hovered/pressed.
   final bool clickResponsiveness;
 
-  /// Whether a white glow appears behind the image on hover.
-  final bool onHoverGlow;
+  /// The color of the glow effect.
+  final Color glowColor;
 
   /// Whether the button is currently interactive.
   final bool isClickable;
 
-  const MakeItButton({
+  /// Internal padding.
+  final EdgeInsetsGeometry padding;
+
+  /// Corner roundness.
+  final double borderRadius;
+
+  const GlassButton({
     super.key,
-    required this.imagePath,
+    this.imagePath,
+    this.child,
     this.onTap,
-    this.width = 50,
-    this.height = 50,
+    this.width,
+    this.height,
     this.clickResponsiveness = true,
-    this.onHoverGlow = true,
+    this.glowColor = Colors.white,
     this.isClickable = true,
-  });
+    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    this.borderRadius = 12.0,
+  }) : assert(imagePath != null || child != null, 'Either imagePath or child must be provided');
 
   @override
-  State<MakeItButton> createState() => _MakeItButtonState();
+  State<GlassButton> createState() => _GlassButtonState();
 }
 
-class _MakeItButtonState extends State<MakeItButton> {
+class _GlassButtonState extends State<GlassButton> {
   bool _isHovering = false;
   bool _isTapped = false;
 
   @override
   Widget build(BuildContext context) {
+    final bool active = widget.isClickable && (_isHovering || _isTapped);
+
     return GestureDetector(
       onTapDown: widget.isClickable && widget.clickResponsiveness
           ? (_) => setState(() => _isTapped = true)
@@ -71,32 +83,82 @@ class _MakeItButtonState extends State<MakeItButton> {
         onEnter: (_) => setState(() => _isHovering = true),
         onExit: (_) => setState(() => _isHovering = false),
         child: AnimatedScale(
-          scale: (widget.clickResponsiveness && (_isHovering || _isTapped))
-              ? 1.1
-              : 1.0,
+          scale: (widget.clickResponsiveness && active) ? 1.05 : 1.0,
           duration: const Duration(milliseconds: 100),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 100),
-            decoration: widget.onHoverGlow && (_isHovering || _isTapped)
-                ? BoxDecoration(
-                    boxShadow: [
+            duration: const Duration(milliseconds: 200),
+            width: widget.width,
+            height: widget.height,
+            padding: widget.padding,
+            decoration: BoxDecoration(
+              color: active 
+                ? Colors.white.withValues(alpha: 0.2) 
+                : Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+              border: Border.all(
+                color: active 
+                  ? widget.glowColor.withValues(alpha: 0.5) 
+                  : Colors.white.withValues(alpha: 0.2),
+                width: 1.5,
+              ),
+              boxShadow: active
+                  ? [
                       BoxShadow(
-                        color: Colors.white.withAlpha((255 * 0.8).round()),
-                        blurRadius: 25.0,
+                        color: widget.glowColor.withValues(alpha: 0.4),
+                        blurRadius: 15.0,
                         spreadRadius: 1.0,
-                        offset: Offset.zero,
                       ),
-                    ],
-                  )
-                : null,
-            child: Image.asset(
-              widget.imagePath,
-              width: widget.width,
-              height: widget.height,
+                    ]
+                  : [],
             ),
+            child: widget.imagePath != null
+                ? Image.asset(
+                    widget.imagePath!,
+                    width: widget.width,
+                    height: widget.height,
+                    fit: BoxFit.contain,
+                  )
+                : Center(child: widget.child),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Legacy wrapper for MakeItButton
+class MakeItButton extends StatelessWidget {
+  final String imagePath;
+  final VoidCallback? onTap;
+  final double width;
+  final double height;
+  final bool clickResponsiveness;
+  final bool onHoverGlow;
+  final bool isClickable;
+
+  const MakeItButton({
+    super.key,
+    required this.imagePath,
+    this.onTap,
+    this.width = 50,
+    this.height = 50,
+    this.clickResponsiveness = true,
+    this.onHoverGlow = true,
+    this.isClickable = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassButton(
+      imagePath: imagePath,
+      onTap: onTap,
+      width: width,
+      height: height,
+      clickResponsiveness: clickResponsiveness,
+      glowColor: Colors.white,
+      isClickable: isClickable,
+      padding: EdgeInsets.zero,
+      borderRadius: 0, // Legacy buttons didn't have rounded containers
     );
   }
 }
