@@ -35,6 +35,9 @@ class LiquidGlassDialog extends StatelessWidget {
   /// The internal padding for the content. Defaults to 20.0.
   final EdgeInsetsGeometry padding;
 
+  /// Optional background color override.
+  final Color? color;
+
   const LiquidGlassDialog({
     super.key,
     required this.child,
@@ -43,6 +46,7 @@ class LiquidGlassDialog extends StatelessWidget {
     this.borderRadius = 20.0,
     this.blurSigma = 8.0,
     this.padding = const EdgeInsets.all(20.0),
+    this.color,
   });
 
   @override
@@ -57,13 +61,13 @@ class LiquidGlassDialog extends StatelessWidget {
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
-              color: const Color.fromRGBO(255, 255, 255, 0.1),
+              color: color ?? const Color.fromRGBO(255, 255, 255, 0.1),
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
                 color: const Color.fromRGBO(255, 255, 255, 0.2),
                 width: 1.5,
               ),
-              gradient: const LinearGradient(
+              gradient: color != null ? null : const LinearGradient(
                 colors: [
                   Color.fromRGBO(255, 255, 255, 0.15),
                   Color.fromRGBO(255, 255, 255, 0.05),

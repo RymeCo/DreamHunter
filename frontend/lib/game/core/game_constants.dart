@@ -8,6 +8,11 @@ class GameConstants {
     'assets/images/dashboard/roulette_man.png',
   ];
 
+  static String getAvatarPath(int id) {
+    if (id < 0 || id >= predefinedAvatars.length) return predefinedAvatars[0];
+    return predefinedAvatars[id];
+  }
+
   static IconData getIconForTaskType(String? type) {
     switch (type) {
       case 'chat':

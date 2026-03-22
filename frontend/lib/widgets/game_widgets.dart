@@ -132,3 +132,88 @@ class GameDialogHeader extends StatelessWidget {
     );
   }
 }
+
+class GameLoadingBar extends StatelessWidget {
+  final double progress;
+  final String label;
+
+  const GameLoadingBar({
+    super.key,
+    required this.progress,
+    this.label = 'LOADING...',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+              ),
+            ),
+            Text(
+              '${(progress * 100).toInt()}%',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        GameProgressBar(
+          percent: progress,
+          height: 12,
+          gradientColors: const [
+            Color(0xFFE92EF6),
+            Color(0xFFCB1CC5),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class AppLogo extends StatelessWidget {
+  final double size;
+  final bool animated;
+
+  const AppLogo({
+    super.key,
+    this.size = 200,
+    this.animated = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Image.asset(
+          'assets/images/core/splash_logo.png',
+          width: size,
+          height: size,
+          color: const Color.fromRGBO(169, 13, 200, 0.4),
+          colorBlendMode: BlendMode.srcATop,
+        ),
+        Image.asset(
+          'assets/images/core/splash_logo.png',
+          width: size * 0.95,
+          height: size * 0.95,
+          color: const Color.fromRGBO(228, 159, 240, 0.9),
+          colorBlendMode: BlendMode.modulate,
+        ),
+      ],
+    );
+  }
+}

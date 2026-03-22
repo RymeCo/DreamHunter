@@ -12,11 +12,14 @@ import 'package:flutter/material.dart';
 /// )
 /// ```
 class GlassButton extends StatefulWidget {
-  /// Path to the asset image. Optional if [child] is provided.
+  /// Path to the asset image. Optional if [child] or [label] is provided.
   final String? imagePath;
 
-  /// Content to display inside the button. Optional if [imagePath] is provided.
+  /// Content to display inside the button. Optional if [imagePath] or [label] is provided.
   final Widget? child;
+
+  /// Text to display inside the button. Shorthand for [child].
+  final String? label;
 
   /// Callback function when the button is tapped.
   final VoidCallback? onTap;
@@ -33,6 +36,12 @@ class GlassButton extends StatefulWidget {
   /// The color of the glow effect.
   final Color glowColor;
 
+  /// The background color override.
+  final Color? color;
+
+  /// The border color override.
+  final Color? borderColor;
+
   /// Whether the button is currently interactive.
   final bool isClickable;
 
@@ -46,15 +55,19 @@ class GlassButton extends StatefulWidget {
     super.key,
     this.imagePath,
     this.child,
+    this.label,
     this.onTap,
     this.width,
     this.height,
     this.clickResponsiveness = true,
     this.glowColor = Colors.white,
+    this.color,
+    this.borderColor,
     this.isClickable = true,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     this.borderRadius = 12.0,
-  }) : assert(imagePath != null || child != null, 'Either imagePath or child must be provided');
+  }) : assert(imagePath != null || child != null || label != null, 
+          'Either imagePath, child, or label must be provided');
 
   @override
   State<GlassButton> createState() => _GlassButtonState();
@@ -67,6 +80,13 @@ class _GlassButtonState extends State<GlassButton> {
   @override
   Widget build(BuildContext context) {
     final bool active = widget.isClickable && (_isHovering || _isTapped);
+
+    // Resolve Colors
+    final Color baseBg = widget.color ?? Colors.white.withValues(alpha: 0.1);
+    final Color activeBg = widget.color?.withValues(alpha: 0.2) ?? Colors.white.withValues(alpha: 0.2);
+    
+    final Color baseBorder = widget.borderColor ?? Colors.white.withValues(alpha: 0.2);
+    final Color activeBorder = widget.borderColor?.withValues(alpha: 0.5) ?? widget.glowColor.withValues(alpha: 0.5);
 
     return GestureDetector(
       onTapDown: widget.isClickable && widget.clickResponsiveness
@@ -91,38 +111,52 @@ class _GlassButtonState extends State<GlassButton> {
             height: widget.height,
             padding: widget.padding,
             decoration: BoxDecoration(
-              color: active 
-                ? Colors.white.withValues(alpha: 0.2) 
-                : Colors.white.withValues(alpha: 0.1),
+              color: active ? activeBg : baseBg,
               borderRadius: BorderRadius.circular(widget.borderRadius),
               border: Border.all(
-                color: active 
-                  ? widget.glowColor.withValues(alpha: 0.5) 
-                  : Colors.white.withValues(alpha: 0.2),
+                color: active ? activeBorder : baseBorder,
                 width: 1.5,
               ),
               boxShadow: active
                   ? [
                       BoxShadow(
-                        color: widget.glowColor.withValues(alpha: 0.4),
+                        color: (widget.borderColor ?? widget.glowColor).withValues(alpha: 0.4),
                         blurRadius: 15.0,
                         spreadRadius: 1.0,
                       ),
                     ]
                   : [],
             ),
-            child: widget.imagePath != null
-                ? Image.asset(
-                    widget.imagePath!,
-                    width: widget.width,
-                    height: widget.height,
-                    fit: BoxFit.contain,
-                  )
-                : Center(child: widget.child),
+            child: _buildContent(),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildContent() {
+    if (widget.imagePath != null) {
+      return Image.asset(
+        widget.imagePath!,
+        width: widget.width,
+        height: widget.height,
+        fit: BoxFit.contain,
+      );
+    }
+    
+    if (widget.label != null) {
+      return Center(
+        child: Text(
+          widget.label!,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+
+    return Center(child: widget.child);
   }
 }
 
@@ -158,7 +192,7 @@ class MakeItButton extends StatelessWidget {
       glowColor: Colors.white,
       isClickable: isClickable,
       padding: EdgeInsets.zero,
-      borderRadius: 0, // Legacy buttons didn't have rounded containers
+      borderRadius: 0, 
     );
   }
 }

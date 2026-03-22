@@ -1,8 +1,8 @@
 import 'package:dreamhunter/screens/splash_screen.dart';
+import 'package:dreamhunter/services/app_theme.dart';
 import 'package:flame/flame.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -18,13 +18,21 @@ void main() async {
     await Flame.device.setPortrait();
   }
 
-  runApp(
-    MaterialApp(
-      theme: ThemeData(
-        textTheme: GoogleFonts.quicksandTextTheme(),
-      ),
+  runApp(const DHApp());
+}
+
+class DHApp extends StatelessWidget {
+  const DHApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'DreamHunter',
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
-    ),
-  );
+    );
+  }
 }

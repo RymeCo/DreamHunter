@@ -1,6 +1,7 @@
 import 'package:dreamhunter/services/auth_service.dart';
 import 'package:dreamhunter/services/auth_ui_helper.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
+import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -85,8 +86,8 @@ class _LoginDialogState extends State<LoginDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    return LiquidGlassDialog(
+      padding: const EdgeInsets.fromLTRB(24, 150 + 10, 24, 24),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(

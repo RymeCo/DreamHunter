@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/offline_cache.dart';
 import '../services/backend_service.dart';
 import 'liquid_glass_dialog.dart';
 import 'custom_snackbar.dart';
+import 'game_widgets.dart';
+import 'clickable_image.dart';
 
 class SettingsDialog extends StatefulWidget {
   final VoidCallback? onLoginRequested;
@@ -49,14 +50,13 @@ class _SettingsDialogState extends State<SettingsDialog> {
     if (FirebaseAuth.instance.currentUser == null) {
       showCustomSnackBar(
         context,
-        'Please log in to use this feature! Use the top right ☰ menu.',
+        'Log in to backup your data!',
         type: SnackBarType.info,
       );
       return;
     }
 
     setState(() => _isSyncing = true);
-    
     final success = await _backendService.performFullSync();
     
     if (mounted) {
@@ -78,40 +78,28 @@ class _SettingsDialogState extends State<SettingsDialog> {
     return Center(
       child: LiquidGlassDialog(
         width: 350,
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'SETTINGS',
-                  style: GoogleFonts.oswald(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white54),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-            const Divider(color: Colors.white24, height: 20),
+            const GameDialogHeader(title: 'Settings'),
+            const SizedBox(height: 16),
             _buildSettingSwitch(
               title: 'Music',
               subtitle: 'Atmospheric background tracks',
+              icon: Icons.music_note_rounded,
               value: _musicEnabled,
               onChanged: (val) {
                 setState(() => _musicEnabled = val);
                 _updateSettings();
               },
             ),
+            const SizedBox(height: 8),
             _buildSettingSwitch(
               title: 'Sound Effects',
-              subtitle: 'Button clicks & game feedback',
+              subtitle: 'UI & game feedback',
+              icon: Icons.volume_up_rounded,
               value: _sfxEnabled,
               onChanged: (val) {
                 setState(() => _sfxEnabled = val);
@@ -119,65 +107,41 @@ class _SettingsDialogState extends State<SettingsDialog> {
               },
             ),
             
-            const SizedBox(height: 16),
-            const Divider(color: Colors.white24, height: 10),
-            const SizedBox(height: 8),
-            
-            // Cloud Sync Section
-            Row(
-              children: [
-                const Icon(Icons.cloud_sync_rounded, color: Colors.cyanAccent, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'CLOUD SYNC',
-                  style: GoogleFonts.oswald(
-                    color: Colors.cyanAccent,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 24),
+            const StatRow(
+              icon: Icons.cloud_sync_rounded,
+              label: 'CLOUD SYNC',
+              color: Colors.cyanAccent,
             ),
             const SizedBox(height: 12),
-            InkWell(
+            GlassButton(
               onTap: _isSyncing ? null : _performManualSync,
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: Colors.cyanAccent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3)),
-                ),
-                child: Center(
-                  child: _isSyncing 
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent))
-                    : Text(
-                        'BACKUP DATA TO CLOUD',
-                        style: GoogleFonts.oswald(
-                          color: Colors.cyanAccent,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                ),
-              ),
+              width: double.infinity,
+              height: 55,
+              color: Colors.cyanAccent.withValues(alpha: 0.1),
+              borderColor: Colors.cyanAccent.withValues(alpha: 0.3),
+              child: _isSyncing 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent))
+                : const Text(
+                    'BACKUP DATA TO CLOUD',
+                    style: TextStyle(
+                      color: Colors.cyanAccent,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1,
+                      fontSize: 14,
+                    ),
+                  ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Last sync: Just now or never',
-              style: GoogleFonts.openSans(color: Colors.white24, fontSize: 10),
-            ),
-            
-            const SizedBox(height: 24),
-            Text(
-              'V 0.1.0',
-              style: GoogleFonts.openSans(
-                color: Colors.white24,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
+            const SizedBox(height: 16),
+            Center(
+              child: Text(
+                'DREAMHUNTER V 0.1.5',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
               ),
             ),
           ],
@@ -189,36 +153,29 @@ class _SettingsDialogState extends State<SettingsDialog> {
   Widget _buildSettingSwitch({
     required String title,
     required String subtitle,
+    required IconData icon,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: SwitchListTile(
+        secondary: Icon(icon, color: Colors.white70),
         title: Text(
           title,
-          style: GoogleFonts.oswald(
-            color: Colors.white,
-            fontSize: 18,
-          ),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
           subtitle,
-          style: GoogleFonts.openSans(
-            color: Colors.white60,
-            fontSize: 12,
-          ),
+          style: const TextStyle(color: Colors.white54, fontSize: 11),
         ),
         value: value,
         onChanged: onChanged,
         activeThumbColor: Colors.cyanAccent,
         activeTrackColor: Colors.cyanAccent.withValues(alpha: 0.3),
-        inactiveThumbColor: Colors.white24,
-        inactiveTrackColor: Colors.black26,
       ),
     );
   }

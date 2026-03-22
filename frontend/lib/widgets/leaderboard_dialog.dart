@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../services/backend_service.dart';
 import '../services/format_utils.dart';
 import 'liquid_glass_dialog.dart';
@@ -129,24 +130,41 @@ class _LeaderboardListState extends State<LeaderboardList> {
   }
 
   Widget _buildLeaderboardTile(Map<String, dynamic> entry, {required int index, bool isCurrentUser = false}) {
+    final int rank = index + 1;
+    final bool showCircle = rank <= 100;
+    final String formattedRank = NumberFormat('#,###').format(rank);
+
     return ListTile(
-      leading: Container(
-        width: 28,
+      leading: SizedBox(
+        width: showCircle ? 28 : 50,
         height: 28,
-        decoration: BoxDecoration(
-          color: isCurrentUser ? Colors.amberAccent : _getRankColor(index),
-          shape: BoxShape.circle,
-        ),
-        child: Center(
-          child: Text(
-            '${index + 1}',
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
-        ),
+        child: showCircle
+            ? Container(
+                decoration: BoxDecoration(
+                  color: isCurrentUser ? Colors.amberAccent : _getRankColor(index),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    '$rank',
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              )
+            : Center(
+                child: Text(
+                  formattedRank,
+                  style: TextStyle(
+                    color: isCurrentUser ? Colors.amberAccent : Colors.white54,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11, // Slightly smaller font for long numbers
+                  ),
+                ),
+              ),
       ),
       title: Text(
         isCurrentUser ? '${entry['displayName']} (YOU)' : (entry['displayName'] ?? 'Unknown'),

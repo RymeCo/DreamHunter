@@ -4,6 +4,7 @@ import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'actors/player.dart';
 import 'level/level.dart';
+import 'interface/hud.dart';
 
 class DreamHunterGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   final String characterType;
@@ -29,21 +30,23 @@ class DreamHunterGame extends FlameGame with HasCollisionDetection, TapCallbacks
     camera.follow(player);
 
     camera.viewport.add(joystick);
+    camera.viewport.add(HUD());
 
     addAll([camera, level]);
   }
 
   void _addJoystick() {
+    // LiquidGlass Joystick style
     final knobPaint = Paint()
-      ..color = const Color.fromRGBO(255, 255, 255, 0.4)
+      ..color = const Color.fromRGBO(255, 255, 255, 0.3)
       ..style = PaintingStyle.fill;
     
     final backgroundPaint = Paint()
-      ..color = const Color.fromRGBO(255, 255, 255, 0.1)
+      ..color = const Color.fromRGBO(255, 255, 255, 0.05)
       ..style = PaintingStyle.fill;
 
     final borderPaint = Paint()
-      ..color = const Color.fromRGBO(255, 255, 255, 0.2)
+      ..color = const Color.fromRGBO(255, 255, 255, 0.15)
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
@@ -73,5 +76,5 @@ class DreamHunterGame extends FlameGame with HasCollisionDetection, TapCallbacks
   }
 
   @override
-  Color backgroundColor() => const Color(0xFF1A1A1A);
+  Color backgroundColor() => const Color(0xFF111111);
 }

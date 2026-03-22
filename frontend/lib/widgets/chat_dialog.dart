@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dreamhunter/services/chat_service.dart';
+import 'package:dreamhunter/services/offline_cache.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/widgets/report_dialog.dart';
@@ -10,7 +11,8 @@ import 'package:dreamhunter/widgets/clickable_image.dart';
 
 class ChatDialog extends StatefulWidget {
   final ChatService? chatService;
-  const ChatDialog({super.key, this.chatService});
+  final VoidCallback? onMessageSent;
+  const ChatDialog({super.key, this.chatService, this.onMessageSent});
 
   @override
   State<ChatDialog> createState() => _ChatDialogState();
@@ -173,6 +175,10 @@ class _ChatDialogState extends State<ChatDialog> {
       if (result != null) {
         _textController.clear();
         
+        // Track chat task and reward XP
+        await OfflineCache.addTransaction(type: 'CHAT');
+        widget.onMessageSent?.call();
+
         // Handle Automod Feedback
         if (result['censored'] == true && mounted) {
           final String msg = result['muteMessage'] ?? result['warning'] ?? 'Please watch your language!';

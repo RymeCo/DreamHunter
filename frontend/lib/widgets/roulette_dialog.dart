@@ -8,7 +8,8 @@ import '../services/offline_cache.dart';
 import 'custom_snackbar.dart';
 
 class RouletteDialog extends StatefulWidget {
-  const RouletteDialog({super.key});
+  final VoidCallback? onSpinCompleted;
+  const RouletteDialog({super.key, this.onSpinCompleted});
 
   @override
   State<RouletteDialog> createState() => _RouletteDialogState();
@@ -244,6 +245,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
           _dreamCoins += rewardAmount;
         }
       });
+      widget.onSpinCompleted?.call();
     }
 
     if (mounted) {
