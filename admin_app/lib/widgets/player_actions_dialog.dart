@@ -3,6 +3,7 @@ import '../services/admin_service.dart';
 import 'custom_snackbar.dart';
 import 'liquid_glass_panel.dart';
 import 'admin_ui_components.dart';
+import 'dart:convert';
 
 class PlayerActionsDialog extends StatefulWidget {
   final Map<String, dynamic> player;
@@ -32,6 +33,8 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
   bool _isBanning = false;
   bool _isMuting = false;
   bool _isResettingSpam = false;
+  bool _isUpdatingRole = false;
+  bool _isWarning = false;
 
   @override
   void initState() {
@@ -95,13 +98,10 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
   }
 
   void _toggleBan(String uid, bool isBanned, bool isSuperBanned) async {
-    // Check if the current logged in user is Admin or Moderator
     final bool currentIsAdmin = _adminService.isAdmin;
 
     if (!currentIsAdmin) {
-      // Moderator logic: Request Ban instead of direct action
       setState(() => _isBanning = true);
-      // We'll add this to admin_service soon
       final success = await _adminService.requestBan(uid, reason: "Moderator Request: ${widget.player['displayName']}");
       if (mounted) {
         setState(() => _isBanning = false);
@@ -113,7 +113,6 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     }
 
     setState(() => _isBanning = true);
-    // Logic: Unban -> Ban -> Superban -> Unban
     bool nextBanned = false;
     bool nextSuper = false;
 
@@ -171,16 +170,115 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     }
   }
 
+  void _warnPlayer(String uid) async {
+    final reason = await _showReasonPrompt("Reason for warning");
+    if (reason == null || reason.isEmpty) return;
+
+    setState(() => _isWarning = true);
+    final success = await _adminService.warnUser(uid, reason);
+    if (mounted) {
+      setState(() => _isWarning = false);
+      if (success) {
+        showCustomSnackBar(context, 'Warning issued!', type: SnackBarType.success);
+        if (widget.onActionComplete != null) widget.onActionComplete!();
+        setState(() {
+          widget.player['strikeCount'] = (widget.player['strikeCount'] ?? 0) + 1;
+        });
+      }
+    }
+  }
+
+  void _toggleModerator(String uid, bool currentStatus) async {
+    setState(() => _isUpdatingRole = true);
+    final success = await _adminService.updateModeratorStatus(uid, !currentStatus);
+    if (mounted) {
+      setState(() => _isUpdatingRole = false);
+      if (success) {
+        showCustomSnackBar(context, !currentStatus ? 'Moderator Role Granted' : 'Moderator Role Revoked', type: SnackBarType.success);
+        if (widget.onActionComplete != null) widget.onActionComplete!();
+        setState(() => widget.player['isModerator'] = !currentStatus);
+      }
+    }
+  }
+
+  void _customMute(String uid) async {
+    final dt = await _pickCustomDateTime();
+    if (dt == null) return;
+    
+    final bool currentIsAdmin = _adminService.isAdmin;
+    if (!currentIsAdmin) {
+      final diff = dt.difference(DateTime.now());
+      if (diff.inHours > 24) {
+        showCustomSnackBar(context, 'Moderators can only mute up to 24h. Adjusting...', type: SnackBarType.warning);
+        _quickMute(uid, 24);
+        return;
+      }
+    }
+
+    setState(() => _isMuting = true);
+    final success = await _adminService.muteUser(uid, null, until: dt.toUtc().toIso8601String());
+    if (mounted) {
+      setState(() => _isMuting = false);
+      if (success) {
+        showCustomSnackBar(context, 'Custom mute applied until ${dt.toString().split('.')[0]}', type: SnackBarType.success);
+        if (widget.onActionComplete != null) widget.onActionComplete!();
+      }
+    }
+  }
+
+  Future<DateTime?> _pickCustomDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(hours: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (date == null) return null;
+    
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (time == null) return null;
+
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
+  Future<String?> _showReasonPrompt(String title) async {
+    String reason = "";
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: Text(title, style: const TextStyle(color: Colors.white)),
+        content: TextField(
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(hintText: "Enter reason...", hintStyle: TextStyle(color: Colors.white38)),
+          onChanged: (value) => reason = value,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+          TextButton(onPressed: () => Navigator.pop(context, reason), child: const Text('SUBMIT')),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final uid = widget.player['uid'] ?? '';
     final displayName = widget.player['displayName'] ?? 'Unknown Player';
     final isBanned = widget.player['isBanned'] ?? false;
     final isSuperBanned = widget.player['isSuperBanned'] ?? false;
+    final isModerator = widget.player['isModerator'] ?? false;
     final spamScore = widget.player['spamScore'] ?? 0;
     final isFlagged = widget.player['isFlagged'] ?? false;
+    final strikeCount = widget.player['strikeCount'] ?? 0;
+    
+    final bool currentIsAdmin = _adminService.isAdmin;
 
-    String banLabel = "PERMANENT BAN";
+    String banLabel = currentIsAdmin ? "PERMANENT BAN" : "REQUEST BAN";
     Color banColor = Colors.redAccent;
     IconData banIcon = Icons.gavel;
     if (isSuperBanned) {
@@ -188,7 +286,7 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
       banColor = Colors.greenAccent;
       banIcon = Icons.restore;
     } else if (isBanned) {
-      banLabel = "UPGRADE TO SUPERBAN";
+      banLabel = currentIsAdmin ? "UPGRADE TO SUPERBAN" : "REQUEST BAN";
       banColor = Colors.deepOrangeAccent;
       banIcon = Icons.security;
     }
@@ -312,12 +410,27 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                     isLoading: _isBanning,
                     color: banColor
                   ),
+                  if (currentIsAdmin)
+                    AdminButton(
+                      onPressed: _isUpdatingRole ? null : () => _toggleModerator(uid, isModerator), 
+                      label: isModerator ? 'REVOKE MOD' : 'GRANT MOD', 
+                      icon: isModerator ? Icons.remove_moderator : Icons.verified_user, 
+                      isLoading: _isUpdatingRole,
+                      color: isModerator ? Colors.orange : Colors.greenAccent
+                    ),
                   AdminButton(
                     onPressed: _isResettingSpam ? null : () => _resetSpam(uid), 
                     label: 'RESET SPAM ($spamScore)', 
                     icon: Icons.refresh, 
                     isLoading: _isResettingSpam,
                     color: Colors.cyanAccent
+                  ),
+                  AdminButton(
+                    onPressed: _isWarning ? null : () => _warnPlayer(uid), 
+                    label: 'WARN PLAYER ($strikeCount/3)', 
+                    icon: Icons.warning_amber_rounded, 
+                    isLoading: _isWarning,
+                    color: Colors.orangeAccent
                   ),
                 ],
               ),
@@ -333,7 +446,8 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
                 children: [
                   _muteBadgeAction(uid, '1H', 1),
                   _muteBadgeAction(uid, '24H', 24),
-                  _muteBadgeAction(uid, '7D', 168),
+                  if (currentIsAdmin) _muteBadgeAction(uid, '7D', 168),
+                  _customMuteBadgeAction(uid),
                   if (isFlagged)
                     AdminButton(onPressed: () => _resetSpam(uid), label: 'UNFLAG USER', icon: Icons.security_outlined, color: Colors.greenAccent),
                 ],
@@ -346,21 +460,18 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     );
   }
 
-  Widget _economyBadge(IconData icon, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
-        ],
+  Widget _customMuteBadgeAction(String uid) {
+    return InkWell(
+      onTap: () => _customMute(uid),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.redAccent.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+        ),
+        child: const Text('CUSTOM', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12)),
       ),
     );
   }
@@ -372,9 +483,9 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
         child: Text(label, style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold, fontSize: 12)),
       ),

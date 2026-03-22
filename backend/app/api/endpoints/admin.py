@@ -147,10 +147,41 @@ async def warn_user(uid: str, req: UserWarnRequest, admin: dict = Depends(verify
     target_data = user_doc.to_dict()
     if target_data.get('isAdmin') is True:
         raise HTTPException(status_code=403, detail="Target is a Superadmin and immune to moderation.")
-    warning = {"reason": req.reason, "timestamp": datetime.now(timezone.utc).isoformat(), "adminUid": admin['uid']}
-    user_ref.update({"warnings": firestore.ArrayUnion([warning]), "updatedAt": firestore.SERVER_TIMESTAMP})
-    log_audit(admin['uid'], "USER_WARNED", uid, f"Warning issued: {req.reason}", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
-    return {"status": "success", "message": f"Warning issued to user {uid}."}
+    
+    current_strikes = target_data.get('strikeCount', 0) + 1
+    warning = {
+        "reason": req.reason, 
+        "timestamp": datetime.now(timezone.utc).isoformat(), 
+        "adminUid": admin['uid'],
+        "strikeNumber": current_strikes
+    }
+    
+    update_data = {
+        "warnings": firestore.ArrayUnion([warning]),
+        "strikeCount": current_strikes,
+        "updatedAt": firestore.SERVER_TIMESTAMP
+    }
+
+    auto_mute_msg = ""
+    if current_strikes >= 3:
+        # Auto-mute for 24 hours on 3rd strike
+        mute_until = datetime.now(timezone.utc) + timedelta(hours=24)
+        update_data["mutedUntil"] = mute_until
+        update_data["strikeCount"] = 0 # Reset strikes after punishment? Or keep them? 
+        # Mandate says: "3 warning strikes trigger automatic 24h mute". 
+        # Usually strikes reset or decrement. Let's reset for now to allow a fresh start after 24h.
+        auto_mute_msg = " [AUTO-MOD: 3 Strikes reached. 24h Mute applied.]"
+
+    user_ref.update(update_data)
+    
+    log_audit(admin['uid'], "USER_WARNED", uid, f"Warning #{current_strikes}: {req.reason}{auto_mute_msg}", admin.get('email'), target_data.get('displayName'), target_data.get('email'))
+    
+    return {
+        "status": "success", 
+        "message": f"Warning issued. Current strikes: {current_strikes % 3 if current_strikes < 3 else 0}.{auto_mute_msg}",
+        "strikeCount": current_strikes,
+        "autoMuted": current_strikes >= 3
+    }
 
 @router.patch("/users/{uid}/currency")
 async def update_user_currency(uid: str, req: UserCurrencyRequest, admin: dict = Depends(verify_admin)):

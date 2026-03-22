@@ -236,6 +236,34 @@ class AdminService {
     }
   }
 
+  Future<bool> warnUser(String uid, String reason) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$baseUrl/admin/users/$uid/warnings'),
+        headers: await getAuthHeaders(),
+        body: json.encode({'reason': reason}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error warning user: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updateModeratorStatus(String uid, bool isModerator) async {
+    try {
+      final response = await _client.patch(
+        Uri.parse('$baseUrl/admin/users/$uid/role'),
+        headers: await getAuthHeaders(),
+        body: json.encode({'isModerator': isModerator}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error updating moderator status: $e');
+      return false;
+    }
+  }
+
   // --- Reports ---
 
   Future<List<dynamic>> getReports(String? status) async {
