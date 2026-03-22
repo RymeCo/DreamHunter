@@ -153,9 +153,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             final tweak = data['tweakData'] as Map<String, dynamic>?;
             if (tweak != null) {
               final String ts = tweak['timestamp'] ?? '';
-              final lastProcessed = await OfflineCache.getMetadata('last_processed_tweak');
-              if (lastProcessed == null || lastProcessed['timestamp'] != ts) {
-                await OfflineCache.saveMetadata('last_processed_tweak', {'timestamp': ts});
+              final String lastProcessed = data['lastProcessedTweakTimestamp'] ?? '';
+              
+              if (lastProcessed != ts) {
+                // Update Firestore immediately to mark as processed
+                final uid = FirebaseAuth.instance.currentUser?.uid;
+                if (uid != null) {
+                   FirebaseFirestore.instance.collection('users').doc(uid).update({
+                     'lastProcessedTweakTimestamp': ts
+                   });
+                }
+
                 if (mounted) {
                   showDialog(
                     context: context,

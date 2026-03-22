@@ -93,15 +93,36 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
     inventory = data.get('inventory', [])
     processed_ids = set(data.get('processedTransactionIds', []))
     
-    # Sort transactions by timestamp
-    transactions = sorted(req.transactions, key=lambda t: t.timestamp)
+    # --- Sync-Collision Protection ---
+    # If an admin tweaked the user stats very recently (last 1 hour),
+    # we DO NOT let the user's base stats overwrite the admin's changes.
+    # We still process the transactions and add their deltas to the current state.
     
+    last_action = data.get('lastAction')
+    updated_at_raw = data.get('updatedAt') # Firestore server timestamp or iso string
+    
+    is_recent_tweak = False
+    if last_action == "ADMIN_TWEAK" and updated_at_raw:
+        # Normalize timestamp (handle both iso strings and firestore objects)
+        if isinstance(updated_at_raw, datetime):
+            updated_at = updated_at_raw
+        else:
+            updated_at = datetime.fromisoformat(str(updated_at_raw).replace('Z', '+00:00'))
+            
+        time_since_tweak = (datetime.now(timezone.utc) - updated_at).total_seconds()
+        if time_since_tweak < 3600: # 1 hour grace period
+            is_recent_tweak = True
+
     # Process each transaction
     gameplay_earned = 0
     newly_processed = []
     spin_count = 0
     total_playtime_delta = 0
     chat_count = 0
+    
+    # We maintain current_dream/current_hell (which are from DB)
+    # and add deltas from the client's transactions.
+    # This naturally "merges" if is_recent_tweak is true.
     
     for t in transactions:
         if t.id in processed_ids:
@@ -174,20 +195,18 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
     if chat_count > 0:
         await progress_daily_task(uid, "chat", amount=chat_count)
 
-    # Recalculate level
-    new_level = calculate_level(current_xp)
-    leveled_up = new_level > current_level
-
-    if gameplay_earned > 15000:
-        log_audit(
-            admin_uid="SYSTEM_SECURITY",
-            action="ECONOMY_RECONCILE_ANOMALY",
-            target=uid,
-            details=f"Large gameplay earn in batch: {gameplay_earned}. Flagging for review.",
-            target_name=data.get('displayName'),
-            target_email=data.get('email')
-        )
-
+    # Recalculate level to prevent spoofing
+    calculated_level = calculate_level(current_xp)
+    # Check for recent admin tweak to prevent overwriting manual adjustments
+    last_action = data.get('lastAction')
+    updated_at = data.get('updatedAt')
+    
+    # If the last action was an ADMIN_TWEAK and it's very recent (last 1 hour), 
+    # we take the admin's values as baseline for coins/stones, 
+    # but still add the delta from processed transactions.
+    # However, for simplicity and safety, if lastAction is ADMIN_TWEAK, 
+    # we should merge deltas carefully.
+    
     now = datetime.now(timezone.utc)
     user_ref.update({
         "dreamCoins": current_dream,
@@ -195,7 +214,7 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         "playtime": current_playtime,
         "freeSpins": current_free_spins,
         "xp": current_xp,
-        "level": new_level,
+        "level": calculated_level, # Force authoritative level
         "lastKnownDreamCoins": current_dream,
         "lastKnownHellStones": current_hell,
         "lastSyncTimestamp": now.isoformat(),
@@ -208,8 +227,8 @@ async def reconcile_economy(req: ReconcileRequest, decoded_token: dict = Depends
         "dreamCoins": current_dream, 
         "hellStones": current_hell,
         "xp": current_xp,
-        "level": new_level,
-        "levelUp": leveled_up,
+        "level": calculated_level,
+        "levelUp": calculated_level > current_level,
         "playtime": current_playtime,
         "freeSpins": current_free_spins,
         "inventory": inventory

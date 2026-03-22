@@ -314,11 +314,6 @@ class _MainLayoutState extends State<MainLayout> {
         ),
         body: Container(
           decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/admin_bg.jpg'), // Optional background if provided
-              fit: BoxFit.cover,
-              opacity: 0.2,
-            ),
             color: Color(0xFF07070F),
           ),
           child: const Padding(

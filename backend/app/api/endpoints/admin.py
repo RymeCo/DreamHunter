@@ -256,6 +256,7 @@ async def tweak_user(uid: str, req: UserSaveTweakRequest, admin: dict = Depends(
         "shadowHash": new_hash,
         "lastAction": "ADMIN_TWEAK",
         "tweakData": tweak_payload,
+        "lastProcessedTweakTimestamp": "", # Reset to ensure client sees it
         "updatedAt": firestore.SERVER_TIMESTAMP
     }
 

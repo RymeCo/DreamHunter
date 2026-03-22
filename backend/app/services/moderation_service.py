@@ -14,13 +14,13 @@ def log_audit(
 ):
     """Log an administrative action to the audit_logs collection."""
     db.collection('audit_logs').add({
-        "adminUid": admin_uid,
-        "adminEmail": admin_email,
+        "adminUid": admin_uid or "SYSTEM",
+        "adminEmail": admin_email or "N/A",
         "action": action,
-        "target": target,
-        "targetName": target_name,
-        "targetEmail": target_email,
-        "details": details,
+        "target": target or "N/A",
+        "targetName": target_name or "N/A",
+        "targetEmail": target_email or "N/A",
+        "details": details or "No details provided",
         "timestamp": firestore.SERVER_TIMESTAMP
     })
 

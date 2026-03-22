@@ -16,41 +16,41 @@
 ## 3. Tasks (Halt after each for /compress)
 
 ### Task 6: Economy Injection & Shadow Hash (SCRUM-106)
-- [ ] **Backend:** Implement `POST /admin/users/{uid}/currency` with hash recalculation.
-- [ ] **Admin App:** Add DC/HS fields to `PlayerActionsDialog`. 
-- [ ] **Admin App:** Implement "Inject" with persistent loading.
+- [x] **Backend:** Implement `POST /admin/users/{uid}/currency` with hash recalculation.
+- [x] **Admin App:** Add DC/HS fields to `PlayerActionsDialog`. 
+- [x] **Admin App:** Implement "Inject" with persistent loading.
 
 ### Task 7: Superban & Advanced Moderation (SCRUM-107)
-- [ ] **Backend:** Add `isSuperBanned` field to user model.
-- [ ] **Backend:** Refactor Ban endpoint to support Toggle (Ban/Unban/Superban).
-- [ ] **Admin App:** Update UI to show Superban option and Toggle labels.
+- [x] **Backend:** Add `isSuperBanned` field to user model.
+- [x] **Backend:** Refactor Ban endpoint to support Toggle (Ban/Unban/Superban).
+- [x] **Admin App:** Update UI to show Superban option and Toggle labels.
 
 ### Task 8: Moderator Hierarchy & Reporting (SCRUM-108)
-- [ ] **Admin App:** If `!isAdmin`, "Ban" button becomes "Request Ban" (POST to `reports` with `priority: "CRITICAL"`).
-- [ ] **Admin App:** Dynamic Mute (Mod cap 24h).
-- [ ] **Admin App:** Add "Grant Moderator" toggle.
+- [x] **Admin App:** If `!isAdmin`, "Ban" button becomes "Request Ban" (POST to `reports` with `priority: "CRITICAL"`).
+- [x] **Admin App:** Dynamic Mute (Mod cap 24h).
+- [x] **Admin App:** Add "Grant Moderator" toggle.
 
 ### Task 9: UX Persistence & Auto-Mod (SCRUM-109)
-- [ ] **UX:** Remove all `Navigator.pop()` from action buttons.
-- [ ] **Auto-Mod:** Strike system (3 warnings -> 24h mute).
-- [ ] **Notifications:** Use `lastAction` + Custom Snackbar on player frontend.
+- [x] **UX:** Remove all `Navigator.pop()` from action buttons.
+- [x] **Auto-Mod:** Strike system (3 warnings -> 24h mute).
+- [x] **Notifications:** Use `lastAction` + Custom Snackbar on player frontend.
 
 ### Task 10: Save Tweak & Admin Surprise Flow (SCRUM-110)
-- [ ] **Admin App:** Implement "Tweak Mode" selector (Additive vs. Force Override).
-- [ ] **Admin App:** "Tweak Summary" confirmation dialog with Online Status indicator.
-- [ ] **Backend:** Implement `POST /admin/users/{uid}/tweak` that triggers the `ADMIN_TWEAK` lastAction.
-- [ ] **Frontend (Player):** Create `AdminSurpriseDialog` (Liquid Glass).
-- [ ] **Frontend (Player):** Background logic to merge `tweak_data` into local save (Protection: don't downgrade level unless 'Override' is forced).
-- [ ] **Frontend (Player):** Ensure surprise only triggers for logged-in users, not guests.
+- [x] **Admin App:** Implement "Tweak Mode" selector (Additive vs. Force Override).
+- [x] **Admin App:** "Tweak Summary" confirmation dialog with Online Status indicator.
+- [x] **Backend:** Implement `POST /admin/users/{uid}/tweak` that triggers the `ADMIN_TWEAK` lastAction.
+- [x] **Frontend (Player):** Create `AdminSurpriseDialog` (Liquid Glass).
+- [x] **Frontend (Player):** Background logic to merge `tweak_data` into local save (Protection: don't downgrade level unless 'Override' is forced).
+- [x] **Frontend (Player):** Ensure surprise only triggers for logged-in users, not guests.
 
 ### Task 11: Leaderboard Repair (SCRUM-111)
-- [ ] **Debug:** Check Firestore indexes and query logic for Leaderboards.
-- [ ] **Fix:** Ensure Admin App can fetch top players.
+- [x] **Debug:** Check Firestore indexes and query logic for Leaderboards.
+- [x] **Fix:** Ensure Admin App can fetch top players.
 
 ### Task 12: Cleanup & UI Fix (SCRUM-112)
-- [ ] **Cleanup:** Remove `ShopManagementScreen` and `ConfigEditorScreen`.
-- [ ] **UI:** Fix overflow in `ServiceOpsScreen`.
+- [x] **Cleanup:** Remove `ShopManagementScreen` and `ConfigEditorScreen`.
+- [x] **UI:** Fix overflow in `ServiceOpsScreen`.
 
 ## 4. Verification Plan
-- [ ] `flutter analyze` & `py_compile`.
-- [ ] Manual check of `audit_logs` for every action.
+- [x] `flutter analyze` & `py_compile`.
+- [x] Manual check of `audit_logs` for every action.

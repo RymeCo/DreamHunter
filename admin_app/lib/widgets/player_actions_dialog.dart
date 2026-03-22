@@ -340,6 +340,7 @@ class _PlayerActionsDialogState extends State<PlayerActionsDialog> {
     String banLabel = currentIsAdmin ? "PERMANENT BAN" : "REQUEST BAN";
     Color banColor = Colors.redAccent;
     IconData banIcon = Icons.gavel;
+    
     if (isSuperBanned) {
       banLabel = "UNBAN PLAYER";
       banColor = Colors.greenAccent;
