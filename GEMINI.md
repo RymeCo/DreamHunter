@@ -15,7 +15,8 @@ When a request is broad, complex, or identified as a "multi-step feature":
 5. **Instruction Wait**: Once all sub-tasks in a plan are finished, the agent MUST stop and wait for another instruction.
 
 ## 3. SCRUM & Jira Automation
-- **Task Initiation**: Whenever the user requests a new feature or task, the agent MUST use the Atlassian MCP server to create a new Jira SCRUM ticket (e.g., `SCRUM-XX`). 
+- **Ticket-First Mandate**: To ensure proper Scrum tracking, the agent MUST create a new Jira SCRUM ticket (e.g., `SCRUM-XX`) **BEFORE** starting any implementation or committing code.
+- **Task Initiation**: Whenever the user requests a new feature or task, the agent MUST use the Atlassian MCP server to create a new ticket.
 - **Naming**: The agent will automatically generate a descriptive title and description for the ticket based on the user's request.
 - **Sprint Management**: For general feature additions or fixes, the agent MUST create a new Jira sprint (if a suitable active one doesn't exist) and move the corresponding SCRUM tickets into it before starting work.
 - **Traceability**: Every commit message MUST start with the corresponding Jira ticket key (e.g., `SCRUM-XX: implemented feature y`).
@@ -26,11 +27,12 @@ To maintain momentum, all development is performed directly on the **`developmen
 1. **Sync**: Always start by pulling the latest changes: `git pull origin development`.
 2. **Develop**: Implement the requested changes directly on the `development` branch.
 3. **Verify**: Use the Dart MCP `analyze_files` tool for static analysis (it is faster and more efficient for identifying errors) and run compilation checks (`py_compile`) before committing.
-- **Commit**: Commit with the Jira key prefix: `git commit -m "SCRUM-XX: description"`.
+4. **Commit**: Commit with the Jira key prefix: `git commit -m "SCRUM-XX: description"`.
+5. **Push**: Push to origin.
 - **Deployment (Auto-Push)**:
     - If the changes include **Backend (Python/FastAPI)** code, the agent MUST automatically push to origin immediately after committing to trigger the Render deployment.
     - For **Frontend-only** changes, the agent should ask the user before pushing, or push immediately if specifically requested.
-- **Jira Finalization**: Once the task is committed and pushed, the agent MUST update the corresponding Jira ticket (transition to 'Done' or add a comment) to reflect the completion.
+- **Jira Finalization**: Once the task is pushed, the agent MUST transition the corresponding Jira ticket to **'Done'** to reflect the completion.
 
 ## 5. Project Structure
 - `backend/`: Python (FastAPI/Firebase) backend.
