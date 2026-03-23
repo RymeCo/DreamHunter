@@ -90,41 +90,34 @@ class AuthService {
     // 3. Update Auth display name
     await userCredential.user?.updateDisplayName(displayName);
 
-    // 4. Use a Transaction for the global counter and user document
-    final counterRef = _db.collection('metadata').doc('counters');
-    final userRef = _db.collection('users').doc(userCredential.user!.uid);
-
-    await _db.runTransaction((transaction) async {
-      DocumentSnapshot counterDoc = await transaction.get(counterRef);
-      int newPlayerNumber = 1;
-
-      if (counterDoc.exists) {
-        newPlayerNumber = (counterDoc.get('totalPlayers') ?? 0) + 1;
+    // 4. Centralized Registration via FastAPI
+    // This handles playerNumber, initial currency, and metadata
+    developer.log('Registering user with backend...', name: 'AuthService');
+    try {
+      final profile = await _backend.post('/user/register');
+      if (profile.statusCode != 200) {
+         throw Exception('Backend registration failed: ${profile.body}');
       }
-
-      // Update global counter
-      transaction.set(
-        counterRef,
-        {'totalPlayers': newPlayerNumber},
-        SetOptions(merge: true),
+      
+      final data = json.decode(profile.body);
+      // Cache the initial profile data
+      await OfflineCache.saveCurrency(
+        data['dreamCoins'] ?? 500,
+        data['hellStones'] ?? 10,
+        0, // playtime
+        1, // freeSpins
+        0, // xp
+        1, // level
+        0, // avatarId
+        data['createdAt'] as String?,
+        null, // dailyTasks (will be pulled on next sync)
+        true,
       );
-
-      // Create the user profile
-      transaction.set(userRef, {
-        'uid': userCredential.user!.uid,
-        'email': email,
-        'displayName': displayName,
-        'playerNumber': newPlayerNumber,
-        'createdAt': FieldValue.serverTimestamp(),
-        'saveSlots': {'slot1': null, 'slot2': null, 'slot3': null},
-        'isBanned': false,
-        'mutedUntil': null,
-        'isAdmin': false,
-        'dreamCoins': 500,
-        'hellStones': 10,
-        'inventory': [],
-      });
-    });
+    } catch (e) {
+      developer.log('Backend registration error', error: e, name: 'AuthService');
+      // If registration fails, we should technically delete the auth user or handle retry
+      rethrow;
+    }
 
     // Sync with FastAPI backend after registration
     developer.log('Initial sync with backend after registration...', name: 'AuthService');

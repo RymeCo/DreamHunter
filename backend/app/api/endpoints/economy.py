@@ -34,34 +34,53 @@ async def sync_economy(req: SyncRequest, decoded_token: dict = Depends(verify_fi
     # --- Security Validation ---
     last_sync_str = data.get('lastSyncTimestamp')
     last_dream = data.get('lastKnownDreamCoins', 0)
+    last_hell = data.get('lastKnownHellStones', 0)
     
     if last_sync_str:
-        last_sync = datetime.fromisoformat(last_sync_str.replace('Z', '+00:00'))
-        hours_passed = (now - last_sync).total_seconds() / 3600.0
-        time_delta_hours = max(hours_passed, 0.016) # min 1 minute
-        
-        max_allowed = last_dream + int(settings.MAX_DREAM_COINS_PER_HOUR * time_delta_hours)
-        
-        if req.dreamCoins > (max_allowed + 500):
-            log_audit(
-                admin_uid="SYSTEM_SECURITY",
-                action="ECONOMY_ANOMALY",
-                target=uid,
-                details=f"Anomaly: {req.dreamCoins} requested. Max: {max_allowed}. Reverting to {last_dream}.",
-                target_name=data.get('displayName'),
-                target_email=data.get('email')
-            )
-            # Revert to last known safe state
-            user_ref.update({
-                "dreamCoins": last_dream,
-                "lastSyncTimestamp": now.isoformat()
-            })
-            return {
-                "status": "anomaly_detected", 
-                "message": "Unusual activity detected.",
-                "dreamCoins": last_dream,
-                "hellStones": data.get('hellStones', 0)
-            }
+        try:
+            last_sync = datetime.fromisoformat(last_sync_str.replace('Z', '+00:00'))
+            hours_passed = (now - last_sync).total_seconds() / 3600.0
+            time_delta_hours = max(hours_passed, 0.016) # min 1 minute
+            
+            # Anomaly detection for Dream Coins
+            max_dream_allowed = last_dream + int(settings.MAX_DREAM_COINS_PER_HOUR * time_delta_hours)
+            # Anomaly detection for Hell Stones (strictly guarded)
+            max_hell_allowed = last_hell + 5 # Very low threshold for direct sync
+            
+            is_anomaly = False
+            details = ""
+            
+            if req.dreamCoins > (max_dream_allowed + 500):
+                is_anomaly = True
+                details = f"DC Anomaly: {req.dreamCoins} requested. Max: {max_dream_allowed}."
+            elif req.hellStones > max_hell_allowed:
+                is_anomaly = True
+                details = f"HS Anomaly: {req.hellStones} requested. Max: {max_hell_allowed}."
+
+            if is_anomaly:
+                log_audit(
+                    admin_uid="SYSTEM_SECURITY",
+                    action="ECONOMY_ANOMALY",
+                    target=uid,
+                    details=f"{details} Reverting to {last_dream}/{last_hell}.",
+                    target_name=data.get('displayName'),
+                    target_email=data.get('email')
+                )
+                # Revert to last known safe state
+                user_ref.update({
+                    "dreamCoins": last_dream,
+                    "hellStones": last_hell,
+                    "lastSyncTimestamp": now.isoformat()
+                })
+                return {
+                    "status": "anomaly_detected", 
+                    "message": "Unusual activity detected.",
+                    "dreamCoins": last_dream,
+                    "hellStones": last_hell
+                }
+        except Exception as e:
+            # If parsing fails, fall back to safe update
+            pass
 
     # If safe, update
     user_ref.update({

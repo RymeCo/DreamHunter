@@ -17,6 +17,7 @@ When a request is broad, complex, or identified as a "multi-step feature":
 ## 3. SCRUM & Jira Automation
 - **Task Initiation**: Whenever the user requests a new feature or task, the agent MUST use the Atlassian MCP server to create a new Jira SCRUM ticket (e.g., `SCRUM-XX`). 
 - **Naming**: The agent will automatically generate a descriptive title and description for the ticket based on the user's request.
+- **Sprint Management**: For general feature additions or fixes, the agent MUST create a new Jira sprint (if a suitable active one doesn't exist) and move the corresponding SCRUM tickets into it before starting work.
 - **Traceability**: Every commit message MUST start with the corresponding Jira ticket key (e.g., `SCRUM-XX: implemented feature y`).
 - **Resilient SCRUM Tracking**: If the Atlassian server is unreachable, the agent MUST still proceed with the development and commit. In this case, the agent will check the git log for the last used key (e.g., `SCRUM-67`), increment the number (to `SCRUM-68`), and use it for the commit prefix. The agent MUST explicitly mention in the commit message that Jira was offline. Once connectivity is restored, the agent (or the user) should ensure the corresponding ticket is created to maintain history.
 
