@@ -5,6 +5,7 @@ This project follows a streamlined development workflow to ensure high velocity 
 ## 1. Core Mandates
 - **Offline-First & Modular**: The application is primarily offline. Modularity and maintainability are the **HIGHEST priorities** when generating code. Always prefer reusable components, clean abstractions, and modular structures to avoid code duplication ("copy-paste" logic).
 - **Service Hub Authority**: The `admin_app` acts as the authoritative Service Hub for the "Online Bridge" (Sync, Chat, Auth).
+- **Scope Restriction**: Do NOT read or modify the `admin_app/` directory or any backend admin-related logic (e.g., `backend/app/api/endpoints/admin.py`) for now. Focus exclusively on the `frontend/` and general `backend/` core functionality.
 
 ## 2. Broad Request & Planning Protocol
 When a request is broad, complex, or identified as a "multi-step feature":
