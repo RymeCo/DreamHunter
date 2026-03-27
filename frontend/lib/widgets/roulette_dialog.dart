@@ -11,11 +11,13 @@ import '../services/dashboard_controller.dart';
 class RouletteDialog extends StatefulWidget {
   final VoidCallback? onSpinCompleted;
   final DashboardController controller;
+  final BuildContext? parentContext;
 
   const RouletteDialog({
     super.key,
     this.onSpinCompleted,
     required this.controller,
+    this.parentContext,
   });
 
   @override
@@ -185,18 +187,22 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
     _controller.reset();
     await _controller.forward();
 
-    if (!mounted) return;
+    if (mounted) {
+      setState(() {
+        _isSpinning = false;
+        _currentRotation = targetRotation;
+      });
+    }
 
-    setState(() {
-      _isSpinning = false;
-      _currentRotation = targetRotation;
-    });
-
-    showCustomSnackBar(
-      context,
-      'YOU WON: ${winningReward['name']}!',
-      type: SnackBarType.success,
-    );
+    // Always show reward snackbar, using parentContext if dialog is closed
+    final announcementContext = (mounted ? context : widget.parentContext);
+    if (announcementContext != null) {
+      showCustomSnackBar(
+        announcementContext,
+        'YOU WON: ${winningReward['name']}!',
+        type: SnackBarType.success,
+      );
+    }
     widget.onSpinCompleted?.call();
   }
 

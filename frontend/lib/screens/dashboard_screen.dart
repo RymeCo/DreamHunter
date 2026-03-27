@@ -254,6 +254,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: 220,
               onTap: () => _showGameDialog(RouletteDialog(
               controller: _controller,
+              parentContext: context,
               onSpinCompleted: () => _controller.refreshCurrency(),
             )),
             ),
