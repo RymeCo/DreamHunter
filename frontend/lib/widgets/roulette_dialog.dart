@@ -202,22 +202,28 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
     await RouletteService.clearPendingReward();
     await RouletteService.setSpinning(false);
 
-    if (!mounted) return;
+    if (!mounted) {
+      if (widget.parentContext != null && widget.parentContext!.mounted) {
+        showCustomSnackBar(
+          widget.parentContext!,
+          'YOU WON: ${reward['name']}!',
+          type: SnackBarType.success,
+        );
+      }
+      widget.onSpinCompleted?.call();
+      return;
+    }
 
     setState(() {
       _isSpinning = false;
       _currentRotation = targetRotation;
     });
 
-    // Use parentContext if dialog is closed
-    final announcementContext = (mounted ? context : widget.parentContext);
-    if (announcementContext != null) {
-      showCustomSnackBar(
-        announcementContext,
-        'YOU WON: ${reward['name']}!',
-        type: SnackBarType.success,
-      );
-    }
+    showCustomSnackBar(
+      context,
+      'YOU WON: ${reward['name']}!',
+      type: SnackBarType.success,
+    );
     widget.onSpinCompleted?.call();
   }
 
