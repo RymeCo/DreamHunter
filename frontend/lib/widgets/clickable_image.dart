@@ -77,6 +77,16 @@ class _GlassButtonState extends State<GlassButton> {
   bool _isHovering = false;
   bool _isTapped = false;
 
+  void _updateTapped(bool tapped) {
+    if (!mounted || _isTapped == tapped) return;
+    setState(() => _isTapped = tapped);
+  }
+
+  void _updateHovering(bool hovering) {
+    if (!mounted || _isHovering == hovering) return;
+    setState(() => _isHovering = hovering);
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool active = widget.isClickable && (_isHovering || _isTapped);
@@ -90,18 +100,18 @@ class _GlassButtonState extends State<GlassButton> {
 
     return GestureDetector(
       onTapDown: widget.isClickable && widget.clickResponsiveness
-          ? (_) => setState(() => _isTapped = true)
+          ? (_) => _updateTapped(true)
           : null,
       onTapUp: widget.isClickable && widget.clickResponsiveness
-          ? (_) => setState(() => _isTapped = false)
+          ? (_) => _updateTapped(false)
           : null,
       onTapCancel: widget.isClickable && widget.clickResponsiveness
-          ? () => setState(() => _isTapped = false)
+          ? () => _updateTapped(false)
           : null,
       onTap: widget.isClickable ? widget.onTap : null,
       child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovering = true),
-        onExit: (_) => setState(() => _isHovering = false),
+        onEnter: (_) => _updateHovering(true),
+        onExit: (_) => _updateHovering(false),
         child: AnimatedScale(
           scale: (widget.clickResponsiveness && active) ? 1.05 : 1.0,
           duration: const Duration(milliseconds: 100),
