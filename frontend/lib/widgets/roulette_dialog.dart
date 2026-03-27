@@ -135,7 +135,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
       return;
     }
 
-    // Determine winner based on weights IMMEDIATELY
+    // 1. Determine winner
     final int totalWeight = _hardcodedRewards.fold<int>(0, (total, item) => total + (item['weight'] as int));
     final randomValue = math.Random().nextInt(totalWeight);
     
@@ -150,21 +150,22 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
     }
 
     final winningReward = _hardcodedRewards[winnerIndex];
-    final rewardAmount = (winningReward['amount'] as num).toInt();
 
-    // ATOMIC UPDATE: Grant reward and subtract cost (if paid) immediately
-    // This ensures that even if they close the dialog (if somehow possible), 
-    // the transaction is finished.
+    // 2. DEDUCT COST ONLY (Suspense!)
+    // We save the reward as "pending" in the service for safety, but don't add it to coins yet.
     if (isPaid) {
       await widget.controller.updateCurrency(
-        newCoins: widget.controller.dreamCoins - cost + rewardAmount,
+        newCoins: widget.controller.dreamCoins - cost,
       );
     } else {
       await RouletteService.consumeFreeSpin();
-      await widget.controller.updateCurrency(
-        newCoins: widget.controller.dreamCoins + rewardAmount,
-      );
     }
+    
+    // Safety: Store the reward in case the app closes during spin
+    await RouletteService.setPendingReward({
+      'amount': winningReward['amount'],
+      'name': winningReward['name'],
+    });
 
     if (!mounted) return;
 
@@ -174,7 +175,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
       if (!isPaid) _freeSpins -= 1;
     });
 
-    // Animation logic
+    // 3. Animate
     const double fullCircle = 2 * math.pi;
     final double segmentWidth = fullCircle / _hardcodedRewards.length;
     final double baseRotation = -math.pi / 2 - (winnerIndex + 0.5) * segmentWidth;
@@ -187,22 +188,25 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
     _controller.reset();
     await _controller.forward();
 
-    if (mounted) {
-      setState(() {
-        _isSpinning = false;
-        _currentRotation = targetRotation;
-      });
-    }
+    // 4. FINISH: Grant reward and clear pending
+    final rewardAmount = (winningReward['amount'] as num).toInt();
+    await widget.controller.updateCurrency(
+      newCoins: widget.controller.dreamCoins + rewardAmount,
+    );
+    await RouletteService.clearPendingReward();
 
-    // Always show reward snackbar, using parentContext if dialog is closed
-    final announcementContext = (mounted ? context : widget.parentContext);
-    if (announcementContext != null) {
-      showCustomSnackBar(
-        announcementContext,
-        'YOU WON: ${winningReward['name']}!',
-        type: SnackBarType.success,
-      );
-    }
+    if (!mounted) return;
+
+    setState(() {
+      _isSpinning = false;
+      _currentRotation = targetRotation;
+    });
+
+    showCustomSnackBar(
+      context,
+      'YOU WON: ${winningReward['name']}!',
+      type: SnackBarType.success,
+    );
     widget.onSpinCompleted?.call();
   }
 

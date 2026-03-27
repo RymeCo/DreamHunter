@@ -4,18 +4,25 @@ import 'offline_cache.dart';
 class RouletteState {
   final int freeSpins;
   final String lastRefillDate; // YYYY-MM-DD
+  final Map<String, dynamic>? pendingReward; // { 'amount': int, 'name': String }
 
-  RouletteState({required this.freeSpins, required this.lastRefillDate});
+  RouletteState({
+    required this.freeSpins, 
+    required this.lastRefillDate,
+    this.pendingReward,
+  });
 
   Map<String, dynamic> toJson() => {
         'freeSpins': freeSpins,
         'lastRefillDate': lastRefillDate,
+        'pendingReward': pendingReward,
       };
 
   factory RouletteState.fromJson(Map<String, dynamic> json) {
     return RouletteState(
       freeSpins: json['freeSpins'] as int? ?? 10,
       lastRefillDate: json['lastRefillDate'] as String? ?? '',
+      pendingReward: json['pendingReward'] as Map<String, dynamic>?,
     );
   }
 }
@@ -32,7 +39,7 @@ class RouletteService {
     Map<String, dynamic>? data = await OfflineCache.getMetadata(_rouletteKey);
     RouletteState state = data != null ? RouletteState.fromJson(data) : RouletteState(freeSpins: 10, lastRefillDate: todayStr);
 
-    // Daily Refill Logic: Add +1 spin if it's a new day and we are under the limit
+    // 1. Daily Refill Logic: Add +1 spin if it's a new day and we are under the limit
     if (state.lastRefillDate != todayStr) {
       int newSpins = state.freeSpins;
       if (newSpins < maxFreeSpins) {
@@ -40,11 +47,35 @@ class RouletteService {
         developer.log('Daily refill: +1 free spin granted.', name: 'RouletteService');
       }
       
-      state = RouletteState(freeSpins: newSpins, lastRefillDate: todayStr);
+      state = RouletteState(
+        freeSpins: newSpins, 
+        lastRefillDate: todayStr,
+        pendingReward: state.pendingReward,
+      );
       await saveState(state);
     }
 
     return state;
+  }
+
+  static Future<void> setPendingReward(Map<String, dynamic> reward) async {
+    final state = await getAndSyncState();
+    final newState = RouletteState(
+      freeSpins: state.freeSpins,
+      lastRefillDate: state.lastRefillDate,
+      pendingReward: reward,
+    );
+    await saveState(newState);
+  }
+
+  static Future<void> clearPendingReward() async {
+    final state = await getAndSyncState();
+    final newState = RouletteState(
+      freeSpins: state.freeSpins,
+      lastRefillDate: state.lastRefillDate,
+      pendingReward: null,
+    );
+    await saveState(newState);
   }
 
   static Future<void> saveState(RouletteState state) async {

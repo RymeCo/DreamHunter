@@ -1,5 +1,6 @@
 import 'package:dreamhunter/services/connectivity_service.dart';
 import 'package:dreamhunter/services/dashboard_controller.dart';
+import 'package:dreamhunter/services/roulette_service.dart';
 import 'package:dreamhunter/widgets/dashboard/currency_display.dart';
 import 'package:dreamhunter/widgets/dashboard/action_menu.dart';
 import 'package:dreamhunter/widgets/dashboard/exchange_module.dart';
@@ -40,12 +41,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     ConnectivityService().initialize();
     _controller.initialize();
+    _checkPendingRouletteRewards();
     _isLoggedIn = FirebaseAuth.instance.currentUser != null;
     _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (mounted) {
         setState(() => _isLoggedIn = user != null);
       }
     });
+  }
+
+  Future<void> _checkPendingRouletteRewards() async {
+    // Wait for the controller to be initialized properly
+    await Future.delayed(const Duration(seconds: 1));
+    
+    final state = await RouletteService.getAndSyncState();
+    if (state.pendingReward != null) {
+      final reward = state.pendingReward!;
+      final amount = (reward['amount'] as num).toInt();
+      final name = reward['name'] as String;
+
+      await _controller.updateCurrency(
+        newCoins: _controller.dreamCoins + amount,
+      );
+      await RouletteService.clearPendingReward();
+
+      if (mounted) {
+        showCustomSnackBar(
+          context,
+          'You received $name from your last spin!',
+          type: SnackBarType.success,
+        );
+      }
+    }
   }
 
   @override
