@@ -207,7 +207,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
     }
 
     return PopScope(
-      canPop: !_isSpinning, // Block back button while spinning
+      canPop: true, // Allow closing while spinning (reward is already safe)
       child: Center(
         child: LiquidGlassDialog(
         width: 380,
