@@ -136,24 +136,36 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
 
     _winningReward = _hardcodedRewards[winnerIndex];
 
-    if (isPaid) {
-      // Logic for paid spin handled after animation or immediately?
-      // For now, subtract immediately for feedback
-    } else {
-      await RouletteService.consumeFreeSpin();
-      setState(() {
-        _freeSpins -= 1;
-      });
-    }
-
     // Animation logic
     const double fullCircle = 2 * math.pi;
     final double segmentWidth = fullCircle / _hardcodedRewards.length;
-    final double targetRotation = _currentRotation + (10 * fullCircle) + (fullCircle - (winnerIndex * segmentWidth));
+    // Pointer is at the TOP ( -pi/2 ).
+    // We want segment `winnerIndex` to be at -pi/2.
+    // Segment i starts at `rotation + i * segmentWidth`.
+    // Middle of segment i is at `rotation + i * segmentWidth + segmentWidth / 2`.
+    // So: `rotation + (winnerIndex + 0.5) * segmentWidth = -pi/2`.
+    // `rotation = -pi/2 - (winnerIndex + 0.5) * segmentWidth`.
+    final double baseRotation = -math.pi / 2 - (winnerIndex + 0.5) * segmentWidth;
+    final double targetRotation = _currentRotation + (10 * fullCircle) + (baseRotation - (_currentRotation % fullCircle));
 
     _animation = Tween<double>(begin: _currentRotation, end: targetRotation).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
+
+    setState(() {
+      _isSpinning = true;
+    });
+
+    if (isPaid) {
+      // For now, subtract immediately for feedback
+    } else {
+      await RouletteService.consumeFreeSpin();
+      if (mounted) {
+        setState(() {
+          _freeSpins -= 1;
+        });
+      }
+    }
 
     _controller.reset();
     await _controller.forward();
