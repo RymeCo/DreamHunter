@@ -349,8 +349,9 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class RouletteWheelPainter extends CustomPainter {
