@@ -5,17 +5,23 @@ class RouletteState {
   final int freeSpins;
   final String lastRefillDate; // YYYY-MM-DD
   final Map<String, dynamic>? pendingReward; // { 'amount': int, 'name': String }
+  final bool isSpinning;
+  final double? targetRotation;
 
   RouletteState({
     required this.freeSpins, 
     required this.lastRefillDate,
     this.pendingReward,
+    this.isSpinning = false,
+    this.targetRotation,
   });
 
   Map<String, dynamic> toJson() => {
         'freeSpins': freeSpins,
         'lastRefillDate': lastRefillDate,
         'pendingReward': pendingReward,
+        'isSpinning': isSpinning,
+        'targetRotation': targetRotation,
       };
 
   factory RouletteState.fromJson(Map<String, dynamic> json) {
@@ -23,6 +29,8 @@ class RouletteState {
       freeSpins: json['freeSpins'] as int? ?? 10,
       lastRefillDate: json['lastRefillDate'] as String? ?? '',
       pendingReward: json['pendingReward'] as Map<String, dynamic>?,
+      isSpinning: json['isSpinning'] as bool? ?? false,
+      targetRotation: (json['targetRotation'] as num?)?.toDouble(),
     );
   }
 }
@@ -51,11 +59,25 @@ class RouletteService {
         freeSpins: newSpins, 
         lastRefillDate: todayStr,
         pendingReward: state.pendingReward,
+        isSpinning: state.isSpinning,
+        targetRotation: state.targetRotation,
       );
       await saveState(state);
     }
 
     return state;
+  }
+
+  static Future<void> setSpinning(bool isSpinning, {double? targetRotation}) async {
+    final state = await getAndSyncState();
+    final newState = RouletteState(
+      freeSpins: state.freeSpins,
+      lastRefillDate: state.lastRefillDate,
+      pendingReward: state.pendingReward,
+      isSpinning: isSpinning,
+      targetRotation: targetRotation,
+    );
+    await saveState(newState);
   }
 
   static Future<void> setPendingReward(Map<String, dynamic> reward) async {

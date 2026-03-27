@@ -55,7 +55,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await Future.delayed(const Duration(seconds: 1));
     
     final state = await RouletteService.getAndSyncState();
-    if (state.pendingReward != null) {
+    
+    // Only auto-claim if it's NOT spinning. 
+    // If it IS spinning, the RouletteDialog will handle the resumption.
+    if (state.pendingReward != null && !state.isSpinning) {
       final reward = state.pendingReward!;
       final amount = (reward['amount'] as num).toInt();
       final name = reward['name'] as String;

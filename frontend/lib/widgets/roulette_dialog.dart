@@ -96,7 +96,41 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
         _freeSpins = state.freeSpins;
         _isLoading = false;
       });
+
+      // Session Recovery: If we were spinning, resume it!
+      if (state.isSpinning && state.targetRotation != null) {
+        _resumeSpin(state.targetRotation!);
+      }
     }
+  }
+
+  void _resumeSpin(double targetRotation) async {
+    // 1. Recover the winning reward from pending
+    final state = await RouletteService.getAndSyncState();
+    if (state.pendingReward == null) {
+      await RouletteService.setSpinning(false);
+      return;
+    }
+
+    final reward = state.pendingReward!;
+    
+    // 2. Setup a shorter "finishing" animation
+    setState(() {
+      _isSpinning = true;
+      _winningReward = reward;
+    });
+
+    // Start from a random previous rotation to make it look like it was spinning
+    _currentRotation = targetRotation - (math.pi * 2); 
+
+    _animation = Tween<double>(begin: _currentRotation, end: targetRotation).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+
+    _controller.reset();
+    await _controller.forward();
+
+    _finalizeSpin(targetRotation, reward);
   }
 
   @override
@@ -151,8 +185,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
 
     final winningReward = _hardcodedRewards[winnerIndex];
 
-    // 2. DEDUCT COST ONLY (Suspense!)
-    // We save the reward as "pending" in the service for safety, but don't add it to coins yet.
+    // 2. DEDUCT COST & SET STATE
     if (isPaid) {
       await widget.controller.updateCurrency(
         newCoins: widget.controller.dreamCoins - cost,
@@ -161,11 +194,17 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
       await RouletteService.consumeFreeSpin();
     }
     
-    // Safety: Store the reward in case the app closes during spin
+    // Store for session recovery
+    const double fullCircle = 2 * math.pi;
+    final double segmentWidth = fullCircle / _hardcodedRewards.length;
+    final double baseRotation = -math.pi / 2 - (winnerIndex + 0.5) * segmentWidth;
+    final double targetRotation = _currentRotation + (10 * fullCircle) + (baseRotation - (_currentRotation % fullCircle));
+
     await RouletteService.setPendingReward({
       'amount': winningReward['amount'],
       'name': winningReward['name'],
     });
+    await RouletteService.setSpinning(true, targetRotation: targetRotation);
 
     if (!mounted) return;
 
@@ -176,11 +215,6 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
     });
 
     // 3. Animate
-    const double fullCircle = 2 * math.pi;
-    final double segmentWidth = fullCircle / _hardcodedRewards.length;
-    final double baseRotation = -math.pi / 2 - (winnerIndex + 0.5) * segmentWidth;
-    final double targetRotation = _currentRotation + (10 * fullCircle) + (baseRotation - (_currentRotation % fullCircle));
-
     _animation = Tween<double>(begin: _currentRotation, end: targetRotation).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
@@ -188,12 +222,17 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
     _controller.reset();
     await _controller.forward();
 
+    _finalizeSpin(targetRotation, winningReward);
+  }
+
+  void _finalizeSpin(double targetRotation, Map<String, dynamic> reward) async {
     // 4. FINISH: Grant reward and clear pending
-    final rewardAmount = (winningReward['amount'] as num).toInt();
+    final rewardAmount = (reward['amount'] as num).toInt();
     await widget.controller.updateCurrency(
       newCoins: widget.controller.dreamCoins + rewardAmount,
     );
     await RouletteService.clearPendingReward();
+    await RouletteService.setSpinning(false);
 
     if (!mounted) return;
 
@@ -204,7 +243,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
 
     showCustomSnackBar(
       context,
-      'YOU WON: ${winningReward['name']}!',
+      'YOU WON: ${reward['name']}!',
       type: SnackBarType.success,
     );
     widget.onSpinCompleted?.call();
