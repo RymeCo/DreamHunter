@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 /// A highly interactive, animated "Liquid Glass" button for indie game UIs.
 /// Supports both image-based and text/widget-based content.
@@ -79,12 +80,27 @@ class _GlassButtonState extends State<GlassButton> {
 
   void _updateTapped(bool tapped) {
     if (!mounted || _isTapped == tapped) return;
-    setState(() => _isTapped = tapped);
+    
+    // Safety check: If we are in the middle of a build, defer the state change.
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _isTapped = tapped);
+      });
+    } else {
+      setState(() => _isTapped = tapped);
+    }
   }
 
   void _updateHovering(bool hovering) {
     if (!mounted || _isHovering == hovering) return;
-    setState(() => _isHovering = hovering);
+
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _isHovering = hovering);
+      });
+    } else {
+      setState(() => _isHovering = hovering);
+    }
   }
 
   @override
