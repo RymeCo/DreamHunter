@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// Defines the visual style of the snackbar.
-enum SnackBarType { success, error, info }
+enum SnackBarType { success, error, warning, info }
 
 /// Represents a single snackbar request in the queue.
 class _SnackBarRequest {
@@ -118,15 +118,19 @@ class CustomSnackBar {
 
         switch (request.type) {
           case SnackBarType.success:
-            bgColor = Colors.greenAccent.withValues(alpha: 0.9);
+            bgColor = Colors.green.withValues(alpha: 0.9);
             icon = Icons.check_circle_outline;
             break;
           case SnackBarType.error:
-            bgColor = Colors.redAccent.withValues(alpha: 0.9);
+            bgColor = Colors.red.withValues(alpha: 0.9);
             icon = Icons.error_outline;
             break;
+          case SnackBarType.warning:
+            bgColor = Colors.orange.withValues(alpha: 0.9);
+            icon = Icons.warning_amber_rounded;
+            break;
           case SnackBarType.info:
-            bgColor = Colors.blueAccent.withValues(alpha: 0.9);
+            bgColor = Colors.blue.withValues(alpha: 0.9);
             icon = Icons.info_outline;
             break;
         }
@@ -152,15 +156,16 @@ class CustomSnackBar {
               ),
               child: Row(
                 children: [
-                  Icon(icon, color: Colors.white),
+                  Icon(icon, color: Colors.white, size: 24),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       request.message,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),

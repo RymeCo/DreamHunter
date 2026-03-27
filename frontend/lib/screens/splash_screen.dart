@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/widgets/game_widgets.dart';
 import 'package:dreamhunter/screens/dashboard_screen.dart';
+import 'package:dreamhunter/services/pre_loader.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,29 +26,11 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _initializeAppData() async {
     final startTime = DateTime.now();
 
-    final imagesToPrecache = [
-      'assets/images/dashboard/main_background.png',
-      'assets/images/dashboard/background_1.png',
-      'assets/images/dashboard/shop_stall.png',
-      'assets/images/dashboard/roulette_man.png',
-      'assets/images/dashboard/signage.png',
-      'assets/images/game/environment/dorm.png',
-    ];
-
-    int loadedCount = 0;
-    for (var path in imagesToPrecache) {
-      try {
-        await precacheImage(AssetImage(path), context);
-      } catch (e) {
-        debugPrint('Failed to precache: $path - $e');
-      }
+    await PreLoader.precacheAll(context, (progress) {
       if (mounted) {
-        loadedCount++;
-        setState(() {
-          _progress = (loadedCount) / (imagesToPrecache.length + 1);
-        });
+        setState(() => _progress = progress);
       }
-    }
+    });
 
     final endTime = DateTime.now();
     final elapsed = endTime.difference(startTime).inMilliseconds;
@@ -56,12 +39,14 @@ class _SplashScreenState extends State<SplashScreen> {
     if (elapsed < minimumWait) {
       final remaining = minimumWait - elapsed;
       final steps = 20;
+      final baseProgress = PreLoader.totalCount / (PreLoader.totalCount + 1);
+      final remainingProgress = 1 / (PreLoader.totalCount + 1);
+
       for (int i = 1; i <= steps; i++) {
         await Future.delayed(Duration(milliseconds: remaining ~/ steps));
         if (!mounted) return;
         setState(() {
-          _progress = (imagesToPrecache.length / (imagesToPrecache.length + 1)) +
-              ((i / steps) * (1 / (imagesToPrecache.length + 1)));
+          _progress = baseProgress + (i / steps) * remainingProgress;
         });
       }
     }

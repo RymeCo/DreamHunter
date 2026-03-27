@@ -88,6 +88,7 @@ class GameDialogHeader extends StatelessWidget {
   final Color titleColor;
   final VoidCallback onEmojiTap; // Optional for future expansions
   final bool showCloseButton;
+  final bool isCentered;
 
   const GameDialogHeader({
     super.key,
@@ -95,6 +96,7 @@ class GameDialogHeader extends StatelessWidget {
     this.titleColor = Colors.amberAccent,
     this.onEmojiTap = _noop,
     this.showCloseButton = true,
+    this.isCentered = false,
   });
 
   static void _noop() {}
@@ -103,29 +105,35 @@ class GameDialogHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          Text(
-            title.toUpperCase(),
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: titleColor,
-              letterSpacing: 2,
-              shadows: [
-                Shadow(
-                  color: titleColor.withValues(alpha: 0.5),
-                  blurRadius: 10,
-                ),
-              ],
+          Align(
+            alignment: isCentered ? Alignment.center : Alignment.centerLeft,
+            child: Text(
+              title.toUpperCase(),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: titleColor,
+                letterSpacing: 2,
+                shadows: [
+                  Shadow(
+                    color: titleColor.withValues(alpha: 0.5),
+                    blurRadius: 10,
+                  ),
+                ],
+              ),
             ),
           ),
           if (showCloseButton)
-            IconButton(
-              icon: const Icon(Icons.close_rounded, color: Colors.white38),
-              onPressed: () => Navigator.pop(context),
-              splashRadius: 20,
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white38),
+                onPressed: () => Navigator.pop(context),
+                splashRadius: 20,
+              ),
             ),
         ],
       ),
@@ -196,24 +204,11 @@ class AppLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Image.asset(
-          'assets/images/core/splash_logo.png',
-          width: size,
-          height: size,
-          color: const Color.fromRGBO(169, 13, 200, 0.4),
-          colorBlendMode: BlendMode.srcATop,
-        ),
-        Image.asset(
-          'assets/images/core/splash_logo.png',
-          width: size * 0.95,
-          height: size * 0.95,
-          color: const Color.fromRGBO(228, 159, 240, 0.9),
-          colorBlendMode: BlendMode.modulate,
-        ),
-      ],
+    return Image.asset(
+      'assets/images/core/splash_logo.png',
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
     );
   }
 }

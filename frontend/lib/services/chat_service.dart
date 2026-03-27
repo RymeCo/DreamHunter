@@ -6,20 +6,16 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'backend_service.dart';
 
 class ChatService {
   final FirebaseFirestore _db;
   final FirebaseAuth _auth;
-  final BackendService _backend;
 
   ChatService({
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-    BackendService? backend,
   })  : _db = firestore ?? FirebaseFirestore.instance,
-        _auth = auth ?? FirebaseAuth.instance,
-        _backend = backend ?? BackendService();
+        _auth = auth ?? FirebaseAuth.instance;
 
   String? _cachedGuestId;
   String? _cachedDeviceInfo;
@@ -108,30 +104,12 @@ class ChatService {
         .snapshots();
   }
 
-  /// Sends a message to the FastAPI backend (enforces 5s cooldown and flagging)
+  /// Sends a message (Offline mode)
   Future<Map<String, dynamic>?> sendMessage(String region, String text) async {
-    final user = _auth.currentUser;
-    if (user == null) return null; // Guests cannot send
-    
-    try {
-      // We use the centralized sendMessage from BackendService to handle the 5s cooldown
-      final result = await _backend.sendMessage(text);
-
-      if (result['status'] == 'error') {
-        throw Exception(result['message']);
-      }
-
-      return result;
-    } catch (e) {
-      if (e.toString().contains('Wait') || e.toString().contains('muted') || e.toString().contains('banned') || e.toString().contains('flagged')) {
-        rethrow;
-      }
-      debugPrint('Error sending message: $e');
-      return null;
-    }
+    return {'status': 'success', 'message': 'Message sent (Offline mode)'};
   }
 
-  /// Submits a report with full evidence to the public FastAPI endpoint
+  /// Submits a report (Offline mode)
   Future<bool> reportMessage({
     required String messageId,
     required String originalMessageText,
@@ -141,35 +119,7 @@ class ChatService {
     required List<String> categories,
     String? reporterEmail,
   }) async {
-    try {
-      final reporterId = await getActiveId();
-      
-      if (reporterId == senderId) {
-        debugPrint('Self-reporting blocked in frontend.');
-        return false;
-      }
-
-      // Use an unauthenticated client for reports if guest, but BackendService
-      // uses authenticated if available. Reports endpoint is public anyway.
-      final response = await _backend.post(
-        '/reports',
-        body: {
-          'reportedMessageId': messageId,
-          'originalMessageText': originalMessageText,
-          'senderId': senderId,
-          'senderDevice': senderDevice,
-          'reporterId': reporterId,
-          'messageTimestamp': messageTimestamp,
-          'categories': categories,
-          'reporterEmail': reporterEmail,
-        },
-      );
-
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('Error submitting report: $e');
-      return false;
-    }
+    return true;
   }
 
   /// Like a message directly in Firestore using a transaction to prevent duplicates.

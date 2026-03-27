@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/offline_cache.dart';
-import '../services/user_service.dart';
-import 'custom_snackbar.dart';
 import 'liquid_glass_dialog.dart';
-import 'confirmation_dialog.dart';
 import 'game_widgets.dart';
 
 class ShopDialog extends StatefulWidget {
@@ -15,45 +11,75 @@ class ShopDialog extends StatefulWidget {
 
 class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final UserService _userService = UserService();
-  List<_ShopItem> _allItem = [];
-  bool _isLoading = true;
+
+  // Hardcoded items specifying image location, name, description, and amount
+  final List<Map<String, dynamic>> _gearItems = [
+    {
+      'image': 'assets/images/dashboard/signage.png',
+      'name': 'Wooden Sword',
+      'description': 'A basic sword made of sturdy oak.',
+      'amount': 100,
+    },
+    {
+      'image': 'assets/images/dashboard/signage.png',
+      'name': 'Iron Shield',
+      'description': 'Provides decent protection against physical hits.',
+      'amount': 250,
+    },
+    {
+      'image': 'assets/images/dashboard/signage.png',
+      'name': 'Steel Armor',
+      'description': 'Heavy plate armor for elite dream hunters.',
+      'amount': 500,
+    },
+  ];
+
+  final List<Map<String, dynamic>> _boostItems = [
+    {
+      'image': 'assets/images/dashboard/sandwich.png',
+      'name': 'XP Booster (1h)',
+      'description': 'Double your XP gain for one hour.',
+      'amount': 50,
+    },
+    {
+      'image': 'assets/images/dashboard/sandwich.png',
+      'name': 'Coin Magnet',
+      'description': 'Attracts nearby coins automatically.',
+      'amount': 75,
+    },
+    {
+      'image': 'assets/images/dashboard/sandwich.png',
+      'name': 'Health Potion',
+      'description': 'Restores 50 HP immediately.',
+      'amount': 20,
+    },
+  ];
+
+  final List<Map<String, dynamic>> _relicItems = [
+    {
+      'image': 'assets/images/dashboard/profile_logo.png',
+      'name': 'Ancient Totem',
+      'description': 'A mysterious relic from the old world.',
+      'amount': 1000,
+    },
+    {
+      'image': 'assets/images/dashboard/profile_logo.png',
+      'name': 'Dragon Scale',
+      'description': 'Impervious to heat and extremely durable.',
+      'amount': 2500,
+    },
+    {
+      'image': 'assets/images/dashboard/profile_logo.png',
+      'name': 'Phoenix Feather',
+      'description': 'Revives you once per dream session.',
+      'amount': 5000,
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadItems();
-  }
-
-  Future<void> _loadItems() async {
-    try {
-      final cachedItems = await _userService.getCachedShopItems();
-      if (cachedItems.isNotEmpty) {
-        _allItem = cachedItems.map((item) => _ShopItem.fromMap(item)).toList();
-      } else {
-        // Hardcoded fallbacks if no cache
-        _allItem = [
-          _ShopItem('Health Potion', 'Restore 50 HP', 150, Icons.healing, 'Essential Gear'),
-          _ShopItem('Energy Bar', 'Speed boost for 30s', 200, Icons.bolt, 'Essential Gear'),
-          _ShopItem('Map Fragment', 'Reveal nearby ghosts', 100, Icons.map, 'Essential Gear'),
-          _ShopItem('Ghost Veil', 'Invisibility for 10s', 500, Icons.visibility_off, 'Ethereal Boosts'),
-          _ShopItem('Spirit Shield', 'Ignore next hit', 750, Icons.shield, 'Ethereal Boosts'),
-          _ShopItem('Gold Magnet', 'Auto-collect coins', 600, Icons.attractions, 'Ethereal Boosts'),
-          _ShopItem('Night Vision', 'Permanent dark sight', 5000, Icons.nights_stay, 'Arcane Relics'),
-          _ShopItem('Dream Walker', 'Walk through walls', 10000, Icons.auto_fix_high, 'Arcane Relics'),
-          _ShopItem('Soul Tether', 'Half respawn time', 3500, Icons.link, 'Arcane Relics'),
-        ];
-      }
-    } catch (e) {
-      debugPrint('Error loading shop items: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 
   @override
@@ -62,79 +88,37 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  void _buyItem(_ShopItem item) async {
-    final Map<String, dynamic> currency = await OfflineCache.getCurrency();
-    final int currentDream = currency['dreamCoins'] ?? 0;
-
-    if (currentDream < item.price) {
-      if (mounted) {
-        showCustomSnackBar(context, 'Insufficient Dream Coins!', type: SnackBarType.error);
-      }
-      return;
-    }
-
-    if (item.price > 500) {
-      if (!mounted) return;
-      final confirmed = await ConfirmationDialog.show(
-        context,
-        title: 'Confirm Purchase?',
-        message: 'Spend ${item.price} coins on ${item.name}?',
-        confirmLabel: 'BUY NOW',
-      );
-      if (confirmed != true) return;
-    }
-
-    await _processPurchase(item);
-  }
-
-  Future<void> _processPurchase(_ShopItem item) async {
-    await OfflineCache.addTransaction(
-      type: 'PURCHASE',
-      itemId: item.name,
-      dreamDelta: -item.price,
-    );
-
-    if (mounted) {
-      showCustomSnackBar(context, 'Purchased ${item.name}!', type: SnackBarType.success);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return Center(
       child: LiquidGlassDialog(
         width: MediaQuery.of(context).size.width * 0.85,
-        height: MediaQuery.of(context).size.height * 0.7,
+        height: MediaQuery.of(context).size.height * 0.75,
         padding: EdgeInsets.zero,
         child: Column(
           children: [
-            const GameDialogHeader(title: 'DREAM SHOP'),
-            
-            // Tab Bar
+            const GameDialogHeader(
+              title: 'DREAM SHOP',
+              isCentered: true,
+            ),
             TabBar(
               controller: _tabController,
               indicatorColor: Colors.amberAccent,
-              labelColor: Colors.amberAccent,
-              unselectedLabelColor: Colors.white60,
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
               tabs: const [
-                Tab(text: 'Essential Gear'),
-                Tab(text: 'Ethereal Boosts'),
-                Tab(text: 'Arcane Relics'),
+                Tab(text: 'Gear'),
+                Tab(text: 'Boosts'),
+                Tab(text: 'Relics'),
               ],
             ),
-            
-            // Tab View
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildShopCategory(_allItem.where((i) => i.category == 'Essential Gear').toList()),
-                  _buildShopCategory(_allItem.where((i) => i.category == 'Ethereal Boosts').toList()),
-                  _buildShopCategory(_allItem.where((i) => i.category == 'Arcane Relics').toList()),
+                  _buildItemGrid(_gearItems),
+                  _buildItemGrid(_boostItems),
+                  _buildItemGrid(_relicItems),
                 ],
               ),
             ),
@@ -144,112 +128,86 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildShopCategory(List<_ShopItem> items) {
-    if (items.isEmpty) {
-      return const Center(child: Text('No items in this category', style: TextStyle(color: Colors.white38)));
-    }
+  Widget _buildItemGrid(List<Map<String, dynamic>> items) {
     return GridView.builder(
-      padding: const EdgeInsets.all(20),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200,
-        childAspectRatio: 0.75,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.7,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return InkWell(
-          onTap: () => _buyItem(item),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white12),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(item.icon, size: 48, color: Colors.amberAccent),
-                const SizedBox(height: 12),
-                Text(
-                  item.name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                item['image'],
+                width: 60,
+                height: 60,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => 
+                  const Icon(Icons.broken_image, color: Colors.white24, size: 60),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                item['name'],
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item['description'],
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white54, fontSize: 10),
+              ),
+              const Spacer(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.toll_rounded, color: Colors.amberAccent, size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${item['amount']}',
+                    style: const TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.w900, fontSize: 14),
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () {
+                  // UI feedback only
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Purchased ${item['name']}! (Demo)'),
+                      backgroundColor: Colors.blueAccent,
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent.withValues(alpha: 0.2),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 32),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  item.description,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white60, fontSize: 12),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.amberAccent.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.toll_rounded, size: 14, color: Colors.amberAccent),
-                      const SizedBox(width: 4),
-                      Text(
-                        item.price.toString(),
-                        style: const TextStyle(
-                          color: Colors.amberAccent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+                child: const Text('BUY', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         );
       },
     );
-  }
-}
-
-class _ShopItem {
-  final String name;
-  final String description;
-  final int price;
-  final IconData icon;
-  final String category;
-
-  _ShopItem(this.name, this.description, this.price, this.icon, this.category);
-
-  factory _ShopItem.fromMap(Map<String, dynamic> map) {
-    return _ShopItem(
-      map['name'] ?? 'Unknown',
-      map['description'] ?? '',
-      (map['price'] as num?)?.toInt() ?? 0,
-      _getIconData(map['icon']),
-      map['category'] ?? 'Essential Gear',
-    );
-  }
-
-  static IconData _getIconData(String? iconName) {
-    switch (iconName) {
-      case 'healing': return Icons.healing;
-      case 'bolt': return Icons.bolt;
-      case 'map': return Icons.map;
-      case 'visibility_off': return Icons.visibility_off;
-      case 'shield': return Icons.shield;
-      case 'attractions': return Icons.attractions;
-      case 'nights_stay': return Icons.nights_stay;
-      case 'auto_fix_high': return Icons.auto_fix_high;
-      case 'link': return Icons.link;
-      default: return Icons.shopping_bag;
-    }
   }
 }

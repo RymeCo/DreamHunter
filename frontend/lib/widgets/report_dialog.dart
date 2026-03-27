@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
-import 'package:dreamhunter/services/chat_service.dart';
 import 'package:dreamhunter/widgets/game_widgets.dart';
 import 'package:dreamhunter/widgets/clickable_image.dart';
 
@@ -26,7 +25,6 @@ class ReportDialog extends StatefulWidget {
 }
 
 class _ReportDialogState extends State<ReportDialog> {
-  final ChatService _chatService = ChatService();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _otherReasonController = TextEditingController();
   
@@ -78,33 +76,13 @@ class _ReportDialogState extends State<ReportDialog> {
 
     setState(() => _isSubmitting = true);
 
-    // If 'Other' is selected, append the custom text to the category list for the backend to see
-    final finalCategories = selectedCategories.map((c) {
-      if (c == 'Other') {
-        return 'Other: ${_otherReasonController.text.trim()}';
-      }
-      return c;
-    }).toList();
-
-    final success = await _chatService.reportMessage(
-      messageId: widget.messageId,
-      originalMessageText: widget.originalMessageText,
-      senderId: widget.senderId,
-      senderDevice: widget.senderDevice,
-      messageTimestamp: widget.messageTimestamp,
-      categories: finalCategories,
-      reporterEmail: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-    );
+    // Artificial delay for UI feel
+    await Future.delayed(const Duration(milliseconds: 500));
 
     if (!mounted) return;
 
-    if (success) {
-      Navigator.pop(context);
-      showCustomSnackBar(context, 'Report submitted successfully. Thank you.', type: SnackBarType.success);
-    } else {
-      setState(() => _isSubmitting = false);
-      showCustomSnackBar(context, 'Failed to submit report. Please try again.', type: SnackBarType.error);
-    }
+    Navigator.pop(context);
+    showCustomSnackBar(context, 'Report submitted successfully. Thank you.', type: SnackBarType.success);
   }
 
   @override

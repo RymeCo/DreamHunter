@@ -1,161 +1,121 @@
 import 'package:flutter/material.dart';
-import '../services/offline_cache.dart';
-import '../services/backend_service.dart';
-import '../game/core/game_constants.dart';
 import 'liquid_glass_dialog.dart';
-import 'custom_snackbar.dart';
 import 'game_widgets.dart';
+import 'package:dreamhunter/widgets/custom_snackbar.dart';
 
 class DailyTasksDialog extends StatefulWidget {
-  final VoidCallback? onTaskClaimed;
-  const DailyTasksDialog({super.key, this.onTaskClaimed});
+  const DailyTasksDialog({super.key});
 
   @override
   State<DailyTasksDialog> createState() => _DailyTasksDialogState();
 }
 
 class _DailyTasksDialogState extends State<DailyTasksDialog> {
-  Map<String, dynamic>? _dailyTasks;
-  bool _isLoading = true;
-  bool _isClaiming = false;
-  final BackendService _backendService = BackendService();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadTasks();
-  }
-
-  Future<void> _loadTasks() async {
-    final tasks = await OfflineCache.getDailyTasks();
-    if (mounted) {
-      setState(() {
-        _dailyTasks = tasks;
-        _isLoading = false;
-      });
+  final List<Map<String, dynamic>> _tasks = [
+    {
+      "id": "daily_login",
+      "title": "Daily Login",
+      "description": "Log in to the game today.",
+      "progress": 1,
+      "target": 1,
+      "reward": 50,
+      "completed": true,
+      "claimed": false,
+      "type": "login"
+    },
+    {
+      "id": "send_messages",
+      "title": "Chatterbox",
+      "description": "Send 5 messages in global chat.",
+      "progress": 2,
+      "target": 5,
+      "reward": 100,
+      "completed": false,
+      "claimed": false,
+      "type": "chat"
+    },
+    {
+      "id": "spin_roulette",
+      "title": "Lucky Spinner",
+      "description": "Spin the Lucky Roulette twice.",
+      "progress": 0,
+      "target": 2,
+      "reward": 150,
+      "completed": false,
+      "claimed": false,
+      "type": "spin"
+    },
+    {
+      "id": "playtime_task",
+      "title": "Time Traveler",
+      "description": "Play for 10 minutes.",
+      "progress": 4,
+      "target": 10,
+      "reward": 200,
+      "completed": false,
+      "claimed": false,
+      "type": "playtime"
     }
-  }
+  ];
 
-  Future<void> _claimTask(String taskId) async {
-    setState(() => _isClaiming = true);
-    final result = await _backendService.claimDailyTask(taskId);
-
-    if (result != null && result['status'] == 'success') {
-      final dailyTasks = result['dailyTasks'] as Map<String, dynamic>;
-      final reward = result['rewardGranted'] as int;
-
-      final current = await OfflineCache.getCurrency();
-      await OfflineCache.saveCurrency(
-        (current['dreamCoins'] ?? 0) + reward,
-        current['hellStones'] ?? 0,
-        current['playtime'] ?? 0,
-        current['freeSpins'] ?? 0,
-        current['xp'] ?? 0,
-        current['level'] ?? 1,
-        current['avatarId'] ?? 0,
-        current['createdAt'],
-        dailyTasks,
-        true, // forceUpdate = true
-      );
-
-      await _loadTasks();
-      widget.onTaskClaimed?.call();
-      if (mounted) {
-        showCustomSnackBar(context, 'Reward claimed: $reward Dream Coins!', type: SnackBarType.success);
-      }
-      
-      await _backendService.performFullSync();
-    } else {
-      if (mounted) {
-        showCustomSnackBar(context, 'Failed to claim reward. Try again later.', type: SnackBarType.error);
-      }
-    }
-    if (mounted) setState(() => _isClaiming = false);
+  void _claimTask(int index) {
+    setState(() {
+      _tasks[index]['claimed'] = true;
+    });
+    // UI feedback only, no backend call
+    showCustomSnackBar(
+      context,
+      'Reward claimed: ${_tasks[index]['reward']} Dream Coins!',
+      type: SnackBarType.success,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return LiquidGlassDialog(
-      width: 400,
+      width: 450,
       padding: const EdgeInsets.all(24),
-      child: Stack(
-        alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Daily Tasks',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          color: Colors.blueAccent,
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Colors.white70),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (_isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: CircularProgressIndicator(color: Colors.blueAccent),
-                  ),
-                )
-              else if (_dailyTasks == null || _dailyTasks!['tasks'] == null)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: Text(
-                      'No tasks available today.',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  ),
-                )
-              else
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: (_dailyTasks!['tasks'] as List).length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final task = (_dailyTasks!['tasks'] as List)[index];
-                            return _buildTaskItem(task);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+              const Text(
+                'Daily Tasks',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(color: Colors.blueAccent, blurRadius: 10),
+                  ],
                 ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close, color: Colors.white70),
+              ),
             ],
           ),
-          if (_isClaiming)
-            const Center(child: CircularProgressIndicator(color: Colors.blueAccent)),
+          const SizedBox(height: 16),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: _tasks.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                return _buildTaskItem(_tasks[index], index);
+              },
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTaskItem(Map<String, dynamic> task) {
+  Widget _buildTaskItem(Map<String, dynamic> task, int index) {
     final bool isCompleted = (task['progress'] as num) >= (task['target'] as num);
     final bool isClaimed = task['claimed'] ?? false;
     final double progress = (task['progress'] as num).toDouble();
@@ -170,9 +130,9 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
         border: Border.all(
           color: isClaimed
               ? Colors.greenAccent.withValues(alpha: 0.3)
-              : isCompleted 
-                ? Colors.amberAccent.withValues(alpha: 0.3)
-                : Colors.white.withValues(alpha: 0.1),
+              : isCompleted
+                  ? Colors.amberAccent.withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.1),
         ),
       ),
       child: Row(
@@ -186,7 +146,7 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isClaimed ? Icons.check_circle_rounded : GameConstants.getIconForTaskType(task['type']),
+              isClaimed ? Icons.check_circle_rounded : _getIconForType(task['type']),
               color: isClaimed ? Colors.greenAccent : Colors.blueAccent,
               size: 24,
             ),
@@ -207,10 +167,7 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
                 ),
                 Text(
                   task['description'] ?? '',
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
                 ),
                 const SizedBox(height: 8),
                 if (!isClaimed)
@@ -226,7 +183,7 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
           const SizedBox(width: 16),
           if (isCompleted && !isClaimed)
             ElevatedButton(
-              onPressed: () => _claimTask(task['id']),
+              onPressed: () => _claimTask(index),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amberAccent,
                 foregroundColor: Colors.black,
@@ -248,28 +205,16 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
               children: [
                 Text(
                   '${progress.toInt()}/${target.toInt()}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.toll_rounded,
-                      color: Colors.amberAccent,
-                      size: 14,
-                    ),
+                    const Icon(Icons.toll_rounded, color: Colors.amberAccent, size: 14),
                     const SizedBox(width: 4),
                     Text(
                       '${task['reward']}',
-                      style: const TextStyle(
-                        color: Colors.amberAccent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -278,5 +223,20 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
         ],
       ),
     );
+  }
+
+  IconData _getIconForType(String? type) {
+    switch (type) {
+      case 'chat':
+        return Icons.chat_bubble_rounded;
+      case 'spin':
+        return Icons.casino_rounded;
+      case 'playtime':
+        return Icons.timer_rounded;
+      case 'login':
+        return Icons.login_rounded;
+      default:
+        return Icons.task_alt_rounded;
+    }
   }
 }
