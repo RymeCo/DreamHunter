@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 class StatRow extends StatelessWidget {
   final IconData icon;
@@ -211,4 +212,68 @@ class AppLogo extends StatelessWidget {
       fit: BoxFit.contain,
     );
   }
+}
+
+class RouletteWheelPainter extends CustomPainter {
+  final List<Map<String, dynamic>> rewards;
+  final double rotation;
+  const RouletteWheelPainter({required this.rewards, required this.rotation});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final sweepAngle = (2 * math.pi) / rewards.length;
+    
+    // 1. Draw Arcs (Wheel background)
+    for (int i = 0; i < rewards.length; i++) {
+      final String colorStr = (rewards[i]['color'] as String).replaceFirst('0x', '');
+      final baseColor = Color(int.parse(colorStr, radix: 16));
+      final paint = Paint()..shader = RadialGradient(
+        colors: [baseColor.withValues(alpha: 0.9), baseColor.withValues(alpha: 0.5)]
+      ).createShader(rect);
+      
+      canvas.drawArc(rect, rotation + i * sweepAngle, sweepAngle, true, paint);
+    }
+
+    // 2. Draw Text (Radial Base-to-Center)
+    for (int i = 0; i < rewards.length; i++) {
+      canvas.save();
+      
+      // Move to center and rotate to the middle of the current segment
+      canvas.translate(center.dx, center.dy);
+      final segmentRotation = rotation + (i * sweepAngle) + (sweepAngle / 2);
+      canvas.rotate(segmentRotation);
+
+      final tp = TextPainter(
+        text: TextSpan(
+          text: rewards[i]['name'],
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.5,
+            shadows: [Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 1))],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      // Position text radially - 75% of the way out
+      final xOffset = radius * 0.72;
+      canvas.translate(xOffset, 0);
+      
+      // Rotate 90 degrees to align text base with the radius (perpendicular)
+      canvas.rotate(math.pi / 2);
+
+      // Paint centered
+      tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
+      
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(RouletteWheelPainter oldDelegate) => oldDelegate.rotation != rotation;
 }

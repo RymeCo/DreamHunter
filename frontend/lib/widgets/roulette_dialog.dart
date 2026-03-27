@@ -28,63 +28,18 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
   late AnimationController _controller;
   Animation<double>? _animation;
   
-  static const List<Map<String, dynamic>> _hardcodedRewards = [
-    {
-      'name': '10 DC',
-      'type': 'currency',
-      'amount': 10,
-      'weight': 100, // Common
-      'color': '0xCC9C27B0' // Deep Purple
-    },
-    {
-      'name': '25 DC',
-      'type': 'currency',
-      'amount': 25,
-      'weight': 50, // Uncommon
-      'color': '0xCC2196F3' // Blue
-    },
-    {
-      'name': '50 DC',
-      'type': 'currency',
-      'amount': 50,
-      'weight': 20, // Rare
-      'color': '0xCC00BCD4' // Cyan
-    },
-    {
-      'name': '100 DC',
-      'type': 'currency',
-      'amount': 100,
-      'weight': 10, // Epic
-      'color': '0xCCFFD740' // Amber
-    },
-    {
-      'name': '250 DC',
-      'type': 'currency',
-      'amount': 250,
-      'weight': 5, // Legendary
-      'color': '0xCCFF4081' // Pink
-    },
-    {
-      'name': '500 DC',
-      'type': 'currency',
-      'amount': 500,
-      'weight': 2, // Jackpot
-      'color': '0xCCFF5252' // Red Accent
-    },
-  ];
-
   int _freeSpins = 0;
   bool _isLoading = true;
   bool _isSpinning = false;
+  bool _isRefilling = false;
   double _currentRotation = 0;
-  Map<String, dynamic>? _winningReward;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 4),
+      duration: const Duration(seconds: 5),
     );
     _loadData();
   }
@@ -129,11 +84,9 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
     // 2. Setup a shortened "finishing" animation
     setState(() {
       _isSpinning = true;
-      _winningReward = reward;
     });
 
     // Calculate roughly where the wheel should be now
-    // This is an approximation for visual continuity
     final double progress = elapsed.inMilliseconds / totalDuration.inMilliseconds;
     _currentRotation = _currentRotation + (targetRotation - _currentRotation) * progress;
 
@@ -185,20 +138,20 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
     }
 
     // 1. Determine winner
-    final int totalWeight = _hardcodedRewards.fold<int>(0, (total, item) => total + (item['weight'] as int));
+    final int totalWeight = RouletteService.rewards.fold<int>(0, (total, item) => total + (item['weight'] as int));
     final randomValue = math.Random().nextInt(totalWeight);
     
     int cumulativeWeight = 0;
     int winnerIndex = 0;
-    for (int i = 0; i < _hardcodedRewards.length; i++) {
-      cumulativeWeight += _hardcodedRewards[i]['weight'] as int;
+    for (int i = 0; i < RouletteService.rewards.length; i++) {
+      cumulativeWeight += RouletteService.rewards[i]['weight'] as int;
       if (randomValue < cumulativeWeight) {
         winnerIndex = i;
         break;
       }
     }
 
-    final winningReward = _hardcodedRewards[winnerIndex];
+    final winningReward = RouletteService.rewards[winnerIndex];
 
     // 2. DEDUCT COST & SET STATE
     if (isPaid) {
@@ -211,7 +164,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
     
     // Store for session recovery
     const double fullCircle = 2 * math.pi;
-    final double segmentWidth = fullCircle / _hardcodedRewards.length;
+    final double segmentWidth = fullCircle / RouletteService.rewards.length;
     final double baseRotation = -math.pi / 2 - (winnerIndex + 0.5) * segmentWidth;
     final double targetRotation = _currentRotation + (10 * fullCircle) + (baseRotation - (_currentRotation % fullCircle));
 
@@ -225,7 +178,6 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
 
     setState(() {
       _isSpinning = true;
-      _winningReward = winningReward;
       if (!isPaid) _freeSpins -= 1;
     });
 
@@ -257,11 +209,15 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
       _currentRotation = targetRotation;
     });
 
-    showCustomSnackBar(
-      context,
-      'YOU WON: ${reward['name']}!',
-      type: SnackBarType.success,
-    );
+    // Use parentContext if dialog is closed
+    final announcementContext = (mounted ? context : widget.parentContext);
+    if (announcementContext != null) {
+      showCustomSnackBar(
+        announcementContext,
+        'YOU WON: ${reward['name']}!',
+        type: SnackBarType.success,
+      );
+    }
     widget.onSpinCompleted?.call();
   }
 
@@ -320,7 +276,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
                       return CustomPaint(
                         size: const Size(300, 300),
                         painter: RouletteWheelPainter(
-                          rewards: _hardcodedRewards,
+                          rewards: RouletteService.rewards,
                           rotation: rotation,
                         ),
                       );
@@ -367,27 +323,47 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
                   else
                     GlassButton(
                       onTap: () async {
+                        if (_isRefilling) return;
+                        _isRefilling = true;
+                        
                         showCustomSnackBar(context, 'Watching ad... +1 Spin granted!', type: SnackBarType.info);
+                        
+                        // Simulate ad delay
+                        await Future.delayed(const Duration(seconds: 1));
+                        
                         final state = await RouletteService.getAndSyncState();
                         final newState = RouletteState(
                           freeSpins: state.freeSpins + 1,
                           lastRefillDate: state.lastRefillDate,
+                          pendingReward: state.pendingReward,
+                          isSpinning: state.isSpinning,
+                          targetRotation: state.targetRotation,
+                          spinStartTime: state.spinStartTime,
                         );
                         await RouletteService.saveState(newState);
+                        
                         if (mounted) {
-                          setState(() => _freeSpins = newState.freeSpins);
+                          setState(() {
+                            _freeSpins = newState.freeSpins;
+                            _isRefilling = false;
+                          });
                         }
                       },
-                      isClickable: !_isSpinning,
+                      isClickable: !_isSpinning && !_isRefilling,
                       glowColor: Colors.blueAccent,
                       width: double.infinity,
                       height: 50,
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.play_circle_outline, color: Colors.blueAccent, size: 20),
-                          SizedBox(width: 8),
-                          Text('WATCH AD (+1 FREE SPIN)', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.w900, fontSize: 14)),
+                          _isRefilling 
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blueAccent))
+                            : const Icon(Icons.play_circle_outline, color: Colors.blueAccent, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            _isRefilling ? 'LOADING...' : 'WATCH AD (+1 FREE SPIN)', 
+                            style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.w900, fontSize: 14)
+                          ),
                         ],
                       ),
                     ),
@@ -414,70 +390,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
           ],
         ),
       ),
-    ),
-  );
-}
-}
-
-class RouletteWheelPainter extends CustomPainter {
-  final List<Map<String, dynamic>> rewards;
-  final double rotation;
-  RouletteWheelPainter({required this.rewards, required this.rotation});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    final sweepAngle = (2 * math.pi) / rewards.length;
-    
-    // 1. Draw Arcs (Wheel background)
-    for (int i = 0; i < rewards.length; i++) {
-      final baseColor = Color(int.parse(rewards[i]['color'].replaceFirst('0x', ''), radix: 16));
-      final paint = Paint()..shader = RadialGradient(
-        colors: [baseColor.withValues(alpha: 0.9), baseColor.withValues(alpha: 0.5)]
-      ).createShader(rect);
-      
-      canvas.drawArc(rect, rotation + i * sweepAngle, sweepAngle, true, paint);
-    }
-
-    // 2. Draw Text (Radial Base-to-Center)
-    for (int i = 0; i < rewards.length; i++) {
-      canvas.save();
-      
-      // Move to center and rotate to the middle of the current segment
-      canvas.translate(center.dx, center.dy);
-      final segmentRotation = rotation + (i * sweepAngle) + (sweepAngle / 2);
-      canvas.rotate(segmentRotation);
-
-      final tp = TextPainter(
-        text: TextSpan(
-          text: rewards[i]['name'],
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.5,
-            shadows: [Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 1))],
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-
-      // Position text radially - 75% of the way out
-      final xOffset = radius * 0.72;
-      canvas.translate(xOffset, 0);
-      
-      // Rotate 90 degrees to align text base with the radius (perpendicular)
-      canvas.rotate(math.pi / 2);
-
-      // Paint centered
-      tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
-      
-      canvas.restore();
-    }
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(RouletteWheelPainter oldDelegate) => oldDelegate.rotation != rotation;
 }

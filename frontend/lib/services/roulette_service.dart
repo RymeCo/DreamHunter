@@ -43,6 +43,51 @@ class RouletteService {
   static const String _rouletteKey = 'roulette_state_v1';
   static const int maxFreeSpins = 10;
 
+  static const List<Map<String, dynamic>> rewards = [
+    {
+      'name': '10 DC',
+      'type': 'currency',
+      'amount': 10,
+      'weight': 100, // Common
+      'color': '0xCC9C27B0' // Deep Purple
+    },
+    {
+      'name': '25 DC',
+      'type': 'currency',
+      'amount': 25,
+      'weight': 50, // Uncommon
+      'color': '0xCC2196F3' // Blue
+    },
+    {
+      'name': '50 DC',
+      'type': 'currency',
+      'amount': 50,
+      'weight': 20, // Rare
+      'color': '0xCC00BCD4' // Cyan
+    },
+    {
+      'name': '100 DC',
+      'type': 'currency',
+      'amount': 100,
+      'weight': 10, // Epic
+      'color': '0xCCFFD740' // Amber
+    },
+    {
+      'name': '250 DC',
+      'type': 'currency',
+      'amount': 250,
+      'weight': 5, // Legendary
+      'color': '0xCCFF4081' // Pink
+    },
+    {
+      'name': '500 DC',
+      'type': 'currency',
+      'amount': 500,
+      'weight': 2, // Jackpot
+      'color': '0xCCFF5252' // Red Accent
+    },
+  ];
+
   /// Loads the current state and applies daily refill logic.
   static Future<RouletteState> getAndSyncState() async {
     final now = DateTime.now();
