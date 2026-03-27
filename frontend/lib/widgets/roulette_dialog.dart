@@ -4,7 +4,6 @@ import 'liquid_glass_dialog.dart';
 import 'game_widgets.dart';
 import 'clickable_image.dart';
 import 'custom_snackbar.dart';
-import 'confirmation_dialog.dart';
 import 'insufficient_funds_dialog.dart';
 import '../services/roulette_service.dart';
 import '../services/dashboard_controller.dart';
@@ -112,7 +111,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
       onGoToExchange: () {
         Navigator.pop(context); // Close Roulette
         showCustomSnackBar(
-          this.context, 
+          context, 
           'Switched to Exchange Module!', 
           type: SnackBarType.info
         );
