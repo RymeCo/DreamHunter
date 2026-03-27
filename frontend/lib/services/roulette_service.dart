@@ -7,6 +7,7 @@ class RouletteState {
   final Map<String, dynamic>? pendingReward; // { 'amount': int, 'name': String }
   final bool isSpinning;
   final double? targetRotation;
+  final String? spinStartTime; // ISO8601
 
   RouletteState({
     required this.freeSpins, 
@@ -14,6 +15,7 @@ class RouletteState {
     this.pendingReward,
     this.isSpinning = false,
     this.targetRotation,
+    this.spinStartTime,
   });
 
   Map<String, dynamic> toJson() => {
@@ -22,6 +24,7 @@ class RouletteState {
         'pendingReward': pendingReward,
         'isSpinning': isSpinning,
         'targetRotation': targetRotation,
+        'spinStartTime': spinStartTime,
       };
 
   factory RouletteState.fromJson(Map<String, dynamic> json) {
@@ -31,6 +34,7 @@ class RouletteState {
       pendingReward: json['pendingReward'] as Map<String, dynamic>?,
       isSpinning: json['isSpinning'] as bool? ?? false,
       targetRotation: (json['targetRotation'] as num?)?.toDouble(),
+      spinStartTime: json['spinStartTime'] as String?,
     );
   }
 }
@@ -61,6 +65,7 @@ class RouletteService {
         pendingReward: state.pendingReward,
         isSpinning: state.isSpinning,
         targetRotation: state.targetRotation,
+        spinStartTime: state.spinStartTime,
       );
       await saveState(state);
     }
@@ -76,6 +81,7 @@ class RouletteService {
       pendingReward: state.pendingReward,
       isSpinning: isSpinning,
       targetRotation: targetRotation,
+      spinStartTime: isSpinning ? DateTime.now().toIso8601String() : null,
     );
     await saveState(newState);
   }

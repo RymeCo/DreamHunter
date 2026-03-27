@@ -107,26 +107,41 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
   void _resumeSpin(double targetRotation) async {
     // 1. Recover the winning reward from pending
     final state = await RouletteService.getAndSyncState();
-    if (state.pendingReward == null) {
+    if (state.pendingReward == null || state.spinStartTime == null) {
       await RouletteService.setSpinning(false);
       return;
     }
 
     final reward = state.pendingReward!;
+    final startTime = DateTime.parse(state.spinStartTime!);
+    final now = DateTime.now();
+    final elapsed = now.difference(startTime);
+    const totalDuration = Duration(seconds: 5);
+
+    // If already finished, just finalize
+    if (elapsed >= totalDuration) {
+      _finalizeSpin(targetRotation, reward);
+      return;
+    }
+
+    final remainingDuration = totalDuration - elapsed;
     
-    // 2. Setup a shorter "finishing" animation
+    // 2. Setup a shortened "finishing" animation
     setState(() {
       _isSpinning = true;
       _winningReward = reward;
     });
 
-    // Start from a random previous rotation to make it look like it was spinning
-    _currentRotation = targetRotation - (math.pi * 2); 
+    // Calculate roughly where the wheel should be now
+    // This is an approximation for visual continuity
+    final double progress = elapsed.inMilliseconds / totalDuration.inMilliseconds;
+    _currentRotation = _currentRotation + (targetRotation - _currentRotation) * progress;
 
     _animation = Tween<double>(begin: _currentRotation, end: targetRotation).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
 
+    _controller.duration = remainingDuration;
     _controller.reset();
     await _controller.forward();
 
@@ -219,6 +234,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
 
+    _controller.duration = const Duration(seconds: 5);
     _controller.reset();
     await _controller.forward();
 
