@@ -133,12 +133,7 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
       return;
     }
 
-    setState(() {
-      _isSpinning = true;
-      _winningReward = null;
-    });
-
-    // Determine winner based on weights
+    // Determine winner based on weights IMMEDIATELY
     final int totalWeight = _hardcodedRewards.fold<int>(0, (total, item) => total + (item['weight'] as int));
     final randomValue = math.Random().nextInt(totalWeight);
     
@@ -152,17 +147,34 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
       }
     }
 
-    _winningReward = _hardcodedRewards[winnerIndex];
+    final winningReward = _hardcodedRewards[winnerIndex];
+    final rewardAmount = (winningReward['amount'] as num).toInt();
+
+    // ATOMIC UPDATE: Grant reward and subtract cost (if paid) immediately
+    // This ensures that even if they close the dialog (if somehow possible), 
+    // the transaction is finished.
+    if (isPaid) {
+      await widget.controller.updateCurrency(
+        newCoins: widget.controller.dreamCoins - cost + rewardAmount,
+      );
+    } else {
+      await RouletteService.consumeFreeSpin();
+      await widget.controller.updateCurrency(
+        newCoins: widget.controller.dreamCoins + rewardAmount,
+      );
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _isSpinning = true;
+      _winningReward = winningReward;
+      if (!isPaid) _freeSpins -= 1;
+    });
 
     // Animation logic
     const double fullCircle = 2 * math.pi;
     final double segmentWidth = fullCircle / _hardcodedRewards.length;
-    // Pointer is at the TOP ( -pi/2 ).
-    // We want segment `winnerIndex` to be at -pi/2.
-    // Segment i starts at `rotation + i * segmentWidth`.
-    // Middle of segment i is at `rotation + i * segmentWidth + segmentWidth / 2`.
-    // So: `rotation + (winnerIndex + 0.5) * segmentWidth = -pi/2`.
-    // `rotation = -pi/2 - (winnerIndex + 0.5) * segmentWidth`.
     final double baseRotation = -math.pi / 2 - (winnerIndex + 0.5) * segmentWidth;
     final double targetRotation = _currentRotation + (10 * fullCircle) + (baseRotation - (_currentRotation % fullCircle));
 
@@ -170,53 +182,22 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
 
-    setState(() {
-      _isSpinning = true;
-    });
-
-    if (isPaid) {
-      // For now, subtract immediately for feedback
-    } else {
-      await RouletteService.consumeFreeSpin();
-      if (mounted) {
-        setState(() {
-          _freeSpins -= 1;
-        });
-      }
-    }
-
     _controller.reset();
     await _controller.forward();
 
     if (!mounted) return;
 
-    final rewardAmount = (_winningReward!['amount'] as num).toInt();
-    
     setState(() {
       _isSpinning = false;
       _currentRotation = targetRotation;
     });
 
-    // Update global currency via controller
-    if (isPaid) {
-      // We deduct cost and add reward
-      await widget.controller.updateCurrency(
-        newCoins: widget.controller.dreamCoins - cost + rewardAmount,
-      );
-    } else {
-      await widget.controller.updateCurrency(
-        newCoins: widget.controller.dreamCoins + rewardAmount,
-      );
-    }
-
-    if (mounted) {
-      showCustomSnackBar(
-        context,
-        'YOU WON: ${_winningReward!['name']}!',
-        type: SnackBarType.success,
-      );
-      widget.onSpinCompleted?.call();
-    }
+    showCustomSnackBar(
+      context,
+      'YOU WON: ${winningReward['name']}!',
+      type: SnackBarType.success,
+    );
+    widget.onSpinCompleted?.call();
   }
 
   @override
@@ -225,8 +206,10 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Center(
-      child: LiquidGlassDialog(
+    return PopScope(
+      canPop: !_isSpinning, // Block back button while spinning
+      child: Center(
+        child: LiquidGlassDialog(
         width: 380,
         height: 650,
         child: Column(
