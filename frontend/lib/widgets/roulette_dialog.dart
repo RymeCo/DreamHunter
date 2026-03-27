@@ -102,6 +102,28 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
     super.dispose();
   }
 
+  void _showInsufficientFundsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => ConfirmationDialog(
+        title: 'Need More Dream Coins?',
+        message: 'You don\'t have enough Dream Coins to spin. You can exchange Hell Stones for more in the Exchange module!',
+        confirmLabel: 'GO TO EXCHANGE',
+        cancelLabel: 'MAYBE LATER',
+        onConfirm: () {
+          Navigator.pop(context); // Close this dialog
+          Navigator.pop(context); // Close Roulette
+          // The exchange module is on the Dashboard, the user can now access it.
+          showCustomSnackBar(
+            this.context, 
+            'Opened Exchange Module!', 
+            type: SnackBarType.info
+          );
+        },
+      ),
+    );
+  }
+
   void _spin(bool isPaid) async {
     if (_isSpinning) return;
     
@@ -110,8 +132,9 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
       showCustomSnackBar(context, 'No free spins left!', type: SnackBarType.info);
       return;
     }
+    
     if (isPaid && widget.controller.dreamCoins < cost) {
-      showCustomSnackBar(context, 'Insufficient Dream Coins!', type: SnackBarType.info);
+      _showInsufficientFundsDialog();
       return;
     }
 
@@ -299,76 +322,36 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
                       ),
                     )
                   else
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GlassButton(
-                            onTap: () async {
-                              showCustomSnackBar(context, 'Watching ad... +1 Spin granted!', type: SnackBarType.info);
-                              final state = await RouletteService.getAndSyncState();
-                              final newState = RouletteState(
-                                freeSpins: state.freeSpins + 1,
-                                lastRefillDate: state.lastRefillDate,
-                              );
-                              await RouletteService.saveState(newState);
-                              if (mounted) {
-                                setState(() => _freeSpins = newState.freeSpins);
-                              }
-                            },
-                            isClickable: !_isSpinning,
-                            glowColor: Colors.blueAccent,
-                            height: 50,
-                            padding: EdgeInsets.zero,
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.play_circle_outline, color: Colors.blueAccent, size: 18),
-                                SizedBox(width: 6),
-                                Text('WATCH AD (+1)', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.w900, fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: GlassButton(
-                            onTap: () async {
-                              const refillCost = 50;
-                              if (widget.controller.dreamCoins < refillCost) {
-                                showCustomSnackBar(context, 'Insufficient coins!', type: SnackBarType.error);
-                                return;
-                              }
-                              final success = await widget.controller.updateCurrency(
-                                newCoins: widget.controller.dreamCoins - refillCost,
-                              );
-                              if (success) {
-                                await RouletteService.refillToMax();
-                                if (mounted) {
-                                  setState(() => _freeSpins = RouletteService.maxFreeSpins);
-                                  showCustomSnackBar(context, 'Refilled 10/10!', type: SnackBarType.success);
-                                }
-                              }
-                            },
-                            isClickable: !_isSpinning,
-                            glowColor: Colors.purpleAccent,
-                            height: 50,
-                            padding: EdgeInsets.zero,
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.bolt_rounded, color: Colors.purpleAccent, size: 18),
-                                SizedBox(width: 6),
-                                Text('REFILL (50 DC)', style: TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.w900, fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                    GlassButton(
+                      onTap: () async {
+                        showCustomSnackBar(context, 'Watching ad... +1 Spin granted!', type: SnackBarType.info);
+                        final state = await RouletteService.getAndSyncState();
+                        final newState = RouletteState(
+                          freeSpins: state.freeSpins + 1,
+                          lastRefillDate: state.lastRefillDate,
+                        );
+                        await RouletteService.saveState(newState);
+                        if (mounted) {
+                          setState(() => _freeSpins = newState.freeSpins);
+                        }
+                      },
+                      isClickable: !_isSpinning,
+                      glowColor: Colors.blueAccent,
+                      width: double.infinity,
+                      height: 50,
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.play_circle_outline, color: Colors.blueAccent, size: 20),
+                          SizedBox(width: 8),
+                          Text('WATCH AD (+1 FREE SPIN)', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.w900, fontSize: 14)),
+                        ],
+                      ),
                     ),
                   const SizedBox(height: 12),
                   GlassButton(
                     onTap: () => _spin(true),
-                    isClickable: !_isSpinning && widget.controller.dreamCoins >= 50,
+                    isClickable: !_isSpinning,
                     glowColor: Colors.amberAccent,
                     width: double.infinity,
                     height: 50,
