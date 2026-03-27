@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'liquid_glass_dialog.dart';
 import 'game_widgets.dart';
 import 'clickable_image.dart';
-import '../services/roulette_service.dart';
-import '../../services/dashboard_controller.dart';
 import 'custom_snackbar.dart';
+import 'confirmation_dialog.dart';
+import 'insufficient_funds_dialog.dart';
+import '../services/roulette_service.dart';
+import '../services/dashboard_controller.dart';
 
 class RouletteDialog extends StatefulWidget {
   final VoidCallback? onSpinCompleted;
@@ -103,24 +105,18 @@ class _RouletteDialogState extends State<RouletteDialog> with SingleTickerProvid
   }
 
   void _showInsufficientFundsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => ConfirmationDialog(
-        title: 'Need More Dream Coins?',
-        message: 'You don\'t have enough Dream Coins to spin. You can exchange Hell Stones for more in the Exchange module!',
-        confirmLabel: 'GO TO EXCHANGE',
-        cancelLabel: 'MAYBE LATER',
-        onConfirm: () {
-          Navigator.pop(context); // Close this dialog
-          Navigator.pop(context); // Close Roulette
-          // The exchange module is on the Dashboard, the user can now access it.
-          showCustomSnackBar(
-            this.context, 
-            'Opened Exchange Module!', 
-            type: SnackBarType.info
-          );
-        },
-      ),
+    InsufficientFundsDialog.show(
+      context,
+      needed: 50,
+      current: widget.controller.dreamCoins,
+      onGoToExchange: () {
+        Navigator.pop(context); // Close Roulette
+        showCustomSnackBar(
+          this.context, 
+          'Switched to Exchange Module!', 
+          type: SnackBarType.info
+        );
+      },
     );
   }
 
