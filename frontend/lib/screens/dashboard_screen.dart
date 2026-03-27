@@ -52,28 +52,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _checkPendingRouletteRewards() async {
     // Wait for the controller to be initialized properly
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(milliseconds: 500));
     
     final state = await RouletteService.getAndSyncState();
     
-    // Only auto-claim if it's NOT spinning. 
-    // If it IS spinning, the RouletteDialog will handle the resumption.
-    if (state.pendingReward != null && !state.isSpinning) {
-      final reward = state.pendingReward!;
-      final amount = (reward['amount'] as num).toInt();
-      final name = reward['name'] as String;
+    if (state.pendingReward != null) {
+      if (state.isSpinning && state.spinStartTime != null) {
+        // BACKGROUND SPIN LOGIC:
+        // Calculate how much longer we need to wait
+        final startTime = DateTime.parse(state.spinStartTime!);
+        final now = DateTime.now();
+        final elapsed = now.difference(startTime);
+        const totalDuration = Duration(seconds: 5);
 
-      await _controller.updateCurrency(
-        newCoins: _controller.dreamCoins + amount,
-      );
-      await RouletteService.clearPendingReward();
+        if (elapsed < totalDuration) {
+          final remaining = totalDuration - elapsed;
+          developer.log('Spin is active in background. Waiting ${remaining.inSeconds}s...', name: 'DashboardScreen');
+          await Future.delayed(remaining);
+        }
+      }
 
-      if (mounted) {
-        showCustomSnackBar(
-          context,
-          'You received $name from your last spin!',
-          type: SnackBarType.success,
+      // Re-fetch state to see if it was already claimed by the Dialog (if user reopened it)
+      final finalState = await RouletteService.getAndSyncState();
+      if (finalState.pendingReward != null) {
+        final reward = finalState.pendingReward!;
+        final amount = (reward['amount'] as num).toInt();
+        final name = reward['name'] as String;
+
+        await _controller.updateCurrency(
+          newCoins: _controller.dreamCoins + amount,
         );
+        await RouletteService.clearPendingReward();
+        await RouletteService.setSpinning(false);
+
+        if (mounted) {
+          showCustomSnackBar(
+            context,
+            'Background spin finished! You received: $name',
+            type: SnackBarType.success,
+          );
+        }
       }
     }
   }
@@ -99,6 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
     );
     _controller.refreshCurrency();
+    _checkPendingRouletteRewards(); // Check if a spin was left running
   }
 
   void _showDropdownMenu() {
