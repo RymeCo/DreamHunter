@@ -33,7 +33,7 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
     sprite = await game.loadSprite('game/characters/$characterType/facing-front($sizeStr).png');
     
     size = spriteSize;
-    anchor = Anchor.bottomCenter;
+    anchor = Anchor.topLeft;
   }
 
   @override
@@ -57,7 +57,7 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
     Bed? foundBed;
     
     for (final bed in beds) {
-      if (_checkOverlap(bed)) {
+      if (toRect().overlaps(bed.toRect())) {
         near = true;
         foundBed = bed;
         break;
@@ -71,8 +71,11 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
   void enterBed() {
     if (currentBed != null) {
       _state = PlayerState.sleeping;
-      // Center player on bed
-      position = Vector2(currentBed!.x + currentBed!.width / 2, currentBed!.y + currentBed!.height);
+      // Center player on bed (TopLeft anchor)
+      position = Vector2(
+        currentBed!.x + (currentBed!.width - width) / 2, 
+        currentBed!.y + (currentBed!.height - height) / 2
+      );
       _updateSprite();
     }
   }
@@ -88,10 +91,10 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
     final movement = joystick.relativeDelta * speed * dt;
 
     position.x += movement.x;
-    _checkHorizontalCollisions();
+    _checkHorizontalCollisions(movement.x);
 
     position.y += movement.y;
-    _checkVerticalCollisions();
+    _checkVerticalCollisions(movement.y);
 
     if (joystick.relativeDelta.x < 0) {
       if (scale.x > 0) scale.x = -1;
@@ -117,66 +120,32 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
     }
   }
 
-  void _checkHorizontalCollisions() {
+  void _checkHorizontalCollisions(double dx) {
     for (final block in collisionBlocks) {
       if (block.isPassable) continue;
 
-      if (_checkCollision(block)) {
-        if (joystick.relativeDelta.x > 0) {
-          position.x = block.x - hitboxSize.x / 2;
-        } else if (joystick.relativeDelta.x < 0) {
-          position.x = block.x + block.width + hitboxSize.x / 2;
+      if (toRect().overlaps(block.toRect())) {
+        if (dx > 0) {
+          position.x = block.x - width;
+        } else if (dx < 0) {
+          position.x = block.x + block.width;
         }
       }
     }
   }
 
-  void _checkVerticalCollisions() {
+  void _checkVerticalCollisions(double dy) {
     for (final block in collisionBlocks) {
       if (block.isPassable) continue;
 
-      if (_checkCollision(block)) {
-        if (joystick.relativeDelta.y > 0) {
-          position.y = block.y;
-        } else if (joystick.relativeDelta.y < 0) {
-          position.y = block.y + block.height + hitboxSize.y;
+      if (toRect().overlaps(block.toRect())) {
+        if (dy > 0) {
+          position.y = block.y - height;
+        } else if (dy < 0) {
+          position.y = block.y + block.height;
         }
       }
     }
-  }
-
-  bool _checkCollision(CollisionBlock block) {
-    final hitboxLeft = position.x - hitboxSize.x / 2;
-    final hitboxRight = position.x + hitboxSize.x / 2;
-    final hitboxBottom = position.y;
-    final hitboxTop = position.y - hitboxSize.y;
-
-    final blockLeft = block.x;
-    final blockRight = block.x + block.width;
-    final blockTop = block.y;
-    final blockBottom = block.y + block.height;
-
-    return (hitboxLeft < blockRight &&
-            hitboxRight > blockLeft &&
-            hitboxTop < blockBottom &&
-            hitboxBottom > blockTop);
-  }
-
-  bool _checkOverlap(PositionComponent other) {
-    final hitboxLeft = position.x - hitboxSize.x / 2;
-    final hitboxRight = position.x + hitboxSize.x / 2;
-    final hitboxBottom = position.y;
-    final hitboxTop = position.y - hitboxSize.y;
-
-    final otherLeft = other.x;
-    final otherRight = other.x + other.width;
-    final otherTop = other.y;
-    final otherBottom = other.y + other.height;
-
-    return (hitboxLeft < otherRight &&
-            hitboxRight > otherLeft &&
-            hitboxTop < otherBottom &&
-            hitboxBottom > otherTop);
   }
 
   Future<void> _updateSprite() async {

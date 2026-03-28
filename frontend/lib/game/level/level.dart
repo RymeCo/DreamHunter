@@ -31,11 +31,15 @@ class Level extends World {
       );
       add(level);
 
-      // Hide the Object tile layer as we spawn components for them
+      // Hide the Object tile layer if it exists
       final objectTileLayer = level.tileMap.getLayer<TileLayer>('Object');
       if (objectTileLayer != null) {
         objectTileLayer.visible = false;
       }
+
+      // Clear existing lists to avoid duplicates on reload
+      player.collisionBlocks.clear();
+      player.beds.clear();
 
       // Support both 'Spawnpoint' and 'Spawnpoints'
       var spawnPointLayer = level.tileMap.getLayer<ObjectGroup>('Spawnpoints') ?? 
@@ -43,20 +47,18 @@ class Level extends World {
       
       if (spawnPointLayer != null) {
         for (final spawnPoint in spawnPointLayer.objects) {
-          // Check both class and name for 'Player'
           if (spawnPoint.class_ == 'Player' || spawnPoint.name == 'Player') {
             player.position = Vector2(spawnPoint.x, spawnPoint.y);
           }
         }
       }
 
-      // Support both 'ObjectLayer' and 'Object' (as seen in screenshot)
+      // Support both 'ObjectLayer' and 'Object'
       var objectLayer = level.tileMap.getLayer<ObjectGroup>('ObjectLayer') ??
                         level.tileMap.getLayer<ObjectGroup>('Object');
 
       if (objectLayer != null) {
         for (final object in objectLayer.objects) {
-          // Robust type detection
           final String type = object.class_.isNotEmpty ? object.class_ : object.name;
           
           switch (type) {
@@ -70,7 +72,7 @@ class Level extends World {
                 size: Vector2(object.width, object.height),
               );
               add(door);
-              collisions.add(door.collisionBlock);
+              player.collisionBlocks.add(door.collisionBlock);
               break;
             case 'Bed':
               final bed = Bed(
@@ -88,7 +90,7 @@ class Level extends World {
         add(player);
       }
 
-      // Support both 'Collisions' and 'Collision' (as seen in screenshot)
+      // Support both 'Collisions' and 'Collision'
       var collisionsLayer = level.tileMap.getLayer<ObjectGroup>('Collisions') ??
                             level.tileMap.getLayer<ObjectGroup>('Collision');
 
@@ -98,12 +100,10 @@ class Level extends World {
             position: Vector2(collision.x, collision.y),
             size: Vector2(collision.width, collision.height),
           );
-          collisions.add(block);
+          player.collisionBlocks.add(block);
           add(block);
         }
       }
-      
-      player.collisionBlocks = collisions;
     } catch (e) {
       add(player);
       debugPrint('Error loading level $levelName: $e');
