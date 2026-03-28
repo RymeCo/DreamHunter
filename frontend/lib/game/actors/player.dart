@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:dreamhunter/game/dreamhunter_game.dart';
+import 'dart:developer' as developer;
 import '../level/collision_block.dart';
 import '../objects/bed.dart';
 
@@ -64,6 +65,9 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
       }
     }
     
+    if (near != isNearBed) {
+      developer.log('SCRUM-66: Near bed changed to: $near', name: 'Player');
+    }
     isNearBed = near;
     currentBed = foundBed;
   }
@@ -77,12 +81,14 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
         currentBed!.y + (currentBed!.height - height) / 2
       );
       _updateSprite();
+      developer.log('SCRUM-66: Player entered bed', name: 'Player');
     }
   }
 
   void exitBed() {
     _state = PlayerState.facingFront;
     _updateSprite();
+    developer.log('SCRUM-66: Player exited bed', name: 'Player');
   }
 
   PlayerState get state => _state;
@@ -126,9 +132,9 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
 
       if (toRect().overlaps(block.toRect())) {
         if (dx > 0) {
-          position.x = block.x - width;
+          position.x = block.x - width - 0.1; // Tiny buffer
         } else if (dx < 0) {
-          position.x = block.x + block.width;
+          position.x = block.x + block.width + 0.1;
         }
       }
     }
@@ -140,9 +146,9 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
 
       if (toRect().overlaps(block.toRect())) {
         if (dy > 0) {
-          position.y = block.y - height;
+          position.y = block.y - height - 0.1;
         } else if (dy < 0) {
-          position.y = block.y + block.height;
+          position.y = block.y + block.height + 0.1;
         }
       }
     }
@@ -150,8 +156,7 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
 
   Future<void> _updateSprite() async {
     if (_state == PlayerState.sleeping) {
-      // Hide or show special sleeping sprite if needed
-      opacity = 0.7; // Just a placeholder effect
+      opacity = 0.7; 
       return;
     }
     opacity = 1.0;

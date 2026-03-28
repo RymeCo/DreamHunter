@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame_tiled/flame_tiled.dart';
-import 'package:flutter/foundation.dart';
+import 'dart:developer' as developer;
 import '../actors/player.dart';
 import 'collision_block.dart';
 import '../objects/door.dart';
@@ -17,13 +17,13 @@ class Level extends World {
   final String levelName;
   final Player player;
   late TiledComponent level;
-  List<CollisionBlock> collisions = [];
 
   Level({required this.levelName, required this.player});
 
   @override
   FutureOr<void> onLoad() async {
     try {
+      developer.log('SCRUM-66: Loading level: $levelName', name: 'Level');
       level = await TiledComponent.load(
         '$levelName.tmx', 
         Vector2.all(32), // Updated to 32x32 to match your map
@@ -47,8 +47,9 @@ class Level extends World {
       
       if (spawnPointLayer != null) {
         for (final spawnPoint in spawnPointLayer.objects) {
-          if (spawnPoint.class_ == 'Player' || spawnPoint.name == 'Player') {
+          if (spawnPoint.class_ == 'Player' || spawnPoint.name == 'Player' || spawnPoint.class_ == 'Spawn') {
             player.position = Vector2(spawnPoint.x, spawnPoint.y);
+            developer.log('SCRUM-66: Player spawned via Spawnpoint layer at: ${player.position}', name: 'Level');
           }
         }
       }
@@ -58,13 +59,15 @@ class Level extends World {
                         level.tileMap.getLayer<ObjectGroup>('Object');
 
       if (objectLayer != null) {
+        developer.log('SCRUM-66: Processing ObjectLayer with ${objectLayer.objects.length} objects', name: 'Level');
         for (final object in objectLayer.objects) {
           final String type = object.class_.isNotEmpty ? object.class_ : object.name;
           
           switch (type) {
             case 'Spawn':
             case 'Player':
-              player.position = Vector2(object.x + object.width / 2, object.y + object.height);
+              player.position = Vector2(object.x, object.y);
+              developer.log('SCRUM-66: Player spawned via ObjectLayer at: ${player.position}', name: 'Level');
               break;
             case 'Door':
               final door = Door(
@@ -81,6 +84,7 @@ class Level extends World {
               );
               add(bed);
               player.beds.add(bed);
+              developer.log('SCRUM-66: Bed added at: ${bed.position}', name: 'Level');
               break;
           }
         }
@@ -95,6 +99,7 @@ class Level extends World {
                             level.tileMap.getLayer<ObjectGroup>('Collision');
 
       if (collisionsLayer != null) {
+        developer.log('SCRUM-66: Processing CollisionLayer with ${collisionsLayer.objects.length} objects', name: 'Level');
         for (final collision in collisionsLayer.objects) {
           final block = CollisionBlock(
             position: Vector2(collision.x, collision.y),
@@ -104,9 +109,10 @@ class Level extends World {
           add(block);
         }
       }
-    } catch (e) {
+      developer.log('SCRUM-66: Level load complete. Collisions: ${player.collisionBlocks.length}, Beds: ${player.beds.length}', name: 'Level');
+    } catch (e, stack) {
       add(player);
-      debugPrint('Error loading level $levelName: $e');
+      developer.log('SCRUM-66: Error loading level $levelName', name: 'Level', error: e, stackTrace: stack);
     }
 
     return super.onLoad();
