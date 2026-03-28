@@ -317,7 +317,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 width: 200,
                 height: 70,
                 borderRadius: 35,
-                glowColor: Colors.blueAccent,
+                glowColor: Colors.deepPurpleAccent,
                 pulseMinOpacity: 0.5,
                 onTap: () {
                   Navigator.of(context).pushReplacement(

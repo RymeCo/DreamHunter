@@ -30,7 +30,7 @@ class DHApp extends StatelessWidget {
       title: 'DreamHunter',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark,
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
     );

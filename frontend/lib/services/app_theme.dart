@@ -6,7 +6,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.blueAccent,
+        seedColor: Colors.deepPurpleAccent,
         brightness: Brightness.light,
       ),
       textTheme: GoogleFonts.quicksandTextTheme(),
@@ -22,7 +22,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.blueAccent,
+        seedColor: Colors.deepPurpleAccent,
         brightness: Brightness.dark,
       ),
       textTheme: GoogleFonts.quicksandTextTheme(

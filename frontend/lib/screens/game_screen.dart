@@ -32,7 +32,7 @@ class _GameScreenState extends State<GameScreen> {
               'PauseMenu': (context, DreamHunterGame game) => PauseMenuOverlay(game: game),
             },
             loadingBuilder: (context) => const Center(
-              child: CircularProgressIndicator(color: Colors.blueAccent),
+              child: CircularProgressIndicator(color: Colors.deepPurpleAccent),
             ),
           ),
           Positioned(

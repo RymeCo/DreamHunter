@@ -23,9 +23,9 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
         padding: const EdgeInsets.all(24),
         width: 250,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
+          color: Colors.purple.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white24, width: 2),
+          border: Border.all(color: Colors.white12, width: 2),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(32),
@@ -81,7 +81,7 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
   Widget _buildMenuButton({
     required String label,
     required VoidCallback onTap,
-    Color glowColor = Colors.blueAccent,
+    Color glowColor = Colors.deepPurpleAccent,
   }) {
     return GlassButton(
       label: label,

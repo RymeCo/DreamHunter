@@ -47,7 +47,7 @@ class GameProgressBar extends StatelessWidget {
     super.key,
     required this.percent,
     this.baseColor = Colors.black26,
-    this.gradientColors = const [Colors.blueAccent, Colors.lightBlueAccent],
+    this.gradientColors = const [Colors.deepPurpleAccent, Colors.purpleAccent],
     this.height = 6,
   });
 
