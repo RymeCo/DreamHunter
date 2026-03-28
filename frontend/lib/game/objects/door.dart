@@ -26,13 +26,13 @@ class Door extends SpriteComponent with HasGameReference<DreamHunterGame>, TapCa
     priority = 1;
     
     _closedSprite = await game.loadSprite(
-      'tiles/door_32x32.png',
+      'door_32x32.png',
       srcPosition: Vector2(0, 0),
       srcSize: Vector2(32, 32),
     );
     
     _openSprite = await game.loadSprite(
-      'tiles/door_32x32.png',
+      'door_32x32.png',
       srcPosition: Vector2(32, 0),
       srcSize: Vector2(32, 32),
     );

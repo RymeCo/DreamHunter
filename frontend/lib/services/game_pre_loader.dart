@@ -11,9 +11,9 @@ class GamePreLoader {
   ];
 
   static final List<String> tileImages = [
-    'tiles/bed_blue_32x64.png',
-    'tiles/door_32x32.png',
-    'tiles/floor_1_16.png',
+    'bed_blue_32x64.png',
+    'door_32x32.png',
+    'floor_1_16.png',
   ];
 
   static Future<void> preload(
