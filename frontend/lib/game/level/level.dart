@@ -27,7 +27,7 @@ class Level extends World {
       level = await TiledComponent.load(
         '$levelName.tmx', 
         Vector2.all(32), // Updated to 32x32 to match your map
-        prefix: 'assets/images/tiles/',
+        prefix: 'assets/images/',
       );
       add(level);
 
