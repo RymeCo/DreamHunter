@@ -2,6 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/dreamhunter_game.dart';
 import 'package:dreamhunter/widgets/pause_menu_overlay.dart';
+import 'package:dreamhunter/widgets/grace_period_timer.dart';
 import 'package:dreamhunter/widgets/clickable_image.dart';
 
 class GameScreen extends StatefulWidget {
@@ -30,6 +31,9 @@ class _GameScreenState extends State<GameScreen> {
             game: _game,
             overlayBuilderMap: {
               'PauseMenu': (context, DreamHunterGame game) => PauseMenuOverlay(game: game),
+              'GraceTimer': (context, DreamHunterGame game) => GracePeriodTimer(
+                onFinished: () => game.overlays.remove('GraceTimer'),
+              ),
             },
             loadingBuilder: (context) => const Center(
               child: CircularProgressIndicator(color: Colors.deepPurpleAccent),

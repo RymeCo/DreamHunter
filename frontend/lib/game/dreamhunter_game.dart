@@ -20,7 +20,7 @@ class DreamHunterGame extends FlameGame with HasCollisionDetection, TapCallbacks
 
     player = Player(joystick: joystick, characterType: characterType);
 
-    level = Level(levelName: 'mini-01', player: player);
+    level = Level(levelName: 'dorm-01', player: player);
 
     camera = CameraComponent.withFixedResolution(
       world: level,
@@ -33,6 +33,9 @@ class DreamHunterGame extends FlameGame with HasCollisionDetection, TapCallbacks
     camera.viewport.add(HUD());
 
     addAll([camera, level]);
+
+    // Trigger Grace Period Timer
+    overlays.add('GraceTimer');
   }
 
   void _addJoystick() {
