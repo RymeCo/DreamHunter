@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dreamhunter/services/audio_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/offline_cache.dart';
 import '../services/backend_service.dart';
@@ -16,11 +17,10 @@ class SettingsDialog extends StatefulWidget {
 }
 
 class _SettingsDialogState extends State<SettingsDialog> {
-  bool _musicEnabled = true;
-  bool _sfxEnabled = true;
   bool _isLoading = true;
   bool _isSyncing = false;
   final BackendService _backendService = BackendService();
+  final AudioService _audioService = AudioService();
 
   @override
   void initState() {
@@ -32,8 +32,17 @@ class _SettingsDialogState extends State<SettingsDialog> {
     final settings = await OfflineCache.getSettings();
     if (mounted) {
       setState(() {
-        _musicEnabled = settings['music'] ?? true;
-        _sfxEnabled = settings['sfx'] ?? true;
+        // Ensure AudioService state matches saved settings
+        final music = settings['music'] ?? true;
+        final sfx = settings['sfx'] ?? true;
+        
+        if (music == _audioService.isMusicMuted) {
+          _audioService.toggleMusicMute();
+        }
+        if (sfx == _audioService.isSoundMuted) {
+          _audioService.toggleSoundMute();
+        }
+        
         _isLoading = false;
       });
     }
@@ -41,8 +50,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
   Future<void> _updateSettings() async {
     await OfflineCache.saveSettings({
-      'music': _musicEnabled,
-      'sfx': _sfxEnabled,
+      'music': !_audioService.isMusicMuted,
+      'sfx': !_audioService.isSoundMuted,
     });
   }
 
@@ -89,10 +98,11 @@ class _SettingsDialogState extends State<SettingsDialog> {
               title: 'Music',
               subtitle: 'Atmospheric background tracks',
               icon: Icons.music_note_rounded,
-              value: _musicEnabled,
-              onChanged: (val) {
-                setState(() => _musicEnabled = val);
-                _updateSettings();
+              value: !_audioService.isMusicMuted,
+              onChanged: (val) async {
+                await _audioService.toggleMusicMute();
+                await _updateSettings();
+                if (mounted) setState(() {});
               },
             ),
             const SizedBox(height: 8),
@@ -100,10 +110,11 @@ class _SettingsDialogState extends State<SettingsDialog> {
               title: 'Sound Effects',
               subtitle: 'UI & game feedback',
               icon: Icons.volume_up_rounded,
-              value: _sfxEnabled,
-              onChanged: (val) {
-                setState(() => _sfxEnabled = val);
-                _updateSettings();
+              value: !_audioService.isSoundMuted,
+              onChanged: (val) async {
+                await _audioService.toggleSoundMute();
+                await _updateSettings();
+                if (mounted) setState(() {});
               },
             ),
             

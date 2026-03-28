@@ -53,10 +53,19 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
                 ),
                 const SizedBox(height: 16),
                 _buildMenuButton(
-                  label: audioService.isMuted ? 'UNMUTE' : 'MUTE',
+                  label: audioService.isMusicMuted ? 'UNMUTE MUSIC' : 'MUTE MUSIC',
                   glowColor: Colors.orangeAccent,
-                  onTap: () {
-                    audioService.toggleMute();
+                  onTap: () async {
+                    await audioService.toggleMusicMute();
+                    setState(() {});
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildMenuButton(
+                  label: audioService.isSoundMuted ? 'UNMUTE SOUND' : 'MUTE SOUND',
+                  glowColor: Colors.cyanAccent,
+                  onTap: () async {
+                    await audioService.toggleSoundMute();
                     setState(() {});
                   },
                 ),

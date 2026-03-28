@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dreamhunter/services/audio_service.dart';
 
 /// A highly interactive, animated "Liquid Glass" button for indie game UIs.
 class GlassButton extends StatefulWidget {
@@ -92,7 +93,10 @@ class _GlassButtonState extends State<GlassButton> with SingleTickerProviderStat
         onTapDown: widget.isClickable && widget.clickResponsiveness ? (_) => _updateTapped(true) : null,
         onTapUp: widget.isClickable && widget.clickResponsiveness ? (_) => _updateTapped(false) : null,
         onTapCancel: widget.isClickable && widget.clickResponsiveness ? () => _updateTapped(false) : null,
-        onTap: widget.isClickable ? widget.onTap : null,
+        onTap: widget.isClickable ? () {
+          AudioService().playClick();
+          widget.onTap?.call();
+        } : null,
         child: AnimatedScale(
           scale: (widget.clickResponsiveness && active) ? 1.08 : 1.0,
           duration: const Duration(milliseconds: 150),
