@@ -276,10 +276,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GlassButton(
-              imagePath: 'assets/images/dashboard/sandwich.png',
-              width: 45,
-              height: 45,
+              width: 51, // 45 (icon) + 3 (left) + 3 (right) = 51
+              height: 51,
+              padding: const EdgeInsets.all(3), // 3px margin as requested
+              pulseMinOpacity: 0.7,
               onTap: _showDropdownMenu,
+              child: OverflowBox(
+                minWidth: 45,
+                maxWidth: 45,
+                minHeight: 45,
+                maxHeight: 45,
+                child: Image.asset(
+                  'assets/images/dashboard/sandwich.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
           ),
         ],
@@ -296,37 +307,98 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           Positioned(
-            bottom: -20,
-            left: -20,
+            bottom: MediaQuery.of(context).size.height * 0.45,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: GlassButton(
+                label: 'PLAY',
+                width: 200,
+                height: 70,
+                borderRadius: 35,
+                glowColor: Colors.blueAccent,
+                pulseMinOpacity: 0.5,
+                onTap: () {
+                  showCustomSnackBar(
+                    context,
+                    'SCRUM-62: Game Coming Soon!',
+                    type: SnackBarType.success,
+                  );
+                },
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 10,
+            left: 10,
             child: GlassButton(
-              imagePath: 'assets/images/dashboard/roulette_man.png',
-              width: 220,
-              height: 220,
+              width: 175,
+              height: 175,
+              padding: const EdgeInsets.all(6),
+              borderRadius: 32,
+              pulseMinOpacity: 0.3,
               onTap: () => _showGameDialog(RouletteDialog(
-              controller: _controller,
-              parentContext: context,
-              onSpinCompleted: () => _controller.refreshCurrency(),
-            )),
+                controller: _controller,
+                parentContext: context,
+                onSpinCompleted: () => _controller.refreshCurrency(),
+              )),
+              child: OverflowBox(
+                alignment: const Alignment(0, -0.07), // Subtle pull UP
+                minWidth: 240,
+                maxWidth: 240,
+                minHeight: 240,
+                maxHeight: 240,
+                child: Image.asset(
+                  'assets/images/dashboard/roulette_man.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
           ),
           Positioned(
-            bottom: -20,
-            right: -20,
+            bottom: 10,
+            right: 10,
             child: GlassButton(
-              imagePath: 'assets/images/dashboard/shop_stall.png',
-              width: 220,
-              height: 220,
-              onTap: () => _showGameDialog(const ShopDialog()),
+              width: 185,
+              height: 191, // Increased height to accommodate extra bottom padding
+              padding: const EdgeInsets.only(left: 6, top: 6, right: 6, bottom: 12), // 12px at bottom
+              borderRadius: 32,
+              pulseMinOpacity: 0.3,
+              onTap: () => _showGameDialog(ShopDialog(controller: _controller)),
+              child: OverflowBox(
+                alignment: const Alignment(0, -0.07),
+                minWidth: 240,
+                maxWidth: 240,
+                minHeight: 240,
+                maxHeight: 240,
+                child: Image.asset(
+                  'assets/images/dashboard/shop_stall.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
           ),
           Positioned(
-            bottom: MediaQuery.of(context).size.height * 0.19,
-            left: 20,
+            bottom: MediaQuery.of(context).size.height * 0.22,
+            left: 15,
             child: GlassButton(
-              imagePath: 'assets/images/dashboard/signage.png',
-              width: 120,
+              width: 90,
               height: 120,
+              padding: const EdgeInsets.all(6),
+              borderRadius: 20,
+              pulseMinOpacity: 0.3,
               onTap: () => _showGameDialog(const Center(child: ChatDialog())),
+              child: OverflowBox(
+                alignment: const Alignment(0, -0.07), // Subtle pull UP
+                minWidth: 120,
+                maxWidth: 120,
+                minHeight: 120,
+                maxHeight: 120,
+                child: Image.asset(
+                  'assets/images/dashboard/signage.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
           ),
         ],
