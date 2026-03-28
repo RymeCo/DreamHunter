@@ -26,7 +26,7 @@ class Level extends World {
     try {
       level = await TiledComponent.load(
         '$levelName.tmx', 
-        Vector2.all(16),
+        Vector2.all(32), // Updated to 32x32 to match your map
         prefix: 'assets/images/tiles/',
       );
       add(level);
@@ -37,25 +37,31 @@ class Level extends World {
         objectTileLayer.visible = false;
       }
 
-      final spawnPointLayer = level.tileMap.getLayer<ObjectGroup>('Spawnpoints');
+      // Support both 'Spawnpoint' and 'Spawnpoints'
+      var spawnPointLayer = level.tileMap.getLayer<ObjectGroup>('Spawnpoints') ?? 
+                           level.tileMap.getLayer<ObjectGroup>('Spawnpoint');
+      
       if (spawnPointLayer != null) {
         for (final spawnPoint in spawnPointLayer.objects) {
-          switch (spawnPoint.class_) {
-            case 'Player':
-              player.position = Vector2(spawnPoint.x, spawnPoint.y);
-              break;
-            default:
+          // Check both class and name for 'Player'
+          if (spawnPoint.class_ == 'Player' || spawnPoint.name == 'Player') {
+            player.position = Vector2(spawnPoint.x, spawnPoint.y);
           }
         }
       }
 
-      final objectLayer = level.tileMap.getLayer<ObjectGroup>('ObjectLayer');
+      // Support both 'ObjectLayer' and 'Object' (as seen in screenshot)
+      var objectLayer = level.tileMap.getLayer<ObjectGroup>('ObjectLayer') ??
+                        level.tileMap.getLayer<ObjectGroup>('Object');
+
       if (objectLayer != null) {
         for (final object in objectLayer.objects) {
-          final String type = object.class_.isEmpty || object.class_ == 'Object' ? object.name : object.class_;
+          // Robust type detection
+          final String type = object.class_.isNotEmpty ? object.class_ : object.name;
           
           switch (type) {
             case 'Spawn':
+            case 'Player':
               player.position = Vector2(object.x + object.width / 2, object.y + object.height);
               break;
             case 'Door':
@@ -72,13 +78,7 @@ class Level extends World {
                 size: Vector2(object.width, object.height),
               );
               add(bed);
-              // Bed is passable as requested, so we don't add it to collisions
-              break;
-            case 'Turret':
-              // Turret(position: Vector2(object.x, object.y), size: Vector2(object.width, object.height));
-              break;
-            case 'EnergyMaker':
-              // EnergyMaker(position: Vector2(object.x, object.y), size: Vector2(object.width, object.height));
+              player.beds.add(bed);
               break;
           }
         }
@@ -88,7 +88,10 @@ class Level extends World {
         add(player);
       }
 
-      final collisionsLayer = level.tileMap.getLayer<ObjectGroup>('Collisions');
+      // Support both 'Collisions' and 'Collision' (as seen in screenshot)
+      var collisionsLayer = level.tileMap.getLayer<ObjectGroup>('Collisions') ??
+                            level.tileMap.getLayer<ObjectGroup>('Collision');
+
       if (collisionsLayer != null) {
         for (final collision in collisionsLayer.objects) {
           final block = CollisionBlock(
