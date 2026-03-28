@@ -22,6 +22,7 @@ import 'package:dreamhunter/screens/game_loading_screen.dart';
 import 'dart:developer' as developer;
 import 'package:dreamhunter/widgets/settings_dialog.dart';
 import 'package:dreamhunter/widgets/clickable_image.dart';
+import 'package:dreamhunter/services/audio_service.dart';
 
 enum AuthDialogType { login, register, profile }
 
@@ -41,6 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    AudioService().playBGM('audio/track1.ogg');
     ConnectivityService().initialize();
     _controller.initialize();
     _checkPendingRouletteRewards();

@@ -1,5 +1,6 @@
 import 'package:dreamhunter/screens/splash_screen.dart';
 import 'package:dreamhunter/services/app_theme.dart';
+import 'package:dreamhunter/services/audio_service.dart';
 import 'package:flame/flame.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -7,6 +8,9 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Audio
+  await AudioService().initialize();
 
   // 1. Initialize Firebase
   await Firebase.initializeApp(

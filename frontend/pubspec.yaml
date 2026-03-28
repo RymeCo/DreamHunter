@@ -35,6 +35,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/audio/
     - assets/images/auth/
     - assets/images/core/
     - assets/images/dashboard/

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/dreamhunter_game.dart';
 import 'package:dreamhunter/screens/dashboard_screen.dart';
 import 'package:dreamhunter/widgets/clickable_image.dart';
+import 'package:dreamhunter/services/audio_service.dart';
 
 class PauseMenuOverlay extends StatefulWidget {
   final DreamHunterGame game;
@@ -14,10 +15,9 @@ class PauseMenuOverlay extends StatefulWidget {
 }
 
 class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
-  bool _isMuted = false;
-
   @override
   Widget build(BuildContext context) {
+    final audioService = AudioService();
     return Center(
       child: Container(
         padding: const EdgeInsets.all(24),
@@ -53,11 +53,11 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
                 ),
                 const SizedBox(height: 16),
                 _buildMenuButton(
-                  label: _isMuted ? 'UNMUTE' : 'MUTE',
+                  label: audioService.isMuted ? 'UNMUTE' : 'MUTE',
                   glowColor: Colors.orangeAccent,
                   onTap: () {
-                    setState(() => _isMuted = !_isMuted);
-                    // Placeholder for actual mute logic
+                    audioService.toggleMute();
+                    setState(() {});
                   },
                 ),
                 const SizedBox(height: 16),

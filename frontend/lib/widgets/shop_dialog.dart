@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 import 'liquid_glass_dialog.dart';
 import 'game_widgets.dart';
+import 'confirmation_dialog.dart';
+import 'insufficient_funds_dialog.dart';
+import 'custom_snackbar.dart';
+import '../services/shop_service.dart';
+import '../services/dashboard_controller.dart';
+import '../models/shop_item.dart';
+import 'dashboard/shop_item_card.dart';
 
 class ShopDialog extends StatefulWidget {
-  const ShopDialog({super.key});
+  final DashboardController controller;
+  
+  const ShopDialog({
+    super.key,
+    required this.controller,
+  });
 
   @override
   State<ShopDialog> createState() => _ShopDialogState();
@@ -11,81 +23,72 @@ class ShopDialog extends StatefulWidget {
 
 class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
-  // Hardcoded items specifying image location, name, description, and amount
-  final List<Map<String, dynamic>> _gearItems = [
-    {
-      'image': 'assets/images/dashboard/signage.png',
-      'name': 'Wooden Sword',
-      'description': 'A basic sword made of sturdy oak.',
-      'amount': 100,
-    },
-    {
-      'image': 'assets/images/dashboard/signage.png',
-      'name': 'Iron Shield',
-      'description': 'Provides decent protection against physical hits.',
-      'amount': 250,
-    },
-    {
-      'image': 'assets/images/dashboard/signage.png',
-      'name': 'Steel Armor',
-      'description': 'Heavy plate armor for elite dream hunters.',
-      'amount': 500,
-    },
-  ];
-
-  final List<Map<String, dynamic>> _boostItems = [
-    {
-      'image': 'assets/images/dashboard/sandwich.png',
-      'name': 'XP Booster (1h)',
-      'description': 'Double your XP gain for one hour.',
-      'amount': 50,
-    },
-    {
-      'image': 'assets/images/dashboard/sandwich.png',
-      'name': 'Coin Magnet',
-      'description': 'Attracts nearby coins automatically.',
-      'amount': 75,
-    },
-    {
-      'image': 'assets/images/dashboard/sandwich.png',
-      'name': 'Health Potion',
-      'description': 'Restores 50 HP immediately.',
-      'amount': 20,
-    },
-  ];
-
-  final List<Map<String, dynamic>> _relicItems = [
-    {
-      'image': 'assets/images/dashboard/profile_logo.png',
-      'name': 'Ancient Totem',
-      'description': 'A mysterious relic from the old world.',
-      'amount': 1000,
-    },
-    {
-      'image': 'assets/images/dashboard/profile_logo.png',
-      'name': 'Dragon Scale',
-      'description': 'Impervious to heat and extremely durable.',
-      'amount': 2500,
-    },
-    {
-      'image': 'assets/images/dashboard/profile_logo.png',
-      'name': 'Phoenix Feather',
-      'description': 'Revives you once per dream session.',
-      'amount': 5000,
-    },
-  ];
+  final ShopService _shopService = ShopService();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    // Synchronously initialize based on hardcoded items
+    final categories = _shopService.getItemsByCategory().keys.toList();
+    _tabController = TabController(length: categories.length, vsync: this);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _shopService.dispose();
     super.dispose();
+  }
+
+  void _handlePurchase(ShopItem item) async {
+    final currentCoins = widget.controller.dreamCoins;
+
+    // 1. Check item limit
+    final ownedCount = _shopService.getOwnedCount(item.id);
+    if (ownedCount >= item.maxLimit) {
+      if (mounted) {
+        showCustomSnackBar(
+          context,
+          'You have reached the maximum limit for ${item.name}!',
+          type: SnackBarType.warning,
+        );
+      }
+      return;
+    }
+
+    // 2. Check affordability
+    if (currentCoins < item.price) {
+      if (mounted) {
+        InsufficientFundsDialog.show(
+          context,
+          needed: item.price,
+          current: currentCoins,
+        );
+      }
+      return;
+    }
+
+    // 3. Confirm purchase
+    final confirmed = await ConfirmationDialog.show(
+      context,
+      title: 'CONFIRM PURCHASE',
+      message: 'Do you want to buy ${item.name} for ${item.price} coins?',
+    );
+
+    if (confirmed == true && mounted) {
+      // 4. Update UI only (Hardcoded path)
+      _shopService.purchaseItemLocally(item.id);
+      await widget.controller.updateDreamCoins(-item.price);
+      
+      if (mounted) {
+        showCustomSnackBar(
+          context, 
+          'Successfully purchased ${item.name}!', 
+          type: SnackBarType.success,
+        );
+        setState(() {}); // Refresh grid
+      }
+    }
   }
 
   @override
@@ -101,25 +104,21 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
               title: 'DREAM SHOP',
               isCentered: true,
             ),
+            
             TabBar(
               controller: _tabController,
               indicatorColor: Colors.amberAccent,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
               labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
-              tabs: const [
-                Tab(text: 'Gear'),
-                Tab(text: 'Boosts'),
-                Tab(text: 'Relics'),
-              ],
+              tabs: _shopService.getItemsByCategory().keys.map((cat) => Tab(text: cat)).toList(),
             ),
+            
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: [
-                  _buildItemGrid(_gearItems),
-                  _buildItemGrid(_boostItems),
-                  _buildItemGrid(_relicItems),
-                ],
+                children: _shopService.getItemsByCategory().values.map((items) => _buildItemGrid(items)).toList(),
               ),
             ),
           ],
@@ -128,7 +127,7 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildItemGrid(List<Map<String, dynamic>> items) {
+  Widget _buildItemGrid(List<ShopItem> items) {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -140,72 +139,16 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                item['image'],
-                width: 60,
-                height: 60,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => 
-                  const Icon(Icons.broken_image, color: Colors.white24, size: 60),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                item['name'],
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                item['description'],
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white54, fontSize: 10),
-              ),
-              const Spacer(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.toll_rounded, color: Colors.amberAccent, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${item['amount']}',
-                    style: const TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.w900, fontSize: 14),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () {
-                  // UI feedback only
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Purchased ${item['name']}! (Demo)'),
-                      backgroundColor: Colors.blueAccent,
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent.withValues(alpha: 0.2),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 32),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: const Text('BUY', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
+        final ownedCount = _shopService.getOwnedCount(item.id);
+        final isOwned = ownedCount > 0;
+        final isLimitReached = ownedCount >= item.maxLimit;
+        
+        return ShopItemCard(
+          item: item,
+          isOwned: isOwned,
+          isLimitReached: isLimitReached,
+          ownedCount: ownedCount,
+          onPurchase: () => _handlePurchase(item),
         );
       },
     );

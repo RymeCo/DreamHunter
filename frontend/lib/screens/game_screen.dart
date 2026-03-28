@@ -5,6 +5,8 @@ import 'package:dreamhunter/widgets/pause_menu_overlay.dart';
 import 'package:dreamhunter/widgets/grace_period_timer.dart';
 import 'package:dreamhunter/widgets/clickable_image.dart';
 
+import 'package:dreamhunter/services/audio_service.dart';
+
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
 
@@ -18,6 +20,7 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
+    AudioService().playBGM('audio/tract2.ogg');
     _game = DreamHunterGame(characterType: 'man');
   }
 

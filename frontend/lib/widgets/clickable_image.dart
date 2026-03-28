@@ -1,56 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 
 /// A highly interactive, animated "Liquid Glass" button for indie game UIs.
-/// Supports both image-based and text/widget-based content.
-///
-/// ### How to use:
-/// ```dart
-/// GlassButton(
-///   onTap: () => print('Button Tapped!'),
-///   child: Text('Play'),
-///   glowColor: Colors.blueAccent,
-/// )
-/// ```
 class GlassButton extends StatefulWidget {
-  /// Path to the asset image. Optional if [child] or [label] is provided.
   final String? imagePath;
-
-  /// Content to display inside the button. Optional if [imagePath] or [label] is provided.
   final Widget? child;
-
-  /// Text to display inside the button. Shorthand for [child].
   final String? label;
-
-  /// Callback function when the button is tapped.
   final VoidCallback? onTap;
-
-  /// Width of the button. Defaults to null (shrink wrap).
   final double? width;
-
-  /// Height of the button. Defaults to null (shrink wrap).
   final double? height;
-
-  /// Whether the button scales up slightly when hovered/pressed.
   final bool clickResponsiveness;
-
-  /// The color of the glow effect.
   final Color glowColor;
-
-  /// The background color override.
   final Color? color;
-
-  /// The border color override.
   final Color? borderColor;
-
-  /// Whether the button is currently interactive.
   final bool isClickable;
-
-  /// Internal padding.
   final EdgeInsetsGeometry padding;
-
-  /// Corner roundness.
   final double borderRadius;
+  final bool pulseEffect;
+  final double pulseMinOpacity;
 
   const GlassButton({
     super.key,
@@ -67,6 +33,8 @@ class GlassButton extends StatefulWidget {
     this.isClickable = true,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     this.borderRadius = 12.0,
+    this.pulseEffect = true,
+    this.pulseMinOpacity = 0.4,
   }) : assert(imagePath != null || child != null || label != null, 
           'Either imagePath, child, or label must be provided');
 
@@ -74,86 +42,100 @@ class GlassButton extends StatefulWidget {
   State<GlassButton> createState() => _GlassButtonState();
 }
 
-class _GlassButtonState extends State<GlassButton> {
+class _GlassButtonState extends State<GlassButton> with SingleTickerProviderStateMixin {
   bool _isHovering = false;
   bool _isTapped = false;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    _pulseAnimation = Tween<double>(begin: widget.pulseMinOpacity, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    if (widget.pulseEffect) {
+      _pulseController.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
 
   void _updateTapped(bool tapped) {
     if (!mounted || _isTapped == tapped) return;
-    
-    // Safety check: If we are in the middle of a build, defer the state change.
-    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _isTapped = tapped);
-      });
-    } else {
-      setState(() => _isTapped = tapped);
-    }
+    setState(() => _isTapped = tapped);
   }
 
   void _updateHovering(bool hovering) {
     if (!mounted || _isHovering == hovering) return;
-
-    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _isHovering = hovering);
-      });
-    } else {
-      setState(() => _isHovering = hovering);
-    }
+    setState(() => _isHovering = hovering);
   }
 
   @override
   Widget build(BuildContext context) {
     final bool active = widget.isClickable && (_isHovering || _isTapped);
 
-    // Resolve Colors
-    final Color baseBg = widget.color ?? Colors.white.withValues(alpha: 0.1);
-    final Color activeBg = widget.color?.withValues(alpha: 0.2) ?? Colors.white.withValues(alpha: 0.2);
-    
-    final Color baseBorder = widget.borderColor ?? Colors.white.withValues(alpha: 0.2);
-    final Color activeBorder = widget.borderColor?.withValues(alpha: 0.5) ?? widget.glowColor.withValues(alpha: 0.5);
-
-    return GestureDetector(
-      onTapDown: widget.isClickable && widget.clickResponsiveness
-          ? (_) => _updateTapped(true)
-          : null,
-      onTapUp: widget.isClickable && widget.clickResponsiveness
-          ? (_) => _updateTapped(false)
-          : null,
-      onTapCancel: widget.isClickable && widget.clickResponsiveness
-          ? () => _updateTapped(false)
-          : null,
-      onTap: widget.isClickable ? widget.onTap : null,
-      child: MouseRegion(
-        onEnter: (_) => _updateHovering(true),
-        onExit: (_) => _updateHovering(false),
+    return MouseRegion(
+      onEnter: (_) => _updateHovering(true),
+      onExit: (_) => _updateHovering(false),
+      child: GestureDetector(
+        onTapDown: widget.isClickable && widget.clickResponsiveness ? (_) => _updateTapped(true) : null,
+        onTapUp: widget.isClickable && widget.clickResponsiveness ? (_) => _updateTapped(false) : null,
+        onTapCancel: widget.isClickable && widget.clickResponsiveness ? () => _updateTapped(false) : null,
+        onTap: widget.isClickable ? widget.onTap : null,
         child: AnimatedScale(
-          scale: (widget.clickResponsiveness && active) ? 1.05 : 1.0,
-          duration: const Duration(milliseconds: 100),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: widget.width,
-            height: widget.height,
-            padding: widget.padding,
-            decoration: BoxDecoration(
-              color: active ? activeBg : baseBg,
-              borderRadius: BorderRadius.circular(widget.borderRadius),
-              border: Border.all(
-                color: active ? activeBorder : baseBorder,
-                width: 1.5,
-              ),
-              boxShadow: active
-                  ? [
-                      BoxShadow(
-                        color: (widget.borderColor ?? widget.glowColor).withValues(alpha: 0.4),
-                        blurRadius: 15.0,
-                        spreadRadius: 1.0,
-                      ),
-                    ]
-                  : [],
-            ),
-            child: _buildContent(),
+          scale: (widget.clickResponsiveness && active) ? 1.08 : 1.0,
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOutBack,
+          child: AnimatedBuilder(
+            animation: _pulseAnimation,
+            builder: (context, child) {
+              final pulse = widget.pulseEffect ? _pulseAnimation.value : 1.0;
+              
+              // Idle state: Subtle and pulsing
+              // Active state: Brighter and more solid (snaps in/out)
+              final double bgAlpha = active 
+                ? 0.25 
+                : (0.1 * pulse);
+                
+              final double borderAlpha = active
+                ? 0.6
+                : (0.2 * pulse);
+
+              return Container(
+                width: widget.width,
+                height: widget.height,
+                padding: widget.padding,
+                decoration: BoxDecoration(
+                  color: (widget.color ?? Colors.white).withValues(alpha: bgAlpha),
+                  borderRadius: BorderRadius.circular(widget.borderRadius),
+                  border: Border.all(
+                    color: (active ? widget.glowColor : Colors.white).withValues(alpha: borderAlpha),
+                    width: 1.5,
+                  ),
+                  boxShadow: active
+                      ? [
+                          BoxShadow(
+                            color: (widget.borderColor ?? widget.glowColor).withValues(alpha: 0.5),
+                            blurRadius: 18.0,
+                            spreadRadius: 1.0,
+                          ),
+                        ]
+                      : [],
+                ),
+                child: _buildContent(),
+              );
+            },
           ),
         ),
       ),
@@ -164,8 +146,6 @@ class _GlassButtonState extends State<GlassButton> {
     if (widget.imagePath != null) {
       return Image.asset(
         widget.imagePath!,
-        width: widget.width,
-        height: widget.height,
         fit: BoxFit.contain,
       );
     }
@@ -182,7 +162,7 @@ class _GlassButtonState extends State<GlassButton> {
       );
     }
 
-    return Center(child: widget.child);
+    return widget.child ?? const SizedBox.shrink();
   }
 }
 
@@ -219,6 +199,7 @@ class MakeItButton extends StatelessWidget {
       isClickable: isClickable,
       padding: EdgeInsets.zero,
       borderRadius: 0, 
+      pulseEffect: false,
     );
   }
 }
