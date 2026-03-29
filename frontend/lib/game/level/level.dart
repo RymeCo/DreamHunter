@@ -25,7 +25,7 @@ class Level extends World {
     try {
       developer.log('SCRUM-66: Loading level: $levelName', name: 'Level');
       level = await TiledComponent.load(
-        '$levelName.tmx', 
+        '$levelName.tmx',
         Vector2.all(32), // Updated to 32x32 to match your map
         prefix: 'assets/images/tiles/',
       );
@@ -42,32 +42,47 @@ class Level extends World {
       player.beds.clear();
 
       // Support both 'Spawnpoint' and 'Spawnpoints'
-      var spawnPointLayer = level.tileMap.getLayer<ObjectGroup>('Spawnpoints') ?? 
-                           level.tileMap.getLayer<ObjectGroup>('Spawnpoint');
-      
+      var spawnPointLayer =
+          level.tileMap.getLayer<ObjectGroup>('Spawnpoints') ??
+          level.tileMap.getLayer<ObjectGroup>('Spawnpoint');
+
       if (spawnPointLayer != null) {
         for (final spawnPoint in spawnPointLayer.objects) {
-          if (spawnPoint.class_ == 'Player' || spawnPoint.name == 'Player' || spawnPoint.class_ == 'Spawn') {
+          if (spawnPoint.class_ == 'Player' ||
+              spawnPoint.name == 'Player' ||
+              spawnPoint.class_ == 'Spawn') {
             player.position = Vector2(spawnPoint.x, spawnPoint.y);
-            developer.log('SCRUM-66: Player spawned via Spawnpoint layer at: ${player.position}', name: 'Level');
+            developer.log(
+              'SCRUM-66: Player spawned via Spawnpoint layer at: ${player.position}',
+              name: 'Level',
+            );
           }
         }
       }
 
       // Support both 'ObjectLayer' and 'Object'
-      var objectLayer = level.tileMap.getLayer<ObjectGroup>('ObjectLayer') ??
-                        level.tileMap.getLayer<ObjectGroup>('Object');
+      var objectLayer =
+          level.tileMap.getLayer<ObjectGroup>('ObjectLayer') ??
+          level.tileMap.getLayer<ObjectGroup>('Object');
 
       if (objectLayer != null) {
-        developer.log('SCRUM-66: Processing ObjectLayer with ${objectLayer.objects.length} objects', name: 'Level');
+        developer.log(
+          'SCRUM-66: Processing ObjectLayer with ${objectLayer.objects.length} objects',
+          name: 'Level',
+        );
         for (final object in objectLayer.objects) {
-          final String type = object.class_.isNotEmpty ? object.class_ : object.name;
-          
+          final String type = object.class_.isNotEmpty
+              ? object.class_
+              : object.name;
+
           switch (type) {
             case 'Spawn':
             case 'Player':
               player.position = Vector2(object.x, object.y);
-              developer.log('SCRUM-66: Player spawned via ObjectLayer at: ${player.position}', name: 'Level');
+              developer.log(
+                'SCRUM-66: Player spawned via ObjectLayer at: ${player.position}',
+                name: 'Level',
+              );
               break;
             case 'Door':
               final door = Door(
@@ -84,22 +99,29 @@ class Level extends World {
               );
               add(bed);
               player.beds.add(bed);
-              developer.log('SCRUM-66: Bed added at: ${bed.position}', name: 'Level');
+              developer.log(
+                'SCRUM-66: Bed added at: ${bed.position}',
+                name: 'Level',
+              );
               break;
           }
         }
       }
-      
+
       if (!player.isMounted) {
         add(player);
       }
 
       // Support both 'Collisions' and 'Collision'
-      var collisionsLayer = level.tileMap.getLayer<ObjectGroup>('Collisions') ??
-                            level.tileMap.getLayer<ObjectGroup>('Collision');
+      var collisionsLayer =
+          level.tileMap.getLayer<ObjectGroup>('Collisions') ??
+          level.tileMap.getLayer<ObjectGroup>('Collision');
 
       if (collisionsLayer != null) {
-        developer.log('SCRUM-66: Processing CollisionLayer with ${collisionsLayer.objects.length} objects', name: 'Level');
+        developer.log(
+          'SCRUM-66: Processing CollisionLayer with ${collisionsLayer.objects.length} objects',
+          name: 'Level',
+        );
         for (final collision in collisionsLayer.objects) {
           final block = CollisionBlock(
             position: Vector2(collision.x, collision.y),
@@ -109,10 +131,18 @@ class Level extends World {
           add(block);
         }
       }
-      developer.log('SCRUM-66: Level load complete. Collisions: ${player.collisionBlocks.length}, Beds: ${player.beds.length}', name: 'Level');
+      developer.log(
+        'SCRUM-66: Level load complete. Collisions: ${player.collisionBlocks.length}, Beds: ${player.beds.length}',
+        name: 'Level',
+      );
     } catch (e, stack) {
       add(player);
-      developer.log('SCRUM-66: Error loading level $levelName', name: 'Level', error: e, stackTrace: stack);
+      developer.log(
+        'SCRUM-66: Error loading level $levelName',
+        name: 'Level',
+        error: e,
+        stackTrace: stack,
+      );
     }
 
     return super.onLoad();

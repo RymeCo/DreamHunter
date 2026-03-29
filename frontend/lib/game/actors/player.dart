@@ -10,29 +10,28 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
   final JoystickComponent joystick;
   final String characterType;
   final Vector2 spriteSize;
-  
+
   double speed = 200.0;
   PlayerState _state = PlayerState.facingFront;
-  
+
   final Vector2 hitboxSize = Vector2(32, 32);
-  
+
   List<CollisionBlock> collisionBlocks = [];
   List<Bed> beds = [];
   Bed? currentBed;
   bool isNearBed = false;
   double energy = 0;
 
-  Player({
-    required this.joystick, 
-    required this.characterType,
-    Vector2? size,
-  }) : spriteSize = size ?? Vector2(32, 64);
+  Player({required this.joystick, required this.characterType, Vector2? size})
+    : spriteSize = size ?? Vector2(32, 64);
 
   @override
   Future<void> onLoad() async {
     final sizeStr = '${spriteSize.x.toInt()}x${spriteSize.y.toInt()}';
-    sprite = await game.loadSprite('game/characters/$characterType/facing-front($sizeStr).png');
-    
+    sprite = await game.loadSprite(
+      'game/characters/$characterType/facing-front($sizeStr).png',
+    );
+
     size = spriteSize;
     anchor = Anchor.topLeft;
   }
@@ -40,7 +39,7 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
   @override
   void update(double dt) {
     super.update(dt);
-    
+
     if (_state == PlayerState.sleeping) {
       energy += 1.0 * dt;
       return;
@@ -56,7 +55,7 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
   void _checkBedProximity() {
     bool near = false;
     Bed? foundBed;
-    
+
     for (final bed in beds) {
       if (toRect().overlaps(bed.toRect())) {
         near = true;
@@ -64,7 +63,7 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
         break;
       }
     }
-    
+
     if (near != isNearBed) {
       developer.log('SCRUM-66: Near bed changed to: $near', name: 'Player');
     }
@@ -77,8 +76,8 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
       _state = PlayerState.sleeping;
       // Center player on bed (TopLeft anchor)
       position = Vector2(
-        currentBed!.x + (currentBed!.width - width) / 2, 
-        currentBed!.y + (currentBed!.height - height) / 2
+        currentBed!.x + (currentBed!.width - width) / 2,
+        currentBed!.y + (currentBed!.height - height) / 2,
       );
       _updateSprite();
       developer.log('SCRUM-66: Player entered bed', name: 'Player');
@@ -156,12 +155,14 @@ class Player extends SpriteComponent with HasGameReference<DreamHunterGame> {
 
   Future<void> _updateSprite() async {
     if (_state == PlayerState.sleeping) {
-      opacity = 0.7; 
+      opacity = 0.7;
       return;
     }
     opacity = 1.0;
     final stateStr = _state == PlayerState.facingBack ? 'back' : 'front';
     final sizeStr = '${spriteSize.x.toInt()}x${spriteSize.y.toInt()}';
-    sprite = await game.loadSprite('game/characters/$characterType/facing-$stateStr($sizeStr).png');
+    sprite = await game.loadSprite(
+      'game/characters/$characterType/facing-$stateStr($sizeStr).png',
+    );
   }
 }

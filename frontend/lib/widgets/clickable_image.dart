@@ -36,14 +36,17 @@ class GlassButton extends StatefulWidget {
     this.borderRadius = 12.0,
     this.pulseEffect = true,
     this.pulseMinOpacity = 0.4,
-  }) : assert(imagePath != null || child != null || label != null, 
-          'Either imagePath, child, or label must be provided');
+  }) : assert(
+         imagePath != null || child != null || label != null,
+         'Either imagePath, child, or label must be provided',
+       );
 
   @override
   State<GlassButton> createState() => _GlassButtonState();
 }
 
-class _GlassButtonState extends State<GlassButton> with SingleTickerProviderStateMixin {
+class _GlassButtonState extends State<GlassButton>
+    with SingleTickerProviderStateMixin {
   bool _isHovering = false;
   bool _isTapped = false;
   late AnimationController _pulseController;
@@ -57,9 +60,10 @@ class _GlassButtonState extends State<GlassButton> with SingleTickerProviderStat
       duration: const Duration(milliseconds: 1500),
     );
 
-    _pulseAnimation = Tween<double>(begin: widget.pulseMinOpacity, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _pulseAnimation = Tween<double>(begin: widget.pulseMinOpacity, end: 1.0)
+        .animate(
+          CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+        );
 
     if (widget.pulseEffect) {
       _pulseController.repeat(reverse: true);
@@ -90,13 +94,21 @@ class _GlassButtonState extends State<GlassButton> with SingleTickerProviderStat
       onEnter: (_) => _updateHovering(true),
       onExit: (_) => _updateHovering(false),
       child: GestureDetector(
-        onTapDown: widget.isClickable && widget.clickResponsiveness ? (_) => _updateTapped(true) : null,
-        onTapUp: widget.isClickable && widget.clickResponsiveness ? (_) => _updateTapped(false) : null,
-        onTapCancel: widget.isClickable && widget.clickResponsiveness ? () => _updateTapped(false) : null,
-        onTap: widget.isClickable ? () {
-          AudioService().playClick();
-          widget.onTap?.call();
-        } : null,
+        onTapDown: widget.isClickable && widget.clickResponsiveness
+            ? (_) => _updateTapped(true)
+            : null,
+        onTapUp: widget.isClickable && widget.clickResponsiveness
+            ? (_) => _updateTapped(false)
+            : null,
+        onTapCancel: widget.isClickable && widget.clickResponsiveness
+            ? () => _updateTapped(false)
+            : null,
+        onTap: widget.isClickable
+            ? () {
+                AudioService().playClick();
+                widget.onTap?.call();
+              }
+            : null,
         child: AnimatedScale(
           scale: (widget.clickResponsiveness && active) ? 1.08 : 1.0,
           duration: const Duration(milliseconds: 150),
@@ -105,32 +117,32 @@ class _GlassButtonState extends State<GlassButton> with SingleTickerProviderStat
             animation: _pulseAnimation,
             builder: (context, child) {
               final pulse = widget.pulseEffect ? _pulseAnimation.value : 1.0;
-              
+
               // Idle state: Subtle and pulsing
               // Active state: Brighter and more solid (snaps in/out)
-              final double bgAlpha = active 
-                ? 0.25 
-                : (0.1 * pulse);
-                
-              final double borderAlpha = active
-                ? 0.6
-                : (0.2 * pulse);
+              final double bgAlpha = active ? 0.25 : (0.1 * pulse);
+
+              final double borderAlpha = active ? 0.6 : (0.2 * pulse);
 
               return Container(
                 width: widget.width,
                 height: widget.height,
                 padding: widget.padding,
                 decoration: BoxDecoration(
-                  color: (widget.color ?? Colors.white).withValues(alpha: bgAlpha),
+                  color: (widget.color ?? Colors.white).withValues(
+                    alpha: bgAlpha,
+                  ),
                   borderRadius: BorderRadius.circular(widget.borderRadius),
                   border: Border.all(
-                    color: (active ? widget.glowColor : Colors.white).withValues(alpha: borderAlpha),
+                    color: (active ? widget.glowColor : Colors.white)
+                        .withValues(alpha: borderAlpha),
                     width: 1.5,
                   ),
                   boxShadow: active
                       ? [
                           BoxShadow(
-                            color: (widget.borderColor ?? widget.glowColor).withValues(alpha: 0.5),
+                            color: (widget.borderColor ?? widget.glowColor)
+                                .withValues(alpha: 0.5),
                             blurRadius: 18.0,
                             spreadRadius: 1.0,
                           ),
@@ -148,12 +160,9 @@ class _GlassButtonState extends State<GlassButton> with SingleTickerProviderStat
 
   Widget _buildContent() {
     if (widget.imagePath != null) {
-      return Image.asset(
-        widget.imagePath!,
-        fit: BoxFit.contain,
-      );
+      return Image.asset(widget.imagePath!, fit: BoxFit.contain);
     }
-    
+
     if (widget.label != null) {
       return Center(
         child: Text(
@@ -202,7 +211,7 @@ class MakeItButton extends StatelessWidget {
       glowColor: Colors.white,
       isClickable: isClickable,
       padding: EdgeInsets.zero,
-      borderRadius: 0, 
+      borderRadius: 0,
       pulseEffect: false,
     );
   }

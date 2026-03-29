@@ -11,17 +11,15 @@ import 'dashboard/shop_item_card.dart';
 
 class ShopDialog extends StatefulWidget {
   final DashboardController controller;
-  
-  const ShopDialog({
-    super.key,
-    required this.controller,
-  });
+
+  const ShopDialog({super.key, required this.controller});
 
   @override
   State<ShopDialog> createState() => _ShopDialogState();
 }
 
-class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateMixin {
+class _ShopDialogState extends State<ShopDialog>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ShopService _shopService = ShopService();
 
@@ -79,11 +77,11 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
       // 4. Update UI only (Hardcoded path)
       _shopService.purchaseItemLocally(item.id);
       await widget.controller.updateDreamCoins(-item.price);
-      
+
       if (mounted) {
         showCustomSnackBar(
-          context, 
-          'Successfully purchased ${item.name}!', 
+          context,
+          'Successfully purchased ${item.name}!',
           type: SnackBarType.success,
         );
         setState(() {}); // Refresh grid
@@ -100,25 +98,35 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
         padding: EdgeInsets.zero,
         child: Column(
           children: [
-            const GameDialogHeader(
-              title: 'DREAM SHOP',
-              isCentered: true,
-            ),
-            
+            const GameDialogHeader(title: 'DREAM SHOP', isCentered: true),
+
             TabBar(
               controller: _tabController,
               indicatorColor: Colors.amberAccent,
               isScrollable: true,
               tabAlignment: TabAlignment.start,
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
-              tabs: _shopService.getItemsByCategory().keys.map((cat) => Tab(text: cat)).toList(),
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.normal,
+              ),
+              tabs: _shopService
+                  .getItemsByCategory()
+                  .keys
+                  .map((cat) => Tab(text: cat))
+                  .toList(),
             ),
-            
+
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: _shopService.getItemsByCategory().values.map((items) => _buildItemGrid(items)).toList(),
+                children: _shopService
+                    .getItemsByCategory()
+                    .values
+                    .map((items) => _buildItemGrid(items))
+                    .toList(),
               ),
             ),
           ],
@@ -142,7 +150,7 @@ class _ShopDialogState extends State<ShopDialog> with SingleTickerProviderStateM
         final ownedCount = _shopService.getOwnedCount(item.id);
         final isOwned = ownedCount > 0;
         final isLimitReached = ownedCount >= item.maxLimit;
-        
+
         return ShopItemCard(
           item: item,
           isOwned: isOwned,

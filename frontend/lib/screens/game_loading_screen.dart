@@ -48,7 +48,8 @@ class _GameLoadingScreenState extends State<GameLoadingScreen> {
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const GameScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const GameScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },

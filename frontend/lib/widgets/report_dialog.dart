@@ -27,7 +27,7 @@ class ReportDialog extends StatefulWidget {
 class _ReportDialogState extends State<ReportDialog> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _otherReasonController = TextEditingController();
-  
+
   final Map<String, bool> _categories = {
     'Harassment': false,
     'Hate Speech': false,
@@ -65,12 +65,20 @@ class _ReportDialogState extends State<ReportDialog> {
         .toList();
 
     if (selectedCategories.isEmpty) {
-      showCustomSnackBar(context, 'Please select at least one reason.', type: SnackBarType.error);
+      showCustomSnackBar(
+        context,
+        'Please select at least one reason.',
+        type: SnackBarType.error,
+      );
       return;
     }
 
     if (_categories['Other']! && _otherReasonController.text.trim().isEmpty) {
-      showCustomSnackBar(context, 'Please specify your "Other" reason.', type: SnackBarType.error);
+      showCustomSnackBar(
+        context,
+        'Please specify your "Other" reason.',
+        type: SnackBarType.error,
+      );
       return;
     }
 
@@ -82,7 +90,11 @@ class _ReportDialogState extends State<ReportDialog> {
     if (!mounted) return;
 
     Navigator.pop(context);
-    showCustomSnackBar(context, 'Report submitted successfully. Thank you.', type: SnackBarType.success);
+    showCustomSnackBar(
+      context,
+      'Report submitted successfully. Thank you.',
+      type: SnackBarType.success,
+    );
   }
 
   @override

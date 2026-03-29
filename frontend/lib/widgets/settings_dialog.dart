@@ -29,20 +29,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
   Future<void> _loadSettings() async {
-    final settings = await OfflineCache.getSettings();
+    // AudioService is already initialized with settings in main.dart
     if (mounted) {
       setState(() {
-        // Ensure AudioService state matches saved settings
-        final music = settings['music'] ?? true;
-        final sfx = settings['sfx'] ?? true;
-        
-        if (music == _audioService.isMusicMuted) {
-          _audioService.toggleMusicMute();
-        }
-        if (sfx == _audioService.isSoundMuted) {
-          _audioService.toggleSoundMute();
-        }
-        
         _isLoading = false;
       });
     }
@@ -52,6 +41,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
     await OfflineCache.saveSettings({
       'music': !_audioService.isMusicMuted,
       'sfx': !_audioService.isSoundMuted,
+      'musicVolume': _audioService.musicVolume,
+      'sfxVolume': _audioService.soundVolume,
     });
   }
 
@@ -67,13 +58,21 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
     setState(() => _isSyncing = true);
     final success = await _backendService.performFullSync();
-    
+
     if (mounted) {
       setState(() => _isSyncing = false);
       if (success) {
-        showCustomSnackBar(context, 'Cloud sync successful!', type: SnackBarType.success);
+        showCustomSnackBar(
+          context,
+          'Cloud sync successful!',
+          type: SnackBarType.success,
+        );
       } else {
-        showCustomSnackBar(context, 'Sync failed. Check your connection.', type: SnackBarType.error);
+        showCustomSnackBar(
+          context,
+          'Sync failed. Check your connection.',
+          type: SnackBarType.error,
+        );
       }
     }
   }
@@ -105,6 +104,15 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 if (mounted) setState(() {});
               },
             ),
+            if (!_audioService.isMusicMuted)
+              _buildVolumeSlider(
+                value: _audioService.musicVolume,
+                onChanged: (val) {
+                  _audioService.setMusicVolume(val);
+                  if (mounted) setState(() {});
+                },
+                onChangeEnd: () => _updateSettings(),
+              ),
             const SizedBox(height: 8),
             _buildSettingSwitch(
               title: 'Sound Effects',
@@ -117,7 +125,19 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 if (mounted) setState(() {});
               },
             ),
-            
+            if (!_audioService.isSoundMuted)
+              _buildVolumeSlider(
+                value: _audioService.soundVolume,
+                onChanged: (val) {
+                  _audioService.setSoundVolume(val);
+                  if (mounted) setState(() {});
+                },
+                onChangeEnd: () async {
+                  await _updateSettings();
+                  await _audioService.playClick();
+                },
+              ),
+
             const SizedBox(height: 24),
             const StatRow(
               icon: Icons.cloud_sync_rounded,
@@ -131,17 +151,24 @@ class _SettingsDialogState extends State<SettingsDialog> {
               height: 55,
               color: Colors.cyanAccent.withValues(alpha: 0.1),
               borderColor: Colors.cyanAccent.withValues(alpha: 0.3),
-              child: _isSyncing 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent))
-                : const Text(
-                    'BACKUP DATA TO CLOUD',
-                    style: TextStyle(
-                      color: Colors.cyanAccent,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
-                      fontSize: 14,
+              child: _isSyncing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.cyanAccent,
+                      ),
+                    )
+                  : const Text(
+                      'BACKUP DATA TO CLOUD',
+                      style: TextStyle(
+                        color: Colors.cyanAccent,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
             ),
             const SizedBox(height: 16),
             Center(
@@ -157,6 +184,40 @@ class _SettingsDialogState extends State<SettingsDialog> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildVolumeSlider({
+    required double value,
+    required ValueChanged<double> onChanged,
+    VoidCallback? onChangeEnd,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Row(
+        children: [
+          const Icon(Icons.volume_down, size: 16, color: Colors.white38),
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 2,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                activeTrackColor: Colors.cyanAccent,
+                inactiveTrackColor: Colors.white10,
+                thumbColor: Colors.cyanAccent,
+                overlayColor: Colors.cyanAccent.withValues(alpha: 0.1),
+              ),
+              child: Slider(
+                value: value,
+                onChanged: onChanged,
+                onChangeEnd: onChangeEnd != null ? (_) => onChangeEnd() : null,
+              ),
+            ),
+          ),
+          const Icon(Icons.volume_up, size: 16, color: Colors.white38),
+        ],
       ),
     );
   }
@@ -177,7 +238,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
         secondary: Icon(icon, color: Colors.white70),
         title: Text(
           title,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         subtitle: Text(
           subtitle,

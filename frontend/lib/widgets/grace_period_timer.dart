@@ -10,7 +10,8 @@ class GracePeriodTimer extends StatefulWidget {
   State<GracePeriodTimer> createState() => _GracePeriodTimerState();
 }
 
-class _GracePeriodTimerState extends State<GracePeriodTimer> with SingleTickerProviderStateMixin {
+class _GracePeriodTimerState extends State<GracePeriodTimer>
+    with SingleTickerProviderStateMixin {
   int _secondsRemaining = 10;
   Timer? _timer;
   late AnimationController _controller;
@@ -23,9 +24,10 @@ class _GracePeriodTimerState extends State<GracePeriodTimer> with SingleTickerPr
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    _scaleAnimation = Tween<double>(begin: 1.5, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.5,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
     _startTimer();
   }

@@ -27,7 +27,12 @@ class LeaderboardDialog extends StatelessWidget {
                 ],
               ),
               const Expanded(
-                child: Center(child: Text('Rankings coming soon', style: TextStyle(color: Colors.white54))),
+                child: Center(
+                  child: Text(
+                    'Rankings coming soon',
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                ),
               ),
             ],
           ),

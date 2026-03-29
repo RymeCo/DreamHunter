@@ -97,7 +97,9 @@ class _LoginDialogState extends State<LoginDialog> {
                     onPressed: widget.onRegisterRequested,
                     child: const Text(
                       "Don't have an account? Register",
-                      style: TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8)),
+                      style: TextStyle(
+                        color: Color.fromRGBO(255, 255, 255, 0.8),
+                      ),
                     ),
                   ),
                 ],
@@ -110,9 +112,7 @@ class _LoginDialogState extends State<LoginDialog> {
           child: Container(
             width: 360,
             height: 360,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-            ),
+            decoration: const BoxDecoration(shape: BoxShape.circle),
             child: Image.asset(
               'assets/images/auth/login_logo.png',
               fit: BoxFit.contain,
@@ -123,5 +123,3 @@ class _LoginDialogState extends State<LoginDialog> {
     );
   }
 }
-
-

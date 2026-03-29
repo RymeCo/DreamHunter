@@ -15,7 +15,9 @@ class ConnectivityService {
 
   void initialize() {
     _checkInitialState();
-    _subscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+    _subscription = _connectivity.onConnectivityChanged.listen(
+      _updateConnectionStatus,
+    );
   }
 
   Future<void> _checkInitialState() async {
@@ -29,7 +31,7 @@ class ConnectivityService {
     if (results.isEmpty) {
       online = false;
     }
-    
+
     if (isOnline.value != online) {
       isOnline.value = online;
     }

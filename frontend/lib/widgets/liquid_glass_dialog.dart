@@ -67,14 +67,16 @@ class LiquidGlassDialog extends StatelessWidget {
                 color: const Color.fromRGBO(255, 255, 255, 0.2),
                 width: 1.5,
               ),
-              gradient: color != null ? null : const LinearGradient(
-                colors: [
-                  Color.fromRGBO(255, 255, 255, 0.15),
-                  Color.fromRGBO(255, 255, 255, 0.05),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              gradient: color != null
+                  ? null
+                  : const LinearGradient(
+                      colors: [
+                        Color.fromRGBO(255, 255, 255, 0.15),
+                        Color.fromRGBO(255, 255, 255, 0.05),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
               boxShadow: const [
                 BoxShadow(
                   color: Color.fromRGBO(0, 0, 0, 0.1),
@@ -83,10 +85,7 @@ class LiquidGlassDialog extends StatelessWidget {
                 ),
               ],
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: child,
-            ),
+            child: Material(color: Colors.transparent, child: child),
           ),
         ),
       ),

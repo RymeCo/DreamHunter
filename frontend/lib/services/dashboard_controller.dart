@@ -27,7 +27,7 @@ class DashboardController extends ChangeNotifier {
   Future<bool> updateCurrency({int? newCoins, int? newStones}) async {
     if (newCoins != null) _dreamCoins = newCoins;
     if (newStones != null) _hellStones = newStones;
-    
+
     notifyListeners();
     await OfflineCache.saveCurrency(_dreamCoins, _hellStones);
     return true;

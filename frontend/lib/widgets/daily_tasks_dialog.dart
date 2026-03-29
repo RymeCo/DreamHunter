@@ -21,7 +21,7 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
       "reward": 50,
       "completed": true,
       "claimed": false,
-      "type": "login"
+      "type": "login",
     },
     {
       "id": "send_messages",
@@ -32,7 +32,7 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
       "reward": 100,
       "completed": false,
       "claimed": false,
-      "type": "chat"
+      "type": "chat",
     },
     {
       "id": "spin_roulette",
@@ -43,7 +43,7 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
       "reward": 150,
       "completed": false,
       "claimed": false,
-      "type": "spin"
+      "type": "spin",
     },
     {
       "id": "playtime_task",
@@ -54,8 +54,8 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
       "reward": 200,
       "completed": false,
       "claimed": false,
-      "type": "playtime"
-    }
+      "type": "playtime",
+    },
   ];
 
   void _claimTask(int index) {
@@ -88,9 +88,7 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
                   color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(color: Colors.blueAccent, blurRadius: 10),
-                  ],
+                  shadows: [Shadow(color: Colors.blueAccent, blurRadius: 10)],
                 ),
               ),
               IconButton(
@@ -116,7 +114,8 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
   }
 
   Widget _buildTaskItem(Map<String, dynamic> task, int index) {
-    final bool isCompleted = (task['progress'] as num) >= (task['target'] as num);
+    final bool isCompleted =
+        (task['progress'] as num) >= (task['target'] as num);
     final bool isClaimed = task['claimed'] ?? false;
     final double progress = (task['progress'] as num).toDouble();
     final double target = (task['target'] as num).toDouble();
@@ -131,8 +130,8 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
           color: isClaimed
               ? Colors.greenAccent.withValues(alpha: 0.3)
               : isCompleted
-                  ? Colors.amberAccent.withValues(alpha: 0.3)
-                  : Colors.white.withValues(alpha: 0.1),
+              ? Colors.amberAccent.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.1),
         ),
       ),
       child: Row(
@@ -146,7 +145,9 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isClaimed ? Icons.check_circle_rounded : _getIconForType(task['type']),
+              isClaimed
+                  ? Icons.check_circle_rounded
+                  : _getIconForType(task['type']),
               color: isClaimed ? Colors.greenAccent : Colors.blueAccent,
               size: 24,
             ),
@@ -187,17 +188,29 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amberAccent,
                 foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              child: const Text('CLAIM', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              child: const Text(
+                'CLAIM',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
             )
           else if (isClaimed)
             const Text(
               'CLAIMED',
-              style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 12),
+              style: TextStyle(
+                color: Colors.greenAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
             )
           else
             Column(
@@ -205,16 +218,28 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
               children: [
                 Text(
                   '${progress.toInt()}/${target.toInt()}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.toll_rounded, color: Colors.amberAccent, size: 14),
+                    const Icon(
+                      Icons.toll_rounded,
+                      color: Colors.amberAccent,
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${task['reward']}',
-                      style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.amberAccent,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),

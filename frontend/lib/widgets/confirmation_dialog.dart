@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'liquid_glass_dialog.dart';
 
 /// A reusable game-themed confirmation dialog.
-/// 
+///
 /// Returns `true` if the user confirms, `false` or `null` otherwise.
 class ConfirmationDialog extends StatelessWidget {
   final String title;
@@ -67,8 +67,8 @@ class ConfirmationDialog extends StatelessWidget {
             title,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.white, 
-              fontSize: 18, 
+              color: Colors.white,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               letterSpacing: 1,
             ),
@@ -89,8 +89,11 @@ class ConfirmationDialog extends StatelessWidget {
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(
-                  cancelLabel, 
-                  style: const TextStyle(color: Colors.white38, fontWeight: FontWeight.bold),
+                  cancelLabel,
+                  style: const TextStyle(
+                    color: Colors.white38,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               ElevatedButton(
@@ -102,7 +105,7 @@ class ConfirmationDialog extends StatelessWidget {
                   shadowColor: iconColor.withValues(alpha: 0.5),
                 ),
                 child: Text(
-                  confirmLabel, 
+                  confirmLabel,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),

@@ -4,13 +4,14 @@ import 'offline_cache.dart';
 class RouletteState {
   final int freeSpins;
   final String lastRefillDate; // YYYY-MM-DD
-  final Map<String, dynamic>? pendingReward; // { 'amount': int, 'name': String }
+  final Map<String, dynamic>?
+  pendingReward; // { 'amount': int, 'name': String }
   final bool isSpinning;
   final double? targetRotation;
   final String? spinStartTime; // ISO8601
 
   RouletteState({
-    required this.freeSpins, 
+    required this.freeSpins,
     required this.lastRefillDate,
     this.pendingReward,
     this.isSpinning = false,
@@ -19,13 +20,13 @@ class RouletteState {
   });
 
   Map<String, dynamic> toJson() => {
-        'freeSpins': freeSpins,
-        'lastRefillDate': lastRefillDate,
-        'pendingReward': pendingReward,
-        'isSpinning': isSpinning,
-        'targetRotation': targetRotation,
-        'spinStartTime': spinStartTime,
-      };
+    'freeSpins': freeSpins,
+    'lastRefillDate': lastRefillDate,
+    'pendingReward': pendingReward,
+    'isSpinning': isSpinning,
+    'targetRotation': targetRotation,
+    'spinStartTime': spinStartTime,
+  };
 
   factory RouletteState.fromJson(Map<String, dynamic> json) {
     return RouletteState(
@@ -49,63 +50,69 @@ class RouletteService {
       'type': 'currency',
       'amount': 10,
       'weight': 100, // Common
-      'color': '0xCC9C27B0' // Deep Purple
+      'color': '0xCC9C27B0', // Deep Purple
     },
     {
       'name': '25 DC',
       'type': 'currency',
       'amount': 25,
       'weight': 50, // Uncommon
-      'color': '0xCC2196F3' // Blue
+      'color': '0xCC2196F3', // Blue
     },
     {
       'name': '50 DC',
       'type': 'currency',
       'amount': 50,
       'weight': 20, // Rare
-      'color': '0xCC00BCD4' // Cyan
+      'color': '0xCC00BCD4', // Cyan
     },
     {
       'name': '100 DC',
       'type': 'currency',
       'amount': 100,
       'weight': 10, // Epic
-      'color': '0xCCFFD740' // Amber
+      'color': '0xCCFFD740', // Amber
     },
     {
       'name': '250 DC',
       'type': 'currency',
       'amount': 250,
       'weight': 5, // Legendary
-      'color': '0xCCFF4081' // Pink
+      'color': '0xCCFF4081', // Pink
     },
     {
       'name': '500 DC',
       'type': 'currency',
       'amount': 500,
       'weight': 2, // Jackpot
-      'color': '0xCCFF5252' // Red Accent
+      'color': '0xCCFF5252', // Red Accent
     },
   ];
 
   /// Loads the current state and applies daily refill logic.
   static Future<RouletteState> getAndSyncState() async {
     final now = DateTime.now();
-    final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    final todayStr =
+        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
     Map<String, dynamic>? data = await OfflineCache.getMetadata(_rouletteKey);
-    RouletteState state = data != null ? RouletteState.fromJson(data) : RouletteState(freeSpins: 10, lastRefillDate: todayStr);
+    RouletteState state = data != null
+        ? RouletteState.fromJson(data)
+        : RouletteState(freeSpins: 10, lastRefillDate: todayStr);
 
     // 1. Daily Refill Logic: Add +1 spin if it's a new day and we are under the limit
     if (state.lastRefillDate != todayStr) {
       int newSpins = state.freeSpins;
       if (newSpins < maxFreeSpins) {
         newSpins++;
-        developer.log('Daily refill: +1 free spin granted.', name: 'RouletteService');
+        developer.log(
+          'Daily refill: +1 free spin granted.',
+          name: 'RouletteService',
+        );
       }
-      
+
       state = RouletteState(
-        freeSpins: newSpins, 
+        freeSpins: newSpins,
         lastRefillDate: todayStr,
         pendingReward: state.pendingReward,
         isSpinning: state.isSpinning,
@@ -118,7 +125,10 @@ class RouletteService {
     return state;
   }
 
-  static Future<void> setSpinning(bool isSpinning, {double? targetRotation}) async {
+  static Future<void> setSpinning(
+    bool isSpinning, {
+    double? targetRotation,
+  }) async {
     final state = await getAndSyncState();
     final newState = RouletteState(
       freeSpins: state.freeSpins,

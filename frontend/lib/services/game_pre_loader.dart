@@ -16,9 +16,7 @@ class GamePreLoader {
     'tiles/floor_1_16.png',
   ];
 
-  static Future<void> preload(
-    Function(double progress) onProgress,
-  ) async {
+  static Future<void> preload(Function(double progress) onProgress) async {
     final allImages = [...characterImages, ...tileImages];
     int loaded = 0;
 

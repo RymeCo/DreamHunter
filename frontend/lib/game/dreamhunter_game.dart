@@ -6,7 +6,8 @@ import 'actors/player.dart';
 import 'level/level.dart';
 import 'interface/hud.dart';
 
-class DreamHunterGame extends FlameGame with HasCollisionDetection, TapCallbacks {
+class DreamHunterGame extends FlameGame
+    with HasCollisionDetection, TapCallbacks {
   final String characterType;
   late final JoystickComponent joystick;
   late final Player player;
@@ -43,7 +44,7 @@ class DreamHunterGame extends FlameGame with HasCollisionDetection, TapCallbacks
     final knobPaint = Paint()
       ..color = const Color.fromRGBO(255, 255, 255, 0.3)
       ..style = PaintingStyle.fill;
-    
+
     final backgroundPaint = Paint()
       ..color = const Color.fromRGBO(255, 255, 255, 0.05)
       ..style = PaintingStyle.fill;
@@ -55,24 +56,14 @@ class DreamHunterGame extends FlameGame with HasCollisionDetection, TapCallbacks
 
     joystick = JoystickComponent(
       knob: CircleComponent(
-        radius: 25, 
+        radius: 25,
         paint: knobPaint,
-        children: [
-          CircleComponent(
-            radius: 25,
-            paint: borderPaint,
-          ),
-        ],
+        children: [CircleComponent(radius: 25, paint: borderPaint)],
       ),
       background: CircleComponent(
-        radius: 60, 
+        radius: 60,
         paint: backgroundPaint,
-        children: [
-          CircleComponent(
-            radius: 60,
-            paint: borderPaint,
-          ),
-        ],
+        children: [CircleComponent(radius: 60, paint: borderPaint)],
       ),
       margin: const EdgeInsets.only(left: 40, bottom: 40),
     );

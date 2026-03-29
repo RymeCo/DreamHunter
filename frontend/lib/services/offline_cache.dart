@@ -11,30 +11,28 @@ class OfflineCache {
     return '${uid}_$baseKey';
   }
 
-  static Future<void> saveSettings(Map<String, bool> settings) async {
+  static Future<void> saveSettings(Map<String, dynamic> settings) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_settingsKey, json.encode(settings));
   }
 
-  static Future<Map<String, bool>> getSettings() async {
+  static Future<Map<String, dynamic>> getSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(_settingsKey);
     if (cached != null) {
-      final Map<String, dynamic> data = json.decode(cached);
-      return {
-        'music': data['music'] as bool? ?? true,
-        'sfx': data['sfx'] as bool? ?? true,
-      };
+      return json.decode(cached) as Map<String, dynamic>;
     }
-    return {'music': true, 'sfx': true};
+    return {
+      'music': true,
+      'sfx': true,
+      'musicVolume': 0.6,
+      'sfxVolume': 1.0,
+    };
   }
 
   static Future<void> saveCurrency(int dreamCoins, int hellStones) async {
     final prefs = await SharedPreferences.getInstance();
-    final data = {
-      'dreamCoins': dreamCoins,
-      'hellStones': hellStones,
-    };
+    final data = {'dreamCoins': dreamCoins, 'hellStones': hellStones};
     await prefs.setString(_getScopedKey(_currencyKey), json.encode(data));
   }
 
@@ -66,11 +64,19 @@ class OfflineCache {
   // Stubs for removed methods to prevent immediate build errors
   static Future<void> migrateGuestData(String uid) async {}
   static Future<List<dynamic>> getTransactionQueue() async => [];
-  static Future<void> addTransaction({required String type, int dreamDelta = 0, int hellDelta = 0, int playtimeDelta = 0}) async {}
+  static Future<void> addTransaction({
+    required String type,
+    int dreamDelta = 0,
+    int hellDelta = 0,
+    int playtimeDelta = 0,
+  }) async {}
   static Future<Map<String, dynamic>?> getDailyTasks() async => null;
   static Future<void> saveNotifiedTaskIds(Set<String> ids) async {}
 
-  static Future<void> saveMetadata(String key, Map<String, dynamic> data) async {
+  static Future<void> saveMetadata(
+    String key,
+    Map<String, dynamic> data,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_getScopedKey(key), json.encode(data));
   }

@@ -32,7 +32,9 @@ class PlayerModel {
       xp: data['xp'] ?? 0,
       currency: data['currency'] ?? 100,
       inventory: List<String>.from(data['inventory'] ?? []),
-      lastLogin: data['lastLogin'] != null ? DateTime.parse(data['lastLogin']) : null,
+      lastLogin: data['lastLogin'] != null
+          ? DateTime.parse(data['lastLogin'])
+          : null,
     );
   }
 

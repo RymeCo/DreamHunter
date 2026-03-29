@@ -183,10 +183,7 @@ class GameLoadingBar extends StatelessWidget {
         GameProgressBar(
           percent: progress,
           height: 12,
-          gradientColors: const [
-            Color(0xFFE92EF6),
-            Color(0xFFCB1CC5),
-          ],
+          gradientColors: const [Color(0xFFE92EF6), Color(0xFFCB1CC5)],
         ),
       ],
     );
@@ -197,11 +194,7 @@ class AppLogo extends StatelessWidget {
   final double size;
   final bool animated;
 
-  const AppLogo({
-    super.key,
-    this.size = 200,
-    this.animated = true,
-  });
+  const AppLogo({super.key, this.size = 200, this.animated = true});
 
   @override
   Widget build(BuildContext context) {
@@ -225,22 +218,29 @@ class RouletteWheelPainter extends CustomPainter {
     final radius = size.width / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
     final sweepAngle = (2 * math.pi) / rewards.length;
-    
+
     // 1. Draw Arcs (Wheel background)
     for (int i = 0; i < rewards.length; i++) {
-      final String colorStr = (rewards[i]['color'] as String).replaceFirst('0x', '');
+      final String colorStr = (rewards[i]['color'] as String).replaceFirst(
+        '0x',
+        '',
+      );
       final baseColor = Color(int.parse(colorStr, radix: 16));
-      final paint = Paint()..shader = RadialGradient(
-        colors: [baseColor.withValues(alpha: 0.9), baseColor.withValues(alpha: 0.5)]
-      ).createShader(rect);
-      
+      final paint = Paint()
+        ..shader = RadialGradient(
+          colors: [
+            baseColor.withValues(alpha: 0.9),
+            baseColor.withValues(alpha: 0.5),
+          ],
+        ).createShader(rect);
+
       canvas.drawArc(rect, rotation + i * sweepAngle, sweepAngle, true, paint);
     }
 
     // 2. Draw Text (Radial Base-to-Center)
     for (int i = 0; i < rewards.length; i++) {
       canvas.save();
-      
+
       // Move to center and rotate to the middle of the current segment
       canvas.translate(center.dx, center.dy);
       final segmentRotation = rotation + (i * sweepAngle) + (sweepAngle / 2);
@@ -254,7 +254,13 @@ class RouletteWheelPainter extends CustomPainter {
             fontSize: 14,
             fontWeight: FontWeight.w900,
             letterSpacing: 0.5,
-            shadows: [Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 1))],
+            shadows: [
+              Shadow(
+                color: Colors.black87,
+                blurRadius: 4,
+                offset: Offset(1, 1),
+              ),
+            ],
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -263,17 +269,18 @@ class RouletteWheelPainter extends CustomPainter {
       // Position text radially - 75% of the way out
       final xOffset = radius * 0.72;
       canvas.translate(xOffset, 0);
-      
+
       // Rotate 90 degrees to align text base with the radius (perpendicular)
       canvas.rotate(math.pi / 2);
 
       // Paint centered
       tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
-      
+
       canvas.restore();
     }
   }
 
   @override
-  bool shouldRepaint(RouletteWheelPainter oldDelegate) => oldDelegate.rotation != rotation;
+  bool shouldRepaint(RouletteWheelPainter oldDelegate) =>
+      oldDelegate.rotation != rotation;
 }

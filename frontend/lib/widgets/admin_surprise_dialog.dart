@@ -9,7 +9,7 @@ class AdminSurpriseDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String reason = tweakData['reason'] ?? 'Administrator Adjustment';
-    
+
     // Extract changes for display
     final int dc = tweakData['dreamCoins'] ?? 0;
     final int hs = tweakData['hellStones'] ?? 0;
@@ -33,7 +33,11 @@ class AdminSurpriseDialog extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.auto_awesome, color: Colors.amberAccent, size: 48),
+                  const Icon(
+                    Icons.auto_awesome,
+                    color: Colors.amberAccent,
+                    size: 48,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'ADMIN SURPRISE!',
@@ -51,12 +55,27 @@ class AdminSurpriseDialog extends StatelessWidget {
                     style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const Divider(height: 32, color: Colors.white10),
-                  
-                  _buildTweakItem('Dream Coins', dc, Icons.cloud_circle, Colors.cyanAccent),
-                  _buildTweakItem('Hell Stones', hs, Icons.local_fire_department, Colors.orangeAccent),
-                  _buildTweakItem('Level', level, Icons.trending_up, Colors.greenAccent),
+
+                  _buildTweakItem(
+                    'Dream Coins',
+                    dc,
+                    Icons.cloud_circle,
+                    Colors.cyanAccent,
+                  ),
+                  _buildTweakItem(
+                    'Hell Stones',
+                    hs,
+                    Icons.local_fire_department,
+                    Colors.orangeAccent,
+                  ),
+                  _buildTweakItem(
+                    'Level',
+                    level,
+                    Icons.trending_up,
+                    Colors.greenAccent,
+                  ),
                   _buildTweakItem('XP', xp, Icons.bolt, Colors.blueAccent),
-                  
+
                   const SizedBox(height: 24),
                   const Text(
                     'Your local save has been synchronized with the master service.',
@@ -64,16 +83,24 @@ class AdminSurpriseDialog extends StatelessWidget {
                     style: TextStyle(color: Colors.white38, fontSize: 10),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.amberAccent,
                       foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
                     ),
-                    child: const Text('AWESOME!', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'AWESOME!',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
@@ -86,7 +113,7 @@ class AdminSurpriseDialog extends StatelessWidget {
 
   Widget _buildTweakItem(String label, int value, IconData icon, Color color) {
     if (value == 0) return const SizedBox.shrink();
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(

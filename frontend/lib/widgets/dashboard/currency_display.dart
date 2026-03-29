@@ -45,7 +45,9 @@ class CurrencyDisplay extends StatelessWidget {
                     const CircleAvatar(
                       radius: 28,
                       backgroundColor: Colors.black45,
-                      backgroundImage: AssetImage('assets/images/dashboard/profile.png'),
+                      backgroundImage: AssetImage(
+                        'assets/images/dashboard/profile.png',
+                      ),
                     ),
                     Positioned(
                       bottom: 0,
@@ -57,7 +59,9 @@ class CurrencyDisplay extends StatelessWidget {
                             width: 14,
                             height: 14,
                             decoration: BoxDecoration(
-                              color: isOnline ? Colors.greenAccent : Colors.redAccent,
+                              color: isOnline
+                                  ? Colors.greenAccent
+                                  : Colors.redAccent,
                               shape: BoxShape.circle,
                               border: Border.all(color: Colors.black, width: 2),
                             ),

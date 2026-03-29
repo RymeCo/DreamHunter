@@ -11,11 +11,9 @@ class ChatService {
   final FirebaseFirestore _db;
   final FirebaseAuth _auth;
 
-  ChatService({
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-  })  : _db = firestore ?? FirebaseFirestore.instance,
-        _auth = auth ?? FirebaseAuth.instance;
+  ChatService({FirebaseFirestore? firestore, FirebaseAuth? auth})
+    : _db = firestore ?? FirebaseFirestore.instance,
+      _auth = auth ?? FirebaseAuth.instance;
 
   String? _cachedGuestId;
   String? _cachedDeviceInfo;
@@ -23,7 +21,7 @@ class ChatService {
   /// Retrieves or generates a persistent guest ID for this device.
   Future<String> getGuestId() async {
     if (_cachedGuestId != null) return _cachedGuestId!;
-    
+
     final prefs = await SharedPreferences.getInstance();
     String? id = prefs.getString('guest_id');
     if (id == null) {
@@ -37,10 +35,10 @@ class ChatService {
   /// Retrieves basic, non-invasive device info (e.g., "iPhone 13", "Android 13").
   Future<String> getDeviceInfo() async {
     if (_cachedDeviceInfo != null) return _cachedDeviceInfo!;
-    
+
     final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     String info = 'Unknown Device';
-    
+
     try {
       if (kIsWeb) {
         final webInfo = await deviceInfo.webBrowserInfo;
@@ -61,7 +59,7 @@ class ChatService {
     } catch (e) {
       debugPrint('Error getting device info: $e');
     }
-    
+
     _cachedDeviceInfo = info;
     return info;
   }
@@ -127,8 +125,12 @@ class ChatService {
     final user = _auth.currentUser;
     if (user == null) return; // Guests cannot like
 
-    final msgRef = _db.collection('chats').doc(region).collection('messages').doc(messageId);
-    
+    final msgRef = _db
+        .collection('chats')
+        .doc(region)
+        .collection('messages')
+        .doc(messageId);
+
     await _db.runTransaction((transaction) async {
       final snapshot = await transaction.get(msgRef);
       if (!snapshot.exists) return;
@@ -140,13 +142,13 @@ class ChatService {
         // User already liked, so unlike
         transaction.update(msgRef, {
           'likes': FieldValue.increment(-1),
-          'likedBy': FieldValue.arrayRemove([user.uid])
+          'likedBy': FieldValue.arrayRemove([user.uid]),
         });
       } else {
         // User hasn't liked yet
         transaction.update(msgRef, {
           'likes': FieldValue.increment(1),
-          'likedBy': FieldValue.arrayUnion([user.uid])
+          'likedBy': FieldValue.arrayUnion([user.uid]),
         });
       }
     });

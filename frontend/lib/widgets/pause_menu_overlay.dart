@@ -53,7 +53,9 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
                 ),
                 const SizedBox(height: 16),
                 _buildMenuButton(
-                  label: audioService.isMusicMuted ? 'UNMUTE MUSIC' : 'MUTE MUSIC',
+                  label: audioService.isMusicMuted
+                      ? 'UNMUTE MUSIC'
+                      : 'MUTE MUSIC',
                   glowColor: Colors.orangeAccent,
                   onTap: () async {
                     await audioService.toggleMusicMute();
@@ -62,7 +64,9 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
                 ),
                 const SizedBox(height: 16),
                 _buildMenuButton(
-                  label: audioService.isSoundMuted ? 'UNMUTE SOUND' : 'MUTE SOUND',
+                  label: audioService.isSoundMuted
+                      ? 'UNMUTE SOUND'
+                      : 'MUTE SOUND',
                   glowColor: Colors.cyanAccent,
                   onTap: () async {
                     await audioService.toggleSoundMute();
@@ -75,7 +79,9 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
                   glowColor: Colors.redAccent,
                   onTap: () {
                     Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const DashboardScreen(),
+                      ),
                     );
                   },
                 ),

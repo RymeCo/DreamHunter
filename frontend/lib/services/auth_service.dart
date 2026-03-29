@@ -40,7 +40,7 @@ class AuthService {
     );
 
     await userCredential.user?.updateDisplayName(displayName);
-    
+
     await signOut();
   }
 

@@ -25,23 +25,29 @@ class ShopItemCard extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isLimitReached 
-            ? Colors.orangeAccent.withValues(alpha: 0.3) 
-            : (isOwned ? Colors.greenAccent.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.1)),
+          color: isLimitReached
+              ? Colors.orangeAccent.withValues(alpha: 0.3)
+              : (isOwned
+                    ? Colors.greenAccent.withValues(alpha: 0.3)
+                    : Colors.white.withValues(alpha: 0.1)),
         ),
-        boxShadow: isLimitReached ? [
-          BoxShadow(
-            color: Colors.orangeAccent.withValues(alpha: 0.1),
-            blurRadius: 10,
-            spreadRadius: 1,
-          )
-        ] : (isOwned ? [
-          BoxShadow(
-            color: Colors.greenAccent.withValues(alpha: 0.1),
-            blurRadius: 10,
-            spreadRadius: 1,
-          )
-        ] : []),
+        boxShadow: isLimitReached
+            ? [
+                BoxShadow(
+                  color: Colors.orangeAccent.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ]
+            : (isOwned
+                  ? [
+                      BoxShadow(
+                        color: Colors.greenAccent.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
+                    ]
+                  : []),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -69,26 +75,29 @@ class ShopItemCard extends StatelessWidget {
                 width: 60,
                 height: 60,
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => 
-                  const Icon(Icons.broken_image, color: Colors.white24, size: 60),
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.broken_image,
+                  color: Colors.white24,
+                  size: 60,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // Name
           Text(
             item.name,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.white, 
-              fontWeight: FontWeight.bold, 
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
           ),
-          
+
           const SizedBox(height: 4),
-          
+
           // Description
           Text(
             item.description,
@@ -97,9 +106,9 @@ class ShopItemCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white54, fontSize: 10),
           ),
-          
+
           const Spacer(),
-          
+
           // Price or Status
           if (isLimitReached)
             Container(
@@ -116,8 +125,8 @@ class ShopItemCard extends StatelessWidget {
                   Text(
                     'LIMIT REACHED',
                     style: TextStyle(
-                      color: Colors.orangeAccent, 
-                      fontWeight: FontWeight.bold, 
+                      color: Colors.orangeAccent,
+                      fontWeight: FontWeight.bold,
                       fontSize: 10,
                     ),
                   ),
@@ -142,13 +151,17 @@ class ShopItemCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.toll_rounded, color: Colors.amberAccent, size: 16),
+                    const Icon(
+                      Icons.toll_rounded,
+                      color: Colors.amberAccent,
+                      size: 16,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${item.price}',
                       style: const TextStyle(
-                        color: Colors.amberAccent, 
-                        fontWeight: FontWeight.w900, 
+                        color: Colors.amberAccent,
+                        fontWeight: FontWeight.w900,
                         fontSize: 14,
                       ),
                     ),
@@ -161,12 +174,16 @@ class ShopItemCard extends StatelessWidget {
                     backgroundColor: Colors.blueAccent.withValues(alpha: 0.3),
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 32),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     elevation: 0,
-                    side: BorderSide(color: Colors.blueAccent.withValues(alpha: 0.5)),
+                    side: BorderSide(
+                      color: Colors.blueAccent.withValues(alpha: 0.5),
+                    ),
                   ),
                   child: const Text(
-                    'BUY', 
+                    'BUY',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),

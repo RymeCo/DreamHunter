@@ -33,7 +33,8 @@ class _GameScreenState extends State<GameScreen> {
           GameWidget(
             game: _game,
             overlayBuilderMap: {
-              'PauseMenu': (context, DreamHunterGame game) => PauseMenuOverlay(game: game),
+              'PauseMenu': (context, DreamHunterGame game) =>
+                  PauseMenuOverlay(game: game),
               'GraceTimer': (context, DreamHunterGame game) => GracePeriodTimer(
                 onFinished: () => game.overlays.remove('GraceTimer'),
               ),

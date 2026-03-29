@@ -47,7 +47,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _controller.initialize();
     _checkPendingRouletteRewards();
     _isLoggedIn = FirebaseAuth.instance.currentUser != null;
-    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((
+      user,
+    ) {
       if (mounted) {
         setState(() => _isLoggedIn = user != null);
       }
@@ -57,9 +59,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _checkPendingRouletteRewards() async {
     // Wait for the controller to be initialized properly
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     final state = await RouletteService.getAndSyncState();
-    
+
     if (state.pendingReward != null) {
       if (state.isSpinning && state.spinStartTime != null) {
         // BACKGROUND SPIN LOGIC:
@@ -71,7 +73,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         if (elapsed < totalDuration) {
           final remaining = totalDuration - elapsed;
-          developer.log('Spin is active in background. Waiting ${remaining.inSeconds}s...', name: 'DashboardScreen');
+          developer.log(
+            'Spin is active in background. Waiting ${remaining.inSeconds}s...',
+            name: 'DashboardScreen',
+          );
           await Future.delayed(remaining);
         }
       }
@@ -153,12 +158,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     },
                     onSettingsTap: () {
                       Navigator.pop(context);
-                      _showGameDialog(SettingsDialog(
-                        onLoginRequested: () {
-                          Navigator.pop(context);
-                          _showAuthDialog();
-                        },
-                      ));
+                      _showGameDialog(
+                        SettingsDialog(
+                          onLoginRequested: () {
+                            Navigator.pop(context);
+                            _showAuthDialog();
+                          },
+                        ),
+                      );
                     },
                     onExitTap: () {
                       if (Platform.isAndroid || Platform.isIOS) {
@@ -179,7 +186,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _showAuthDialog() {
     setState(() {
-      _currentDialogType = _isLoggedIn ? AuthDialogType.profile : AuthDialogType.login;
+      _currentDialogType = _isLoggedIn
+          ? AuthDialogType.profile
+          : AuthDialogType.login;
     });
 
     showGeneralDialog(
@@ -198,22 +207,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
             switch (_currentDialogType) {
               case AuthDialogType.login:
                 dialogContent = LoginDialog(
-                  onRegisterRequested: () => setDialogState(() => _currentDialogType = AuthDialogType.register),
+                  onRegisterRequested: () => setDialogState(
+                    () => _currentDialogType = AuthDialogType.register,
+                  ),
                   onLoginSuccess: () {
                     setDialogState(() {
                       _isLoggedIn = true;
                       _currentDialogType = AuthDialogType.profile;
                     });
-                    showCustomSnackBar(context, 'Welcome back!', type: SnackBarType.success);
+                    showCustomSnackBar(
+                      context,
+                      'Welcome back!',
+                      type: SnackBarType.success,
+                    );
                   },
                 );
                 break;
               case AuthDialogType.register:
                 dialogContent = RegisterDialog(
-                  onLoginRequested: () => setDialogState(() => _currentDialogType = AuthDialogType.login),
+                  onLoginRequested: () => setDialogState(
+                    () => _currentDialogType = AuthDialogType.login,
+                  ),
                   onRegisterSuccess: () {
-                    setDialogState(() => _currentDialogType = AuthDialogType.login);
-                    showCustomSnackBar(context, 'Account created! Please log in.', type: SnackBarType.success);
+                    setDialogState(
+                      () => _currentDialogType = AuthDialogType.login,
+                    );
+                    showCustomSnackBar(
+                      context,
+                      'Account created! Please log in.',
+                      type: SnackBarType.success,
+                    );
                   },
                 );
                 break;
@@ -227,8 +250,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 break;
             }
 
-            final double dialogX = (MediaQuery.of(context).size.width - dialogWidth) / 2;
-            final double dialogY = (MediaQuery.of(context).size.height - dialogHeight) / 2 + 100;
+            final double dialogX =
+                (MediaQuery.of(context).size.width - dialogWidth) / 2;
+            final double dialogY =
+                (MediaQuery.of(context).size.height - dialogHeight) / 2 + 100;
 
             return Stack(
               clipBehavior: Clip.none,
@@ -268,11 +293,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: CurrencyDisplay(
             controller: _controller,
             onProfileTap: _showAuthDialog,
-            onExchangeTap: () => _showGameDialog(ExchangeDialogContent(
-              onBackTap: () => Navigator.pop(context),
-              controller: _controller,
-            )),
-            onPurchaseTap: () => _showGameDialog(PurchaseDialogContent(onBackTap: () => Navigator.pop(context))),
+            onExchangeTap: () => _showGameDialog(
+              ExchangeDialogContent(
+                onBackTap: () => Navigator.pop(context),
+                controller: _controller,
+              ),
+            ),
+            onPurchaseTap: () => _showGameDialog(
+              PurchaseDialogContent(onBackTap: () => Navigator.pop(context)),
+            ),
           ),
         ),
         actions: [
@@ -300,13 +329,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Stack(
         children: [
-          Positioned.fill(child: Image.asset('assets/images/dashboard/main_background.png', fit: BoxFit.cover)),
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/dashboard/main_background.png',
+              fit: BoxFit.cover,
+            ),
+          ),
           Positioned(
             bottom: MediaQuery.of(context).size.height * 0.15,
             left: 0,
             right: 0,
             child: Center(
-              child: Image.asset('assets/images/game/environment/dorm.png', fit: BoxFit.contain, width: MediaQuery.of(context).size.width * 0.85),
+              child: Image.asset(
+                'assets/images/game/environment/dorm.png',
+                fit: BoxFit.contain,
+                width: MediaQuery.of(context).size.width * 0.85,
+              ),
             ),
           ),
           Positioned(
@@ -323,7 +361,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 pulseMinOpacity: 0.5,
                 onTap: () {
                   Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const GameLoadingScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const GameLoadingScreen(),
+                    ),
                   );
                 },
               ),
@@ -338,11 +378,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(6),
               borderRadius: 32,
               pulseMinOpacity: 0.3,
-              onTap: () => _showGameDialog(RouletteDialog(
-                controller: _controller,
-                parentContext: context,
-                onSpinCompleted: () => _controller.refreshCurrency(),
-              )),
+              onTap: () => _showGameDialog(
+                RouletteDialog(
+                  controller: _controller,
+                  parentContext: context,
+                  onSpinCompleted: () => _controller.refreshCurrency(),
+                ),
+              ),
               child: OverflowBox(
                 alignment: const Alignment(0, -0.07), // Subtle pull UP
                 minWidth: 240,
@@ -361,8 +403,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             right: 10,
             child: GlassButton(
               width: 185,
-              height: 191, // Increased height to accommodate extra bottom padding
-              padding: const EdgeInsets.only(left: 6, top: 6, right: 6, bottom: 12), // 12px at bottom
+              height:
+                  191, // Increased height to accommodate extra bottom padding
+              padding: const EdgeInsets.only(
+                left: 6,
+                top: 6,
+                right: 6,
+                bottom: 12,
+              ), // 12px at bottom
               borderRadius: 32,
               pulseMinOpacity: 0.3,
               onTap: () => _showGameDialog(ShopDialog(controller: _controller)),

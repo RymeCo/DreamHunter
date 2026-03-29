@@ -19,9 +19,16 @@ class PurchaseDialogContent extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const GameDialogHeader(title: 'Hell Stones', titleColor: Colors.redAccent),
+            const GameDialogHeader(
+              title: 'Hell Stones',
+              titleColor: Colors.redAccent,
+            ),
             const SizedBox(height: 24),
-            const Icon(Icons.diamond_rounded, color: Colors.redAccent, size: 80),
+            const Icon(
+              Icons.diamond_rounded,
+              color: Colors.redAccent,
+              size: 80,
+            ),
             const SizedBox(height: 16),
             const Text(
               'Purchase premium stones to unlock exclusive characters and items!',
@@ -36,7 +43,10 @@ class PurchaseDialogContent extends StatelessWidget {
               borderColor: Colors.redAccent.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 12),
-            const Text('(In-game purchases coming soon)', style: TextStyle(color: Colors.white24, fontSize: 10)),
+            const Text(
+              '(In-game purchases coming soon)',
+              style: TextStyle(color: Colors.white24, fontSize: 10),
+            ),
           ],
         ),
       ),
@@ -78,7 +88,9 @@ class _ExchangeDialogContentState extends State<ExchangeDialogContent> {
   }
 
   Future<void> _performExchange() async {
-    final success = await widget.controller.exchangeHellStones(_amountToExchange);
+    final success = await widget.controller.exchangeHellStones(
+      _amountToExchange,
+    );
     if (mounted) {
       if (success) {
         showCustomSnackBar(
@@ -106,24 +118,40 @@ class _ExchangeDialogContentState extends State<ExchangeDialogContent> {
         child: ListenableBuilder(
           listenable: widget.controller,
           builder: (context, child) {
-            final canExchange = widget.controller.hellStones >= _amountToExchange && _amountToExchange > 0;
+            final canExchange =
+                widget.controller.hellStones >= _amountToExchange &&
+                _amountToExchange > 0;
 
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const GameDialogHeader(title: 'Exchange', titleColor: Colors.amberAccent),
+                const GameDialogHeader(
+                  title: 'Exchange',
+                  titleColor: Colors.amberAccent,
+                ),
                 const SizedBox(height: 16),
-                const Icon(Icons.toll_rounded, color: Colors.amberAccent, size: 60),
+                const Icon(
+                  Icons.toll_rounded,
+                  color: Colors.amberAccent,
+                  size: 60,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   '1 Hell Stone = 100 Dream Coins',
-                  style: TextStyle(color: Colors.amberAccent.withValues(alpha: 0.8), fontSize: 12, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.amberAccent.withValues(alpha: 0.8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 24),
 
                 // Live Preview of Resulting Balances
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.03),
                     borderRadius: BorderRadius.circular(16),
@@ -137,11 +165,16 @@ class _ExchangeDialogContentState extends State<ExchangeDialogContent> {
                         widget.controller.hellStones - _amountToExchange,
                         Colors.redAccent,
                       ),
-                      const Icon(Icons.swap_horiz_rounded, color: Colors.white10, size: 24),
+                      const Icon(
+                        Icons.swap_horiz_rounded,
+                        color: Colors.white10,
+                        size: 24,
+                      ),
                       _buildBalancePreview(
                         'Resulting Coins',
                         widget.controller.dreamCoins,
-                        widget.controller.dreamCoins + (_amountToExchange * 100),
+                        widget.controller.dreamCoins +
+                            (_amountToExchange * 100),
                         Colors.amberAccent,
                       ),
                     ],
@@ -152,7 +185,10 @@ class _ExchangeDialogContentState extends State<ExchangeDialogContent> {
 
                 // Amount Selector
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black26,
                     borderRadius: BorderRadius.circular(12),
@@ -168,7 +204,11 @@ class _ExchangeDialogContentState extends State<ExchangeDialogContent> {
                         child: Text(
                           '$_amountToExchange',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -176,7 +216,13 @@ class _ExchangeDialogContentState extends State<ExchangeDialogContent> {
                       const SizedBox(width: 8),
                       TextButton(
                         onPressed: _setMax,
-                        child: const Text('MAX', style: TextStyle(color: Colors.amberAccent, fontSize: 12)),
+                        child: const Text(
+                          'MAX',
+                          style: TextStyle(
+                            color: Colors.amberAccent,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -192,8 +238,11 @@ class _ExchangeDialogContentState extends State<ExchangeDialogContent> {
                       GlassButton(
                         onTap: canExchange ? _performExchange : null,
                         label: 'EXCHANGE NOW',
-                        color: (canExchange ? Colors.amberAccent : Colors.grey).withValues(alpha: 0.2),
-                        borderColor: (canExchange ? Colors.amberAccent : Colors.grey).withValues(alpha: 0.4),
+                        color: (canExchange ? Colors.amberAccent : Colors.grey)
+                            .withValues(alpha: 0.2),
+                        borderColor:
+                            (canExchange ? Colors.amberAccent : Colors.grey)
+                                .withValues(alpha: 0.4),
                       ),
                       const SizedBox(height: 12),
                       GlassButton(
@@ -212,17 +261,43 @@ class _ExchangeDialogContentState extends State<ExchangeDialogContent> {
     );
   }
 
-  Widget _buildBalancePreview(String label, int current, int result, Color color) {
+  Widget _buildBalancePreview(
+    String label,
+    int current,
+    int result,
+    Color color,
+  ) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white38, fontSize: 10),
+        ),
         const SizedBox(height: 4),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('$current', style: const TextStyle(color: Colors.white24, fontSize: 12, decoration: TextDecoration.lineThrough)),
-            const Icon(Icons.chevron_right_rounded, color: Colors.white12, size: 14),
-            Text('$result', style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              '$current',
+              style: const TextStyle(
+                color: Colors.white24,
+                fontSize: 12,
+                decoration: TextDecoration.lineThrough,
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.white12,
+              size: 14,
+            ),
+            Text(
+              '$result',
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ],

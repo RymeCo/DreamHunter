@@ -65,12 +65,14 @@ class CustomSnackBar {
     VoidCallback? onAction,
   }) {
     // 1. Add to queue
-    _queue.add(_SnackBarRequest(
-      message: message,
-      type: type,
-      actionLabel: actionLabel,
-      onAction: onAction,
-    ));
+    _queue.add(
+      _SnackBarRequest(
+        message: message,
+        type: type,
+        actionLabel: actionLabel,
+        onAction: onAction,
+      ),
+    );
 
     // 2. Start processing if not already
     _processQueue(context);
@@ -86,7 +88,7 @@ class CustomSnackBar {
 
       while (_queue.isNotEmpty) {
         final request = _queue.removeAt(0);
-        
+
         _currentEntry = _createOverlayEntry(request);
         overlay.insert(_currentEntry!);
 

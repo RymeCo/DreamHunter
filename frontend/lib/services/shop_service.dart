@@ -109,13 +109,17 @@ class ShopService extends ChangeNotifier {
   /// Sync categories for the UI
   Map<String, List<ShopItem>> getItemsByCategory() {
     // Explicitly order the categories as they were before
-    final List<String> order = ['Essential Gear', 'Ethereal Boosts', 'Arcane Relics'];
+    final List<String> order = [
+      'Essential Gear',
+      'Ethereal Boosts',
+      'Arcane Relics',
+    ];
     final Map<String, List<ShopItem>> grouped = {};
-    
+
     for (var cat in order) {
       grouped[cat] = _items.where((i) => i.category == cat).toList();
     }
-    
+
     return grouped;
   }
 

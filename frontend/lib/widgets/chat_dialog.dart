@@ -24,11 +24,11 @@ class _ChatDialogState extends State<ChatDialog> {
 
   void _sendMessage() {
     if (_textController.text.trim().isEmpty) return;
-    
+
     // UI-only feedback
     final text = _textController.text.trim();
     _textController.clear();
-    
+
     showCustomSnackBar(
       context,
       'Message sent (Offline mode): $text',
@@ -48,13 +48,33 @@ class _ChatDialogState extends State<ChatDialog> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
-              mainAxisAlignment: MapEntry('spaceBetween', null).key == 'spaceBetween' ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
+              mainAxisAlignment:
+                  MapEntry('spaceBetween', null).key == 'spaceBetween'
+                  ? MainAxisAlignment.spaceBetween
+                  : MainAxisAlignment.center,
               children: [
-                const Text('Global Chat', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Global Chat',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 DropdownButton<String>(
                   value: _selectedRegion,
                   dropdownColor: Colors.black87,
-                  items: _regions.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value, style: const TextStyle(color: Colors.white)))).toList(),
+                  items: _regions.entries
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(
+                            e.value,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      )
+                      .toList(),
                   onChanged: (v) => setState(() => _selectedRegion = v!),
                 ),
               ],
@@ -62,7 +82,10 @@ class _ChatDialogState extends State<ChatDialog> {
           ),
           Expanded(
             child: Center(
-              child: Text('Chat messages will appear here', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+              child: Text(
+                'Chat messages will appear here',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+              ),
             ),
           ),
           Padding(
@@ -73,10 +96,16 @@ class _ChatDialogState extends State<ChatDialog> {
                   child: TextField(
                     controller: _textController,
                     style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(hintText: 'Type a message...', hintStyle: TextStyle(color: Colors.white54)),
+                    decoration: const InputDecoration(
+                      hintText: 'Type a message...',
+                      hintStyle: TextStyle(color: Colors.white54),
+                    ),
                   ),
                 ),
-                IconButton(icon: const Icon(Icons.send, color: Colors.white), onPressed: _sendMessage),
+                IconButton(
+                  icon: const Icon(Icons.send, color: Colors.white),
+                  onPressed: _sendMessage,
+                ),
               ],
             ),
           ),

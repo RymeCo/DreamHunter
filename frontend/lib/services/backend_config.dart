@@ -1,7 +1,7 @@
 class BackendConfig {
   static const String baseUrl = 'https://dreamhunter-api.onrender.com';
   static const String apiVersion = 'v1';
-  
+
   // Shared keys for OfflineCache to prevent typos across apps
   static const String currencyKey = 'cached_currency';
   static const String transactionQueueKey = 'transaction_queue';

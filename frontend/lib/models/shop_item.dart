@@ -1,8 +1,4 @@
-enum ShopItemType {
-  gear,
-  boost,
-  relic,
-}
+enum ShopItemType { gear, boost, relic }
 
 class ShopItem {
   final String id;
@@ -38,8 +34,12 @@ class ShopItem {
       price: data['price'] ?? 0,
       type: type,
       category: data['category'] ?? 'General',
-      isConsumable: data['isConsumable'] ?? (type != ShopItemType.gear && type != ShopItemType.relic),
-      maxLimit: data['maxLimit'] ?? (type == ShopItemType.gear || type == ShopItemType.relic ? 1 : 99),
+      isConsumable:
+          data['isConsumable'] ??
+          (type != ShopItemType.gear && type != ShopItemType.relic),
+      maxLimit:
+          data['maxLimit'] ??
+          (type == ShopItemType.gear || type == ShopItemType.relic ? 1 : 99),
     );
   }
 

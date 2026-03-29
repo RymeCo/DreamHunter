@@ -11,7 +11,7 @@ class UserService {
   Stream<PlayerModel?> getPlayerStream() {
     final user = _auth.currentUser;
     if (user == null) return Stream.value(null);
-    
+
     return _db.collection('users').doc(user.uid).snapshots().map((doc) {
       if (!doc.exists) return null;
       return PlayerModel.fromMap(doc.data()!, doc.id);
@@ -21,7 +21,10 @@ class UserService {
   /// Updates player data in Firestore
   Future<void> updatePlayer(PlayerModel player) async {
     try {
-      await _db.collection('users').doc(player.uid).set(player.toMap(), SetOptions(merge: true));
+      await _db
+          .collection('users')
+          .doc(player.uid)
+          .set(player.toMap(), SetOptions(merge: true));
       // Also cache locally for offline access
       await OfflineCache.saveMetadata('player_profile', player.toMap());
     } catch (e) {
@@ -47,13 +50,16 @@ class UserService {
   /// Updates the local shop cache from Firestore
   Future<void> updateShopCache() async {
     try {
-      final snapshot = await _db.collection('shop_items').get().timeout(const Duration(seconds: 10));
+      final snapshot = await _db
+          .collection('shop_items')
+          .get()
+          .timeout(const Duration(seconds: 10));
       final items = snapshot.docs.map((doc) {
         final data = doc.data();
         data['id'] = doc.id;
         return data;
       }).toList();
-      
+
       await OfflineCache.saveMetadata('shop_items', {'items': items});
     } catch (e) {
       // Ignore if offline

@@ -113,7 +113,9 @@ class _RegisterDialogState extends State<RegisterDialog> {
                     controller: _confirmPasswordController,
                     style: const TextStyle(color: Colors.white),
                     obscureText: true,
-                    decoration: AuthUIHelper.inputDecoration('Confirm Password'),
+                    decoration: AuthUIHelper.inputDecoration(
+                      'Confirm Password',
+                    ),
                     validator: (value) {
                       if (value != _passwordController.text) {
                         return 'Passwords do not match';
@@ -131,7 +133,9 @@ class _RegisterDialogState extends State<RegisterDialog> {
                     onPressed: widget.onLoginRequested,
                     child: const Text(
                       'Already have an account? Login',
-                      style: TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8)),
+                      style: TextStyle(
+                        color: Color.fromRGBO(255, 255, 255, 0.8),
+                      ),
                     ),
                   ),
                 ],
@@ -144,9 +148,7 @@ class _RegisterDialogState extends State<RegisterDialog> {
           child: Container(
             width: 360,
             height: 360,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-            ),
+            decoration: const BoxDecoration(shape: BoxShape.circle),
             child: Image.asset(
               'assets/images/auth/register_logo.png',
               fit: BoxFit.contain,
@@ -157,5 +159,3 @@ class _RegisterDialogState extends State<RegisterDialog> {
     );
   }
 }
-
-

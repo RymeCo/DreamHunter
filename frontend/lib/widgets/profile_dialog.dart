@@ -6,10 +6,7 @@ import 'game_widgets.dart';
 class ProfileDialog extends StatefulWidget {
   final VoidCallback onLogoutRequested;
 
-  const ProfileDialog({
-    super.key,
-    required this.onLogoutRequested,
-  });
+  const ProfileDialog({super.key, required this.onLogoutRequested});
 
   @override
   State<ProfileDialog> createState() => _ProfileDialogState();
@@ -45,8 +42,22 @@ class _ProfileDialogState extends State<ProfileDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Choose Avatar', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, color: Colors.white70, size: 20)),
+                const Text(
+                  'Choose Avatar',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(
+                    Icons.close,
+                    color: Colors.white70,
+                    size: 20,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -71,7 +82,9 @@ class _ProfileDialogState extends State<ProfileDialog> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSelected ? Colors.purpleAccent : Colors.white12,
+                          color: isSelected
+                              ? Colors.purpleAccent
+                              : Colors.white12,
                           width: isSelected ? 2 : 1,
                         ),
                         color: Colors.white.withValues(alpha: 0.05),
@@ -105,8 +118,18 @@ class _ProfileDialogState extends State<ProfileDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Player Profile', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-              IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, color: Colors.white70)),
+              const Text(
+                'Player Profile',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close, color: Colors.white70),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -133,25 +156,51 @@ class _ProfileDialogState extends State<ProfileDialog> {
                     child: Image.asset(
                       _selectedProfileImage,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 50, color: Colors.white),
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.person,
+                        size: 50,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(color: Colors.purpleAccent, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: Colors.purpleAccent,
+                  shape: BoxShape.circle,
+                ),
                 child: const Icon(Icons.edit, size: 16, color: Colors.white),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Text(displayName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-          if (user?.email != null) Text(user!.email!, style: const TextStyle(color: Colors.white54, fontSize: 14)),
+          Text(
+            displayName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (user?.email != null)
+            Text(
+              user!.email!,
+              style: const TextStyle(color: Colors.white54, fontSize: 14),
+            ),
           const SizedBox(height: 24),
-          const StatRow(icon: Icons.bolt, label: 'Level 1', color: Colors.blueAccent),
+          const StatRow(
+            icon: Icons.bolt,
+            label: 'Level 1',
+            color: Colors.blueAccent,
+          ),
           const SizedBox(height: 12),
-          const StatRow(icon: Icons.military_tech, label: '0 XP', color: Colors.orangeAccent),
+          const StatRow(
+            icon: Icons.military_tech,
+            label: '0 XP',
+            color: Colors.orangeAccent,
+          ),
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
@@ -167,7 +216,9 @@ class _ProfileDialogState extends State<ProfileDialog> {
                 backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
                 foregroundColor: Colors.redAccent,
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),

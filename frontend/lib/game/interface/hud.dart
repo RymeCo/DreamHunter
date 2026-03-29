@@ -29,19 +29,36 @@ class HUD extends PositionComponent with HasGameReference<DreamHunterGame> {
     );
     add(energyText);
 
-    final buttonPaint = Paint()..color = Colors.deepPurpleAccent.withValues(alpha: 0.5);
-    final buttonText = TextPaint(style: const TextStyle(color: Colors.white, fontSize: 14));
+    final buttonPaint = Paint()
+      ..color = Colors.deepPurpleAccent.withValues(alpha: 0.5);
+    final buttonText = TextPaint(
+      style: const TextStyle(color: Colors.white, fontSize: 14),
+    );
 
     sleepButton = ButtonComponent(
       button: RectangleComponent(size: Vector2(80, 40), paint: buttonPaint),
-      children: [TextComponent(text: 'SLEEP', textRenderer: buttonText, anchor: Anchor.center, position: Vector2(40, 20))],
+      children: [
+        TextComponent(
+          text: 'SLEEP',
+          textRenderer: buttonText,
+          anchor: Anchor.center,
+          position: Vector2(40, 20),
+        ),
+      ],
       position: Vector2(game.size.x - 100, game.size.y - 100),
       onPressed: () => game.player.enterBed(),
     );
 
     exitButton = ButtonComponent(
       button: RectangleComponent(size: Vector2(80, 40), paint: buttonPaint),
-      children: [TextComponent(text: 'EXIT', textRenderer: buttonText, anchor: Anchor.center, position: Vector2(40, 20))],
+      children: [
+        TextComponent(
+          text: 'EXIT',
+          textRenderer: buttonText,
+          anchor: Anchor.center,
+          position: Vector2(40, 20),
+        ),
+      ],
       position: Vector2(game.size.x - 100, game.size.y - 100),
       onPressed: () => game.player.exitBed(),
     );
@@ -51,7 +68,7 @@ class HUD extends PositionComponent with HasGameReference<DreamHunterGame> {
   void update(double dt) {
     super.update(dt);
     energyText.text = 'Energy: ${game.player.energy.toInt()}';
-    
+
     final isSleeping = game.player.state == PlayerState.sleeping;
     final isNearBed = game.player.isNearBed;
 

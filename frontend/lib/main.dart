@@ -13,9 +13,7 @@ void main() async {
   await AudioService().initialize();
 
   // 1. Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   if (!ThemeData().platform.toString().contains('web')) {
     await Flame.device.fullScreen();

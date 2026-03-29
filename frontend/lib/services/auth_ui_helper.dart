@@ -43,9 +43,7 @@ class AuthUIHelper {
           side: const BorderSide(color: Color.fromRGBO(255, 255, 255, 0.3)),
         ),
         elevation: 0,
-      ).copyWith(
-        overlayColor: WidgetStateProperty.all(Colors.white10),
-      ),
+      ).copyWith(overlayColor: WidgetStateProperty.all(Colors.white10)),
       child: isLoading
           ? const SizedBox(
               width: 20,
