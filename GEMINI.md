@@ -42,9 +42,11 @@ These mandates apply to **ALL** project components:
 - Database/Security (`firestore.rules`, `firestore.indexes.json`).
 
 ## 4. SCRUM & Jira Automation
-- **Grouping Policy:** For small fixes and minor enhancements, group them under an existing relevant SCRUM ticket or a general "Maintenance" ticket for the current sprint. For major features, use the "Ticket-First" mandate.
-- **Local Ticket Log:** Maintain a local mirror of Jira tickets in **`scrum/scrum.md`**. Every time a new ticket is created or a status changes, this file MUST be updated line-by-line to ensure offline traceability.
-- **Traceability:** Every commit MUST start with the corresponding Jira ticket key (e.g., `SCRUM-XX: implemented feature y`).
+- **Modular Reuse Policy:** Before creating a new Jira ticket, the agent MUST check **`scrum/scrum.md`** to see if the task fits into an existing **Evergreen Reuse Block**. Minor fixes, polish, and ongoing component updates SHOULD reuse these anchor keys.
+- **Ticket-First (Major Only):** For major new features (V2, V3 etc.) or broad architectural shifts, continue to create a unique Jira SCRUM ticket.
+- **Local Ticket Log:** Maintain **`scrum/scrum.md`** as the primary reference for offline traceability. Update statuses and blocks as the project evolves.
+- **Resilient Workflow (Jira Offline):** If Jira Atlassian MCP is unreachable or de-authenticated, **ALWAYS** reuse the most relevant key from the local `scrum/scrum.md` log. Do NOT invent new ticket numbers. Add `(Jira Offline fallback)` to the commit message.
+- **Traceability:** Every commit MUST start with the corresponding Jira ticket key (e.g., `SCRUM-116: refined HUD layout`).
 
 
 ## 5. Strict Validation & Git Workflow
