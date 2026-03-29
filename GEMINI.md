@@ -43,7 +43,9 @@ These mandates apply to **ALL** project components:
 
 ## 4. SCRUM & Jira Automation
 - **Grouping Policy:** For small fixes and minor enhancements, group them under an existing relevant SCRUM ticket or a general "Maintenance" ticket for the current sprint. For major features, use the "Ticket-First" mandate.
+- **Local Ticket Log:** Maintain a local mirror of Jira tickets in **`scrum/scrum.md`**. Every time a new ticket is created or a status changes, this file MUST be updated line-by-line to ensure offline traceability.
 - **Traceability:** Every commit MUST start with the corresponding Jira ticket key (e.g., `SCRUM-XX: implemented feature y`).
+
 
 ## 5. Strict Validation & Git Workflow
 - **Pre-Commit Mandate:** Every commit MUST pass `analyze_files` (static analysis) and `run_tests` (unit tests) with **100% pass rate**.
