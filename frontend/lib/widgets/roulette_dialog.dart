@@ -7,6 +7,7 @@ import 'custom_snackbar.dart';
 import 'insufficient_funds_dialog.dart';
 import '../services/roulette_service.dart';
 import '../services/dashboard_controller.dart';
+import '../services/audio_service.dart';
 
 class RouletteDialog extends StatefulWidget {
   final VoidCallback? onSpinCompleted;
@@ -188,6 +189,7 @@ class _RouletteDialogState extends State<RouletteDialog>
       'name': winningReward['name'],
     });
     await RouletteService.setSpinning(true, targetRotation: targetRotation);
+    AudioService().playRouletteSpin();
 
     if (!mounted) return;
 

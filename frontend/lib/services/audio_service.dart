@@ -14,6 +14,7 @@ class AudioService {
   bool _isSoundMuted = false;
   double _musicVolume = 0.72;
   double _soundVolume = 1.0;
+  bool _isPlaylistActive = false;
 
   Future<void> initialize() async {
     try {
@@ -36,13 +37,11 @@ class AudioService {
       _musicVolume = (settings['musicVolume'] as num?)?.toDouble() ?? 0.72;
       _soundVolume = (settings['sfxVolume'] as num?)?.toDouble() ?? 1.0;
 
-      // Ensure release mode is loop
-      await _bgmPlayer.setReleaseMode(ReleaseMode.loop);
-
-      // Listen for player complete as a fallback for gapless looping
+      // Handle track completion for looping/playlist
       _bgmPlayer.onPlayerComplete.listen((_) {
-        if (!_isMusicMuted && _currentBgm != null) {
-          developer.log('Looping BGM manually: $_currentBgm', name: 'AudioService');
+        if (_isPlaylistActive) {
+          _handlePlaylistNext();
+        } else if (!_isMusicMuted && _currentBgm != null) {
           _bgmPlayer.play(AssetSource(_currentBgm!));
         }
       });
@@ -63,7 +62,21 @@ class AudioService {
     }
   }
 
-  Future<void> playBGM(String assetPath) async {
+  void _handlePlaylistNext() {
+    if (!_isPlaylistActive) return;
+    
+    // Simple toggle between track1 and tract2
+    final nextTrack = (_currentBgm == 'audio/track1.ogg') 
+        ? 'audio/tract2.ogg' 
+        : 'audio/track1.ogg';
+    
+    developer.log('Playlist moving to next track: $nextTrack', name: 'AudioService');
+    playBGM(nextTrack, isPlaylist: true);
+  }
+
+  Future<void> playBGM(String assetPath, {bool isPlaylist = false}) async {
+    _isPlaylistActive = isPlaylist;
+    
     if (_currentBgm == assetPath) {
       if (_bgmPlayer.state == PlayerState.playing) return;
       await _bgmPlayer.resume();
@@ -72,14 +85,20 @@ class AudioService {
 
     try {
       _currentBgm = assetPath;
-      developer.log('Starting BGM: $assetPath', name: 'AudioService');
+      developer.log('Starting BGM: $assetPath (Playlist: $isPlaylist)', name: 'AudioService');
       await _bgmPlayer.stop();
-      await _bgmPlayer.setReleaseMode(ReleaseMode.loop);
+      // Only set loop mode if NOT a playlist (playlist handles completion manually)
+      await _bgmPlayer.setReleaseMode(isPlaylist ? ReleaseMode.release : ReleaseMode.loop);
       await _bgmPlayer.setVolume(_isMusicMuted ? 0 : _musicVolume);
       await _bgmPlayer.play(AssetSource(assetPath));
     } catch (e) {
       developer.log('Error playing BGM: $e', name: 'AudioService', error: e);
     }
+  }
+
+  /// Plays the dashboard playlist (Track 1 & Track 2 alternating)
+  Future<void> playDashboardMusic() async {
+    await playBGM('audio/track1.ogg', isPlaylist: true);
   }
 
   Future<void> playSFX(String assetPath) async {
@@ -105,6 +124,10 @@ class AudioService {
 
   Future<void> playClick() async {
     await playSFX('audio/click.ogg');
+  }
+
+  Future<void> playRouletteSpin() async {
+    await playSFX('audio/roulette_spin.ogg');
   }
 
   Future<void> toggleMusicMute() async {

@@ -42,7 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    AudioService().playBGM('audio/track1.ogg');
+    AudioService().playDashboardMusic();
     ConnectivityService().initialize();
     _controller.initialize();
     _checkPendingRouletteRewards();
