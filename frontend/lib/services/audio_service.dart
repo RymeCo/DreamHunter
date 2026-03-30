@@ -8,8 +8,7 @@ class AudioService {
   AudioService._internal();
 
   final AudioPlayer _bgmPlayer = AudioPlayer();
-  final List<AudioPlayer> _sfxPlayers = List.generate(3, (_) => AudioPlayer());
-  int _nextSfxPlayerIndex = 0;
+  final AudioPlayer _sfxPlayer = AudioPlayer();
   
   String? _currentBgm;
   bool _isMusicMuted = false;
@@ -20,25 +19,12 @@ class AudioService {
 
   Future<void> initialize() async {
     try {
-      // 0. Set GLOBAL Audio Context to prevent focus conflicts
-      await AudioPlayer.global.setAudioContext(
-        AudioContext(
-          android: AudioContextAndroid(
-            usageType: AndroidUsageType.assistanceSonification,
-            contentType: AndroidContentType.sonification,
-            audioFocus: AndroidAudioFocus.none, // Do not snatch focus by default
-          ),
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.ambient,
-            options: {AVAudioSessionOptions.mixWithOthers},
-          ),
-        ),
-      );
-
-      // 1. Configure BGM Player specifically for GAIN (persistent focus)
+      // 1. Configure BGM Player (Main Music Focus)
       await _bgmPlayer.setAudioContext(
         AudioContext(
           android: AudioContextAndroid(
+            isContextIsolated: true, // Prevent focus yanking from other players
+            stayAwake: true,
             usageType: AndroidUsageType.media,
             contentType: AndroidContentType.music,
             audioFocus: AndroidAudioFocus.gain, // Request persistent focus
@@ -53,22 +39,23 @@ class AudioService {
         ),
       );
 
-      // 2. Configure SFX Players for NO focus
-      for (final player in _sfxPlayers) {
-        await player.setAudioContext(
-          AudioContext(
-            android: AudioContextAndroid(
-              usageType: AndroidUsageType.assistanceSonification,
-              contentType: AndroidContentType.sonification,
-              audioFocus: AndroidAudioFocus.none, // Never steal focus
-            ),
-            iOS: AudioContextIOS(
-              category: AVAudioSessionCategory.ambient,
-              options: {AVAudioSessionOptions.mixWithOthers},
-            ),
+      // 2. Configure SFX Player (Transparent Focus - Overlaps with Music)
+      // Use lowLatency mode for Android (SoundPool) - This is key for 0ms delay!
+      await _sfxPlayer.setPlayerMode(PlayerMode.lowLatency);
+      await _sfxPlayer.setAudioContext(
+        AudioContext(
+          android: AudioContextAndroid(
+            isContextIsolated: true,
+            usageType: AndroidUsageType.assistanceSonification,
+            contentType: AndroidContentType.sonification,
+            audioFocus: AndroidAudioFocus.none, // Do NOT request focus for SFX
           ),
-        );
-      }
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.ambient,
+            options: {AVAudioSessionOptions.mixWithOthers},
+          ),
+        ),
+      );
 
       // Load saved settings
       final settings = await OfflineCache.getSettings();
@@ -83,24 +70,16 @@ class AudioService {
         if (_isPlaylistActive) {
           _handlePlaylistNext();
         } else if (!_isMusicMuted && _currentBgm != null) {
+          // Normal looping
           _bgmPlayer.play(AssetSource(_currentBgm!));
-        }
-      });
-
-      // LOG FOCUS CHANGES (Helpful for debugging -1 errors)
-      _bgmPlayer.onLog.listen((msg) {
-        if (msg.contains('AudioFocus')) {
-          developer.log('Audio Focus Status: $msg', name: 'AudioService');
         }
       });
 
       // Apply initial volumes
       await _bgmPlayer.setVolume(_isMusicMuted ? 0 : _musicVolume);
-      for (final player in _sfxPlayers) {
-        await player.setVolume(_isSoundMuted ? 0 : _soundVolume);
-      }
+      await _sfxPlayer.setVolume(_isSoundMuted ? 0 : _soundVolume);
 
-      // WARM UP: Pre-load and set sources for critical SFX to fix 3s delay
+      // CRITICAL WARM UP: Pre-load the roulette sound to avoid "SoundPool not READY"
       await _warmUpSounds(['audio/click.ogg', 'audio/roulette.ogg']);
 
       developer.log(
@@ -112,18 +91,16 @@ class AudioService {
     }
   }
 
-  /// Explicitly pre-load sounds into player instances to fix latency.
+  /// Explicitly pre-load sounds into the native SoundPool (lowLatency mode).
   Future<void> _warmUpSounds(List<String> assetPaths) async {
     for (final path in assetPaths) {
       try {
         await AudioCache.instance.load(path);
-        // Pre-set the source on all players to ensure it is ready
-        for (final player in _sfxPlayers) {
-          await player.setSource(AssetSource(path));
-        }
-        developer.log('Warmed up sound: $path', name: 'AudioService');
+        // Pre-set the source once to warm up the player stream
+        await _sfxPlayer.setSource(AssetSource(path));
+        developer.log('Warmed up SFX: $path', name: 'AudioService');
       } catch (e) {
-        developer.log('Error warming up sound: $path - $e', name: 'AudioService');
+        developer.log('Error warming up SFX: $path - $e', name: 'AudioService');
       }
     }
   }
@@ -162,9 +139,8 @@ class AudioService {
       _currentBgm = assetPath;
       developer.log('Starting BGM: $assetPath (Playlist: $isPlaylist, Vol: $targetVolume)', name: 'AudioService');
       
-      await _bgmPlayer.stop();
+      // Do NOT await stop() before play() in playlist transition as it can cause focus yanking
       await _bgmPlayer.setPlayerMode(PlayerMode.mediaPlayer);
-      // Use ReleaseMode.release to ensure completion events trigger correctly
       await _bgmPlayer.setReleaseMode(ReleaseMode.release);
       await _bgmPlayer.setVolume(targetVolume);
       await _bgmPlayer.play(AssetSource(assetPath));
@@ -190,15 +166,9 @@ class AudioService {
     if (_isSoundMuted || _soundVolume <= 0.01) return;
 
     try {
-      final player = _sfxPlayers[_nextSfxPlayerIndex];
-      _nextSfxPlayerIndex = (_nextSfxPlayerIndex + 1) % _sfxPlayers.length;
-
-      // Don't wait for the setVolume here if already set, but ensure it matches
-      player.setVolume(_soundVolume); 
-      
-      // Use PlayerMode.lowLatency for snappy SFX (SoundPool on Android)
-      // Since we 'warmed up' these players, this should be instant.
-      player.play(AssetSource(assetPath), mode: PlayerMode.lowLatency);
+      // In lowLatency mode, play() is asynchronous and uses SoundPool
+      _sfxPlayer.setVolume(_soundVolume);
+      _sfxPlayer.play(AssetSource(assetPath));
     } catch (e) {
       developer.log('Error playing SFX: $assetPath - $e', name: 'AudioService');
     }
@@ -228,12 +198,10 @@ class AudioService {
 
   Future<void> toggleSoundMute() async {
     _isSoundMuted = !_isSoundMuted;
-    for (final player in _sfxPlayers) {
-      if (_isSoundMuted) {
-        await player.stop();
-      }
-      await player.setVolume(_isSoundMuted ? 0 : _soundVolume);
+    if (_isSoundMuted) {
+      await _sfxPlayer.stop();
     }
+    await _sfxPlayer.setVolume(_isSoundMuted ? 0 : _soundVolume);
     developer.log('Sound mute toggled: $_isSoundMuted', name: 'AudioService');
   }
 
@@ -244,7 +212,6 @@ class AudioService {
 
   Future<void> setMusicVolume(double volume) async {
     _musicVolume = volume;
-    // Apply immediately if not muted
     if (!_isMusicMuted) {
       await _bgmPlayer.setVolume(_musicVolume);
     }
@@ -252,11 +219,8 @@ class AudioService {
 
   Future<void> setSoundVolume(double volume) async {
     _soundVolume = volume;
-    // Apply immediately if not muted
     if (!_isSoundMuted) {
-      for (final player in _sfxPlayers) {
-        await player.setVolume(_soundVolume);
-      }
+      await _sfxPlayer.setVolume(_soundVolume);
     }
   }
 
@@ -275,8 +239,6 @@ class AudioService {
 
   void dispose() {
     _bgmPlayer.dispose();
-    for (final player in _sfxPlayers) {
-      player.dispose();
-    }
+    _sfxPlayer.dispose();
   }
 }
