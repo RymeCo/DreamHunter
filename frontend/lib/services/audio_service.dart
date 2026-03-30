@@ -12,7 +12,7 @@ class AudioService {
   String? _currentBgm;
   bool _isMusicMuted = false;
   bool _isSoundMuted = false;
-  double _musicVolume = 0.6;
+  double _musicVolume = 0.72;
   double _soundVolume = 1.0;
 
   Future<void> initialize() async {
@@ -33,7 +33,7 @@ class AudioService {
       final settings = await OfflineCache.getSettings();
       _isMusicMuted = !(settings['music'] ?? true);
       _isSoundMuted = !(settings['sfx'] ?? true);
-      _musicVolume = (settings['musicVolume'] as num?)?.toDouble() ?? 0.6;
+      _musicVolume = (settings['musicVolume'] as num?)?.toDouble() ?? 0.72;
       _soundVolume = (settings['sfxVolume'] as num?)?.toDouble() ?? 1.0;
 
       // Ensure release mode is loop
