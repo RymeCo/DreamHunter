@@ -18,15 +18,36 @@ class AudioService {
 
   Future<void> initialize() async {
     try {
-      // Configure global audio context for Android/iOS
-      await AudioPlayer.global.setAudioContext(
+      // 1. Configure BGM Player (Main Music Focus)
+      await _bgmPlayer.setAudioContext(
         AudioContext(
           android: AudioContextAndroid(
             usageType: AndroidUsageType.media,
             contentType: AndroidContentType.music,
-            audioFocus: AndroidAudioFocus.gain,
+            audioFocus: AndroidAudioFocus.gain, // Request persistent focus
           ),
-          iOS: AudioContextIOS(category: AVAudioSessionCategory.playback),
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playback,
+            options: {
+              AVAudioSessionOptions.mixWithOthers,
+              AVAudioSessionOptions.defaultToSpeaker,
+            },
+          ),
+        ),
+      );
+
+      // 2. Configure SFX Player (Transient Focus - Overlaps with Music)
+      await _sfxPlayer.setAudioContext(
+        AudioContext(
+          android: AudioContextAndroid(
+            usageType: AndroidUsageType.assistanceSonification,
+            contentType: AndroidContentType.sonification,
+            audioFocus: AndroidAudioFocus.none, // Don't snatch focus from music
+          ),
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.ambient,
+            options: {AVAudioSessionOptions.mixWithOthers},
+          ),
         ),
       );
 
