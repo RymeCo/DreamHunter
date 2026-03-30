@@ -50,10 +50,6 @@ class AudioService {
       await _bgmPlayer.setVolume(_isMusicMuted ? 0 : _musicVolume);
       await _sfxPlayer.setVolume(_isSoundMuted ? 0 : _soundVolume);
 
-      // Pre-cache SFX to avoid "SoundPool not READY" errors on Android
-      await AudioCache.instance.load('audio/click.ogg');
-      await AudioCache.instance.load('audio/roulette.ogg');
-
       developer.log(
         'AudioService initialized: MusicMuted=$_isMusicMuted, SFXMuted=$_isSoundMuted, MusicVol=$_musicVolume, SFXVol=$_soundVolume',
         name: 'AudioService',
@@ -63,6 +59,16 @@ class AudioService {
         'Error initializing AudioService: $e',
         name: 'AudioService',
       );
+    }
+  }
+
+  /// Explicitly pre-cache an audio file to avoid latency or SoundPool errors.
+  Future<void> precacheSound(String assetPath) async {
+    try {
+      await AudioCache.instance.load(assetPath);
+      developer.log('Pre-cached sound: $assetPath', name: 'AudioService');
+    } catch (e) {
+      developer.log('Error pre-caching sound: $assetPath - $e', name: 'AudioService');
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'audio_service.dart';
 
 class PreLoader {
   static final List<String> imagesToPrecache = [
@@ -10,23 +11,44 @@ class PreLoader {
     'assets/images/game/environment/dorm.png',
   ];
 
-  /// Pre-caches all essential images and reports progress.
+  static final List<String> soundsToPrecache = [
+    'audio/click.ogg',
+    'audio/roulette.ogg',
+    'audio/track1.ogg',
+    'audio/tract2.ogg',
+  ];
+
+  /// Pre-caches all essential images and sounds, reporting progress.
   static Future<void> precacheAll(
     BuildContext context,
     Function(double progress) onProgress,
   ) async {
+    int totalItems = imagesToPrecache.length + soundsToPrecache.length;
     int loadedCount = 0;
+
+    // 1. Load Images
     for (var path in imagesToPrecache) {
       try {
         await precacheImage(AssetImage(path), context);
       } catch (e) {
-        debugPrint('Failed to precache: $path - $e');
+        debugPrint('Failed to precache image: $path - $e');
       }
       loadedCount++;
-      onProgress(loadedCount / (imagesToPrecache.length + 1));
+      onProgress(loadedCount / totalItems);
+    }
+
+    // 2. Load Sounds
+    for (var path in soundsToPrecache) {
+      try {
+        await AudioService().precacheSound(path);
+      } catch (e) {
+        debugPrint('Failed to precache sound: $path - $e');
+      }
+      loadedCount++;
+      onProgress(loadedCount / totalItems);
     }
   }
 
-  /// Returns the total count of images that need to be pre-cached.
-  static int get totalCount => imagesToPrecache.length;
+  /// Returns the total count of assets that need to be pre-cached.
+  static int get totalCount => imagesToPrecache.length + soundsToPrecache.length;
 }
