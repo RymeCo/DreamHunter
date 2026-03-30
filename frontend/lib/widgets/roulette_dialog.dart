@@ -185,7 +185,10 @@ class _RouletteDialogState extends State<RouletteDialog>
         'amount': winningReward['amount'],
         'name': winningReward['name'],
       });
-      await RouletteService.setSpinning(true, targetRotation: 0); // Rotation updated below
+      await RouletteService.setSpinning(
+        true,
+        targetRotation: 0,
+      ); // Rotation updated below
     }();
 
     // 4. PREPARE ANIMATION
@@ -212,17 +215,14 @@ class _RouletteDialogState extends State<RouletteDialog>
 
     _controller.duration = const Duration(seconds: 5);
     _controller.reset();
-    
+
     // We already played the sound at the top.
-    
+
     // 5. START ANIMATION
     final animationFuture = _controller.forward();
 
     // Wait for the animation to finish OR for the sync to finish if we need to be safe
-    await Future.wait([
-      animationFuture,
-      syncFuture,
-    ]);
+    await Future.wait([animationFuture, syncFuture]);
 
     _finalizeSpin(targetRotation, winningReward);
   }
@@ -238,7 +238,7 @@ class _RouletteDialogState extends State<RouletteDialog>
     );
     await RouletteService.clearPendingReward();
     await RouletteService.setSpinning(false);
-    
+
     if (!mounted) {
       if (widget.parentContext != null && widget.parentContext!.mounted) {
         showCustomSnackBar(

@@ -22,12 +22,7 @@ class OfflineCache {
     if (cached != null) {
       return json.decode(cached) as Map<String, dynamic>;
     }
-    return {
-      'music': true,
-      'sfx': true,
-      'musicVolume': 0.79,
-      'sfxVolume': 1.0,
-    };
+    return {'music': true, 'sfx': true, 'musicVolume': 0.79, 'sfxVolume': 1.0};
   }
 
   static Future<void> saveCurrency(int dreamCoins, int hellStones) async {

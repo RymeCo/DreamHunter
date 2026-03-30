@@ -52,5 +52,6 @@ class PreLoader {
   }
 
   /// Returns the total count of assets that need to be pre-cached.
-  static int get totalCount => imagesToPrecache.length + soundsToPrecache.length;
+  static int get totalCount =>
+      imagesToPrecache.length + soundsToPrecache.length;
 }

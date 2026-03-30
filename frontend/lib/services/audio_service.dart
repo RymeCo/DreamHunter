@@ -14,7 +14,7 @@ class AudioService with WidgetsBindingObserver {
   // Pool of SFX players to allow overlapping sounds (like multiple clicks)
   final List<AudioPlayer> _sfxPool = List.generate(3, (_) => AudioPlayer());
   int _nextSfxIndex = 0;
-  
+
   String? _currentBgm;
   bool _isMusicMuted = false;
   bool _isSoundMuted = false;
@@ -28,20 +28,30 @@ class AudioService with WidgetsBindingObserver {
     developer.log('AppLifecycleState changed: $state', name: 'AudioService');
     if (state == AppLifecycleState.resumed) {
       if (_wasPlayingBeforePause && !_isMusicMuted && _currentBgm != null) {
-        developer.log('Resuming BGM after app resume: $_currentBgm', name: 'AudioService');
+        developer.log(
+          'Resuming BGM after app resume: $_currentBgm',
+          name: 'AudioService',
+        );
         resumeBGM();
       }
-    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _wasPlayingBeforePause = _bgmPlayer.state == PlayerState.playing;
       if (_wasPlayingBeforePause) {
-        developer.log('Pausing BGM for app background: $_currentBgm', name: 'AudioService');
+        developer.log(
+          'Pausing BGM for app background: $_currentBgm',
+          name: 'AudioService',
+        );
         pauseBGM();
       }
     }
   }
 
   Future<void> initialize() async {
-    developer.log('AudioService: Starting initialization (Android-focused)...', name: 'AudioService');
+    developer.log(
+      'AudioService: Starting initialization (Android-focused)...',
+      name: 'AudioService',
+    );
     try {
       // 0. Set GLOBAL Audio Context Baseline
       await AudioPlayer.global.setAudioContext(
@@ -61,7 +71,7 @@ class AudioService with WidgetsBindingObserver {
             stayAwake: true,
             usageType: AndroidUsageType.game,
             contentType: AndroidContentType.music,
-            audioFocus: AndroidAudioFocus.none, 
+            audioFocus: AndroidAudioFocus.none,
           ),
         ),
       );
@@ -86,17 +96,26 @@ class AudioService with WidgetsBindingObserver {
       _isSoundMuted = !(settings['sfx'] ?? true);
       _musicVolume = (settings['musicVolume'] as num?)?.toDouble() ?? 0.79;
       _soundVolume = (settings['sfxVolume'] as num?)?.toDouble() ?? 1.0;
-      
-      developer.log('AudioService: Settings loaded - Muted: $_isMusicMuted, Vol: $_musicVolume', name: 'AudioService');
+
+      developer.log(
+        'AudioService: Settings loaded - Muted: $_isMusicMuted, Vol: $_musicVolume',
+        name: 'AudioService',
+      );
 
       // Track BGM player state
       _bgmPlayer.onPlayerStateChanged.listen((state) {
-        developer.log('AudioService: BGM Player State Change: $state', name: 'AudioService');
+        developer.log(
+          'AudioService: BGM Player State Change: $state',
+          name: 'AudioService',
+        );
       });
 
       // Handle track completion for looping/playlist
       _bgmPlayer.onPlayerComplete.listen((_) {
-        developer.log('AudioService: BGM Complete: PlaylistActive=$_isPlaylistActive', name: 'AudioService');
+        developer.log(
+          'AudioService: BGM Complete: PlaylistActive=$_isPlaylistActive',
+          name: 'AudioService',
+        );
         if (_isPlaylistActive) {
           _handlePlaylistNext();
         } else if (!_isMusicMuted && _currentBgm != null) {
@@ -116,13 +135,27 @@ class AudioService with WidgetsBindingObserver {
       }
 
       // WARM UP (Non-blocking but aggressive)
-      _warmUpPool(['audio/click.ogg', 'audio/roulette.ogg', 'audio/reward.ogg', 'audio/levelup.ogg']).catchError((e) {
-        developer.log('AudioService: Warmup error (ignored): $e', name: 'AudioService');
+      _warmUpPool([
+        'audio/click.ogg',
+        'audio/roulette.ogg',
+        'audio/reward.ogg',
+        'audio/levelup.ogg',
+      ]).catchError((e) {
+        developer.log(
+          'AudioService: Warmup error (ignored): $e',
+          name: 'AudioService',
+        );
       });
 
-      developer.log('AudioService: Initialization complete', name: 'AudioService');
+      developer.log(
+        'AudioService: Initialization complete',
+        name: 'AudioService',
+      );
     } catch (e) {
-      developer.log('AudioService: ERROR during initialization: $e', name: 'AudioService');
+      developer.log(
+        'AudioService: ERROR during initialization: $e',
+        name: 'AudioService',
+      );
     }
   }
 
@@ -136,7 +169,10 @@ class AudioService with WidgetsBindingObserver {
           await player.setSource(AssetSource(path));
         }
       } catch (e) {
-        developer.log('AudioService: Error warming up pool for $path: $e', name: 'AudioService');
+        developer.log(
+          'AudioService: Error warming up pool for $path: $e',
+          name: 'AudioService',
+        );
       }
     }
   }
@@ -145,50 +181,72 @@ class AudioService with WidgetsBindingObserver {
     try {
       await AudioCache.instance.load(assetPath);
     } catch (e) {
-      developer.log('AudioService: Error pre-caching sound $assetPath: $e', name: 'AudioService');
+      developer.log(
+        'AudioService: Error pre-caching sound $assetPath: $e',
+        name: 'AudioService',
+      );
     }
   }
 
   void _handlePlaylistNext() {
     if (!_isPlaylistActive) return;
-    
+
     // Toggle between track1 and track2
-    final nextTrack = (_currentBgm == 'audio/track1.ogg') 
-        ? 'audio/track2.ogg' 
+    final nextTrack = (_currentBgm == 'audio/track1.ogg')
+        ? 'audio/track2.ogg'
         : 'audio/track1.ogg';
-    
-    developer.log('AudioService: Playlist rotating to: $nextTrack', name: 'AudioService');
+
+    developer.log(
+      'AudioService: Playlist rotating to: $nextTrack',
+      name: 'AudioService',
+    );
     playBGM(nextTrack, isPlaylist: true);
   }
 
-  Future<void> playBGM(String assetPath, {bool isPlaylist = false, double? volumeOverride}) async {
+  Future<void> playBGM(
+    String assetPath, {
+    bool isPlaylist = false,
+    double? volumeOverride,
+  }) async {
     _isPlaylistActive = isPlaylist;
     final targetVolume = _isMusicMuted ? 0.0 : (volumeOverride ?? _musicVolume);
 
-    developer.log('AudioService: playBGM requested for $assetPath (Vol: $targetVolume)', name: 'AudioService');
+    developer.log(
+      'AudioService: playBGM requested for $assetPath (Vol: $targetVolume)',
+      name: 'AudioService',
+    );
 
     // If same track is already playing, just update volume and return
     if (_currentBgm == assetPath && _bgmPlayer.state == PlayerState.playing) {
-      developer.log('AudioService: $assetPath already playing, updating volume.', name: 'AudioService');
+      developer.log(
+        'AudioService: $assetPath already playing, updating volume.',
+        name: 'AudioService',
+      );
       await _bgmPlayer.setVolume(targetVolume);
       return;
     }
 
     try {
       _currentBgm = assetPath;
-      
+
       await _bgmPlayer.setPlayerMode(PlayerMode.mediaPlayer);
       await _bgmPlayer.setReleaseMode(ReleaseMode.stop);
       await _bgmPlayer.setVolume(targetVolume);
-      
+
       if (_bgmPlayer.state != PlayerState.stopped) {
         await _bgmPlayer.stop();
       }
-      
-      developer.log('AudioService: Executing play for $assetPath', name: 'AudioService');
+
+      developer.log(
+        'AudioService: Executing play for $assetPath',
+        name: 'AudioService',
+      );
       await _bgmPlayer.play(AssetSource(assetPath));
     } catch (e) {
-      developer.log('AudioService: ERROR playing BGM $assetPath: $e', name: 'AudioService');
+      developer.log(
+        'AudioService: ERROR playing BGM $assetPath: $e',
+        name: 'AudioService',
+      );
     }
   }
 
@@ -201,8 +259,11 @@ class AudioService with WidgetsBindingObserver {
   Future<void> playInGameMusic() async {
     final gameVolume = (_musicVolume * 1.20).clamp(0.0, 1.0);
     final track = _currentBgm ?? 'audio/track1.ogg';
-    
-    developer.log('AudioService: playInGameMusic (Seamless Boost to $gameVolume for $track)', name: 'AudioService');
+
+    developer.log(
+      'AudioService: playInGameMusic (Seamless Boost to $gameVolume for $track)',
+      name: 'AudioService',
+    );
     await playBGM(track, isPlaylist: true, volumeOverride: gameVolume);
   }
 
@@ -226,24 +287,27 @@ class AudioService with WidgetsBindingObserver {
       await player.setVolume(_soundVolume);
       await player.play(AssetSource(assetPath), mode: PlayerMode.lowLatency);
     } catch (e) {
-      developer.log('AudioService: Error playing SFX $assetPath: $e', name: 'AudioService');
+      developer.log(
+        'AudioService: Error playing SFX $assetPath: $e',
+        name: 'AudioService',
+      );
     }
   }
 
   Future<void> playClick() async {
-    await playSFX('audio/click.ogg');
+    playSFX('audio/click.ogg');
   }
 
   Future<void> playRouletteSpin() async {
-    await playSFX('audio/roulette.ogg');
+    playSFX('audio/roulette.ogg');
   }
 
   Future<void> playLevelUp() async {
-    await playSFX('audio/levelup.ogg');
+    playSFX('audio/levelup.ogg');
   }
 
   Future<void> playReward() async {
-    await playSFX('audio/reward.ogg');
+    playSFX('audio/reward.ogg');
   }
 
   Future<void> toggleMusicMute() async {
