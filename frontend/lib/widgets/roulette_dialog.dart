@@ -184,21 +184,6 @@ class _RouletteDialogState extends State<RouletteDialog>
         (10 * fullCircle) +
         (baseRotation - (_currentRotation % fullCircle));
 
-    await RouletteService.setPendingReward({
-      'amount': winningReward['amount'],
-      'name': winningReward['name'],
-    });
-    await RouletteService.setSpinning(true, targetRotation: targetRotation);
-    AudioService().playRouletteSpin();
-
-    if (!mounted) return;
-
-    setState(() {
-      _isSpinning = true;
-      if (!isPaid) _freeSpins -= 1;
-    });
-
-    // 3. Animate
     _animation = Tween<double>(
       begin: _currentRotation,
       end: targetRotation,
@@ -206,12 +191,19 @@ class _RouletteDialogState extends State<RouletteDialog>
 
     _controller.duration = const Duration(seconds: 5);
     _controller.reset();
+    
+    // Start the sound exactly when the animation starts
+    AudioService().playRouletteSpin();
+    
     await _controller.forward();
 
     _finalizeSpin(targetRotation, winningReward);
   }
 
   void _finalizeSpin(double targetRotation, Map<String, dynamic> reward) async {
+    // Play the reward sound immediately!
+    AudioService().playReward();
+
     // 4. FINISH: Grant reward and clear pending
     final rewardAmount = (reward['amount'] as num).toInt();
     await widget.controller.updateCurrency(
@@ -220,9 +212,6 @@ class _RouletteDialogState extends State<RouletteDialog>
     await RouletteService.clearPendingReward();
     await RouletteService.setSpinning(false);
     
-    // Play the reward sound!
-    AudioService().playReward();
-
     if (!mounted) {
       if (widget.parentContext != null && widget.parentContext!.mounted) {
         showCustomSnackBar(
