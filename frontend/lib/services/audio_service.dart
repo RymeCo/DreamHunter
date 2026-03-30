@@ -8,7 +8,9 @@ class AudioService {
   AudioService._internal();
 
   final AudioPlayer _bgmPlayer = AudioPlayer();
-  final AudioPlayer _sfxPlayer = AudioPlayer();
+  // Pool of SFX players to allow overlapping sounds (like multiple clicks)
+  final List<AudioPlayer> _sfxPool = List.generate(3, (_) => AudioPlayer());
+  int _nextSfxIndex = 0;
   
   String? _currentBgm;
   bool _isMusicMuted = false;
@@ -19,6 +21,22 @@ class AudioService {
 
   Future<void> initialize() async {
     try {
+      // 0. Set GLOBAL Audio Context Baseline
+      // This tells Android the app is a game and sounds should mix.
+      await AudioPlayer.global.setAudioContext(
+        AudioContext(
+          android: AudioContextAndroid(
+            usageType: AndroidUsageType.game,
+            contentType: AndroidContentType.sonification,
+            audioFocus: AndroidAudioFocus.none,
+          ),
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.ambient,
+            options: {AVAudioSessionOptions.mixWithOthers},
+          ),
+        ),
+      );
+
       // 1. Configure BGM Player (Main Music Focus)
       await _bgmPlayer.setAudioContext(
         AudioContext(
@@ -38,22 +56,23 @@ class AudioService {
         ),
       );
 
-      // 2. Configure SFX Player (Transparent Focus - Overlaps with Music)
-      // Use lowLatency mode for Android (SoundPool) - This is key for 0ms delay!
-      await _sfxPlayer.setPlayerMode(PlayerMode.lowLatency);
-      await _sfxPlayer.setAudioContext(
-        AudioContext(
-          android: AudioContextAndroid(
-            usageType: AndroidUsageType.assistanceSonification,
-            contentType: AndroidContentType.sonification,
-            audioFocus: AndroidAudioFocus.none, // Do NOT request focus for SFX
+      // 2. Configure SFX Pool (Transparent Focus - Overlaps with Music)
+      for (final player in _sfxPool) {
+        await player.setPlayerMode(PlayerMode.lowLatency);
+        await player.setAudioContext(
+          AudioContext(
+            android: AudioContextAndroid(
+              usageType: AndroidUsageType.game,
+              contentType: AndroidContentType.sonification,
+              audioFocus: AndroidAudioFocus.none, // Do NOT request focus
+            ),
+            iOS: AudioContextIOS(
+              category: AVAudioSessionCategory.ambient,
+              options: {AVAudioSessionOptions.mixWithOthers},
+            ),
           ),
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.ambient,
-            options: {AVAudioSessionOptions.mixWithOthers},
-          ),
-        ),
-      );
+        );
+      }
 
       // Load saved settings
       final settings = await OfflineCache.getSettings();
@@ -68,17 +87,25 @@ class AudioService {
         if (_isPlaylistActive) {
           _handlePlaylistNext();
         } else if (!_isMusicMuted && _currentBgm != null) {
-          // Normal looping
           _bgmPlayer.play(AssetSource(_currentBgm!));
+        }
+      });
+
+      // Log Focus Changes to help debug WayDroid -1 issues
+      _bgmPlayer.onLog.listen((msg) {
+        if (msg.contains('AudioFocus')) {
+          developer.log('Audio Focus Log: $msg', name: 'AudioService');
         }
       });
 
       // Apply initial volumes
       await _bgmPlayer.setVolume(_isMusicMuted ? 0 : _musicVolume);
-      await _sfxPlayer.setVolume(_isSoundMuted ? 0 : _soundVolume);
+      for (final player in _sfxPool) {
+        await player.setVolume(_isSoundMuted ? 0 : _soundVolume);
+      }
 
       // CRITICAL WARM UP: Pre-load the roulette sound to avoid "SoundPool not READY"
-      await _warmUpSounds(['audio/click.ogg', 'audio/roulette.ogg']);
+      await _warmUpPool(['audio/click.ogg', 'audio/roulette.ogg']);
 
       developer.log(
         'AudioService initialized: MusicMuted=$_isMusicMuted, SFXMuted=$_isSoundMuted, MusicVol=$_musicVolume, SFXVol=$_soundVolume',
@@ -89,16 +116,18 @@ class AudioService {
     }
   }
 
-  /// Explicitly pre-load sounds into the native SoundPool (lowLatency mode).
-  Future<void> _warmUpSounds(List<String> assetPaths) async {
+  /// Warm up the SFX pool by setting sources in advance.
+  Future<void> _warmUpPool(List<String> assetPaths) async {
     for (final path in assetPaths) {
       try {
         await AudioCache.instance.load(path);
-        // Pre-set the source once to warm up the player stream
-        await _sfxPlayer.setSource(AssetSource(path));
-        developer.log('Warmed up SFX: $path', name: 'AudioService');
+        // Pre-set the source on all pool players
+        for (final player in _sfxPool) {
+          await player.setSource(AssetSource(path));
+        }
+        developer.log('Warmed up Pool for: $path', name: 'AudioService');
       } catch (e) {
-        developer.log('Error warming up SFX: $path - $e', name: 'AudioService');
+        developer.log('Error warming up pool: $path - $e', name: 'AudioService');
       }
     }
   }
@@ -137,7 +166,6 @@ class AudioService {
       _currentBgm = assetPath;
       developer.log('Starting BGM: $assetPath (Playlist: $isPlaylist, Vol: $targetVolume)', name: 'AudioService');
       
-      // Do NOT await stop() before play() in playlist transition as it can cause focus yanking
       await _bgmPlayer.setPlayerMode(PlayerMode.mediaPlayer);
       await _bgmPlayer.setReleaseMode(ReleaseMode.release);
       await _bgmPlayer.setVolume(targetVolume);
@@ -164,9 +192,12 @@ class AudioService {
     if (_isSoundMuted || _soundVolume <= 0.01) return;
 
     try {
+      final player = _sfxPool[_nextSfxIndex];
+      _nextSfxIndex = (_nextSfxIndex + 1) % _sfxPool.length;
+
       // In lowLatency mode, play() is asynchronous and uses SoundPool
-      _sfxPlayer.setVolume(_soundVolume);
-      _sfxPlayer.play(AssetSource(assetPath));
+      player.setVolume(_soundVolume);
+      player.play(AssetSource(assetPath), mode: PlayerMode.lowLatency);
     } catch (e) {
       developer.log('Error playing SFX: $assetPath - $e', name: 'AudioService');
     }
@@ -196,10 +227,12 @@ class AudioService {
 
   Future<void> toggleSoundMute() async {
     _isSoundMuted = !_isSoundMuted;
-    if (_isSoundMuted) {
-      await _sfxPlayer.stop();
+    for (final player in _sfxPool) {
+      if (_isSoundMuted) {
+        await player.stop();
+      }
+      await player.setVolume(_isSoundMuted ? 0 : _soundVolume);
     }
-    await _sfxPlayer.setVolume(_isSoundMuted ? 0 : _soundVolume);
     developer.log('Sound mute toggled: $_isSoundMuted', name: 'AudioService');
   }
 
@@ -218,7 +251,9 @@ class AudioService {
   Future<void> setSoundVolume(double volume) async {
     _soundVolume = volume;
     if (!_isSoundMuted) {
-      await _sfxPlayer.setVolume(_soundVolume);
+      for (final player in _sfxPool) {
+        await player.setVolume(_soundVolume);
+      }
     }
   }
 
@@ -237,6 +272,8 @@ class AudioService {
 
   void dispose() {
     _bgmPlayer.dispose();
-    _sfxPlayer.dispose();
+    for (final player in _sfxPool) {
+      player.dispose();
+    }
   }
 }
