@@ -140,4 +140,4 @@ This log is the **primary reference** for commit tracking. Before creating a new
 - **[SCRUM-118]** Enable background spin completion on Dashboard - Done
 - **[SCRUM-119]** Final Roulette optimizations and race condition fixes - Done
 - **[SCRUM-120]** Fixed 'developer' import error and context sync lints - Done
-- **[SCRUM-121]** Fix BGM playlist (typo & focus resilience) - Done
+- **[SCRUM-121]** Fix BGM playlist (typo, focus resilience, seamless transitions & Android-only context) - Done

@@ -18,6 +18,8 @@ All notable changes to the **DreamHunter** project will be documented in this fi
 - **Sound:** Fixed track2 asset typo (`tract2.ogg` -> `track2.ogg`) and updated references in `AudioService` and `PreLoader`.
 - **Sound:** Enhanced `AudioService` with `WidgetsBindingObserver` to automatically resume BGM when app returns from background (resilience against WayDroid focus loss).
 - **Sound:** Refined BGM playlist logic with `ReleaseMode.stop` to ensure smooth alternating between track1 and track2.
+- **Sound:** Optimized BGM for Android/WayDroid by using `AndroidUsageType.game` and `AndroidAudioFocus.none` for all players, preventing SFX from cutting music. Fixed `AudioContext` assertion by removing iOS-specific configurations in this Android-only app.
+- **Sound:** Implemented seamless volume transitions when entering the game (20% boost without track restart).
 - **Sound:** Refactored to V3 Audio Architecture with a global mixing baseline to prevent SFX from interrupting BGM.
 - **Sound:** Implemented a 3-player SFX pool to allow rapid, overlapping UI sounds without performance hits.
 - **Sound:** Integrated "Buffer Warm-up" for critical assets (`roulette.ogg`, `click.ogg`) to achieve 0ms latency.
