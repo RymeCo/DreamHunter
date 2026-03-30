@@ -141,4 +141,4 @@ This log is the **primary reference** for commit tracking. Before creating a new
 - **[SCRUM-119]** Final Roulette optimizations and race condition fixes - Done
 - **[SCRUM-120]** Fixed 'developer' import error and context sync lints - Done
 - **[SCRUM-121]** Fix BGM playlist (typo, focus resilience, seamless transitions & Android-only context) - Done
-- **[SCRUM-122]** Increase base music volume by 10% (0.72 -> 0.79) - Done
+- **[SCRUM-122]** Increase base music volume by 10% (0.72 -> 0.79) & Verify SFX Max - Done
