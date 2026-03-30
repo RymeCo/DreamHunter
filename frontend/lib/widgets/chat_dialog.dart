@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
+import 'package:dreamhunter/services/audio_service.dart';
 
 class ChatDialog extends StatefulWidget {
   final VoidCallback? onMessageSent;
@@ -104,7 +105,10 @@ class _ChatDialogState extends State<ChatDialog> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.send, color: Colors.white),
-                  onPressed: _sendMessage,
+                  onPressed: () {
+                    AudioService().playClick();
+                    _sendMessage();
+                  },
                 ),
               ],
             ),

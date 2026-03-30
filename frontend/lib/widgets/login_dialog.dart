@@ -2,6 +2,7 @@ import 'package:dreamhunter/services/auth_service.dart';
 import 'package:dreamhunter/services/auth_ui_helper.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
+import 'package:dreamhunter/services/audio_service.dart';
 import 'package:flutter/material.dart';
 
 class LoginDialog extends StatefulWidget {
@@ -94,7 +95,10 @@ class _LoginDialogState extends State<LoginDialog> {
                     isLoading: _isLoading,
                   ),
                   TextButton(
-                    onPressed: widget.onRegisterRequested,
+                    onPressed: () {
+                      AudioService().playClick();
+                      widget.onRegisterRequested();
+                    },
                     child: const Text(
                       "Don't have an account? Register",
                       style: TextStyle(

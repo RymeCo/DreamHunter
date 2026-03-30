@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/audio_service.dart';
 import 'liquid_glass_dialog.dart';
 
 /// A reusable game-themed confirmation dialog.
@@ -87,7 +88,10 @@ class ConfirmationDialog extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               TextButton(
-                onPressed: () => Navigator.pop(context, false),
+                onPressed: () {
+                  AudioService().playClick();
+                  Navigator.pop(context, false);
+                },
                 child: Text(
                   cancelLabel,
                   style: const TextStyle(
@@ -97,7 +101,10 @@ class ConfirmationDialog extends StatelessWidget {
                 ),
               ),
               ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  AudioService().playClick();
+                  Navigator.pop(context, true);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: iconColor,
                   foregroundColor: Colors.black,

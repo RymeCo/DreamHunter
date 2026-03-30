@@ -2,6 +2,7 @@ import 'package:dreamhunter/services/auth_service.dart';
 import 'package:dreamhunter/services/auth_ui_helper.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
+import 'package:dreamhunter/services/audio_service.dart';
 import 'package:flutter/material.dart';
 
 class RegisterDialog extends StatefulWidget {
@@ -130,7 +131,10 @@ class _RegisterDialogState extends State<RegisterDialog> {
                     isLoading: _isLoading,
                   ),
                   TextButton(
-                    onPressed: widget.onLoginRequested,
+                    onPressed: () {
+                      AudioService().playClick();
+                      widget.onLoginRequested();
+                    },
                     child: const Text(
                       'Already have an account? Login',
                       style: TextStyle(

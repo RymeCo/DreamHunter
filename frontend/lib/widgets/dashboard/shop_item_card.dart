@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/shop_item.dart';
+import '../../services/audio_service.dart';
 
 class ShopItemCard extends StatelessWidget {
   final ShopItem item;
@@ -169,7 +170,10 @@ class ShopItemCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton(
-                  onPressed: onPurchase,
+                  onPressed: () {
+                    AudioService().playClick();
+                    onPurchase();
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueAccent.withValues(alpha: 0.3),
                     foregroundColor: Colors.white,

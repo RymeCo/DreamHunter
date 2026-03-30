@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/audio_service.dart';
 import '../liquid_glass_dialog.dart';
 
 class DashboardActionMenu extends StatelessWidget {
@@ -59,7 +60,10 @@ class DashboardActionMenu extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          AudioService().playClick();
+          onTap();
+        },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),

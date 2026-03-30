@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/audio_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/dashboard_controller.dart';
 import '../liquid_glass_dialog.dart';
@@ -28,7 +29,10 @@ class CurrencyDisplay extends StatelessWidget {
         return Row(
           children: [
             GestureDetector(
-              onTap: onProfileTap,
+              onTap: () {
+                AudioService().playClick();
+                onProfileTap();
+              },
               child: Container(
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
@@ -127,7 +131,10 @@ class CurrencyDisplay extends StatelessWidget {
           if (onPlusTap != null) ...[
             const SizedBox(width: 8),
             GestureDetector(
-              onTap: onPlusTap,
+              onTap: () {
+                AudioService().playClick();
+                onPlusTap();
+              },
               child: Container(
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(

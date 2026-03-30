@@ -248,7 +248,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
           style: const TextStyle(color: Colors.white54, fontSize: 11),
         ),
         value: value,
-        onChanged: onChanged,
+        onChanged: (val) {
+          AudioService().playClick();
+          onChanged(val);
+        },
         activeThumbColor: Colors.cyanAccent,
         activeTrackColor: Colors.cyanAccent.withValues(alpha: 0.3),
       ),

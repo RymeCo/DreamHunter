@@ -3,6 +3,7 @@ import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/dreamhunter_game.dart';
 import 'package:dreamhunter/game/actors/player.dart';
+import 'package:dreamhunter/services/audio_service.dart';
 
 class HUD extends PositionComponent with HasGameReference<DreamHunterGame> {
   late TextComponent energyText;
@@ -46,7 +47,10 @@ class HUD extends PositionComponent with HasGameReference<DreamHunterGame> {
         ),
       ],
       position: Vector2(game.size.x - 100, game.size.y - 100),
-      onPressed: () => game.player.enterBed(),
+      onPressed: () {
+        AudioService().playClick();
+        game.player.enterBed();
+      },
     );
 
     exitButton = ButtonComponent(
@@ -60,7 +64,10 @@ class HUD extends PositionComponent with HasGameReference<DreamHunterGame> {
         ),
       ],
       position: Vector2(game.size.x - 100, game.size.y - 100),
-      onPressed: () => game.player.exitBed(),
+      onPressed: () {
+        AudioService().playClick();
+        game.player.exitBed();
+      },
     );
   }
 

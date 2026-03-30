@@ -4,7 +4,7 @@
 .gemini/
 docs/
 AGENTS.md
-GEMINI.MD
+GEMINI.MD2
 node_modules/
 build/
 *.log

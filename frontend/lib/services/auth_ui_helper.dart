@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'audio_service.dart';
 
 /// A helper class to standardize the look and validation of Auth-related forms.
 class AuthUIHelper {
@@ -32,7 +33,12 @@ class AuthUIHelper {
     bool isLoading = false,
   }) {
     return ElevatedButton(
-      onPressed: isLoading ? null : onPressed,
+      onPressed: isLoading
+          ? null
+          : () {
+              AudioService().playClick();
+              onPressed?.call();
+            },
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color.fromRGBO(255, 255, 255, 0.2),
         foregroundColor: Colors.white,

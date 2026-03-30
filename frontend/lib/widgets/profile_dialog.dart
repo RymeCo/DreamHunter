@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/audio_service.dart';
 import 'liquid_glass_dialog.dart';
 import 'game_widgets.dart';
 
@@ -51,7 +52,10 @@ class _ProfileDialogState extends State<ProfileDialog> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    AudioService().playClick();
+                    Navigator.pop(context);
+                  },
                   icon: const Icon(
                     Icons.close,
                     color: Colors.white70,
@@ -75,6 +79,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
                   final isSelected = _selectedProfileImage == path;
                   return GestureDetector(
                     onTap: () {
+                      AudioService().playClick();
                       setState(() => _selectedProfileImage = path);
                       Navigator.pop(context);
                     },
@@ -127,7 +132,10 @@ class _ProfileDialogState extends State<ProfileDialog> {
                 ),
               ),
               IconButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  AudioService().playClick();
+                  Navigator.pop(context);
+                },
                 icon: const Icon(Icons.close, color: Colors.white70),
               ),
             ],
@@ -137,7 +145,10 @@ class _ProfileDialogState extends State<ProfileDialog> {
             alignment: Alignment.bottomRight,
             children: [
               GestureDetector(
-                onTap: _showImageSelector,
+                onTap: () {
+                  AudioService().playClick();
+                  _showImageSelector();
+                },
                 child: Container(
                   width: 100,
                   height: 100,
@@ -206,6 +217,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () async {
+                AudioService().playClick();
                 Navigator.pop(context);
                 await AuthService().signOut();
                 widget.onLogoutRequested();

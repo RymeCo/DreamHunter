@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import '../services/audio_service.dart';
 
 class StatRow extends StatelessWidget {
   final IconData icon;
@@ -132,7 +133,10 @@ class GameDialogHeader extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: IconButton(
                 icon: const Icon(Icons.close_rounded, color: Colors.white38),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  AudioService().playClick();
+                  Navigator.pop(context);
+                },
                 splashRadius: 20,
               ),
             ),
