@@ -127,7 +127,7 @@ class AudioService {
   }
 
   Future<void> playRouletteSpin() async {
-    await playSFX('audio/roulette_spin.ogg');
+    await playSFX('audio/roulette.ogg');
   }
 
   Future<void> toggleMusicMute() async {
