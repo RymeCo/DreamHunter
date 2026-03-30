@@ -41,7 +41,7 @@ class AudioService with WidgetsBindingObserver {
   }
 
   Future<void> initialize() async {
-    print('AudioService: Starting initialization (Android-focused)...');
+    developer.log('AudioService: Starting initialization (Android-focused)...', name: 'AudioService');
     try {
       // 0. Set GLOBAL Audio Context Baseline
       await AudioPlayer.global.setAudioContext(
@@ -55,7 +55,6 @@ class AudioService with WidgetsBindingObserver {
       );
 
       // 1. Configure BGM Player (Main Music Focus)
-      // Force AndroidUsageType.game for BGM too so they mix in the same stream on WayDroid.
       await _bgmPlayer.setAudioContext(
         AudioContext(
           android: AudioContextAndroid(
@@ -85,19 +84,19 @@ class AudioService with WidgetsBindingObserver {
       final settings = await OfflineCache.getSettings();
       _isMusicMuted = !(settings['music'] ?? true);
       _isSoundMuted = !(settings['sfx'] ?? true);
-      _musicVolume = (settings['musicVolume'] as num?)?.toDouble() ?? 0.72;
+      _musicVolume = (settings['musicVolume'] as num?)?.toDouble() ?? 0.79;
       _soundVolume = (settings['sfxVolume'] as num?)?.toDouble() ?? 1.0;
       
-      print('AudioService: Settings loaded - Muted: $_isMusicMuted, Vol: $_musicVolume');
+      developer.log('AudioService: Settings loaded - Muted: $_isMusicMuted, Vol: $_musicVolume', name: 'AudioService');
 
       // Track BGM player state
       _bgmPlayer.onPlayerStateChanged.listen((state) {
-        print('AudioService: BGM Player State Change: $state');
+        developer.log('AudioService: BGM Player State Change: $state', name: 'AudioService');
       });
 
       // Handle track completion for looping/playlist
       _bgmPlayer.onPlayerComplete.listen((_) {
-        print('AudioService: BGM Complete: PlaylistActive=$_isPlaylistActive');
+        developer.log('AudioService: BGM Complete: PlaylistActive=$_isPlaylistActive', name: 'AudioService');
         if (_isPlaylistActive) {
           _handlePlaylistNext();
         } else if (!_isMusicMuted && _currentBgm != null) {
@@ -107,7 +106,7 @@ class AudioService with WidgetsBindingObserver {
 
       // Log Focus Changes to help debug WayDroid -1 issues
       _bgmPlayer.onLog.listen((msg) {
-        print('AudioService: BGM Log: $msg');
+        developer.log('AudioService: BGM Log: $msg', name: 'AudioService');
       });
 
       // Apply initial volumes
@@ -116,14 +115,14 @@ class AudioService with WidgetsBindingObserver {
         await player.setVolume(_isSoundMuted ? 0 : _soundVolume);
       }
 
-      // NON-BLOCKING WARM UP
-      _warmUpPool(['audio/click.ogg', 'audio/roulette.ogg']).catchError((e) {
-        print('AudioService: Warmup error (ignored): $e');
+      // WARM UP (Non-blocking but aggressive)
+      _warmUpPool(['audio/click.ogg', 'audio/roulette.ogg', 'audio/reward.ogg', 'audio/levelup.ogg']).catchError((e) {
+        developer.log('AudioService: Warmup error (ignored): $e', name: 'AudioService');
       });
 
-      print('AudioService: Initialization complete');
+      developer.log('AudioService: Initialization complete', name: 'AudioService');
     } catch (e) {
-      print('AudioService: ERROR during initialization: $e');
+      developer.log('AudioService: ERROR during initialization: $e', name: 'AudioService');
     }
   }
 
@@ -132,12 +131,12 @@ class AudioService with WidgetsBindingObserver {
     for (final path in assetPaths) {
       try {
         await AudioCache.instance.load(path);
-        // Pre-set the source on all pool players
+        // Pre-set the source on all pool players to reduce start latency
         for (final player in _sfxPool) {
           await player.setSource(AssetSource(path));
         }
       } catch (e) {
-        print('AudioService: Error warming up pool for $path: $e');
+        developer.log('AudioService: Error warming up pool for $path: $e', name: 'AudioService');
       }
     }
   }
@@ -146,7 +145,7 @@ class AudioService with WidgetsBindingObserver {
     try {
       await AudioCache.instance.load(assetPath);
     } catch (e) {
-      print('AudioService: Error pre-caching sound $assetPath: $e');
+      developer.log('AudioService: Error pre-caching sound $assetPath: $e', name: 'AudioService');
     }
   }
 
@@ -158,7 +157,7 @@ class AudioService with WidgetsBindingObserver {
         ? 'audio/track2.ogg' 
         : 'audio/track1.ogg';
     
-    print('AudioService: Playlist rotating to: $nextTrack');
+    developer.log('AudioService: Playlist rotating to: $nextTrack', name: 'AudioService');
     playBGM(nextTrack, isPlaylist: true);
   }
 
@@ -166,11 +165,11 @@ class AudioService with WidgetsBindingObserver {
     _isPlaylistActive = isPlaylist;
     final targetVolume = _isMusicMuted ? 0.0 : (volumeOverride ?? _musicVolume);
 
-    print('AudioService: playBGM requested for $assetPath (Vol: $targetVolume)');
+    developer.log('AudioService: playBGM requested for $assetPath (Vol: $targetVolume)', name: 'AudioService');
 
     // If same track is already playing, just update volume and return
     if (_currentBgm == assetPath && _bgmPlayer.state == PlayerState.playing) {
-      print('AudioService: $assetPath already playing, updating volume.');
+      developer.log('AudioService: $assetPath already playing, updating volume.', name: 'AudioService');
       await _bgmPlayer.setVolume(targetVolume);
       return;
     }
@@ -186,10 +185,10 @@ class AudioService with WidgetsBindingObserver {
         await _bgmPlayer.stop();
       }
       
-      print('AudioService: Executing play for $assetPath');
+      developer.log('AudioService: Executing play for $assetPath', name: 'AudioService');
       await _bgmPlayer.play(AssetSource(assetPath));
     } catch (e) {
-      print('AudioService: ERROR playing BGM $assetPath: $e');
+      developer.log('AudioService: ERROR playing BGM $assetPath: $e', name: 'AudioService');
     }
   }
 
@@ -203,7 +202,7 @@ class AudioService with WidgetsBindingObserver {
     final gameVolume = (_musicVolume * 1.20).clamp(0.0, 1.0);
     final track = _currentBgm ?? 'audio/track1.ogg';
     
-    print('AudioService: playInGameMusic (Seamless Boost to $gameVolume for $track)');
+    developer.log('AudioService: playInGameMusic (Seamless Boost to $gameVolume for $track)', name: 'AudioService');
     await playBGM(track, isPlaylist: true, volumeOverride: gameVolume);
   }
 
@@ -214,11 +213,15 @@ class AudioService with WidgetsBindingObserver {
       final player = _sfxPool[_nextSfxIndex];
       _nextSfxIndex = (_nextSfxIndex + 1) % _sfxPool.length;
 
-      // In lowLatency mode, play() is asynchronous and uses SoundPool
-      player.setVolume(_soundVolume);
-      player.play(AssetSource(assetPath), mode: PlayerMode.lowLatency);
+      // Force stop before play to ensure immediate restart in lowLatency mode
+      if (player.state == PlayerState.playing) {
+        await player.stop();
+      }
+
+      await player.setVolume(_soundVolume);
+      await player.play(AssetSource(assetPath), mode: PlayerMode.lowLatency);
     } catch (e) {
-      developer.log('Error playing SFX: $assetPath - $e', name: 'AudioService');
+      developer.log('AudioService: Error playing SFX $assetPath: $e', name: 'AudioService');
     }
   }
 
@@ -290,6 +293,7 @@ class AudioService with WidgetsBindingObserver {
   }
 
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _bgmPlayer.dispose();
     for (final player in _sfxPool) {
       player.dispose();
