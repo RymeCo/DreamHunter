@@ -23,7 +23,6 @@ class AudioService {
       await _bgmPlayer.setAudioContext(
         AudioContext(
           android: AudioContextAndroid(
-            isContextIsolated: true, // Prevent focus yanking from other players
             stayAwake: true,
             usageType: AndroidUsageType.media,
             contentType: AndroidContentType.music,
@@ -45,7 +44,6 @@ class AudioService {
       await _sfxPlayer.setAudioContext(
         AudioContext(
           android: AudioContextAndroid(
-            isContextIsolated: true,
             usageType: AndroidUsageType.assistanceSonification,
             contentType: AndroidContentType.sonification,
             audioFocus: AndroidAudioFocus.none, // Do NOT request focus for SFX
