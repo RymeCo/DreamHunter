@@ -159,6 +159,14 @@ class AudioService {
     await playSFX('audio/roulette.ogg');
   }
 
+  Future<void> playLevelUp() async {
+    await playSFX('audio/levelup.ogg');
+  }
+
+  Future<void> playReward() async {
+    await playSFX('audio/reward.ogg');
+  }
+
   Future<void> toggleMusicMute() async {
     _isMusicMuted = !_isMusicMuted;
     await _bgmPlayer.setVolume(_isMusicMuted ? 0 : _musicVolume);

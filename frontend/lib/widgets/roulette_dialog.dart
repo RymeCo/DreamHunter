@@ -219,6 +219,9 @@ class _RouletteDialogState extends State<RouletteDialog>
     );
     await RouletteService.clearPendingReward();
     await RouletteService.setSpinning(false);
+    
+    // Play the reward sound!
+    AudioService().playReward();
 
     if (!mounted) {
       if (widget.parentContext != null && widget.parentContext!.mounted) {
