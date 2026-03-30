@@ -15,7 +15,7 @@ class PreLoader {
     'audio/click.ogg',
     'audio/roulette.ogg',
     'audio/track1.ogg',
-    'audio/tract2.ogg',
+    'audio/track2.ogg',
     'audio/levelup.ogg',
     'audio/reward.ogg',
   ];

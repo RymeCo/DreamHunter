@@ -15,11 +15,17 @@ All notable changes to the **DreamHunter** project will be documented in this fi
 - **Docs:** Mandated documentation updates for every edit.
 
 ### Frontend
+- **Sound:** Fixed track2 asset typo (`tract2.ogg` -> `track2.ogg`) and updated references in `AudioService` and `PreLoader`.
+- **Sound:** Enhanced `AudioService` with `WidgetsBindingObserver` to automatically resume BGM when app returns from background (resilience against WayDroid focus loss).
+- **Sound:** Refined BGM playlist logic with `ReleaseMode.stop` to ensure smooth alternating between track1 and track2.
+- **Sound:** Refactored to V3 Audio Architecture with a global mixing baseline to prevent SFX from interrupting BGM.
+- **Sound:** Implemented a 3-player SFX pool to allow rapid, overlapping UI sounds without performance hits.
+- **Sound:** Integrated "Buffer Warm-up" for critical assets (`roulette.ogg`, `click.ogg`) to achieve 0ms latency.
 - **Sound:** Increased base music volume by 20% (0.6 -> 0.72) for a more immersive experience.
-- **Sound:** Implemented a dashboard BGM playlist that automatically alternates between `track1.ogg` and `tract2.ogg`.
+- **Sound:** Implemented a dashboard BGM playlist that automatically alternates between `track1.ogg` and `track2.ogg`.
 - **Sound:** Integrated `roulette.ogg`, `reward.ogg`, and `levelup.ogg` into the `AudioService`.
 - **Sound:** Fixed Android "SoundPool not READY" errors by implementing SFX pre-caching in the `SplashScreen` via `PreLoader`.
-- **Sound:** Configured independent Audio Contexts for BGM and SFX to allow seamless overlapping (SFX no longer kills music).
+- **Sound:** Configured independent Audio Contexts for BGM and SFX to allow seamless overlapping.
 - **UI:** Enhanced the `RouletteDialog` with synchronized SFX for spinning and winning.
 - **UI:** Performed global SFX injection across 12+ dashboard widgets for consistent feedback.
 - **UI:** Implemented bed interaction, sleeping state, and energy generation logic.

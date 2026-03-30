@@ -1,11 +1,14 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:developer' as developer;
 import 'offline_cache.dart';
+import 'package:flutter/widgets.dart';
 
-class AudioService {
+class AudioService with WidgetsBindingObserver {
   static final AudioService _instance = AudioService._internal();
   factory AudioService() => _instance;
-  AudioService._internal();
+  AudioService._internal() {
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   final AudioPlayer _bgmPlayer = AudioPlayer();
   // Pool of SFX players to allow overlapping sounds (like multiple clicks)
@@ -18,6 +21,24 @@ class AudioService {
   double _musicVolume = 0.72;
   double _soundVolume = 1.0;
   bool _isPlaylistActive = false;
+  bool _wasPlayingBeforePause = false;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    developer.log('AppLifecycleState changed: $state', name: 'AudioService');
+    if (state == AppLifecycleState.resumed) {
+      if (_wasPlayingBeforePause && !_isMusicMuted && _currentBgm != null) {
+        developer.log('Resuming BGM after app resume: $_currentBgm', name: 'AudioService');
+        resumeBGM();
+      }
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _wasPlayingBeforePause = _bgmPlayer.state == PlayerState.playing;
+      if (_wasPlayingBeforePause) {
+        developer.log('Pausing BGM for app background: $_currentBgm', name: 'AudioService');
+        pauseBGM();
+      }
+    }
+  }
 
   Future<void> initialize() async {
     try {
@@ -95,6 +116,8 @@ class AudioService {
       _bgmPlayer.onLog.listen((msg) {
         if (msg.contains('AudioFocus')) {
           developer.log('Audio Focus Log: $msg', name: 'AudioService');
+          // If we detect focus loss, we might want to try re-gaining it later
+          // or at least log it clearly.
         }
       });
 
@@ -144,9 +167,9 @@ class AudioService {
   void _handlePlaylistNext() {
     if (!_isPlaylistActive) return;
     
-    // Toggle between track1 and tract2
+    // Toggle between track1 and track2
     final nextTrack = (_currentBgm == 'audio/track1.ogg') 
-        ? 'audio/tract2.ogg' 
+        ? 'audio/track2.ogg' 
         : 'audio/track1.ogg';
     
     developer.log('Playlist rotating to next track: $nextTrack', name: 'AudioService');
@@ -157,6 +180,7 @@ class AudioService {
     _isPlaylistActive = isPlaylist;
     final targetVolume = _isMusicMuted ? 0.0 : (volumeOverride ?? _musicVolume);
 
+    // If same track is already playing, just update volume and return
     if (_currentBgm == assetPath && _bgmPlayer.state == PlayerState.playing) {
       await _bgmPlayer.setVolume(targetVolume);
       return;
@@ -167,8 +191,15 @@ class AudioService {
       developer.log('Starting BGM: $assetPath (Playlist: $isPlaylist, Vol: $targetVolume)', name: 'AudioService');
       
       await _bgmPlayer.setPlayerMode(PlayerMode.mediaPlayer);
-      await _bgmPlayer.setReleaseMode(ReleaseMode.release);
+      // Use ReleaseMode.stop instead of release to keep resources for alternating tracks
+      await _bgmPlayer.setReleaseMode(ReleaseMode.stop);
       await _bgmPlayer.setVolume(targetVolume);
+      
+      // Ensure we stop before playing new source to avoid state conflicts
+      if (_bgmPlayer.state != PlayerState.stopped) {
+        await _bgmPlayer.stop();
+      }
+      
       await _bgmPlayer.play(AssetSource(assetPath));
     } catch (e) {
       developer.log('Error playing BGM: $e', name: 'AudioService', error: e);
