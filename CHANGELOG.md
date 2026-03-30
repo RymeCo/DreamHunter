@@ -23,7 +23,7 @@ All notable changes to the **DreamHunter** project will be documented in this fi
 - **Sound:** Refactored to V3 Audio Architecture with a global mixing baseline to prevent SFX from interrupting BGM.
 - **Sound:** Implemented a 3-player SFX pool to allow rapid, overlapping UI sounds without performance hits.
 - **Sound:** Integrated "Buffer Warm-up" for critical assets (`roulette.ogg`, `click.ogg`) to achieve 0ms latency.
-- **Sound:** Increased base music volume by 20% (0.6 -> 0.72) for a more immersive experience.
+- **Sound:** Increased base music volume by an additional 10% (0.72 -> 0.79) for a more immersive experience.
 - **Sound:** Implemented a dashboard BGM playlist that automatically alternates between `track1.ogg` and `track2.ogg`.
 - **Sound:** Integrated `roulette.ogg`, `reward.ogg`, and `levelup.ogg` into the `AudioService`.
 - **Sound:** Fixed Android "SoundPool not READY" errors by implementing SFX pre-caching in the `SplashScreen` via `PreLoader`.

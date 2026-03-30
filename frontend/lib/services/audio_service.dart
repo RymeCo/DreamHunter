@@ -18,7 +18,7 @@ class AudioService with WidgetsBindingObserver {
   String? _currentBgm;
   bool _isMusicMuted = false;
   bool _isSoundMuted = false;
-  double _musicVolume = 0.72;
+  double _musicVolume = 0.79;
   double _soundVolume = 1.0;
   bool _isPlaylistActive = false;
   bool _wasPlayingBeforePause = false;

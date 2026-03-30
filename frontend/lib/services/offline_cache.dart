@@ -25,7 +25,7 @@ class OfflineCache {
     return {
       'music': true,
       'sfx': true,
-      'musicVolume': 0.6,
+      'musicVolume': 0.79,
       'sfxVolume': 1.0,
     };
   }
