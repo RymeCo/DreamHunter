@@ -64,11 +64,18 @@ class AudioService {
 
       // Handle track completion for looping/playlist
       _bgmPlayer.onPlayerComplete.listen((_) {
-        developer.log('BGM Player Complete. PlaylistActive=$_isPlaylistActive', name: 'AudioService');
+        developer.log('BGM Complete: PlaylistActive=$_isPlaylistActive, Current=$_currentBgm', name: 'AudioService');
         if (_isPlaylistActive) {
           _handlePlaylistNext();
         } else if (!_isMusicMuted && _currentBgm != null) {
           _bgmPlayer.play(AssetSource(_currentBgm!));
+        }
+      });
+
+      // Handle focus changes (e.g. phone call or other apps)
+      _bgmPlayer.onLog.listen((msg) {
+        if (msg.contains('onAudioFocusChange')) {
+           developer.log('Audio Focus Change: $msg', name: 'AudioService');
         }
       });
 
@@ -118,13 +125,8 @@ class AudioService {
     _isPlaylistActive = isPlaylist;
     final targetVolume = _isMusicMuted ? 0.0 : (volumeOverride ?? _musicVolume);
 
-    if (_currentBgm == assetPath) {
-      if (_bgmPlayer.state == PlayerState.playing) {
-        await _bgmPlayer.setVolume(targetVolume);
-        return;
-      }
+    if (_currentBgm == assetPath && _bgmPlayer.state == PlayerState.playing) {
       await _bgmPlayer.setVolume(targetVolume);
-      await _bgmPlayer.resume();
       return;
     }
 
@@ -133,8 +135,10 @@ class AudioService {
       developer.log('Starting BGM: $assetPath (Playlist: $isPlaylist, Vol: $targetVolume)', name: 'AudioService');
       
       await _bgmPlayer.stop();
-      // Use ReleaseMode.stop instead of release for smoother transitions
-      await _bgmPlayer.setReleaseMode(ReleaseMode.stop);
+      // Ensure the BGM player is in MediaPlayer mode for better focus handling
+      await _bgmPlayer.setPlayerMode(PlayerMode.mediaPlayer);
+      // Use ReleaseMode.release to ensure completion events trigger correctly
+      await _bgmPlayer.setReleaseMode(ReleaseMode.release);
       await _bgmPlayer.setVolume(targetVolume);
       await _bgmPlayer.play(AssetSource(assetPath));
     } catch (e) {
