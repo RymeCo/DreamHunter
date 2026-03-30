@@ -146,7 +146,11 @@ class _RouletteDialogState extends State<RouletteDialog>
       return;
     }
 
-    // 1. Determine winner
+    // --- START IMMEDIATELY ---
+    // 1. Play sound at the absolute beginning to avoid lag
+    AudioService().playRouletteSpin();
+
+    // 2. Determine winner (Instant calculation)
     final int totalWeight = RouletteService.rewards.fold<int>(
       0,
       (total, item) => total + (item['weight'] as int),
@@ -165,16 +169,26 @@ class _RouletteDialogState extends State<RouletteDialog>
 
     final winningReward = RouletteService.rewards[winnerIndex];
 
-    // 2. DEDUCT COST & SET STATE
-    if (isPaid) {
-      await widget.controller.updateCurrency(
-        newCoins: widget.controller.dreamCoins - cost,
-      );
-    } else {
-      await RouletteService.consumeFreeSpin();
-    }
+    // 3. BACKGROUND THE HEAVY SYNC CALLS
+    // We don't 'await' these here because they block the animation start.
+    // They will run in the background while the wheel spins.
+    final Future<void> syncFuture = () async {
+      if (isPaid) {
+        await widget.controller.updateCurrency(
+          newCoins: widget.controller.dreamCoins - cost,
+        );
+      } else {
+        await RouletteService.consumeFreeSpin();
+      }
 
-    // Store for session recovery
+      await RouletteService.setPendingReward({
+        'amount': winningReward['amount'],
+        'name': winningReward['name'],
+      });
+      await RouletteService.setSpinning(true, targetRotation: 0); // Rotation updated below
+    }();
+
+    // 4. PREPARE ANIMATION
     const double fullCircle = 2 * math.pi;
     final double segmentWidth = fullCircle / RouletteService.rewards.length;
     final double baseRotation =
@@ -184,13 +198,6 @@ class _RouletteDialogState extends State<RouletteDialog>
         (10 * fullCircle) +
         (baseRotation - (_currentRotation % fullCircle));
 
-    // 2. SET STATE & SYNC WITH SERVICE
-    await RouletteService.setPendingReward({
-      'amount': winningReward['amount'],
-      'name': winningReward['name'],
-    });
-    await RouletteService.setSpinning(true, targetRotation: targetRotation);
-
     if (!mounted) return;
 
     setState(() {
@@ -198,7 +205,6 @@ class _RouletteDialogState extends State<RouletteDialog>
       if (!isPaid) _freeSpins -= 1;
     });
 
-    // 3. ANIMATE
     _animation = Tween<double>(
       begin: _currentRotation,
       end: targetRotation,
@@ -207,10 +213,16 @@ class _RouletteDialogState extends State<RouletteDialog>
     _controller.duration = const Duration(seconds: 5);
     _controller.reset();
     
-    // Start the sound exactly when the animation starts
-    AudioService().playRouletteSpin();
+    // We already played the sound at the top.
     
-    await _controller.forward();
+    // 5. START ANIMATION
+    final animationFuture = _controller.forward();
+
+    // Wait for the animation to finish OR for the sync to finish if we need to be safe
+    await Future.wait([
+      animationFuture,
+      syncFuture,
+    ]);
 
     _finalizeSpin(targetRotation, winningReward);
   }

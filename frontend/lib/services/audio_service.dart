@@ -206,9 +206,14 @@ class AudioService with WidgetsBindingObserver {
     await playBGM(track, isPlaylist: true, volumeOverride: gameVolume);
   }
 
-  Future<void> playSFX(String assetPath) async {
+  void playSFX(String assetPath) {
     if (_isSoundMuted || _soundVolume <= 0.01) return;
 
+    // Fire and forget to avoid any UI thread / async lag
+    _playSfxInternal(assetPath);
+  }
+
+  Future<void> _playSfxInternal(String assetPath) async {
     try {
       final player = _sfxPool[_nextSfxIndex];
       _nextSfxIndex = (_nextSfxIndex + 1) % _sfxPool.length;
