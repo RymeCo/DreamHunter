@@ -184,6 +184,21 @@ class _RouletteDialogState extends State<RouletteDialog>
         (10 * fullCircle) +
         (baseRotation - (_currentRotation % fullCircle));
 
+    // 2. SET STATE & SYNC WITH SERVICE
+    await RouletteService.setPendingReward({
+      'amount': winningReward['amount'],
+      'name': winningReward['name'],
+    });
+    await RouletteService.setSpinning(true, targetRotation: targetRotation);
+
+    if (!mounted) return;
+
+    setState(() {
+      _isSpinning = true;
+      if (!isPaid) _freeSpins -= 1;
+    });
+
+    // 3. ANIMATE
     _animation = Tween<double>(
       begin: _currentRotation,
       end: targetRotation,

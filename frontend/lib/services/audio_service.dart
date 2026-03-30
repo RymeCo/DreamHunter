@@ -96,31 +96,37 @@ class AudioService {
   void _handlePlaylistNext() {
     if (!_isPlaylistActive) return;
     
-    // Simple toggle between track1 and tract2
+    // Toggle between track1 and tract2
     final nextTrack = (_currentBgm == 'audio/track1.ogg') 
         ? 'audio/tract2.ogg' 
         : 'audio/track1.ogg';
     
-    developer.log('Playlist moving to next track: $nextTrack', name: 'AudioService');
+    developer.log('Playlist rotating to next track: $nextTrack', name: 'AudioService');
     playBGM(nextTrack, isPlaylist: true);
   }
 
-  Future<void> playBGM(String assetPath, {bool isPlaylist = false}) async {
+  Future<void> playBGM(String assetPath, {bool isPlaylist = false, double? volumeOverride}) async {
     _isPlaylistActive = isPlaylist;
-    
+    final targetVolume = _isMusicMuted ? 0.0 : (volumeOverride ?? _musicVolume);
+
     if (_currentBgm == assetPath) {
-      if (_bgmPlayer.state == PlayerState.playing) return;
+      if (_bgmPlayer.state == PlayerState.playing) {
+        await _bgmPlayer.setVolume(targetVolume);
+        return;
+      }
+      await _bgmPlayer.setVolume(targetVolume);
       await _bgmPlayer.resume();
       return;
     }
 
     try {
       _currentBgm = assetPath;
-      developer.log('Starting BGM: $assetPath (Playlist: $isPlaylist)', name: 'AudioService');
+      developer.log('Starting BGM: $assetPath (Playlist: $isPlaylist, Vol: $targetVolume)', name: 'AudioService');
+      
       await _bgmPlayer.stop();
-      // Only set loop mode if NOT a playlist (playlist handles completion manually)
-      await _bgmPlayer.setReleaseMode(isPlaylist ? ReleaseMode.release : ReleaseMode.loop);
-      await _bgmPlayer.setVolume(_isMusicMuted ? 0 : _musicVolume);
+      // Ensure release mode is set so onPlayerComplete triggers reliably
+      await _bgmPlayer.setReleaseMode(ReleaseMode.release);
+      await _bgmPlayer.setVolume(targetVolume);
       await _bgmPlayer.play(AssetSource(assetPath));
     } catch (e) {
       developer.log('Error playing BGM: $e', name: 'AudioService', error: e);
@@ -130,6 +136,17 @@ class AudioService {
   /// Plays the dashboard playlist (Track 1 & Track 2 alternating)
   Future<void> playDashboardMusic() async {
     await playBGM('audio/track1.ogg', isPlaylist: true);
+  }
+
+  /// Plays music specifically for the game, starting over with 15% more volume.
+  Future<void> playInGameMusic() async {
+    // 15% increase from base 0.72 = 0.828
+    final gameVolume = (_musicVolume * 1.15).clamp(0.0, 1.0);
+    // Restarting current BGM to 'start again'
+    final track = _currentBgm ?? 'audio/track1.ogg';
+    
+    _currentBgm = null; // Force reload/restart
+    await playBGM(track, isPlaylist: true, volumeOverride: gameVolume);
   }
 
   Future<void> playSFX(String assetPath) async {

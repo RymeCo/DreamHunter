@@ -20,7 +20,7 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-    AudioService().playBGM('audio/tract2.ogg');
+    AudioService().playInGameMusic();
     _game = DreamHunterGame(characterType: 'man');
   }
 
