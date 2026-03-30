@@ -8,7 +8,9 @@ class AudioService {
   AudioService._internal();
 
   final AudioPlayer _bgmPlayer = AudioPlayer();
-  final AudioPlayer _sfxPlayer = AudioPlayer();
+  final List<AudioPlayer> _sfxPlayers = List.generate(5, (_) => AudioPlayer());
+  int _nextSfxPlayerIndex = 0;
+  
   String? _currentBgm;
   bool _isMusicMuted = false;
   bool _isSoundMuted = false;
@@ -18,13 +20,13 @@ class AudioService {
 
   Future<void> initialize() async {
     try {
-      // 1. Configure BGM Player (Main Music Focus)
+      // 1. Configure BGM Player
       await _bgmPlayer.setAudioContext(
         AudioContext(
           android: AudioContextAndroid(
             usageType: AndroidUsageType.media,
             contentType: AndroidContentType.music,
-            audioFocus: AndroidAudioFocus.gain, // Request persistent focus
+            audioFocus: AndroidAudioFocus.gain,
           ),
           iOS: AudioContextIOS(
             category: AVAudioSessionCategory.playback,
@@ -36,20 +38,22 @@ class AudioService {
         ),
       );
 
-      // 2. Configure SFX Player (Transient Focus - Overlaps with Music)
-      await _sfxPlayer.setAudioContext(
-        AudioContext(
-          android: AudioContextAndroid(
-            usageType: AndroidUsageType.assistanceSonification,
-            contentType: AndroidContentType.sonification,
-            audioFocus: AndroidAudioFocus.none, // Don't snatch focus from music
+      // 2. Configure SFX Players
+      for (final player in _sfxPlayers) {
+        await player.setAudioContext(
+          AudioContext(
+            android: AudioContextAndroid(
+              usageType: AndroidUsageType.assistanceSonification,
+              contentType: AndroidContentType.sonification,
+              audioFocus: AndroidAudioFocus.none,
+            ),
+            iOS: AudioContextIOS(
+              category: AVAudioSessionCategory.ambient,
+              options: {AVAudioSessionOptions.mixWithOthers},
+            ),
           ),
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.ambient,
-            options: {AVAudioSessionOptions.mixWithOthers},
-          ),
-        ),
-      );
+        );
+      }
 
       // Load saved settings
       final settings = await OfflineCache.getSettings();
@@ -60,6 +64,7 @@ class AudioService {
 
       // Handle track completion for looping/playlist
       _bgmPlayer.onPlayerComplete.listen((_) {
+        developer.log('BGM Player Complete. PlaylistActive=$_isPlaylistActive', name: 'AudioService');
         if (_isPlaylistActive) {
           _handlePlaylistNext();
         } else if (!_isMusicMuted && _currentBgm != null) {
@@ -69,17 +74,19 @@ class AudioService {
 
       // Apply initial volumes
       await _bgmPlayer.setVolume(_isMusicMuted ? 0 : _musicVolume);
-      await _sfxPlayer.setVolume(_isSoundMuted ? 0 : _soundVolume);
+      for (final player in _sfxPlayers) {
+        await player.setVolume(_isSoundMuted ? 0 : _soundVolume);
+      }
+
+      // Pre-load common sounds
+      await precacheSound('audio/click.ogg');
 
       developer.log(
         'AudioService initialized: MusicMuted=$_isMusicMuted, SFXMuted=$_isSoundMuted, MusicVol=$_musicVolume, SFXVol=$_soundVolume',
         name: 'AudioService',
       );
     } catch (e) {
-      developer.log(
-        'Error initializing AudioService: $e',
-        name: 'AudioService',
-      );
+      developer.log('Error initializing AudioService: $e', name: 'AudioService');
     }
   }
 
@@ -87,6 +94,8 @@ class AudioService {
   Future<void> precacheSound(String assetPath) async {
     try {
       await AudioCache.instance.load(assetPath);
+      // Also warm up the players by setting the source
+      await _sfxPlayers[0].setSource(AssetSource(assetPath));
       developer.log('Pre-cached sound: $assetPath', name: 'AudioService');
     } catch (e) {
       developer.log('Error pre-caching sound: $assetPath - $e', name: 'AudioService');
@@ -124,8 +133,8 @@ class AudioService {
       developer.log('Starting BGM: $assetPath (Playlist: $isPlaylist, Vol: $targetVolume)', name: 'AudioService');
       
       await _bgmPlayer.stop();
-      // Ensure release mode is set so onPlayerComplete triggers reliably
-      await _bgmPlayer.setReleaseMode(ReleaseMode.release);
+      // Use ReleaseMode.stop instead of release for smoother transitions
+      await _bgmPlayer.setReleaseMode(ReleaseMode.stop);
       await _bgmPlayer.setVolume(targetVolume);
       await _bgmPlayer.play(AssetSource(assetPath));
     } catch (e) {
@@ -140,31 +149,24 @@ class AudioService {
 
   /// Plays music specifically for the game, starting over with 15% more volume.
   Future<void> playInGameMusic() async {
-    // 15% increase from base 0.72 = 0.828
     final gameVolume = (_musicVolume * 1.15).clamp(0.0, 1.0);
-    // Restarting current BGM to 'start again'
     final track = _currentBgm ?? 'audio/track1.ogg';
-    
-    _currentBgm = null; // Force reload/restart
+    _currentBgm = null; // Force restart
     await playBGM(track, isPlaylist: true, volumeOverride: gameVolume);
   }
 
   Future<void> playSFX(String assetPath) async {
-    developer.log(
-      'playSFX: $assetPath, Muted=$_isSoundMuted, Vol=$_soundVolume',
-      name: 'AudioService',
-    );
     if (_isSoundMuted || _soundVolume <= 0.01) return;
 
     try {
-      await _sfxPlayer.setVolume(_soundVolume);
-      await _sfxPlayer.play(AssetSource(assetPath), mode: PlayerMode.lowLatency);
+      final player = _sfxPlayers[_nextSfxPlayerIndex];
+      _nextSfxPlayerIndex = (_nextSfxPlayerIndex + 1) % _sfxPlayers.length;
+
+      await player.setVolume(_soundVolume);
+      // Use PlayerMode.lowLatency for snappy SFX
+      await player.play(AssetSource(assetPath), mode: PlayerMode.lowLatency);
     } catch (e) {
-      developer.log(
-        'Error playing SFX: $assetPath - $e',
-        name: 'AudioService',
-        error: e,
-      );
+      developer.log('Error playing SFX: $assetPath - $e', name: 'AudioService');
     }
   }
 
@@ -192,10 +194,12 @@ class AudioService {
 
   Future<void> toggleSoundMute() async {
     _isSoundMuted = !_isSoundMuted;
-    if (_isSoundMuted) {
-      await _sfxPlayer.stop();
+    for (final player in _sfxPlayers) {
+      if (_isSoundMuted) {
+        await player.stop();
+      }
+      await player.setVolume(_isSoundMuted ? 0 : _soundVolume);
     }
-    await _sfxPlayer.setVolume(_isSoundMuted ? 0 : _soundVolume);
     developer.log('Sound mute toggled: $_isSoundMuted', name: 'AudioService');
   }
 
@@ -216,7 +220,9 @@ class AudioService {
     _soundVolume = volume;
     // Apply immediately if not muted
     if (!_isSoundMuted) {
-      await _sfxPlayer.setVolume(_soundVolume);
+      for (final player in _sfxPlayers) {
+        await player.setVolume(_soundVolume);
+      }
     }
   }
 
@@ -235,5 +241,8 @@ class AudioService {
 
   void dispose() {
     _bgmPlayer.dispose();
+    for (final player in _sfxPlayers) {
+      player.dispose();
+    }
   }
 }
