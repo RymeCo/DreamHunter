@@ -50,6 +50,10 @@ class AudioService {
       await _bgmPlayer.setVolume(_isMusicMuted ? 0 : _musicVolume);
       await _sfxPlayer.setVolume(_isSoundMuted ? 0 : _soundVolume);
 
+      // Pre-cache SFX to avoid "SoundPool not READY" errors on Android
+      await AudioCache.instance.load('audio/click.ogg');
+      await AudioCache.instance.load('audio/roulette.ogg');
+
       developer.log(
         'AudioService initialized: MusicMuted=$_isMusicMuted, SFXMuted=$_isSoundMuted, MusicVol=$_musicVolume, SFXVol=$_soundVolume',
         name: 'AudioService',
@@ -109,8 +113,6 @@ class AudioService {
     if (_isSoundMuted || _soundVolume <= 0.01) return;
 
     try {
-      // Use a separate player if needed for overlapping, but for now we stop/start
-      await _sfxPlayer.stop();
       await _sfxPlayer.setVolume(_soundVolume);
       await _sfxPlayer.play(AssetSource(assetPath), mode: PlayerMode.lowLatency);
     } catch (e) {
