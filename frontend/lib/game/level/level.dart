@@ -34,7 +34,7 @@ class Level extends World with HasGameReference<HauntedDormGame> {
       player.collisionBlocks.clear();
       player.beds.clear();
 
-      _processLayers();
+      _processLayersInOrder();
 
       if (!player.isMounted) add(player);
     } catch (e, stack) {
@@ -44,23 +44,35 @@ class Level extends World with HasGameReference<HauntedDormGame> {
     return super.onLoad();
   }
 
-  void _processLayers() {
+  /// PRO-LEVEL FIX: Process definitions (Beds/Doors) BEFORE logic (Slots/Spawns)
+  /// This prevents the "Ghost Plus" bug where slots link to the wrong room.
+  void _processLayersInOrder() {
+    ObjectGroup? spawnLayer;
+    ObjectGroup? slotLayer;
+
+    // 1. First Pass: Create all Beds and Doors
     for (final layer in level.tileMap.map.layers) {
       if (layer is ObjectGroup) {
-        if (layer.name == 'Object Layer') {
+        if (layer.name == 'Object Layer' || layer.name == 'Object') {
           _processObjectLayer(layer);
-        } else if (layer.name == 'Spawn') {
-          _processSpawnLayer(layer);
         } else if (layer.name == 'Collisions') {
           _processCollisionLayer(layer);
+        } else if (layer.name == 'Spawn') {
+          spawnLayer = layer;
         } else if (layer.name == 'BuildingSlots') {
-          _processBuildingSlots(layer);
+          slotLayer = layer;
         }
       }
     }
-    
-    // FIX: Link doors to rooms with a much larger search radius
+
+    // 2. Second Pass: Link Doors to Rooms
     _linkDoorsToBeds();
+
+    // 3. Third Pass: Process Building Slots (Now they know where all beds are!)
+    if (slotLayer != null) _processBuildingSlots(slotLayer);
+
+    // 4. Final Pass: Spawn Hunters (Now they know which beds are taken!)
+    if (spawnLayer != null) _processSpawnLayer(spawnLayer);
   }
 
   void _processObjectLayer(ObjectGroup layer) {
@@ -89,13 +101,11 @@ class Level extends World with HasGameReference<HauntedDormGame> {
   }
 
   void _linkDoorsToBeds() {
-    // Each door needs to find its bed to know which room it protects
     for (final door in allDoors) {
       Bed? nearest;
       double minDist = double.infinity;
       for (final bed in allBeds) {
         final dist = (door.position - bed.position).length;
-        // 400px radius ensures we find the door even in big rooms
         if (dist < minDist && dist < 400) { 
           minDist = dist;
           nearest = bed;
@@ -106,21 +116,23 @@ class Level extends World with HasGameReference<HauntedDormGame> {
   }
 
   void _processSpawnLayer(ObjectGroup layer) {
-    int aiCount = 0;
+    int hunterCount = 0;
     final types = ['nun', 'max', 'jack', 'nun', 'max', 'jack', 'nun'];
 
     for (final object in layer.objects) {
-      if (object.class_ == 'Hunter' || object.name == 'Spawn' || object.name == 'HunterSpawn') {
-        if (aiCount == 0) {
-          player.position = Vector2(object.x + 16, object.y + 24);
-          aiCount++;
-        } else if (aiCount <= 7) {
-          final ai = AIHunter(characterType: types[aiCount - 1]);
-          ai.position = Vector2(object.x + 16, object.y + 24);
+      final String objType = object.type.isNotEmpty ? object.type : object.class_;
+      
+      if (objType == 'Hunter' || object.name == 'Spawn' || object.name == 'HunterSpawn') {
+        if (hunterCount == 0) {
+          player.position = Vector2(object.x + 16, object.y + 16);
+          hunterCount++;
+        } else if (hunterCount <= 7) {
+          final ai = AIHunter(characterType: types[hunterCount - 1]);
+          ai.position = Vector2(object.x + 16, object.y + 16);
           aiHunters.add(ai);
           add(ai);
           game.hunters.add(ai);
-          aiCount++;
+          hunterCount++;
         }
       }
     }

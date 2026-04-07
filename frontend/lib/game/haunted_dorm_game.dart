@@ -5,6 +5,9 @@ import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'actors/player.dart';
 import 'level/level.dart';
+import 'objects/building_slot.dart';
+import 'objects/turret.dart';
+import 'objects/generator.dart';
 
 class HauntedDormGame extends FlameGame
     with HasCollisionDetection, TapCallbacks {
@@ -12,6 +15,10 @@ class HauntedDormGame extends FlameGame
   late final JoystickComponent joystick;
   late final Player player;
   late final Level level;
+
+  // Track the currently selected building slot or turret
+  BuildingSlot? activeSlot;
+  Turret? activeTurret;
 
   // Track if the monster is allowed to move
   bool isGracePeriod = true;
@@ -21,13 +28,41 @@ class HauntedDormGame extends FlameGame
 
   HauntedDormGame({required this.characterType});
 
+  void buildTurret() {
+    if (activeSlot == null || activeSlot!.isOccupied) return;
+
+    final turret = Turret(
+      position: activeSlot!.position.clone(),
+      size: activeSlot!.size.clone(),
+      level: 1,
+    );
+
+    level.add(turret);
+    activeSlot!.isOccupied = true;
+    player.energy -= 10; 
+    activeSlot = null;
+  }
+
+  void buildGenerator(int levelNum) {
+    if (activeSlot == null || activeSlot!.isOccupied) return;
+
+    final generator = Generator(
+      position: activeSlot!.position.clone(),
+      size: activeSlot!.size.clone(),
+      level: levelNum,
+    );
+
+    level.add(generator);
+    activeSlot!.isOccupied = true;
+    player.energy -= (levelNum * 50); 
+    activeSlot = null;
+  }
+
   @override
   Future<void> onLoad() async {
     _addJoystick();
 
     player = Player(joystick: joystick, characterType: characterType);
-
-    // We will update Level to handle the new Haunted Dorm logic
     level = Level(levelName: 'dorm-01', player: player);
 
     camera = CameraComponent.withFixedResolution(

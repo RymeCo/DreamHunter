@@ -80,8 +80,8 @@ class Player extends SpriteComponent with HasGameReference<HauntedDormGame> {
     if (currentBed != null) {
       _state = PlayerState.sleeping;
       
-      // FIX: Better head alignment on the 32x32 bed
-      position = Vector2(currentBed!.x + 16, currentBed!.y + 6);
+      // FIX: Better head alignment on the pillow (Center of 32x32 tile)
+      position = Vector2(currentBed!.x + 16, currentBed!.y + 16);
       
       currentBed!.setSleeping(true);
       

@@ -1,14 +1,17 @@
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import '../haunted_dorm_game.dart';
 import '../objects/bed.dart';
+import '../actors/player.dart';
 
-class BuildingSlot extends SpriteComponent 
+class BuildingSlot extends PositionComponent 
     with TapCallbacks, HasGameReference<HauntedDormGame> {
   
   bool isOccupied = false;
   Bed? associatedBed;
+  late final TextComponent _plusText;
 
   BuildingSlot({
     required super.position,
@@ -18,23 +21,55 @@ class BuildingSlot extends SpriteComponent
 
   @override
   Future<void> onLoad() async {
-    // Development placeholder for the grid slot
-    sprite = await game.loadSprite('tiles/floor_tiles-32x32.png');
-    // Slightly tint it so players know it's interactive
-    paint = Paint()..color = Colors.white.withValues(alpha: 0.1);
+    _plusText = TextComponent(
+      text: '+',
+      textRenderer: TextPaint(
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.2), // Fainter visibility
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      anchor: Anchor.center,
+      position: size / 2,
+    );
+    _plusText.scale = Vector2.zero(); 
+    add(_plusText);
+
+    // SUBTLE & SLOW: Slow breathing effect
+    _plusText.add(ScaleEffect.to(
+      Vector2.all(1.08), // Only 8% growth
+      EffectController(
+        duration: 1.5, 
+        reverseDuration: 1.5, 
+        infinite: true,
+        curve: Curves.easeInOut,
+      ),
+    ));
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    
+    final bool isClaimed = game.player.state == PlayerState.sleeping && 
+                           game.player.currentBed == associatedBed;
+    
+    if (isClaimed && !isOccupied) {
+      if (_plusText.scale == Vector2.zero()) _plusText.scale = Vector2.all(1.0);
+    } else {
+      if (_plusText.scale != Vector2.zero()) _plusText.scale = Vector2.zero();
+    }
   }
 
   @override
   void onTapDown(TapDownEvent event) {
-    if (isOccupied) return;
+    final bool isClaimed = game.player.state == PlayerState.sleeping && 
+                           game.player.currentBed == associatedBed;
 
-    // Check if player is sleeping in the associated bed
-    if (game.player.currentBed != associatedBed) {
-      // Cannot build in a room you don't own
-      return;
+    if (isClaimed && !isOccupied) {
+      game.activeSlot = this;
+      game.overlays.add('BuildMenu');
     }
-
-    // Trigger Build Menu (We will implement this in Phase 3)
-    game.overlays.add('BuildMenu');
   }
 }

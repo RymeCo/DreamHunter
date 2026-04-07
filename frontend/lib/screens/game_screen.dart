@@ -5,6 +5,8 @@ import 'package:dreamhunter/widgets/pause_menu_overlay.dart';
 import 'package:dreamhunter/widgets/grace_period_timer.dart';
 import 'package:dreamhunter/widgets/clickable_image.dart';
 import 'package:dreamhunter/widgets/game_economy_hud.dart';
+import 'package:dreamhunter/widgets/build_menu.dart';
+import 'package:dreamhunter/widgets/upgrade_menu.dart';
 import 'package:dreamhunter/services/game_pre_loader.dart';
 import 'package:dreamhunter/services/audio_service.dart';
 
@@ -50,14 +52,10 @@ class _GameScreenState extends State<GameScreen> {
                   game.isGracePeriod = false;
                 },
               ),
-              'BuildMenu': (context, HauntedDormGame game) => Center(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  color: Colors.black87,
-                  child: const Text('BUILD MENU (COMING SOON)',
-                      style: TextStyle(color: Colors.white)),
-                ),
-              ),
+              'BuildMenu': (context, HauntedDormGame game) => 
+                  BuildMenu(game: game),
+              'UpgradeMenu': (context, HauntedDormGame game) =>
+                  UpgradeMenu(game: game),
             },
             loadingBuilder: (context) => const Center(
               child: CircularProgressIndicator(color: Colors.deepPurpleAccent),

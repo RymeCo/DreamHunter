@@ -26,6 +26,7 @@ class GamePreLoader {
     'game/defenses/door_wood-32x32.png',
     'game/defenses/door_wood_open-32x32.png',
     'game/defenses/turret_sheet-32x32.png',
+    'tiles/floor_tiles-32x32.png',
   ];
 
   /// Loads all match-specific images into Flame's memory cache.
