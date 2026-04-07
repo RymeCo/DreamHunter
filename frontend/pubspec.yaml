@@ -37,14 +37,16 @@ flutter:
   assets:
     - assets/audio/
     - assets/images/
-    - assets/images/auth/
-    - assets/images/core/
     - assets/images/dashboard/
-    - assets/images/game/environment/
+    - assets/images/dashboard/auth/
+    - assets/images/dashboard/core/
+    - assets/images/game/
     - assets/images/game/characters/
-    - assets/images/game/characters/lady/
-    - assets/images/game/characters/boy/
-    - assets/images/game/characters/man/
+    - assets/images/game/monsters/
+    - assets/images/game/economy/
+    - assets/images/game/defenses/
+    - assets/images/game/interface/
     - assets/images/tiles/
+    - assets/tiles/
 
 

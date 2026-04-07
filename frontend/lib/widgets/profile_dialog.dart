@@ -16,9 +16,9 @@ class ProfileDialog extends StatefulWidget {
 class _ProfileDialogState extends State<ProfileDialog> {
   // List of available profile images - same approach as shop
   static final List<String> _profileOptions = [
-    'assets/images/core/splash_logo.png',
-    'assets/images/auth/login_logo.png',
-    'assets/images/auth/register_logo.png',
+    'assets/images/dashboard/core/splash_logo.png',
+    'assets/images/dashboard/auth/login_logo.png',
+    'assets/images/dashboard/auth/register_logo.png',
     // Add more paths here as needed
   ];
 

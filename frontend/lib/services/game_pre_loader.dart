@@ -1,29 +1,52 @@
 import 'package:flame/flame.dart';
+import 'package:flutter/foundation.dart';
 
+/// Handles loading and unloading of high-memory game assets.
+/// These assets are only loaded when the match starts and are WIPED when the match ends.
 class GamePreLoader {
-  static final List<String> characterImages = [
-    'game/characters/man/facing-front(32x64).png',
-    'game/characters/man/facing-back(32x64).png',
-    'game/characters/lady/facing-front(32x64).png',
-    'game/characters/lady/facing-back(32x64).png',
-    'game/characters/boy/facing-front(32x64).png',
-    'game/characters/boy/facing-back(32x64).png',
+  static final List<String> gameImages = [
+    // Characters
+    'game/characters/nun_front-32x48.png',
+    'game/characters/nun_back-32x48.png',
+    'game/characters/max_front-32x48.png',
+    'game/characters/max_back-32x48.png',
+    'game/characters/jack_front-32x48.png',
+    'game/characters/jack_back-32x48.png',
+    
+    // Monsters
+    'game/monsters/ghost_idle-32x48.png',
+    'game/monsters/ghost_right-32x48.png',
+    'game/monsters/ghost_back-32x48.png',
+    
+    // Economy & Defense
+    'game/economy/bed-32x32.png',
+    'game/economy/generator_lv1-32x32.png',
+    'game/economy/generator_lv2-32x32.png',
+    'game/economy/generator_lv3-32x32.png',
+    'game/defenses/door_wood-32x32.png',
+    'game/defenses/door_wood_open-32x32.png',
+    'game/defenses/turret_sheet-32x32.png',
   ];
 
-  static final List<String> tileImages = [
-    'tiles/bed_blue_32x64.png',
-    'tiles/door_32x32.png',
-    'tiles/floor_1_16.png',
-  ];
-
-  static Future<void> preload(Function(double progress) onProgress) async {
-    final allImages = [...characterImages, ...tileImages];
+  /// Loads all match-specific images into Flame's memory cache.
+  static Future<void> loadGameAssets(Function(double progress) onProgress) async {
     int loaded = 0;
-
-    for (var path in allImages) {
-      await Flame.images.load(path);
+    for (var path in gameImages) {
+      try {
+        await Flame.images.load(path);
+      } catch (e) {
+        debugPrint('Failed to load game asset: $path - $e');
+      }
       loaded++;
-      onProgress(loaded / allImages.length);
+      onProgress(loaded / gameImages.length);
     }
+  }
+
+  /// Wipes match assets from memory. Call this when the player exits the game!
+  static void unloadGameAssets() {
+    for (var path in gameImages) {
+      Flame.images.clear(path);
+    }
+    debugPrint('Game Assets Wiped from Memory.');
   }
 }

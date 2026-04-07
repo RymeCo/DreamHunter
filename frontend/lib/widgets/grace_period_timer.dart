@@ -36,11 +36,13 @@ class _GracePeriodTimerState extends State<GracePeriodTimer>
     _controller.forward();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_secondsRemaining > 1) {
-        setState(() {
-          _secondsRemaining--;
-          _controller.reset();
-          _controller.forward();
-        });
+        if (mounted) {
+          setState(() {
+            _secondsRemaining--;
+            _controller.reset();
+            _controller.forward();
+          });
+        }
       } else {
         _timer?.cancel();
         widget.onFinished();
@@ -57,27 +59,29 @@ class _GracePeriodTimerState extends State<GracePeriodTimer>
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: Text(
-          '$_secondsRemaining',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.8),
-            fontSize: 120,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -5,
-            shadows: [
-              Shadow(
-                color: Colors.deepPurpleAccent.withValues(alpha: 0.5),
-                blurRadius: 30,
-              ),
-              const Shadow(
-                color: Colors.black45,
-                offset: Offset(4, 4),
-                blurRadius: 10,
-              ),
-            ],
+    return IgnorePointer(
+      child: Center(
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: Text(
+            '$_secondsRemaining',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 120,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -5,
+              shadows: [
+                Shadow(
+                  color: Colors.deepPurpleAccent.withValues(alpha: 0.5),
+                  blurRadius: 30,
+                ),
+                const Shadow(
+                  color: Colors.black45,
+                  offset: Offset(4, 4),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
           ),
         ),
       ),

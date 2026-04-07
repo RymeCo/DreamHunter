@@ -154,7 +154,7 @@ class _RegisterDialogState extends State<RegisterDialog> {
             height: 360,
             decoration: const BoxDecoration(shape: BoxShape.circle),
             child: Image.asset(
-              'assets/images/auth/register_logo.png',
+              'assets/images/dashboard/auth/register_logo.png',
               fit: BoxFit.contain,
             ),
           ),

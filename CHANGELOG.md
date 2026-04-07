@@ -36,5 +36,11 @@ All notable changes to the **DreamHunter** project will be documented in this fi
 - **Game:** Improved collision detection and map alignment for `dorm-01`.
 - **Assets:** Consolidated Tiled project files and images into `assets/images/tiles`.
 
-### Backend
-- **Jira:** Ongoing synchronization with the `SCRUM` project for task tracking.
+### Haunted Dorm Reconstruction
+- **Architecture:** Implemented "On-Demand Loading" strategy. Dashboard assets preload at Splash; Game assets load at GameLoadingScreen and are wiped upon exit for maximum memory efficiency.
+- **Organization:** Restructured game assets into a DDD-lite directory system (`characters/`, `monsters/`, `economy/`, `defenses/`, `interface/`).
+- **Mapping:** Aligned Tiled project with Flame Engine best practices (standardized `assets/tiles/` and `assets/images/tiles/` paths).
+- **Tooling:** Created `SpriteNameParser` utility to automatically extract `Vector2` sizes from filenames (`name-WxH.png`).
+- **Logic:** Built the foundations for the 8-Hunter spawn system and AI bed reservation yielding.
+- **Refinement:** Implemented "Asymmetrical Mirroring" for player/AI sprites and the "Tucked In" bed layering effect.
+- **Fix:** Corrected build-breaking `ConnectivityService` async initialization error.

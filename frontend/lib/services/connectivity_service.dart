@@ -13,8 +13,8 @@ class ConnectivityService {
   // ValueNotifier so the UI can listen and rebuild
   final ValueNotifier<bool> isOnline = ValueNotifier(true);
 
-  void initialize() {
-    _checkInitialState();
+  Future<void> initialize() async {
+    await _checkInitialState();
     _subscription = _connectivity.onConnectivityChanged.listen(
       _updateConnectionStatus,
     );

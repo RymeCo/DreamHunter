@@ -25,7 +25,7 @@ class _GameLoadingScreenState extends State<GameLoadingScreen> {
   Future<void> _startPreloading() async {
     final startTime = DateTime.now();
 
-    await GamePreLoader.preload((progress) {
+    await GamePreLoader.loadGameAssets((progress) {
       if (mounted) {
         setState(() => _progress = progress);
       }

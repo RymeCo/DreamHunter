@@ -1,0 +1,38 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "dorm-01.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "dorm-01.tmx": {
+            "scale": 2,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 176,
+                "y": 415
+            }
+        },
+        "dorm_tiles.tsx": {
+            "scaleInDock": 1.5,
+            "scaleInEditor": 1
+        }
+    },
+    "last.imagePath": "/home/ryme/All/Programming/School/DreamHunter/frontend/assets/images/tiles",
+    "map.height": 40,
+    "map.lastUsedFormat": "tmx",
+    "map.width": 40,
+    "openFiles": [
+        "dorm_tiles.tsx",
+        "dorm-01.tmx"
+    ],
+    "project": "dreamhunter.tiled-project",
+    "recentFiles": [
+        "dorm_tiles.tsx",
+        "dorm-01.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx"
+}

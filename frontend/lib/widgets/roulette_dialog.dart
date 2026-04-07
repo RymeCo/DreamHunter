@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'liquid_glass_dialog.dart';
 import 'game_widgets.dart';
@@ -146,11 +147,7 @@ class _RouletteDialogState extends State<RouletteDialog>
       return;
     }
 
-    // --- START IMMEDIATELY ---
-    // 1. Play sound at the absolute beginning to avoid lag
-    AudioService().playRouletteSpin();
-
-    // 2. Determine winner (Instant calculation)
+    // --- PHASE 1: PREPARE DATA (INSTANT) ---
     final int totalWeight = RouletteService.rewards.fold<int>(
       0,
       (total, item) => total + (item['weight'] as int),
@@ -169,29 +166,6 @@ class _RouletteDialogState extends State<RouletteDialog>
 
     final winningReward = RouletteService.rewards[winnerIndex];
 
-    // 3. BACKGROUND THE HEAVY SYNC CALLS
-    // We don't 'await' these here because they block the animation start.
-    // They will run in the background while the wheel spins.
-    final Future<void> syncFuture = () async {
-      if (isPaid) {
-        await widget.controller.updateCurrency(
-          newCoins: widget.controller.dreamCoins - cost,
-        );
-      } else {
-        await RouletteService.consumeFreeSpin();
-      }
-
-      await RouletteService.setPendingReward({
-        'amount': winningReward['amount'],
-        'name': winningReward['name'],
-      });
-      await RouletteService.setSpinning(
-        true,
-        targetRotation: 0,
-      ); // Rotation updated below
-    }();
-
-    // 4. PREPARE ANIMATION
     const double fullCircle = 2 * math.pi;
     final double segmentWidth = fullCircle / RouletteService.rewards.length;
     final double baseRotation =
@@ -201,7 +175,8 @@ class _RouletteDialogState extends State<RouletteDialog>
         (10 * fullCircle) +
         (baseRotation - (_currentRotation % fullCircle));
 
-    if (!mounted) return;
+    // --- PHASE 2: TRIGGER UI & SOUND (INSTANT) ---
+    AudioService().playRouletteSpin();
 
     setState(() {
       _isSpinning = true;
@@ -215,15 +190,27 @@ class _RouletteDialogState extends State<RouletteDialog>
 
     _controller.duration = const Duration(seconds: 5);
     _controller.reset();
+    unawaited(_controller.forward());
 
-    // We already played the sound at the top.
+    // --- PHASE 3: DETACHED BACKGROUND SYNC ---
+    unawaited(() async {
+      if (isPaid) {
+        await widget.controller.updateCurrency(
+          newCoins: widget.controller.dreamCoins - cost,
+        );
+      } else {
+        await RouletteService.consumeFreeSpin();
+      }
 
-    // 5. START ANIMATION
-    final animationFuture = _controller.forward();
+      await RouletteService.setPendingReward({
+        'amount': winningReward['amount'],
+        'name': winningReward['name'],
+      });
+      await RouletteService.setSpinning(true, targetRotation: targetRotation);
+    }());
 
-    // Wait for the animation to finish OR for the sync to finish if we need to be safe
-    await Future.wait([animationFuture, syncFuture]);
-
+    // --- PHASE 4: FINALIZE ---
+    await Future.delayed(const Duration(seconds: 5));
     _finalizeSpin(targetRotation, winningReward);
   }
 
@@ -231,14 +218,18 @@ class _RouletteDialogState extends State<RouletteDialog>
     // Play the reward sound immediately!
     AudioService().playReward();
 
-    // 4. FINISH: Grant reward and clear pending
+    // FINISH: Grant reward and clear pending
     final rewardAmount = (reward['amount'] as num).toInt();
-    await widget.controller.updateCurrency(
-      newCoins: widget.controller.dreamCoins + rewardAmount,
-    );
-    await RouletteService.clearPendingReward();
-    await RouletteService.setSpinning(false);
-
+    
+    // Background the final update too to avoid UI stutters during closing
+    unawaited(() async {
+      await widget.controller.updateCurrency(
+        newCoins: widget.controller.dreamCoins + rewardAmount,
+      );
+      await RouletteService.clearPendingReward();
+      await RouletteService.setSpinning(false);
+    }());
+    
     if (!mounted) {
       if (widget.parentContext != null && widget.parentContext!.mounted) {
         showCustomSnackBar(
@@ -321,7 +312,7 @@ class _RouletteDialogState extends State<RouletteDialog>
                       animation: _controller,
                       builder: (context, child) {
                         double rotation = _isSpinning
-                            ? _animation!.value
+                            ? (_animation?.value ?? _currentRotation)
                             : _currentRotation;
                         return CustomPaint(
                           size: const Size(300, 300),

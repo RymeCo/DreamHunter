@@ -42,10 +42,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    AudioService().playDashboardMusic();
-    ConnectivityService().initialize();
-    _controller.initialize();
-    _checkPendingRouletteRewards();
+    // DETACH HEAVY INITIALIZATION: Run in background to avoid blocking splash/dashboard transition
+    unawaited(_backgroundInit());
+
     _isLoggedIn = FirebaseAuth.instance.currentUser != null;
     _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((
       user,
@@ -56,10 +55,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  Future<void> _checkPendingRouletteRewards() async {
-    // Wait for the controller to be initialized properly
-    await Future.delayed(const Duration(milliseconds: 500));
+  Future<void> _backgroundInit() async {
+    // 1. Start music immediately (now returns void/unawaited internal)
+    AudioService().playDashboardMusic();
 
+    // 2. Initialize background services
+    await ConnectivityService().initialize();
+    await _controller.initialize();
+
+    // 3. Check for rewards without arbitrary delays
+    if (mounted) {
+      await _checkPendingRouletteRewards();
+    }
+  }
+
+  Future<void> _checkPendingRouletteRewards() async {
+    // Arbitrary delay removed - controller is awaited in _backgroundInit now
     final state = await RouletteService.getAndSyncState();
 
     if (state.pendingReward != null) {
@@ -341,7 +352,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             right: 0,
             child: Center(
               child: Image.asset(
-                'assets/images/game/environment/dorm.png',
+                'assets/images/dashboard/core/dorm.png',
                 fit: BoxFit.contain,
                 width: MediaQuery.of(context).size.width * 0.85,
               ),

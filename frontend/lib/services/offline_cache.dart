@@ -5,6 +5,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 class OfflineCache {
   static const String _currencyKey = 'currency_v1';
   static const String _settingsKey = 'settings_v1';
+  static SharedPreferences? _prefs;
+
+  /// Pre-caches the SharedPreferences instance to avoid 500ms+ delays during I/O calls.
+  static Future<void> initialize() async {
+    _prefs ??= await SharedPreferences.getInstance();
+  }
+
+  static SharedPreferences get _p {
+    if (_prefs == null) {
+      throw Exception("OfflineCache not initialized. Call initialize() in main.");
+    }
+    return _prefs!;
+  }
 
   static String _getScopedKey(String baseKey) {
     final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
@@ -12,28 +25,30 @@ class OfflineCache {
   }
 
   static Future<void> saveSettings(Map<String, dynamic> settings) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_settingsKey, json.encode(settings));
+    await _p.setString(_settingsKey, json.encode(settings));
   }
 
   static Future<Map<String, dynamic>> getSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString(_settingsKey);
+    await initialize(); // Fallback just in case
+    final cached = _p.getString(_settingsKey);
     if (cached != null) {
       return json.decode(cached) as Map<String, dynamic>;
     }
-    return {'music': true, 'sfx': true, 'musicVolume': 0.79, 'sfxVolume': 1.0};
+    return {
+      'music': true,
+      'sfx': true,
+      'musicVolume': 0.79,
+      'sfxVolume': 1.0,
+    };
   }
 
   static Future<void> saveCurrency(int dreamCoins, int hellStones) async {
-    final prefs = await SharedPreferences.getInstance();
     final data = {'dreamCoins': dreamCoins, 'hellStones': hellStones};
-    await prefs.setString(_getScopedKey(_currencyKey), json.encode(data));
+    await _p.setString(_getScopedKey(_currencyKey), json.encode(data));
   }
 
   static Future<Map<String, int>> getCurrency() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString(_getScopedKey(_currencyKey));
+    final cached = _p.getString(_getScopedKey(_currencyKey));
     if (cached != null) {
       final Map<String, dynamic> data = json.decode(cached);
       return {
@@ -45,13 +60,12 @@ class OfflineCache {
   }
 
   static Future<void> clearAllUserData() async {
-    final prefs = await SharedPreferences.getInstance();
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
-    final keys = prefs.getKeys();
+    final keys = _p.getKeys();
     for (final key in keys) {
       if (key.startsWith('${uid}_')) {
-        await prefs.remove(key);
+        await _p.remove(key);
       }
     }
   }
@@ -72,13 +86,11 @@ class OfflineCache {
     String key,
     Map<String, dynamic> data,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_getScopedKey(key), json.encode(data));
+    await _p.setString(_getScopedKey(key), json.encode(data));
   }
 
   static Future<Map<String, dynamic>?> getMetadata(String key) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString(_getScopedKey(key));
+    final cached = _p.getString(_getScopedKey(key));
     if (cached != null) {
       return json.decode(cached) as Map<String, dynamic>;
     }

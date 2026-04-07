@@ -203,7 +203,7 @@ class AppLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/images/core/splash_logo.png',
+      'assets/images/dashboard/core/splash_logo.png',
       width: size,
       height: size,
       fit: BoxFit.contain,

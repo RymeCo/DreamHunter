@@ -1,26 +1,44 @@
 import 'dart:async';
 import 'package:flame/components.dart';
-import 'package:dreamhunter/game/dreamhunter_game.dart';
+import 'package:flame/events.dart';
+import '../haunted_dorm_game.dart';
+import '../core/interactable.dart';
 
-class Bed extends SpriteComponent with HasGameReference<DreamHunterGame> {
-  Bed({required super.position, required super.size});
+class Bed extends SpriteComponent with HasGameReference<HauntedDormGame>, TapCallbacks, Interactable {
+  final String orientation; // North, South, East, West
+
+  Bed({
+    required super.position, 
+    required super.size, 
+    this.orientation = 'North',
+  });
+
+  @override
+  String get interactionAction => 'SLEEP';
+
+  @override
+  void onInteract() {
+    game.player.enterBed();
+  }
 
   @override
   FutureOr<void> onLoad() async {
     priority = 1;
-    // We adjust the size to 32x64 to match the sprite,
-    // even if the TMX object height is smaller (e.g., 48).
-    // This ensures the bed doesn't look squashed.
-    size = Vector2(32, 64);
-    // Since objects in Tiled are usually top-left, we might need
-    // to adjust the Y position if we're increasing the height.
-    // If the object was 48, and we increase to 64, we move it up by 16.
-    // But for now, let's keep it simple.
-    sprite = await game.loadSprite(
-      'tiles/bed_blue_32x64.png',
-      srcPosition: Vector2(0, 0),
-      srcSize: Vector2(32, 64),
-    );
+    size = Vector2.all(32);
+    sprite = await game.loadSprite('game/economy/bed-32x32.png');
+    
+    setupInteractable();
+
     return super.onLoad();
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    updateInteractable(game.player.position, 50.0);
+  }
+
+  void setSleeping(bool sleeping) {
+    // Logic for sleeping state (like ZZZ particles) can go here
   }
 }

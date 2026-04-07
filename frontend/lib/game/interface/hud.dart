@@ -1,12 +1,13 @@
 import 'package:flame/components.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
-import 'package:dreamhunter/game/dreamhunter_game.dart';
-import 'package:dreamhunter/game/actors/player.dart';
+import '../haunted_dorm_game.dart';
+import '../actors/player.dart';
 import 'package:dreamhunter/services/audio_service.dart';
 
-class HUD extends PositionComponent with HasGameReference<DreamHunterGame> {
+class HUD extends PositionComponent with HasGameReference<HauntedDormGame> {
   late TextComponent energyText;
+  late TextComponent coinText;
   late ButtonComponent sleepButton;
   late ButtonComponent exitButton;
 
@@ -29,6 +30,13 @@ class HUD extends PositionComponent with HasGameReference<DreamHunterGame> {
       textRenderer: regular,
     );
     add(energyText);
+
+    coinText = TextComponent(
+      text: 'Coins: 0',
+      position: Vector2(20, 50),
+      textRenderer: regular,
+    );
+    add(coinText);
 
     final buttonPaint = Paint()
       ..color = Colors.deepPurpleAccent.withValues(alpha: 0.5);
@@ -75,18 +83,13 @@ class HUD extends PositionComponent with HasGameReference<DreamHunterGame> {
   void update(double dt) {
     super.update(dt);
     energyText.text = 'Energy: ${game.player.energy.toInt()}';
+    coinText.text = 'Coins: ${game.player.energy.toInt()}'; // Temporary link to energy until economy ticks are built
 
     final isSleeping = game.player.state == PlayerState.sleeping;
-    final isNearBed = game.player.isNearBed;
 
     if (isSleeping) {
       if (!exitButton.isMounted) add(exitButton);
-      if (sleepButton.isMounted) remove(sleepButton);
-    } else if (isNearBed) {
-      if (!sleepButton.isMounted) add(sleepButton);
-      if (exitButton.isMounted) remove(exitButton);
     } else {
-      if (sleepButton.isMounted) remove(sleepButton);
       if (exitButton.isMounted) remove(exitButton);
     }
   }

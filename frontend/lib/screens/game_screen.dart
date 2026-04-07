@@ -1,10 +1,11 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
-import 'package:dreamhunter/game/dreamhunter_game.dart';
+import 'package:dreamhunter/game/haunted_dorm_game.dart';
 import 'package:dreamhunter/widgets/pause_menu_overlay.dart';
 import 'package:dreamhunter/widgets/grace_period_timer.dart';
 import 'package:dreamhunter/widgets/clickable_image.dart';
-
+import 'package:dreamhunter/widgets/game_economy_hud.dart';
+import 'package:dreamhunter/services/game_pre_loader.dart';
 import 'package:dreamhunter/services/audio_service.dart';
 
 class GameScreen extends StatefulWidget {
@@ -15,13 +16,19 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
-  late final DreamHunterGame _game;
+  late final HauntedDormGame _game;
 
   @override
   void initState() {
     super.initState();
     AudioService().playInGameMusic();
-    _game = DreamHunterGame(characterType: 'man');
+    _game = HauntedDormGame(characterType: 'max');
+  }
+
+  @override
+  void dispose() {
+    GamePreLoader.unloadGameAssets();
+    super.dispose();
   }
 
   @override
@@ -33,15 +40,29 @@ class _GameScreenState extends State<GameScreen> {
           GameWidget(
             game: _game,
             overlayBuilderMap: {
-              'PauseMenu': (context, DreamHunterGame game) =>
+              'PauseMenu': (context, HauntedDormGame game) =>
                   PauseMenuOverlay(game: game),
-              'GraceTimer': (context, DreamHunterGame game) => GracePeriodTimer(
-                onFinished: () => game.overlays.remove('GraceTimer'),
+              'EconomyHUD': (context, HauntedDormGame game) =>
+                  GameEconomyHUD(game: game),
+              'GraceTimer': (context, HauntedDormGame game) => GracePeriodTimer(
+                onFinished: () {
+                  game.overlays.remove('GraceTimer');
+                  game.isGracePeriod = false;
+                },
+              ),
+              'BuildMenu': (context, HauntedDormGame game) => Center(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  color: Colors.black87,
+                  child: const Text('BUILD MENU (COMING SOON)',
+                      style: TextStyle(color: Colors.white)),
+                ),
               ),
             },
             loadingBuilder: (context) => const Center(
               child: CircularProgressIndicator(color: Colors.deepPurpleAccent),
             ),
+            initialActiveOverlays: const ['EconomyHUD'],
           ),
           Positioned(
             top: 40,

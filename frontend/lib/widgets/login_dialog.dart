@@ -118,7 +118,7 @@ class _LoginDialogState extends State<LoginDialog> {
             height: 360,
             decoration: const BoxDecoration(shape: BoxShape.circle),
             child: Image.asset(
-              'assets/images/auth/login_logo.png',
+              'assets/images/dashboard/auth/login_logo.png',
               fit: BoxFit.contain,
             ),
           ),

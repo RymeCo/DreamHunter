@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'audio_service.dart';
 
+/// Handles pre-loading of UI and Dashboard assets only.
+/// This runs during the SplashScreen to ensure the main menu is snappy.
 class PreLoader {
   static final List<String> imagesToPrecache = [
     'assets/images/dashboard/main_background.png',
@@ -8,7 +10,11 @@ class PreLoader {
     'assets/images/dashboard/shop_stall.png',
     'assets/images/dashboard/roulette_man.png',
     'assets/images/dashboard/signage.png',
-    'assets/images/game/environment/dorm.png',
+    'assets/images/dashboard/core/dorm.png',
+    'assets/images/dashboard/auth/login_logo.png',
+    'assets/images/dashboard/auth/register_logo.png',
+    'assets/images/dashboard/core/splash_logo.png',
+    'assets/images/dashboard/core/by_ryme.png',
   ];
 
   static final List<String> soundsToPrecache = [
@@ -16,11 +22,8 @@ class PreLoader {
     'audio/roulette.ogg',
     'audio/track1.ogg',
     'audio/track2.ogg',
-    'audio/levelup.ogg',
-    'audio/reward.ogg',
   ];
 
-  /// Pre-caches all essential images and sounds, reporting progress.
   static Future<void> precacheAll(
     BuildContext context,
     Function(double progress) onProgress,
@@ -28,30 +31,22 @@ class PreLoader {
     int totalItems = imagesToPrecache.length + soundsToPrecache.length;
     int loadedCount = 0;
 
-    // 1. Load Images
     for (var path in imagesToPrecache) {
       try {
         await precacheImage(AssetImage(path), context);
-      } catch (e) {
-        debugPrint('Failed to precache image: $path - $e');
-      }
+      } catch (_) {}
       loadedCount++;
       onProgress(loadedCount / totalItems);
     }
 
-    // 2. Load Sounds
     for (var path in soundsToPrecache) {
       try {
-        await AudioService().precacheSound(path);
-      } catch (e) {
-        debugPrint('Failed to precache sound: $path - $e');
-      }
+        AudioService().precacheSound(path);
+      } catch (_) {}
       loadedCount++;
       onProgress(loadedCount / totalItems);
     }
   }
 
-  /// Returns the total count of assets that need to be pre-cached.
-  static int get totalCount =>
-      imagesToPrecache.length + soundsToPrecache.length;
+  static int get totalCount => imagesToPrecache.length + soundsToPrecache.length;
 }
