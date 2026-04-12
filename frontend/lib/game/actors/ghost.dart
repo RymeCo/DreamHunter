@@ -62,10 +62,12 @@ class Ghost extends SpriteComponent with HasGameReference<HauntedDormGame> {
   void update(double dt) {
     super.update(dt);
 
-    _levelTimer += dt;
-    if (_levelTimer >= GameConfig.monsterUpgradeTime) {
-      _levelTimer = 0;
-      _levelUp();
+    if (!game.isGracePeriod) {
+      _levelTimer += dt;
+      if (_levelTimer >= GameConfig.monsterUpgradeTime) {
+        _levelTimer = 0;
+        _levelUp();
+      }
     }
 
     _hpBar.width = width * (_health / _maxHealth);
