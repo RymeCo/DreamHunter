@@ -4,6 +4,9 @@ import '../game/haunted_dorm_game.dart';
 import '../widgets/game_economy_hud.dart';
 import '../widgets/build_menu.dart';
 import '../widgets/upgrade_menu.dart';
+import '../widgets/pause_menu_overlay.dart';
+import '../widgets/clickable_image.dart';
+import '../widgets/liquid_glass_dialog.dart';
 
 class GameScreen extends StatefulWidget {
   final String characterType;
@@ -31,18 +34,13 @@ class _GameScreenState extends State<GameScreen> {
           GameWidget(
             game: _game,
             overlayBuilderMap: {
-              'BuildMenu': (context, HauntedDormGame game) =>
-                  BuildMenu(game: game),
-              'UpgradeMenu': (context, HauntedDormGame game) =>
-                  UpgradeMenu(game: game),
+              'BuildMenu': (context, HauntedDormGame game) => BuildMenu(game: game),
+              'UpgradeMenu': (context, HauntedDormGame game) => UpgradeMenu(game: game),
+              'PauseMenu': (context, HauntedDormGame game) => PauseMenuOverlay(game: game),
               'GameOver': (context, HauntedDormGame game) => Center(
-                child: Container(
+                child: LiquidGlassDialog(
+                  width: 320,
                   padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Colors.black87,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.redAccent, width: 2),
-                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -55,9 +53,10 @@ class _GameScreenState extends State<GameScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('BACK TO DASHBOARD'),
+                      GlassButton(
+                        label: 'BACK TO DASHBOARD',
+                        onTap: () => Navigator.of(context).pop(),
+                        glowColor: Colors.redAccent,
                       ),
                     ],
                   ),
@@ -65,53 +64,74 @@ class _GameScreenState extends State<GameScreen> {
               ),
             },
           ),
-
+          
+          // TOP HUD BAR
           Positioned(
             top: 50,
-            left: 20,
-            right: 20,
-            child: Column(
-              children: [
-                ListenableBuilder(
-                  listenable: _game.gameState,
-                  builder: (context, _) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white10),
-                      ),
-                      child: Text(
-                        _game.gameState.formattedTime,
-                        style: const TextStyle(
-                          color: Colors.amberAccent,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'TIME REMAINING',
-                  style: TextStyle(
-                    color: Colors.white38,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
+            left: 0,
+            right: 0,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // CENTER TIMER
+                  ListenableBuilder(
+                    listenable: _game.gameState,
+                    builder: (context, _) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          LiquidGlassDialog(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            borderRadius: 12,
+                            child: Text(
+                              _game.gameState.formattedTime,
+                              style: const TextStyle(
+                                color: Colors.amberAccent,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'TIME REMAINING',
+                            style: TextStyle(
+                              color: Colors.white38,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
-                ),
-              ],
+
+                  // TOP RIGHT PAUSE
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GlassButton(
+                      width: 50,
+                      height: 50,
+                      borderRadius: 12,
+                      onTap: () {
+                        if (!_game.overlays.isActive('PauseMenu')) {
+                          _game.pauseEngine();
+                          _game.overlays.add('PauseMenu');
+                        }
+                      },
+                      child: const Icon(Icons.pause_rounded, color: Colors.white, size: 28),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-
-          // ECONOMY HUD
+          
+          // ECONOMY HUD (Left side)
           GameEconomyHUD(game: _game),
         ],
       ),

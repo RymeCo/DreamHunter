@@ -22,6 +22,7 @@ class Player extends SpriteComponent with HasGameReference<HauntedDormGame> {
   Bed? currentBed;
   bool isNearBed = false;
   double energy = 0;
+  double coins = 0;
 
   Player({required this.joystick, required this.characterType, Vector2? size})
     : spriteSize = size ?? Vector2(32, 48);
@@ -124,6 +125,7 @@ class Player extends SpriteComponent with HasGameReference<HauntedDormGame> {
       await Future.delayed(const Duration(milliseconds: 500));
       if (_state == PlayerState.sleeping) {
         energy += 1;
+        coins += 1;
         _showFloatingText('+1');
         return true;
       }
