@@ -137,6 +137,55 @@ class _GameScreenState extends State<GameScreen> {
           
           // ECONOMY HUD (Left side)
           GameEconomyHUD(game: _game),
+
+          // GIANT GRACE COUNTDOWN
+          IgnorePointer(
+            child: Center(
+              child: ListenableBuilder(
+                listenable: _game.gameState,
+                builder: (context, _) {
+                  final isGrace = _game.gameState.status == GameStatus.grace;
+                  final graceSeconds = _game.gameState.graceTimeRemaining.ceil();
+
+                  // Brief "GO!" flash when grace ends
+                  final showGo = !isGrace &&
+                      _game.gameState.matchTimeRemaining >
+                          (HauntedDormGame.matchDuration - 1.5);
+
+                  if (!isGrace && !showGo) return const SizedBox.shrink();
+
+                  return TweenAnimationBuilder<double>(
+                    key: ValueKey(graceSeconds),
+                    duration: const Duration(milliseconds: 300),
+                    tween: Tween(begin: 1.5, end: 1.0),
+                    builder: (context, scale, child) {
+                      return Transform.scale(
+                        scale: scale,
+                        child: Text(
+                          showGo ? 'GO!' : '$graceSeconds',
+                          style: TextStyle(
+                            color: showGo ? Colors.greenAccent : Colors.white,
+                            fontSize: 120,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 4,
+                            shadows: [
+                              Shadow(
+                                color: (showGo
+                                        ? Colors.greenAccent
+                                        : Colors.white)
+                                    .withValues(alpha: 0.5),
+                                blurRadius: 40,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
         ],
       ),
     );

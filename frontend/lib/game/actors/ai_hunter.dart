@@ -59,6 +59,8 @@ class AIHunter extends SpriteComponent with HasGameReference<HauntedDormGame> {
   }
 
   void _handleEconomy(double dt) {
+    if (game.isGracePeriod) return;
+
     _incomeTimer += dt;
     if (_incomeTimer >= 0.5) {
       _incomeTimer = 0;

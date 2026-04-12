@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
-import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
 import 'actors/player.dart';
 import 'level/level.dart';
@@ -46,34 +45,6 @@ class HauntedDormGame extends FlameGame
 
     // Update global grace state for actors
     isGracePeriod = gameState.status == GameStatus.grace;
-
-    // Grace Period Screen Flash Effect
-    if (isGracePeriod) {
-      if (!overlays.isActive('GraceFlash')) {
-        _triggerScreenFlash();
-      }
-    }
-  }
-
-  void _triggerScreenFlash() {
-    final flash = RectangleComponent(
-      size: camera.viewport.size,
-      paint: Paint()..color = Colors.red.withValues(alpha: 0.1),
-    );
-    camera.viewport.add(flash);
-    flash.add(
-      OpacityEffect.to(
-        0.3,
-        EffectController(duration: 0.5, reverseDuration: 0.5, infinite: true),
-      ),
-    );
-
-    // Watch for grace period end to remove flash
-    gameState.addListener(() {
-      if (gameState.status != GameStatus.grace && flash.isMounted) {
-        flash.removeFromParent();
-      }
-    });
   }
 
   @override

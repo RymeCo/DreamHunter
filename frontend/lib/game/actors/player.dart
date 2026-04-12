@@ -23,6 +23,7 @@ class Player extends SpriteComponent with HasGameReference<HauntedDormGame> {
   bool isNearBed = false;
   double energy = 0;
   double coins = 0;
+  double _economyTimer = 0;
 
   Player({required this.joystick, required this.characterType, Vector2? size})
     : spriteSize = size ?? Vector2(32, 48);
@@ -52,6 +53,17 @@ class Player extends SpriteComponent with HasGameReference<HauntedDormGame> {
       if (joystick.scale != Vector2.zero()) {
         joystick.scale = Vector2.zero();
         game.camera.stop(); // FREE CAM: Unlock camera from player
+      }
+
+      // Frame-safe, pause-aware economy loop
+      if (!game.isGracePeriod) {
+        _economyTimer += dt;
+        if (_economyTimer >= 0.5) {
+          _economyTimer = 0;
+          energy += 1;
+          coins += 1;
+          _showFloatingText('+1');
+        }
       }
       return;
     } else {
@@ -115,22 +127,7 @@ class Player extends SpriteComponent with HasGameReference<HauntedDormGame> {
       }
 
       _updateSprite();
-      _startEconomyTicks();
     }
-  }
-
-  void _startEconomyTicks() {
-    Future.doWhile(() async {
-      if (_state != PlayerState.sleeping) return false;
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (_state == PlayerState.sleeping) {
-        energy += 1;
-        coins += 1;
-        _showFloatingText('+1');
-        return true;
-      }
-      return false;
-    });
   }
 
   void _showFloatingText(String text) {
