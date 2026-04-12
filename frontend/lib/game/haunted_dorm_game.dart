@@ -77,10 +77,9 @@ class HauntedDormGame extends FlameGame
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
-    // Responsive Scaling: Ensure we always see roughly the same amount of game world
-    // by adjusting zoom based on the current screen width.
+    // 7-TILE ZOOM: Target exactly 7 tiles (224px) width-wise for that classic feel.
     if (isLoaded) {
-      camera.viewfinder.zoom = (size.x / 360).clamp(1.0, 3.0);
+      camera.viewfinder.zoom = size.x / 224;
     }
   }
 
