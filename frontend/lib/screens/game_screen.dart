@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
 import '../game/haunted_dorm_game.dart';
+import '../game/core/game_state_manager.dart';
 import '../widgets/game_economy_hud.dart';
 import '../widgets/build_menu.dart';
 import '../widgets/upgrade_menu.dart';
@@ -79,28 +80,30 @@ class _GameScreenState extends State<GameScreen> {
                   ListenableBuilder(
                     listenable: _game.gameState,
                     builder: (context, _) {
+                      final isGrace = _game.gameState.status == GameStatus.grace;
                       return Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           LiquidGlassDialog(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                             borderRadius: 12,
+                            glowColor: isGrace ? Colors.redAccent : Colors.amberAccent,
                             child: Text(
                               _game.gameState.formattedTime,
-                              style: const TextStyle(
-                                color: Colors.amberAccent,
-                                fontSize: 28,
+                              style: TextStyle(
+                                color: isGrace ? Colors.redAccent : Colors.amberAccent,
+                                fontSize: 32, // Larger
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 2,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'TIME REMAINING',
+                          const SizedBox(height: 6),
+                          Text(
+                            isGrace ? 'GRACE PERIOD' : 'TIME REMAINING',
                             style: TextStyle(
-                              color: Colors.white38,
-                              fontSize: 10,
+                              color: isGrace ? Colors.redAccent : Colors.white38,
+                              fontSize: 11,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 2,
                             ),
@@ -114,16 +117,17 @@ class _GameScreenState extends State<GameScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: GlassButton(
-                      width: 50,
-                      height: 50,
-                      borderRadius: 12,
+                      width: 56, // Scaled up
+                      height: 56,
+                      borderRadius: 14,
+                      glowColor: Colors.white,
                       onTap: () {
                         if (!_game.overlays.isActive('PauseMenu')) {
                           _game.pauseEngine();
                           _game.overlays.add('PauseMenu');
                         }
                       },
-                      child: const Icon(Icons.pause_rounded, color: Colors.white, size: 28),
+                      child: const Icon(Icons.pause_rounded, color: Colors.white, size: 32),
                     ),
                   ),
                 ],

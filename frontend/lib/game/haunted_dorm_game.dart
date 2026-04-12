@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
+import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
 import 'actors/player.dart';
 import 'level/level.dart';
@@ -42,6 +43,37 @@ class HauntedDormGame extends FlameGame
   void update(double dt) {
     super.update(dt);
     gameState.updateTimer(dt);
+
+    // Update global grace state for actors
+    isGracePeriod = gameState.status == GameStatus.grace;
+
+    // Grace Period Screen Flash Effect
+    if (isGracePeriod) {
+      if (!overlays.isActive('GraceFlash')) {
+        _triggerScreenFlash();
+      }
+    }
+  }
+
+  void _triggerScreenFlash() {
+    final flash = RectangleComponent(
+      size: camera.viewport.size,
+      paint: Paint()..color = Colors.red.withValues(alpha: 0.1),
+    );
+    camera.viewport.add(flash);
+    flash.add(
+      OpacityEffect.to(
+        0.3,
+        EffectController(duration: 0.5, reverseDuration: 0.5, infinite: true),
+      ),
+    );
+
+    // Watch for grace period end to remove flash
+    gameState.addListener(() {
+      if (gameState.status != GameStatus.grace && flash.isMounted) {
+        flash.removeFromParent();
+      }
+    });
   }
 
   @override
@@ -51,14 +83,10 @@ class HauntedDormGame extends FlameGame
     player = Player(joystick: joystick, characterType: characterType);
     level = Level(levelName: 'dorm-01', player: player);
 
-    // Use default CameraComponent (MaxViewport) for true full-screen
+    // CAMERA: exactly 7 tiles wide (224px) for perfect scaling
     camera = CameraComponent(world: level);
-
-    // Set a responsive zoom: Target ~10-12 tiles (320-384px) visible horizontally.
-    // We'll set a base zoom and allow it to scale in onGameResize.
     camera.viewfinder.zoom = 1.0;
 
-    // Add a subtle full-screen tint to the viewport
     camera.viewport.add(
       RectangleComponent(
         size: camera.viewport.size,
@@ -67,7 +95,6 @@ class HauntedDormGame extends FlameGame
     );
 
     camera.viewport.add(joystick);
-
     addAll([level, camera]);
 
     camera.follow(player);
@@ -77,21 +104,33 @@ class HauntedDormGame extends FlameGame
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
-    // 7-TILE ZOOM: Target exactly 7 tiles (224px) width-wise for that classic feel.
     if (isLoaded) {
       camera.viewfinder.zoom = size.x / 224;
     }
   }
 
   void _addJoystick() {
-    final knobPaint = Paint()..color = const Color.fromRGBO(255, 255, 255, 0.3);
+    // LiquidGlass Joystick style - SCALED UP
+    final knobPaint = Paint()..color = const Color.fromRGBO(255, 255, 255, 0.4);
     final backgroundPaint = Paint()
-      ..color = const Color.fromRGBO(255, 255, 255, 0.05);
+      ..color = const Color.fromRGBO(255, 255, 255, 0.1);
+    final borderPaint = Paint()
+      ..color = const Color.fromRGBO(255, 255, 255, 0.2)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
 
     joystick = JoystickComponent(
-      knob: CircleComponent(radius: 20, paint: knobPaint),
-      background: CircleComponent(radius: 40, paint: backgroundPaint),
-      margin: const EdgeInsets.only(left: 40, bottom: 40),
+      knob: CircleComponent(
+        radius: 35, // Increased from 20
+        paint: knobPaint,
+        children: [CircleComponent(radius: 35, paint: borderPaint)],
+      ),
+      background: CircleComponent(
+        radius: 75, // Increased from 40
+        paint: backgroundPaint,
+        children: [CircleComponent(radius: 75, paint: borderPaint)],
+      ),
+      margin: const EdgeInsets.only(left: 50, bottom: 50),
     );
   }
 

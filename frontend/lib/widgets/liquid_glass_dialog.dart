@@ -38,6 +38,9 @@ class LiquidGlassDialog extends StatelessWidget {
   /// Optional background color override.
   final Color? color;
 
+  /// Optional border/glow color override.
+  final Color? glowColor;
+
   const LiquidGlassDialog({
     super.key,
     required this.child,
@@ -47,6 +50,7 @@ class LiquidGlassDialog extends StatelessWidget {
     this.blurSigma = 8.0,
     this.padding = const EdgeInsets.all(20.0),
     this.color,
+    this.glowColor,
   });
 
   @override
@@ -64,7 +68,7 @@ class LiquidGlassDialog extends StatelessWidget {
               color: color ?? const Color.fromRGBO(255, 255, 255, 0.1),
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
-                color: const Color.fromRGBO(255, 255, 255, 0.2),
+                color: (glowColor ?? Colors.white).withValues(alpha: 0.2),
                 width: 1.5,
               ),
               gradient: color != null
