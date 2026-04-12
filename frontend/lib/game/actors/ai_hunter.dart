@@ -11,7 +11,7 @@ enum AIHunterState { wandering, claiming, sleeping }
 class AIHunter extends SpriteComponent with HasGameReference<HauntedDormGame> {
   final String characterType;
   final Vector2 spriteSize;
-  double speed = 100.0;
+  double speed = 70.0;
   bool isMovingBack = false;
 
   AIHunterState _state = AIHunterState.wandering;
@@ -20,6 +20,7 @@ class AIHunter extends SpriteComponent with HasGameReference<HauntedDormGame> {
   Bed? targetBed;
 
   double energy = 0;
+  double coins = 0;
   double _economyTimer = 0;
   double _incomeTimer = 0;
 
@@ -64,7 +65,7 @@ class AIHunter extends SpriteComponent with HasGameReference<HauntedDormGame> {
     _incomeTimer += dt;
     if (_incomeTimer >= 0.5) {
       _incomeTimer = 0;
-      energy += 1;
+      coins += 1;
     }
 
     _economyTimer += dt;
@@ -82,13 +83,15 @@ class AIHunter extends SpriteComponent with HasGameReference<HauntedDormGame> {
       orElse: () => game.level.allDoors.first,
     );
 
-    if (energy >= 50 && myDoor.currentHealth < myDoor.maxHealth) {
-      energy -= 10;
+    // Repair costs coins
+    if (coins >= 50 && myDoor.currentHealth < myDoor.maxHealth) {
+      coins -= 10;
       myDoor.repair(50.0);
       return;
     }
 
-    if (energy >= 50) {
+    // Build Generator costs COINS
+    if (coins >= 50) {
       final emptySlot = game.level.allSlots.firstWhere(
         (s) => s.roomID == targetBed!.roomID && !s.isOccupied,
         orElse: () =>
@@ -101,14 +104,16 @@ class AIHunter extends SpriteComponent with HasGameReference<HauntedDormGame> {
             position: emptySlot.position.clone(),
             size: emptySlot.size.clone(),
             level: 1,
+            onProduce: (amount) => energy += amount,
           ),
         );
         emptySlot.isOccupied = true;
-        energy -= 50;
+        coins -= 50;
         return;
       }
     }
 
+    // Build Turret costs ENERGY
     if (energy >= 10) {
       final emptySlot = game.level.allSlots.firstWhere(
         (s) => s.roomID == targetBed!.roomID && !s.isOccupied,

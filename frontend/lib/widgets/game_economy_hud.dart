@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../game/haunted_dorm_game.dart';
+import '../game/actors/player.dart';
 import 'liquid_glass_dialog.dart';
 
 /// A professional, compact HUD that displays player's coins and energy.
@@ -19,7 +20,10 @@ class GameEconomyHUD extends StatelessWidget {
         builder: (context, snapshot) {
           try {
             final energy = game.player.energy.toInt();
-            final coins = game.player.coins.toInt();
+            final actualCoins = game.player.coins.toInt();
+            // Obfuscate coins unless sleeping
+            final displayedCoins =
+                game.player.state == PlayerState.sleeping ? actualCoins : 0;
 
             return Column(
               mainAxisSize: MainAxisSize.min,
@@ -28,7 +32,7 @@ class GameEconomyHUD extends StatelessWidget {
                 _buildStatItem(
                   icon: Icons.monetization_on_rounded,
                   label: 'COINS',
-                  value: coins,
+                  value: displayedCoins,
                   color: Colors.amberAccent,
                 ),
                 const SizedBox(height: 8),

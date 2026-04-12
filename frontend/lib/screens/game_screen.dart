@@ -35,9 +35,12 @@ class _GameScreenState extends State<GameScreen> {
           GameWidget(
             game: _game,
             overlayBuilderMap: {
-              'BuildMenu': (context, HauntedDormGame game) => BuildMenu(game: game),
-              'UpgradeMenu': (context, HauntedDormGame game) => UpgradeMenu(game: game),
-              'PauseMenu': (context, HauntedDormGame game) => PauseMenuOverlay(game: game),
+              'BuildMenu': (context, HauntedDormGame game) =>
+                  BuildMenu(game: game),
+              'UpgradeMenu': (context, HauntedDormGame game) =>
+                  UpgradeMenu(game: game),
+              'PauseMenu': (context, HauntedDormGame game) =>
+                  PauseMenuOverlay(game: game),
               'GameOver': (context, HauntedDormGame game) => Center(
                 child: LiquidGlassDialog(
                   width: 320,
@@ -65,78 +68,95 @@ class _GameScreenState extends State<GameScreen> {
               ),
             },
           ),
-          
-          // TOP HUD BAR
-          Positioned(
-            top: 50,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // CENTER TIMER
-                  ListenableBuilder(
-                    listenable: _game.gameState,
-                    builder: (context, _) {
-                      final isGrace = _game.gameState.status == GameStatus.grace;
-                      return Column(
+
+          // TOP HUD BAR (Hidden during Grace)
+          ListenableBuilder(
+            listenable: _game.gameState,
+            builder: (context, _) {
+              final isGrace = _game.gameState.status == GameStatus.grace;
+              if (isGrace) return const SizedBox.shrink();
+
+              return Positioned(
+                top: 50,
+                left: 0,
+                right: 0,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // CENTER TIMER
+                      Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           LiquidGlassDialog(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 8,
+                            ),
                             borderRadius: 12,
-                            glowColor: isGrace ? Colors.redAccent : Colors.amberAccent,
+                            glowColor: Colors.amberAccent,
                             child: Text(
                               _game.gameState.formattedTime,
-                              style: TextStyle(
-                                color: isGrace ? Colors.redAccent : Colors.amberAccent,
-                                fontSize: 32, // Larger
+                              style: const TextStyle(
+                                color: Colors.amberAccent,
+                                fontSize: 32,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 2,
                               ),
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Text(
-                            isGrace ? 'GRACE PERIOD' : 'TIME REMAINING',
+                          const Text(
+                            'TIME REMAINING',
                             style: TextStyle(
-                              color: isGrace ? Colors.redAccent : Colors.white38,
+                              color: Colors.white38,
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 2,
                             ),
                           ),
                         ],
-                      );
-                    },
-                  ),
+                      ),
 
-                  // TOP RIGHT PAUSE
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: GlassButton(
-                      width: 56, // Scaled up
-                      height: 56,
-                      borderRadius: 14,
-                      glowColor: Colors.white,
-                      onTap: () {
-                        if (!_game.overlays.isActive('PauseMenu')) {
-                          _game.pauseEngine();
-                          _game.overlays.add('PauseMenu');
-                        }
-                      },
-                      child: const Icon(Icons.pause_rounded, color: Colors.white, size: 32),
-                    ),
+                      // TOP RIGHT PAUSE
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GlassButton(
+                          width: 56,
+                          height: 56,
+                          borderRadius: 14,
+                          glowColor: Colors.white,
+                          onTap: () {
+                            if (!_game.overlays.isActive('PauseMenu')) {
+                              _game.pauseEngine();
+                              _game.overlays.add('PauseMenu');
+                            }
+                          },
+                          child: const Icon(
+                            Icons.pause_rounded,
+                            color: Colors.white,
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
-          
-          // ECONOMY HUD (Left side)
-          GameEconomyHUD(game: _game),
+
+          // ECONOMY HUD (Left side - Hidden during Grace)
+          ListenableBuilder(
+            listenable: _game.gameState,
+            builder: (context, _) {
+              if (_game.gameState.status == GameStatus.grace) {
+                return const SizedBox.shrink();
+              }
+              return GameEconomyHUD(game: _game);
+            },
+          ),
 
           // GIANT GRACE COUNTDOWN
           IgnorePointer(
@@ -145,10 +165,12 @@ class _GameScreenState extends State<GameScreen> {
                 listenable: _game.gameState,
                 builder: (context, _) {
                   final isGrace = _game.gameState.status == GameStatus.grace;
-                  final graceSeconds = _game.gameState.graceTimeRemaining.ceil();
+                  final graceSeconds =
+                      _game.gameState.graceTimeRemaining.ceil();
 
                   // Brief "GO!" flash when grace ends
-                  final showGo = !isGrace &&
+                  final showGo =
+                      !isGrace &&
                       _game.gameState.matchTimeRemaining >
                           (HauntedDormGame.matchDuration - 1.5);
 

@@ -119,8 +119,8 @@ class HauntedDormGame extends FlameGame
   }
 
   void buildGenerator(int levelNum) {
-    if (activeSlot != null && player.energy >= 50) {
-      player.energy -= 50;
+    if (activeSlot != null && player.coins >= 50) {
+      player.coins -= 50;
       final gen = Generator(
         position: activeSlot!.position.clone(),
         size: activeSlot!.size.clone(),

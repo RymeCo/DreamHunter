@@ -13,7 +13,7 @@ class Player extends SpriteComponent with HasGameReference<HauntedDormGame> {
   final String characterType;
   final Vector2 spriteSize;
 
-  double speed = 200.0;
+  double speed = 120.0;
   PlayerState _state = PlayerState.wandering;
   bool isMovingBack = false;
 
@@ -49,21 +49,23 @@ class Player extends SpriteComponent with HasGameReference<HauntedDormGame> {
   void update(double dt) {
     super.update(dt);
 
+    // Passive Economy: Runs once match starts (Grace ends)
+    if (!game.isGracePeriod) {
+      _economyTimer += dt;
+      if (_economyTimer >= 0.5) {
+        _economyTimer = 0;
+        coins += 1;
+        // Only show floating text if sleeping (UI feedback)
+        if (_state == PlayerState.sleeping) {
+          _showFloatingText('+1');
+        }
+      }
+    }
+
     if (_state == PlayerState.sleeping) {
       if (joystick.scale != Vector2.zero()) {
         joystick.scale = Vector2.zero();
         game.camera.stop(); // FREE CAM: Unlock camera from player
-      }
-
-      // Frame-safe, pause-aware economy loop
-      if (!game.isGracePeriod) {
-        _economyTimer += dt;
-        if (_economyTimer >= 0.5) {
-          _economyTimer = 0;
-          energy += 1;
-          coins += 1;
-          _showFloatingText('+1');
-        }
       }
       return;
     } else {

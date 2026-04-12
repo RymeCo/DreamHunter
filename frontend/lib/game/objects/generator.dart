@@ -3,9 +3,14 @@ import 'building_component.dart';
 
 class Generator extends BuildingComponent {
   double _timer = 0;
+  final void Function(int)? onProduce;
 
-  Generator({required super.position, required super.size, super.level = 1})
-    : super(maxHealth: 150);
+  Generator({
+    required super.position,
+    required super.size,
+    super.level = 1,
+    this.onProduce,
+  }) : super(maxHealth: 150);
 
   @override
   String get interactionAction => 'UPGRADE (Lv$level)';
@@ -30,11 +35,15 @@ class Generator extends BuildingComponent {
   void update(double dt) {
     super.update(dt);
 
-    // Generate extra energy/coins every 1 second
+    // Generate extra energy every 1 second
     _timer += dt;
     if (_timer >= 1.0) {
       _timer = 0;
-      game.player.energy += (level * 2);
+      if (onProduce != null) {
+        onProduce!(level * 2);
+      } else {
+        game.player.energy += (level * 2);
+      }
     }
   }
 }
