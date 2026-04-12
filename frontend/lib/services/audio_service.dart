@@ -19,7 +19,7 @@ class AudioService with WidgetsBindingObserver {
   // Pool of SFX players
   final List<AudioPlayer> _sfxPool = List.generate(4, (_) => AudioPlayer());
   int _nextSfxIndex = 0;
-  
+
   String? _currentBgm;
   bool _isMusicMuted = false;
   bool _isSoundMuted = false;
@@ -36,7 +36,8 @@ class AudioService with WidgetsBindingObserver {
       if (_wasPlayingBeforePause && !_isMusicMuted && _currentBgm != null) {
         resumeBGM();
       }
-    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _wasPlayingBeforePause = _activeBgmPlayer.state == PlayerState.playing;
       if (_wasPlayingBeforePause) {
         pauseBGM();
@@ -45,7 +46,10 @@ class AudioService with WidgetsBindingObserver {
   }
 
   Future<void> initialize() async {
-    developer.log('AudioService: Initializing (Gapless Android Edition)...', name: 'AudioService');
+    developer.log(
+      'AudioService: Initializing (Gapless Android Edition)...',
+      name: 'AudioService',
+    );
     try {
       final context = AudioContext(
         android: AudioContextAndroid(
@@ -59,16 +63,18 @@ class AudioService with WidgetsBindingObserver {
 
       // Configure BGM Players
       for (final p in [_bgmPlayerA, _bgmPlayerB]) {
-        await p.setAudioContext(AudioContext(
-          android: AudioContextAndroid(
-            stayAwake: true,
-            usageType: AndroidUsageType.game,
-            contentType: AndroidContentType.music,
-            audioFocus: AndroidAudioFocus.none,
+        await p.setAudioContext(
+          AudioContext(
+            android: AudioContextAndroid(
+              stayAwake: true,
+              usageType: AndroidUsageType.game,
+              contentType: AndroidContentType.music,
+              audioFocus: AndroidAudioFocus.none,
+            ),
           ),
-        ));
+        );
         await p.setReleaseMode(ReleaseMode.stop);
-        
+
         p.onPlayerComplete.listen((_) {
           if (_isPlaylistActive) _handlePlaylistNext();
         });
@@ -84,26 +90,39 @@ class AudioService with WidgetsBindingObserver {
       final settings = await OfflineCache.getSettings();
       _isMusicMuted = !(settings['music'] ?? true);
       _isSoundMuted = !(settings['sfx'] ?? true);
-      
+
       // FORCE VOLUME to 0.79 to override any old cached low values
-      _musicVolume = 0.79; 
+      _musicVolume = 0.79;
       _soundVolume = 1.0;
 
       await _applyVolumes();
 
       // Aggressive SFX Warm-up
-      unawaited(_warmUpPool(['audio/click.ogg', 'audio/roulette.ogg', 'audio/reward.ogg', 'audio/levelup.ogg']));
+      unawaited(
+        _warmUpPool([
+          'audio/click.ogg',
+          'audio/roulette.ogg',
+          'audio/reward.ogg',
+          'audio/levelup.ogg',
+        ]),
+      );
 
-      developer.log('AudioService: Initialization complete. BGM Vol: $_musicVolume', name: 'AudioService');
+      developer.log(
+        'AudioService: Initialization complete. BGM Vol: $_musicVolume',
+        name: 'AudioService',
+      );
     } catch (e) {
-      developer.log('AudioService: ERROR during initialization: $e', name: 'AudioService');
+      developer.log(
+        'AudioService: ERROR during initialization: $e',
+        name: 'AudioService',
+      );
     }
   }
 
   Future<void> _applyVolumes() async {
     final mVol = _isMusicMuted ? 0.0 : _musicVolume;
     final sVol = _isSoundMuted ? 0.0 : _soundVolume;
-    
+
     await _bgmPlayerA.setVolume(mVol);
     await _bgmPlayerB.setVolume(mVol);
     for (final p in _sfxPool) {
@@ -120,7 +139,10 @@ class AudioService with WidgetsBindingObserver {
           await p.setSource(source);
         }
       } catch (e) {
-        developer.log('AudioService: Warmup fail for $path: $e', name: 'AudioService');
+        developer.log(
+          'AudioService: Warmup fail for $path: $e',
+          name: 'AudioService',
+        );
       }
     }
   }
@@ -131,28 +153,36 @@ class AudioService with WidgetsBindingObserver {
 
   void _handlePlaylistNext() {
     if (!_isPlaylistActive) return;
-    
-    final nextTrack = (_currentBgm == 'audio/track1.ogg') 
-        ? 'audio/track2.ogg' 
+
+    final nextTrack = (_currentBgm == 'audio/track1.ogg')
+        ? 'audio/track2.ogg'
         : 'audio/track1.ogg';
-    
+
     // Gapless swap: Start next track on inactive player
     _currentBgm = nextTrack;
     final targetVol = _isMusicMuted ? 0.0 : _musicVolume;
-    
+
     _usePlayerA = !_usePlayerA; // Swap!
-    
+
     unawaited(_activeBgmPlayer.setVolume(targetVol));
     unawaited(_activeBgmPlayer.play(AssetSource(nextTrack)));
-    
-    developer.log('AudioService: Playlist swapped to $nextTrack', name: 'AudioService');
+
+    developer.log(
+      'AudioService: Playlist swapped to $nextTrack',
+      name: 'AudioService',
+    );
   }
 
-  Future<void> playBGM(String assetPath, {bool isPlaylist = false, double? volumeOverride}) async {
+  Future<void> playBGM(
+    String assetPath, {
+    bool isPlaylist = false,
+    double? volumeOverride,
+  }) async {
     _isPlaylistActive = isPlaylist;
     final targetVolume = _isMusicMuted ? 0.0 : (volumeOverride ?? _musicVolume);
 
-    if (_currentBgm == assetPath && _activeBgmPlayer.state == PlayerState.playing) {
+    if (_currentBgm == assetPath &&
+        _activeBgmPlayer.state == PlayerState.playing) {
       await _activeBgmPlayer.setVolume(targetVolume);
       return;
     }
@@ -191,7 +221,7 @@ class AudioService with WidgetsBindingObserver {
 
       // DO NOT await stop or setVolume if possible, just play.
       // But we need the volume.
-      player.setVolume(_soundVolume); 
+      player.setVolume(_soundVolume);
       player.play(AssetSource(assetPath), mode: PlayerMode.lowLatency);
     } catch (e) {
       developer.log('AudioService: SFX Error: $e', name: 'AudioService');

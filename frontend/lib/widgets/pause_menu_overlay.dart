@@ -18,7 +18,7 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
   @override
   Widget build(BuildContext context) {
     final audioService = AudioService();
-    
+
     return Center(
       child: LiquidGlassDialog(
         width: 280,
@@ -34,7 +34,11 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
                 fontWeight: FontWeight.w900,
                 letterSpacing: 6,
                 shadows: [
-                  Shadow(color: Colors.black54, blurRadius: 10, offset: Offset(2, 2)),
+                  Shadow(
+                    color: Colors.black54,
+                    blurRadius: 10,
+                    offset: Offset(2, 2),
+                  ),
                 ],
               ),
             ),

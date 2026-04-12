@@ -3,17 +3,17 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "dorm-01.tmx",
+    "activeFile": "dorm_tiles.tsx",
     "expandedProjectPaths": [
         "."
     ],
     "fileStates": {
         "dorm-01.tmx": {
-            "scale": 2,
+            "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 176,
-                "y": 415
+                "x": -138,
+                "y": 461
             }
         },
         "dorm_tiles.tsx": {
@@ -26,8 +26,7 @@
     "map.lastUsedFormat": "tmx",
     "map.width": 40,
     "openFiles": [
-        "dorm_tiles.tsx",
-        "dorm-01.tmx"
+        "dorm_tiles.tsx"
     ],
     "project": "dreamhunter.tiled-project",
     "recentFiles": [

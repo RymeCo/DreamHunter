@@ -2,6 +2,9 @@ import 'package:flame/components.dart';
 import '../haunted_dorm_game.dart';
 import '../level/collision_block.dart';
 import '../objects/bed.dart';
+import '../objects/building_slot.dart';
+import '../objects/turret.dart';
+import '../objects/generator.dart';
 
 enum AIHunterState { wandering, claiming, sleeping }
 
@@ -16,6 +19,10 @@ class AIHunter extends SpriteComponent with HasGameReference<HauntedDormGame> {
   List<Bed> beds = [];
   Bed? targetBed;
 
+  double energy = 0;
+  double _economyTimer = 0;
+  double _incomeTimer = 0;
+
   AIHunter({required this.characterType, Vector2? size})
     : spriteSize = size ?? Vector2(32, 48);
 
@@ -25,83 +32,130 @@ class AIHunter extends SpriteComponent with HasGameReference<HauntedDormGame> {
     sprite = await game.loadSprite(fileName);
     size = spriteSize;
     anchor = Anchor.center;
+    priority = 5;
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    if (_state == AIHunterState.sleeping) return;
+
+    if (_state == AIHunterState.sleeping) {
+      _handleEconomy(dt);
+      return;
+    }
 
     if (_state == AIHunterState.claiming && targetBed != null) {
       // AI Vision: Check if the door to their target room is closed
-      for (final door in game.level.allDoors) {
-        if (door.associatedBed == targetBed && !door.isOpen) {
-          // Door is closed! Yield and find another room.
-          yieldBed();
-          return;
-        }
+      final myDoor = game.level.allDoors.firstWhere(
+        (d) => d.roomID == targetBed!.roomID,
+        orElse: () => game.level.allDoors.first,
+      );
+      if (!myDoor.isOpen && game.player.currentBed == targetBed) {
+        yieldBed();
+        return;
       }
       _moveToTarget(dt);
     }
   }
 
-  void _moveToTarget(double dt) {
+  void _handleEconomy(double dt) {
+    _incomeTimer += dt;
+    if (_incomeTimer >= 0.5) {
+      _incomeTimer = 0;
+      energy += 1;
+    }
+
+    _economyTimer += dt;
+    if (_economyTimer >= 5.0) {
+      _economyTimer = 0;
+      _decideWhatToBuild();
+    }
+  }
+
+  void _decideWhatToBuild() {
     if (targetBed == null) return;
 
-    // AI targets slightly above the bed to align with the pillow
-    final targetPos = targetBed!.position + (targetBed!.size / 2);
-    final direction = targetPos - position;
-    
-    if (direction.length < 2) {
-      _enterBed();
+    final myDoor = game.level.allDoors.firstWhere(
+      (d) => d.roomID == targetBed!.roomID,
+      orElse: () => game.level.allDoors.first,
+    );
+
+    if (energy >= 50 && myDoor.currentHealth < myDoor.maxHealth) {
+      energy -= 10;
+      myDoor.repair(50.0);
       return;
     }
 
-    final velocity = direction.normalized() * speed * dt;
-    position += velocity;
+    if (energy >= 50) {
+      final emptySlot = game.level.allSlots.firstWhere(
+        (s) => s.roomID == targetBed!.roomID && !s.isOccupied,
+        orElse: () =>
+            BuildingSlot(position: Vector2.zero(), size: Vector2.zero()),
+      );
 
-    // Asymmetrical Mirroring: Scale -1 around the CENTER anchor
-    if (velocity.x < 0) {
-      if (scale.x > 0) scale.x = -1;
-      if (isMovingBack) {
-        isMovingBack = false;
-        _updateSprite();
-      }
-    } else if (velocity.x > 0) {
-      if (scale.x < 0) scale.x = 1;
-      if (isMovingBack) {
-        isMovingBack = false;
-        _updateSprite();
+      if (emptySlot.roomID != -1) {
+        game.level.add(
+          Generator(
+            position: emptySlot.position.clone(),
+            size: emptySlot.size.clone(),
+            level: 1,
+          ),
+        );
+        emptySlot.isOccupied = true;
+        energy -= 50;
+        return;
       }
     }
 
-    if (velocity.y < -0.5) {
-      if (!isMovingBack) {
-        isMovingBack = true;
-        _updateSprite();
-      }
-    } else if (velocity.y > 0.5) {
-      if (isMovingBack) {
-        isMovingBack = false;
-        _updateSprite();
+    if (energy >= 10) {
+      final emptySlot = game.level.allSlots.firstWhere(
+        (s) => s.roomID == targetBed!.roomID && !s.isOccupied,
+        orElse: () =>
+            BuildingSlot(position: Vector2.zero(), size: Vector2.zero()),
+      );
+
+      if (emptySlot.roomID != -1) {
+        game.level.add(
+          Turret(
+            position: emptySlot.position.clone(),
+            size: emptySlot.size.clone(),
+            level: 1,
+          ),
+        );
+        emptySlot.isOccupied = true;
+        energy -= 10;
       }
     }
+  }
+
+  void _moveToTarget(double dt) {
+    if (targetBed == null) return;
+    final targetPos = targetBed!.position + (targetBed!.size / 2);
+    final direction = targetPos - position;
+    if (direction.length < 5) {
+      _enterBed();
+      return;
+    }
+    position += direction.normalized() * speed * dt;
   }
 
   void _enterBed() {
     if (targetBed != null) {
       _state = AIHunterState.sleeping;
-      // Center AI on bed
       position = targetBed!.position + (targetBed!.size / 2);
+      for (final door in game.level.allDoors) {
+        if (door.roomID == targetBed!.roomID) {
+          door.closeDoor();
+          break;
+        }
+      }
       _updateSprite();
     }
   }
 
   void yieldBed() {
-    if (_state == AIHunterState.sleeping || _state == AIHunterState.claiming) {
-      _state = AIHunterState.wandering;
-      targetBed = null;
-    }
+    _state = AIHunterState.wandering;
+    targetBed = null;
   }
 
   void setTargetBed(Bed bed) {
@@ -110,9 +164,7 @@ class AIHunter extends SpriteComponent with HasGameReference<HauntedDormGame> {
   }
 
   Future<void> _updateSprite() async {
-    final suffix = isMovingBack ? 'back' : 'front';
-    final fileName = 'game/characters/${characterType}_$suffix-32x48.png';
-
+    final fileName = 'game/characters/${characterType}_front-32x48.png';
     if (_state == AIHunterState.sleeping) {
       sprite = await game.loadSprite(
         fileName,
@@ -122,7 +174,6 @@ class AIHunter extends SpriteComponent with HasGameReference<HauntedDormGame> {
       size = Vector2(32, 24);
       return;
     }
-
     size = spriteSize;
     sprite = await game.loadSprite(fileName);
   }

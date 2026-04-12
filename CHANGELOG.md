@@ -38,9 +38,14 @@ All notable changes to the **DreamHunter** project will be documented in this fi
 
 ### Haunted Dorm Reconstruction
 - **Architecture:** Implemented "On-Demand Loading" strategy. Dashboard assets preload at Splash; Game assets load at GameLoadingScreen and are wiped upon exit for maximum memory efficiency.
+- **Architecture:** Introduced `GameStateManager` (Event-Driven State using `ChangeNotifier`) to decouple Flame game loop from Flutter UI, enabling scalable game state tracking.
+- **Architecture:** Created `BuildingComponent` base class, centralizing HP, leveling, and interaction logic for `Turret`, `Generator`, `Door`, and `Bed`.
+- **UI:** Replaced the Survival Progress bar with a sleek, professional `MM:SS` countdown timer in the Game HUD.
 - **Organization:** Restructured game assets into a DDD-lite directory system (`characters/`, `monsters/`, `economy/`, `defenses/`, `interface/`).
 - **Mapping:** Aligned Tiled project with Flame Engine best practices (standardized `assets/tiles/` and `assets/images/tiles/` paths).
 - **Tooling:** Created `SpriteNameParser` utility to automatically extract `Vector2` sizes from filenames (`name-WxH.png`).
 - **Logic:** Built the foundations for the 8-Hunter spawn system and AI bed reservation yielding.
-- **Refinement:** Implemented "Asymmetrical Mirroring" for player/AI sprites and the "Tucked In" bed layering effect.
+- **Refinement:** Implemented \"Asymmetrical Mirroring\" for player/AI sprites and the \"Tucked In\" bed layering effect.
+- **Gameplay:** Added 15-minute Match Timer with automatic Victory/Defeat states and Firestore reward synchronization (Survival Bonus + Energy Harvest).
 - **Fix:** Corrected build-breaking `ConnectivityService` async initialization error.
+

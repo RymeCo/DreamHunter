@@ -6,11 +6,11 @@ import '../haunted_dorm_game.dart';
 import '../objects/bed.dart';
 import '../actors/player.dart';
 
-class BuildingSlot extends PositionComponent 
+class BuildingSlot extends PositionComponent
     with TapCallbacks, HasGameReference<HauntedDormGame> {
-  
   bool isOccupied = false;
   Bed? associatedBed;
+  int roomID = -1;
   late final TextComponent _plusText;
 
   BuildingSlot({
@@ -33,29 +33,35 @@ class BuildingSlot extends PositionComponent
       anchor: Anchor.center,
       position: size / 2,
     );
-    _plusText.scale = Vector2.zero(); 
+    _plusText.scale = Vector2.zero();
     add(_plusText);
 
     // SUBTLE & SLOW: Slow breathing effect
-    _plusText.add(ScaleEffect.to(
-      Vector2.all(1.08), // Only 8% growth
-      EffectController(
-        duration: 1.5, 
-        reverseDuration: 1.5, 
-        infinite: true,
-        curve: Curves.easeInOut,
+    _plusText.add(
+      ScaleEffect.to(
+        Vector2.all(1.08), // Only 8% growth
+        EffectController(
+          duration: 1.5,
+          reverseDuration: 1.5,
+          infinite: true,
+          curve: Curves.easeInOut,
+        ),
       ),
-    ));
+    );
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    
-    final bool isClaimed = game.player.state == PlayerState.sleeping && 
-                           game.player.currentBed == associatedBed;
-    
-    if (isClaimed && !isOccupied) {
+
+    // SMART ROOM ISOLATION:
+    // Only show "+" if player's current room ID matches this slot's room ID.
+    final bool isClaimed =
+        game.player.state == PlayerState.sleeping &&
+        game.player.currentBed != null &&
+        game.player.currentBed!.roomID == roomID;
+
+    if (isClaimed && !isOccupied && roomID != -1) {
       if (_plusText.scale == Vector2.zero()) _plusText.scale = Vector2.all(1.0);
     } else {
       if (_plusText.scale != Vector2.zero()) _plusText.scale = Vector2.zero();
@@ -64,8 +70,9 @@ class BuildingSlot extends PositionComponent
 
   @override
   void onTapDown(TapDownEvent event) {
-    final bool isClaimed = game.player.state == PlayerState.sleeping && 
-                           game.player.currentBed == associatedBed;
+    final bool isClaimed =
+        game.player.state == PlayerState.sleeping &&
+        game.player.currentBed == associatedBed;
 
     if (isClaimed && !isOccupied) {
       game.activeSlot = this;

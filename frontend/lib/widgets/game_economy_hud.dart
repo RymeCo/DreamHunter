@@ -13,33 +13,42 @@ class GameEconomyHUD extends StatefulWidget {
 class _GameEconomyHUDState extends State<GameEconomyHUD> {
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-      stream: Stream.periodic(const Duration(milliseconds: 500)),
-      builder: (context, snapshot) {
-        return Positioned(
-          top: 40,
-          left: 20,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildEconomyChip(
-                emoji: '💰',
-                label: 'COINS',
-                value: widget.game.player.energy.toInt(),
-                color: Colors.amberAccent,
-              ),
-              const SizedBox(height: 8),
-              _buildEconomyChip(
-                emoji: '⚡',
-                label: 'ENERGY',
-                value: widget.game.player.energy.toInt(),
-                color: Colors.blueAccent,
-              ),
-            ],
-          ),
-        );
-      }
+    // FIX: Positioned must be at the ROOT of the overlay
+    return Positioned(
+      top: 110,
+      left: 20,
+      child: StreamBuilder(
+        stream: Stream.periodic(const Duration(milliseconds: 500)),
+        builder: (context, snapshot) {
+          // SAFETY: Check if player is initialized before reading values
+          // Using a try-catch because 'player' is a late variable
+          try {
+            final energy = widget.game.player.energy.toInt();
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildEconomyChip(
+                  emoji: '💰',
+                  label: 'COINS',
+                  value: energy,
+                  color: Colors.amberAccent,
+                ),
+                const SizedBox(height: 8),
+                _buildEconomyChip(
+                  emoji: '⚡',
+                  label: 'ENERGY',
+                  value: energy,
+                  color: Colors.blueAccent,
+                ),
+              ],
+            );
+          } catch (e) {
+            // Player not ready yet, show empty chips
+            return const SizedBox.shrink();
+          }
+        },
+      ),
     );
   }
 

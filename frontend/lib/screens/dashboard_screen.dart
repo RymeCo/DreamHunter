@@ -18,7 +18,7 @@ import 'package:dreamhunter/widgets/chat_dialog.dart';
 import 'package:dreamhunter/widgets/leaderboard_dialog.dart';
 import 'package:dreamhunter/widgets/daily_tasks_dialog.dart';
 import 'package:dreamhunter/widgets/roulette_dialog.dart';
-import 'package:dreamhunter/screens/game_loading_screen.dart';
+import 'package:dreamhunter/widgets/matchmaking_dialog.dart';
 import 'dart:developer' as developer;
 import 'package:dreamhunter/widgets/settings_dialog.dart';
 import 'package:dreamhunter/widgets/clickable_image.dart';
@@ -371,11 +371,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 glowColor: Colors.deepPurpleAccent,
                 pulseMinOpacity: 0.5,
                 onTap: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (context) => const GameLoadingScreen(),
-                    ),
-                  );
+                  _showGameDialog(const MatchmakingDialog());
                 },
               ),
             ),

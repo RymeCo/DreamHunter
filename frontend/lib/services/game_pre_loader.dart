@@ -12,12 +12,12 @@ class GamePreLoader {
     'game/characters/max_back-32x48.png',
     'game/characters/jack_front-32x48.png',
     'game/characters/jack_back-32x48.png',
-    
+
     // Monsters
     'game/monsters/ghost_idle-32x48.png',
     'game/monsters/ghost_right-32x48.png',
     'game/monsters/ghost_back-32x48.png',
-    
+
     // Economy & Defense
     'game/economy/bed-32x32.png',
     'game/economy/generator_lv1-32x32.png',
@@ -30,7 +30,9 @@ class GamePreLoader {
   ];
 
   /// Loads all match-specific images into Flame's memory cache.
-  static Future<void> loadGameAssets(Function(double progress) onProgress) async {
+  static Future<void> loadGameAssets(
+    Function(double progress) onProgress,
+  ) async {
     int loaded = 0;
     for (var path in gameImages) {
       try {

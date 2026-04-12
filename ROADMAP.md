@@ -59,7 +59,7 @@ To ensure the code is "easy to write," all art assets follow this naming convent
 
 | ✅ | **Phase 1** | Foundation & Smart Assets |
 | ✅ | **Phase 2** | AI & Grid Logic |
-| 🚧 | **Phase 3** | Door & Economy |
-| ⏳ | **Phase 4** | Scaling Monster & Victory |
+| ✅ | **Phase 3** | Door & Economy |
+| 🚧 | **Phase 4** | Scaling Monster & Victory |
 
 **Legend:** ⏳ Planned | 🚧 In-Progress | ✅ Completed

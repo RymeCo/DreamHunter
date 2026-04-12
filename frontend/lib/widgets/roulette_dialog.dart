@@ -220,7 +220,7 @@ class _RouletteDialogState extends State<RouletteDialog>
 
     // FINISH: Grant reward and clear pending
     final rewardAmount = (reward['amount'] as num).toInt();
-    
+
     // Background the final update too to avoid UI stutters during closing
     unawaited(() async {
       await widget.controller.updateCurrency(
@@ -229,7 +229,7 @@ class _RouletteDialogState extends State<RouletteDialog>
       await RouletteService.clearPendingReward();
       await RouletteService.setSpinning(false);
     }());
-    
+
     if (!mounted) {
       if (widget.parentContext != null && widget.parentContext!.mounted) {
         showCustomSnackBar(

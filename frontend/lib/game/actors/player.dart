@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
+import 'dart:developer' as developer;
 import '../haunted_dorm_game.dart';
 import '../level/collision_block.dart';
 import '../objects/bed.dart';
@@ -47,10 +48,16 @@ class Player extends SpriteComponent with HasGameReference<HauntedDormGame> {
     super.update(dt);
 
     if (_state == PlayerState.sleeping) {
-      if (joystick.scale != Vector2.zero()) joystick.scale = Vector2.zero();
+      if (joystick.scale != Vector2.zero()) {
+        joystick.scale = Vector2.zero();
+        game.camera.stop(); // FREE CAM: Unlock camera from player
+      }
       return;
     } else {
-      if (joystick.scale != Vector2.all(1.0)) joystick.scale = Vector2.all(1.0);
+      if (joystick.scale != Vector2.all(1.0)) {
+        joystick.scale = Vector2.all(1.0);
+        game.camera.follow(this); // Lock camera back to player
+      }
     }
 
     _checkBedProximity();
@@ -79,20 +86,33 @@ class Player extends SpriteComponent with HasGameReference<HauntedDormGame> {
   void enterBed() {
     if (currentBed != null) {
       _state = PlayerState.sleeping;
-      
-      // FIX: Better head alignment on the pillow (Center of 32x32 tile)
-      position = Vector2(currentBed!.x + 16, currentBed!.y + 16);
-      
+
+      // FIX: Position head exactly on the pillow (Top of the 32x32 bed)
+      position = currentBed!.position + Vector2(16, -8);
+
       currentBed!.setSleeping(true);
-      
+
       // AUTO-CLOSE: Find the Door strictly linked to this Bed
+      bool doorFound = false;
       for (final door in game.level.allDoors) {
-        if (door.associatedBed == currentBed) {
+        if (door.roomID == currentBed!.roomID) {
+          developer.log(
+            'Room Match Found! Closing door ID: ${door.roomID}',
+            name: 'Player',
+          );
           door.closeDoor();
+          doorFound = true;
           break;
         }
       }
-      
+
+      if (!doorFound) {
+        developer.log(
+          'ERROR: No Door found for Room ID: ${currentBed!.roomID}. Map Scan Gap!',
+          name: 'Player',
+        );
+      }
+
       _updateSprite();
       _startEconomyTicks();
     }
@@ -124,14 +144,16 @@ class Player extends SpriteComponent with HasGameReference<HauntedDormGame> {
         ),
       ),
     );
-    
+
     game.level.add(textComponent);
 
-    textComponent.add(MoveByEffect(
-      Vector2(0, -40),
-      EffectController(duration: 0.6),
-      onComplete: () => textComponent.removeFromParent(),
-    ));
+    textComponent.add(
+      MoveByEffect(
+        Vector2(0, -40),
+        EffectController(duration: 0.6),
+        onComplete: () => textComponent.removeFromParent(),
+      ),
+    );
   }
 
   void exitBed() {
@@ -193,7 +215,7 @@ class Player extends SpriteComponent with HasGameReference<HauntedDormGame> {
   Future<void> _updateSprite() async {
     final suffix = isMovingBack ? 'back' : 'front';
     final fileName = 'game/characters/${characterType}_$suffix-32x48.png';
-    
+
     if (_state == PlayerState.sleeping) {
       sprite = await game.loadSprite(
         fileName,

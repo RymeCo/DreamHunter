@@ -5,7 +5,8 @@ import 'package:dreamhunter/services/game_pre_loader.dart';
 import 'package:dreamhunter/screens/game_screen.dart';
 
 class GameLoadingScreen extends StatefulWidget {
-  const GameLoadingScreen({super.key});
+  final String characterType;
+  const GameLoadingScreen({super.key, required this.characterType});
 
   @override
   State<GameLoadingScreen> createState() => _GameLoadingScreenState();
@@ -49,7 +50,7 @@ class _GameLoadingScreenState extends State<GameLoadingScreen> {
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            const GameScreen(),
+            GameScreen(characterType: widget.characterType),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },

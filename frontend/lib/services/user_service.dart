@@ -18,6 +18,18 @@ class UserService {
     });
   }
 
+  /// Updates specific fields in player data
+  Future<void> updateUserData(Map<String, dynamic> data) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _db.collection('users').doc(user.uid).update(data);
+    } catch (e) {
+      // Offline fallback: we can implement offline queueing later
+    }
+  }
+
   /// Updates player data in Firestore
   Future<void> updatePlayer(PlayerModel player) async {
     try {
@@ -55,9 +67,10 @@ class UserService {
           .get()
           .timeout(const Duration(seconds: 10));
       final items = snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return data;
+        final data = doc.id;
+        final map = doc.data();
+        map['id'] = data;
+        return map;
       }).toList();
 
       await OfflineCache.saveMetadata('shop_items', {'items': items});

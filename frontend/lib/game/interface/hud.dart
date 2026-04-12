@@ -83,7 +83,8 @@ class HUD extends PositionComponent with HasGameReference<HauntedDormGame> {
   void update(double dt) {
     super.update(dt);
     energyText.text = 'Energy: ${game.player.energy.toInt()}';
-    coinText.text = 'Coins: ${game.player.energy.toInt()}'; // Temporary link to energy until economy ticks are built
+    coinText.text =
+        'Coins: ${game.player.energy.toInt()}'; // Temporary link to energy until economy ticks are built
 
     final isSleeping = game.player.state == PlayerState.sleeping;
 

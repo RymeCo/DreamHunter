@@ -1,85 +1,118 @@
-import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
-import 'package:dreamhunter/game/haunted_dorm_game.dart';
-import 'package:dreamhunter/widgets/pause_menu_overlay.dart';
-import 'package:dreamhunter/widgets/grace_period_timer.dart';
-import 'package:dreamhunter/widgets/clickable_image.dart';
-import 'package:dreamhunter/widgets/game_economy_hud.dart';
-import 'package:dreamhunter/widgets/build_menu.dart';
-import 'package:dreamhunter/widgets/upgrade_menu.dart';
-import 'package:dreamhunter/services/game_pre_loader.dart';
-import 'package:dreamhunter/services/audio_service.dart';
+import 'package:flame/game.dart';
+import '../game/haunted_dorm_game.dart';
+import '../widgets/game_economy_hud.dart';
+import '../widgets/build_menu.dart';
+import '../widgets/upgrade_menu.dart';
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key});
+  final String characterType;
+  const GameScreen({super.key, required this.characterType});
 
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
 
 class _GameScreenState extends State<GameScreen> {
-  late final HauntedDormGame _game;
+  late HauntedDormGame _game;
 
   @override
   void initState() {
     super.initState();
-    AudioService().playInGameMusic();
-    _game = HauntedDormGame(characterType: 'max');
-  }
-
-  @override
-  void dispose() {
-    GamePreLoader.unloadGameAssets();
-    super.dispose();
+    _game = HauntedDormGame(characterType: widget.characterType);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF111111),
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
           GameWidget(
             game: _game,
             overlayBuilderMap: {
-              'PauseMenu': (context, HauntedDormGame game) =>
-                  PauseMenuOverlay(game: game),
-              'EconomyHUD': (context, HauntedDormGame game) =>
-                  GameEconomyHUD(game: game),
-              'GraceTimer': (context, HauntedDormGame game) => GracePeriodTimer(
-                onFinished: () {
-                  game.overlays.remove('GraceTimer');
-                  game.isGracePeriod = false;
-                },
-              ),
-              'BuildMenu': (context, HauntedDormGame game) => 
+              'BuildMenu': (context, HauntedDormGame game) =>
                   BuildMenu(game: game),
               'UpgradeMenu': (context, HauntedDormGame game) =>
                   UpgradeMenu(game: game),
+              'GameOver': (context, HauntedDormGame game) => Center(
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.redAccent, width: 2),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'GAME OVER',
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('BACK TO DASHBOARD'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             },
-            loadingBuilder: (context) => const Center(
-              child: CircularProgressIndicator(color: Colors.deepPurpleAccent),
-            ),
-            initialActiveOverlays: const ['EconomyHUD'],
           ),
+
           Positioned(
-            top: 40,
+            top: 50,
+            left: 20,
             right: 20,
-            child: GlassButton(
-              label: 'II',
-              width: 50,
-              height: 50,
-              borderRadius: 12,
-              glowColor: Colors.white70,
-              pulseMinOpacity: 0.6,
-              onTap: () {
-                if (!_game.overlays.isActive('PauseMenu')) {
-                  _game.pauseEngine();
-                  _game.overlays.add('PauseMenu');
-                }
-              },
+            child: Column(
+              children: [
+                ListenableBuilder(
+                  listenable: _game.gameState,
+                  builder: (context, _) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Text(
+                        _game.gameState.formattedTime,
+                        style: const TextStyle(
+                          color: Colors.amberAccent,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'TIME REMAINING',
+                  style: TextStyle(
+                    color: Colors.white38,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ],
             ),
           ),
+
+          // ECONOMY HUD
+          GameEconomyHUD(game: _game),
         ],
       ),
     );

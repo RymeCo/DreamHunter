@@ -10,7 +10,8 @@ class BuildMenu extends StatefulWidget {
   State<BuildMenu> createState() => _BuildMenuState();
 }
 
-class _BuildMenuState extends State<BuildMenu> with SingleTickerProviderStateMixin {
+class _BuildMenuState extends State<BuildMenu>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -27,72 +28,101 @@ class _BuildMenuState extends State<BuildMenu> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: LiquidGlassDialog(
-        width: 320,
-        height: 400,
-        padding: EdgeInsets.zero,
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.white10)),
-              ),
-              child: const Text(
-                'BUILD MODE',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
+    return Stack(
+      children: [
+        // Click outside to close
+        GestureDetector(
+          onTap: () => widget.game.overlays.remove('BuildMenu'),
+          child: Container(
+            color: Colors.black26, // Dim background
+          ),
+        ),
+        Center(
+          child: LiquidGlassDialog(
+            width: 380, // WIDER
+            height: 600, // TALLER
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  decoration: const BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Colors.white10)),
+                  ),
+                  child: const Text(
+                    'BUILDING MODE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 4,
+                      fontSize: 20,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            TabBar(
-              controller: _tabController,
-              isScrollable: false,
-              indicatorColor: Colors.deepPurpleAccent,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white38,
-              labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-              tabs: const [
-                Tab(text: 'DEFENSE'),
-                Tab(text: 'GEN'),
-                Tab(text: 'SPEC'),
-                Tab(text: 'PREM'),
+                TabBar(
+                  controller: _tabController,
+                  isScrollable: false,
+                  indicatorColor: Colors.deepPurpleAccent,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white38,
+                  labelStyle: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  tabs: const [
+                    Tab(text: 'DEFENSE'),
+                    Tab(text: 'GEN'),
+                    Tab(text: 'SPEC'),
+                    Tab(text: 'PREM'),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildDefenseTab(),
+                      _buildGeneratorTab(),
+                      const Center(
+                        child: Text(
+                          'Special',
+                          style: TextStyle(color: Colors.white24),
+                        ),
+                      ),
+                      const Center(
+                        child: Text(
+                          'Premium',
+                          style: TextStyle(color: Colors.white24),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => widget.game.overlays.remove('BuildMenu'),
+                  child: const Text(
+                    'CLOSE',
+                    style: TextStyle(color: Colors.white38),
+                  ),
+                ),
+                const SizedBox(height: 16),
               ],
             ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildDefenseTab(),
-                  _buildGeneratorTab(),
-                  const Center(child: Text('Special Tab', style: TextStyle(color: Colors.white24))),
-                  const Center(child: Text('Premium Tab', style: TextStyle(color: Colors.white24))),
-                ],
-              ),
-            ),
-            TextButton(
-              onPressed: () => widget.game.overlays.remove('BuildMenu'),
-              child: const Text('CLOSE', style: TextStyle(color: Colors.white38)),
-            ),
-            const SizedBox(height: 8),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
   Widget _buildDefenseTab() {
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.75,
       ),
-      itemCount: 1, 
+      itemCount: 1,
       itemBuilder: (context, index) {
         return _buildBuildItem(
           name: 'Turret Lv1',
@@ -109,13 +139,14 @@ class _BuildMenuState extends State<BuildMenu> with SingleTickerProviderStateMix
 
   Widget _buildGeneratorTab() {
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.75,
       ),
-      itemCount: 1, 
+      itemCount: 1,
       itemBuilder: (context, index) {
         return _buildBuildItem(
           name: 'Wood Gen',
@@ -143,25 +174,33 @@ class _BuildMenuState extends State<BuildMenu> with SingleTickerProviderStateMix
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: canAfford ? Colors.white12 : Colors.redAccent.withValues(alpha: 0.2),
+            color: canAfford
+                ? Colors.white12
+                : Colors.redAccent.withValues(alpha: 0.2),
           ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 24)),
+            Text(emoji, style: const TextStyle(fontSize: 32)),
+            const SizedBox(height: 8),
             Text(
               name,
-              style: const TextStyle(color: Colors.white70, fontSize: 10),
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
             ),
+            const SizedBox(height: 4),
             Text(
               '⚡ $cost',
               style: TextStyle(
                 color: canAfford ? Colors.blueAccent : Colors.redAccent,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ],

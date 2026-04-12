@@ -48,5 +48,6 @@ class PreLoader {
     }
   }
 
-  static int get totalCount => imagesToPrecache.length + soundsToPrecache.length;
+  static int get totalCount =>
+      imagesToPrecache.length + soundsToPrecache.length;
 }

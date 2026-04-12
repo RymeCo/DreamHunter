@@ -1,20 +1,16 @@
 import 'dart:async';
 import 'package:flame/components.dart';
-import 'package:flame/effects.dart';
-import 'package:flame/events.dart';
-import '../haunted_dorm_game.dart';
+import 'building_component.dart';
 import '../level/collision_block.dart';
-import '../core/interactable.dart';
 import 'bed.dart';
 
-class Door extends SpriteComponent 
-    with HasGameReference<HauntedDormGame>, TapCallbacks, Interactable {
-  
+class Door extends BuildingComponent {
   bool isOpen;
   late final Sprite _closedSprite;
   late final Sprite _openSprite;
   final CollisionBlock collisionBlock;
   Bed? associatedBed;
+  int roomID = -1;
 
   Door({required Vector2 position, required Vector2 size, this.isOpen = true})
     : collisionBlock = CollisionBlock(
@@ -22,53 +18,85 @@ class Door extends SpriteComponent
         size: size.clone(),
         isPassable: isOpen,
       ),
-      super(position: position, size: size) {
+      super(position: position, size: size, maxHealth: 100) {
     priority = 0;
   }
 
   @override
-  String get interactionAction => isOpen ? 'CLOSE' : 'OPEN';
+  String get interactionAction => isOpen ? 'CLOSE' : 'REPAIR';
 
   @override
   void onInteract() {
-    toggleDoor();
+    if (isOpen) {
+      toggleDoor();
+    } else {
+      repairDoor();
+    }
   }
 
   @override
   FutureOr<void> onLoad() async {
     _closedSprite = await game.loadSprite('game/defenses/door_wood-32x32.png');
-    _openSprite = await game.loadSprite('game/defenses/door_wood_open-32x32.png');
+    _openSprite = await game.loadSprite(
+      'game/defenses/door_wood_open-32x32.png',
+    );
 
     sprite = isOpen ? _openSprite : _closedSprite;
-    setupInteractable();
-
     return super.onLoad();
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    updateInteractable(game.player.position, 50.0);
-    
     prompt.text = interactionAction;
+  }
+
+  @override
+  void takeDamage(double amount) {
+    if (isOpen) return;
+    super.takeDamage(amount);
+    if (currentHealth <= 0) {
+      toggleDoor(); // Break door (open it)
+    }
+  }
+
+  void repairDoor() {
+    if (game.player.energy >= 10) {
+      game.player.energy -= 10;
+      repair(50.0);
+    }
   }
 
   void toggleDoor() {
     isOpen = !isOpen;
     collisionBlock.isPassable = isOpen;
-    
-    add(
-      ScaleEffect.to(
-        Vector2.all(1.1),
-        EffectController(duration: 0.1, reverseDuration: 0.1),
-        onComplete: () {
-          sprite = isOpen ? _openSprite : _closedSprite;
-        },
-      ),
-    );
+
+    if (!isOpen) {
+      // Cardinal Push Logic
+      final player = game.player;
+      final doorCenter = position + (size / 2);
+      final diff = player.position - doorCenter;
+      Vector2 push = (diff.x.abs() > diff.y.abs())
+          ? Vector2(diff.x.sign * 48, 0)
+          : Vector2(0, diff.y.sign * 48);
+      player.position = doorCenter + push;
+      currentHealth = maxHealth; // Reset HP when closing
+    }
+
+    triggerBounceEffect();
+    sprite = isOpen ? _openSprite : _closedSprite;
   }
 
   void closeDoor() {
     if (isOpen) toggleDoor();
+  }
+
+  @override
+  void onDestroyed() {
+    // Doors don't get removed, they just open (break)
+    isOpen = true;
+    collisionBlock.isPassable = true;
+    sprite = _openSprite;
+    currentHealth = 0;
   }
 }

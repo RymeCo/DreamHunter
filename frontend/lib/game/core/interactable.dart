@@ -5,10 +5,11 @@ import '../haunted_dorm_game.dart';
 import '../actors/player.dart';
 
 /// A mixin that adds a clickable prompt when the player is nearby.
-mixin Interactable on SpriteComponent, HasGameReference<HauntedDormGame> implements TapCallbacks {
+mixin Interactable on SpriteComponent, HasGameReference<HauntedDormGame>
+    implements TapCallbacks {
   late final TextComponent prompt;
   bool _isPlayerNear = false;
-  String get interactionAction; 
+  String get interactionAction;
   void onInteract();
 
   void setupInteractable() {
@@ -44,8 +45,10 @@ mixin Interactable on SpriteComponent, HasGameReference<HauntedDormGame> impleme
   @override
   bool containsLocalPoint(Vector2 point) {
     if (!_isPlayerNear) return false;
-    return point.x >= -20 && point.x <= width + 20 &&
-           point.y >= -20 && point.y <= height + 20;
+    return point.x >= -20 &&
+        point.x <= width + 20 &&
+        point.y >= -20 &&
+        point.y <= height + 20;
   }
 
   @override

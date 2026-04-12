@@ -14,7 +14,9 @@ class UpgradeMenu extends StatelessWidget {
 
     final int nextLevel = turret.level + 1;
     final bool canUpgrade = nextLevel <= 9;
-    final int cost = canUpgrade ? GameConfig.turretUpgradeCosts[nextLevel - 2] : 0;
+    final int cost = canUpgrade
+        ? GameConfig.turretUpgradeCosts[nextLevel - 2]
+        : 0;
     final bool canAfford = game.player.energy >= cost;
 
     return Center(
@@ -26,7 +28,11 @@ class UpgradeMenu extends StatelessWidget {
           children: [
             Text(
               'TURRET LV${turret.level}',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
             ),
             const SizedBox(height: 8),
             if (canUpgrade) ...[
@@ -36,23 +42,39 @@ class UpgradeMenu extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: canAfford ? () {
-                  game.player.energy -= cost;
-                  turret.upgrade();
-                  game.overlays.remove('UpgradeMenu');
-                } : null,
+                onPressed: canAfford
+                    ? () {
+                        game.player.energy -= cost;
+                        turret.upgrade();
+                        game.overlays.remove('UpgradeMenu');
+                      }
+                    : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: canAfford ? Colors.deepPurpleAccent : Colors.grey,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  backgroundColor: canAfford
+                      ? Colors.deepPurpleAccent
+                      : Colors.grey,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
                 ),
                 child: Text('UPGRADE (⚡ $cost)'),
               ),
-            ] else 
-              const Text('MAX LEVEL REACHED', style: TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold)),
-            
+            ] else
+              const Text(
+                'MAX LEVEL REACHED',
+                style: TextStyle(
+                  color: Colors.amberAccent,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
             TextButton(
               onPressed: () => game.overlays.remove('UpgradeMenu'),
-              child: const Text('CLOSE', style: TextStyle(color: Colors.white38)),
+              child: const Text(
+                'CLOSE',
+                style: TextStyle(color: Colors.white38),
+              ),
             ),
           ],
         ),
