@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 
 enum GameStatus { playing, paused, gameOver, victory }
 
@@ -9,8 +10,8 @@ class GameStateManager extends ChangeNotifier {
   GameStatus _status = GameStatus.playing;
 
   GameStateManager({required double duration})
-    : _matchTimeRemaining = duration,
-      _maxDuration = duration;
+      : _matchTimeRemaining = duration,
+        _maxDuration = duration;
 
   double get matchTimeRemaining => _matchTimeRemaining;
   double get progress => (_maxDuration - _matchTimeRemaining) / _maxDuration;
@@ -30,22 +31,32 @@ class GameStateManager extends ChangeNotifier {
       _matchTimeRemaining = 0;
       setGameOver(victory: true); // Survival victory
     }
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void setGameOver({required bool victory}) {
     if (_status == GameStatus.gameOver || _status == GameStatus.victory) return;
     _status = victory ? GameStatus.victory : GameStatus.gameOver;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void pause() {
     _status = GameStatus.paused;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void resume() {
     _status = GameStatus.playing;
-    notifyListeners();
+    _safeNotifyListeners();
+  }
+
+  /// Ensures that listeners are notified after the build phase if necessary.
+  void _safeNotifyListeners() {
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => notifyListeners());
+    } else {
+      notifyListeners();
+    }
   }
 }
+

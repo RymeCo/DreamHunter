@@ -48,24 +48,40 @@ class HauntedDormGame extends FlameGame
   FutureOr<void> onLoad() async {
     _addJoystick();
 
-    // CAMERA FIX: Exactly 7 tiles wide (224px) and 15 tiles high (480px)
-    camera = CameraComponent.withFixedResolution(width: 224, height: 480);
+    player = Player(joystick: joystick, characterType: characterType);
+    level = Level(levelName: 'dorm-01', player: player);
 
+    // Use default CameraComponent (MaxViewport) for true full-screen
+    camera = CameraComponent(world: level);
+
+    // Set a responsive zoom: Target ~10-12 tiles (320-384px) visible horizontally.
+    // We'll set a base zoom and allow it to scale in onGameResize.
+    camera.viewfinder.zoom = 1.0;
+
+    // Add a subtle full-screen tint to the viewport
     camera.viewport.add(
       RectangleComponent(
-        size: Vector2(224, 480),
+        size: camera.viewport.size,
         paint: Paint()..color = const Color(0x084B0082),
       ),
     );
 
-    player = Player(joystick: joystick, characterType: characterType);
-    level = Level(levelName: 'dorm-01', player: player);
+    camera.viewport.add(joystick);
 
-    add(level);
-    add(camera);
+    addAll([level, camera]);
 
     camera.follow(player);
     return super.onLoad();
+  }
+
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    // Responsive Scaling: Ensure we always see roughly the same amount of game world
+    // by adjusting zoom based on the current screen width.
+    if (isLoaded) {
+      camera.viewfinder.zoom = (size.x / 360).clamp(1.0, 3.0);
+    }
   }
 
   void _addJoystick() {
@@ -78,7 +94,6 @@ class HauntedDormGame extends FlameGame
       background: CircleComponent(radius: 40, paint: backgroundPaint),
       margin: const EdgeInsets.only(left: 40, bottom: 40),
     );
-    camera.viewport.add(joystick);
   }
 
   void buildTurret() {
