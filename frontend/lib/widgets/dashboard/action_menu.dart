@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../services/audio_service.dart';
-import '../liquid_glass_dialog.dart';
+import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
+import 'package:dreamhunter/widgets/glass_button.dart';
 
 class DashboardActionMenu extends StatelessWidget {
   final VoidCallback onDailyTasksTap;
@@ -29,19 +29,16 @@ class DashboardActionMenu extends StatelessWidget {
             label: 'Daily Tasks',
             onTap: onDailyTasksTap,
           ),
-          const Divider(color: Colors.white10),
           _buildMenuButton(
             icon: Icons.leaderboard_rounded,
             label: 'Leaderboard',
             onTap: onLeaderboardTap,
           ),
-          const Divider(color: Colors.white10),
           _buildMenuButton(
             icon: Icons.settings_rounded,
             label: 'Settings',
             onTap: onSettingsTap,
           ),
-          const Divider(color: Colors.white10),
           _buildMenuButton(
             icon: Icons.power_settings_new_rounded,
             label: 'Exit Game',
@@ -57,30 +54,32 @@ class DashboardActionMenu extends StatelessWidget {
     required String label,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          AudioService().playClick();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-          child: Row(
-            children: [
-              Icon(icon, color: Colors.white70, size: 20),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: GlassButton(
+        onTap: onTap,
+        width: double.infinity,
+        height: 50,
+        borderRadius: 12,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        color: Colors.white.withValues(alpha: 0.05),
+        hoverColor: Colors.deepPurpleAccent.withValues(alpha: 0.1),
+        borderColor: Colors.white.withValues(alpha: 0.1),
+        hoverBorderColor: Colors.deepPurpleAccent,
+        glowColor: Colors.deepPurpleAccent,
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white70, size: 20),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

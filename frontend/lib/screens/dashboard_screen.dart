@@ -1,28 +1,29 @@
-import 'package:dreamhunter/services/connectivity_service.dart';
-import 'package:dreamhunter/services/dashboard_controller.dart';
-import 'package:dreamhunter/services/roulette_service.dart';
+import 'package:dreamhunter/services/core/network_monitor.dart';
+import 'package:dreamhunter/services/economy/wallet_manager.dart';
+import 'package:dreamhunter/services/progression/daily_roulette.dart';
 import 'package:dreamhunter/widgets/dashboard/currency_display.dart';
 import 'package:dreamhunter/widgets/dashboard/action_menu.dart';
 import 'package:dreamhunter/widgets/dashboard/exchange_module.dart';
-import 'package:dreamhunter/widgets/shop_dialog.dart';
+import 'package:dreamhunter/widgets/economy/shop_dialog.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:dreamhunter/widgets/login_dialog.dart';
-import 'package:dreamhunter/widgets/register_dialog.dart';
-import 'package:dreamhunter/widgets/profile_dialog.dart';
-import 'package:dreamhunter/widgets/chat_dialog.dart';
+import 'package:dreamhunter/widgets/identity/login_dialog.dart';
+import 'package:dreamhunter/widgets/identity/register_dialog.dart';
+import 'package:dreamhunter/widgets/identity/profile_dialog.dart';
+import 'package:dreamhunter/widgets/community/chat_dialog.dart';
 import 'package:dreamhunter/widgets/leaderboard_dialog.dart';
-import 'package:dreamhunter/widgets/daily_tasks_dialog.dart';
-import 'package:dreamhunter/widgets/roulette_dialog.dart';
-import 'package:dreamhunter/widgets/matchmaking_dialog.dart';
-import 'dart:developer' as developer;
+import 'package:dreamhunter/widgets/progression/daily_tasks_dialog.dart';
+import 'package:dreamhunter/widgets/progression/roulette_dialog.dart';
+import 'package:dreamhunter/game/matchmaking_dialog.dart';
 import 'package:dreamhunter/widgets/settings_dialog.dart';
-import 'package:dreamhunter/widgets/clickable_image.dart';
-import 'package:dreamhunter/services/audio_service.dart';
+import 'package:dreamhunter/widgets/glass_button.dart';
+import 'package:dreamhunter/widgets/identity/save_resolution_dialog.dart';
+import 'package:dreamhunter/services/core/audio_manager.dart';
+import 'package:dreamhunter/services/core/storage_engine.dart';
 
 enum AuthDialogType { login, register, profile }
 
@@ -35,7 +36,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late StreamSubscription<User?> _authStateSubscription;
-  final DashboardController _controller = DashboardController();
+  final WalletManager _controller = WalletManager.instance;
   bool _isLoggedIn = false;
   AuthDialogType _currentDialogType = AuthDialogType.login;
 
@@ -56,62 +57,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _backgroundInit() async {
-    // 1. Start music immediately (now returns void/unawaited internal)
-    AudioService().playDashboardMusic();
+    // 1. Start music immediately
+    AudioManager.instance.playDashboardMusic();
 
     // 2. Initialize background services
-    await ConnectivityService().initialize();
+    await NetworkMonitor().initialize();
     await _controller.initialize();
+    await DailyRoulette.instance.initialize();
 
-    // 3. Check for rewards without arbitrary delays
-    if (mounted) {
-      await _checkPendingRouletteRewards();
-    }
-  }
-
-  Future<void> _checkPendingRouletteRewards() async {
-    // Arbitrary delay removed - controller is awaited in _backgroundInit now
-    final state = await RouletteService.getAndSyncState();
-
-    if (state.pendingReward != null) {
-      if (state.isSpinning && state.spinStartTime != null) {
-        // BACKGROUND SPIN LOGIC:
-        // Calculate how much longer we need to wait
-        final startTime = DateTime.parse(state.spinStartTime!);
-        final now = DateTime.now();
-        final elapsed = now.difference(startTime);
-        const totalDuration = Duration(seconds: 5);
-
-        if (elapsed < totalDuration) {
-          final remaining = totalDuration - elapsed;
-          developer.log(
-            'Spin is active in background. Waiting ${remaining.inSeconds}s...',
-            name: 'DashboardScreen',
-          );
-          await Future.delayed(remaining);
-        }
+    // 3. Handle Save Conflict Recovery (Crash/Close protection)
+    if (mounted && StorageEngine.instance.isConflictPending()) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        unawaited(SaveResolutionDialog.showIfNeeded(context, user.uid));
       }
+    }
 
-      // Re-fetch state to see if it was already claimed by the Dialog (if user reopened it)
-      final finalState = await RouletteService.getAndSyncState();
-      if (finalState.pendingReward != null) {
-        final reward = finalState.pendingReward!;
-        final amount = (reward['amount'] as num).toInt();
-        final name = reward['name'] as String;
-
-        await _controller.updateCurrency(
-          newCoins: _controller.dreamCoins + amount,
-        );
-        await RouletteService.clearPendingReward();
-        await RouletteService.setSpinning(false);
-
-        if (mounted) {
-          showCustomSnackBar(
-            context,
-            'Background spin finished! You received: $name',
-            type: SnackBarType.success,
+    // 4. Handle Crash Refunds (Economy Logic Fix)
+    if (mounted) {
+      final state = DailyRoulette.instance.state;
+      if (state.isSpinning) {
+        if (state.lastSpinWasPaid) {
+          await _controller.updateBalance(
+            coinsDelta: DailyRoulette.paidSpinCost,
           );
+          if (mounted) {
+            showCustomSnackBar(
+              context,
+              'RECOVERY: ${DailyRoulette.paidSpinCost} Coins refunded.',
+              type: SnackBarType.info,
+            );
+          }
+        } else {
+          await DailyRoulette.instance.addFreeSpins(1);
+          if (mounted) {
+            showCustomSnackBar(
+              context,
+              'RECOVERY: 1 Free Spin restored.',
+              type: SnackBarType.info,
+            );
+          }
         }
+        await DailyRoulette.instance.setSpinning(false);
       }
     }
   }
@@ -136,8 +123,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
       },
     );
-    _controller.refreshCurrency();
-    _checkPendingRouletteRewards(); // Check if a spin was left running
+    // Note: Refresh is automatic now via Singleton + ListenableBuilder
   }
 
   void _showDropdownMenu() {
@@ -359,16 +345,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           Positioned(
-            bottom: MediaQuery.of(context).size.height * 0.45,
+            bottom: MediaQuery.of(context).size.height * 0.18,
             left: 0,
             right: 0,
             child: Center(
               child: GlassButton(
                 label: 'PLAY',
-                width: 200,
-                height: 70,
-                borderRadius: 35,
-                glowColor: Colors.deepPurpleAccent,
+                width: 140,
+                height: 49,
+                borderRadius: 25,
+                glowColor: Colors.tealAccent,
+                hoverColor: Colors.tealAccent.withValues(alpha: 0.15),
+                hoverBorderColor: Colors.tealAccent,
+                hoverTextColor: Colors.tealAccent,
                 pulseMinOpacity: 0.5,
                 onTap: () {
                   _showGameDialog(const MatchmakingDialog());
@@ -380,24 +369,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
             bottom: 10,
             left: 10,
             child: GlassButton(
-              width: 175,
-              height: 175,
-              padding: const EdgeInsets.all(6),
-              borderRadius: 32,
+              width: 148,
+              height: 148,
+              padding: const EdgeInsets.all(5),
+              borderRadius: 28,
+              glowColor: Colors.pinkAccent,
+              hoverColor: Colors.pinkAccent.withValues(alpha: 0.15),
+              hoverBorderColor: Colors.pinkAccent,
               pulseMinOpacity: 0.3,
               onTap: () => _showGameDialog(
-                RouletteDialog(
-                  controller: _controller,
-                  parentContext: context,
-                  onSpinCompleted: () => _controller.refreshCurrency(),
-                ),
+                RouletteDialog(controller: _controller, parentContext: context),
               ),
               child: OverflowBox(
                 alignment: const Alignment(0, -0.07), // Subtle pull UP
-                minWidth: 240,
-                maxWidth: 240,
-                minHeight: 240,
-                maxHeight: 240,
+                minWidth: 204,
+                maxWidth: 204,
+                minHeight: 204,
+                maxHeight: 204,
                 child: Image.asset(
                   'assets/images/dashboard/roulette_man.png',
                   fit: BoxFit.contain,
@@ -409,24 +397,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
             bottom: 10,
             right: 10,
             child: GlassButton(
-              width: 185,
+              width: 157,
               height:
-                  191, // Increased height to accommodate extra bottom padding
+                  162, // Increased height to accommodate extra bottom padding
               padding: const EdgeInsets.only(
-                left: 6,
-                top: 6,
-                right: 6,
-                bottom: 12,
-              ), // 12px at bottom
-              borderRadius: 32,
+                left: 5,
+                top: 5,
+                right: 5,
+                bottom: 10,
+              ), // 10px at bottom
+              borderRadius: 28,
+              glowColor: Colors.amberAccent,
+              hoverColor: Colors.amberAccent.withValues(alpha: 0.15),
+              hoverBorderColor: Colors.amberAccent,
               pulseMinOpacity: 0.3,
               onTap: () => _showGameDialog(ShopDialog(controller: _controller)),
               child: OverflowBox(
                 alignment: const Alignment(0, -0.07),
-                minWidth: 240,
-                maxWidth: 240,
-                minHeight: 240,
-                maxHeight: 240,
+                minWidth: 204,
+                maxWidth: 204,
+                minHeight: 204,
+                maxHeight: 204,
                 child: Image.asset(
                   'assets/images/dashboard/shop_stall.png',
                   fit: BoxFit.contain,
@@ -438,18 +429,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             bottom: MediaQuery.of(context).size.height * 0.22,
             left: 15,
             child: GlassButton(
-              width: 90,
-              height: 120,
-              padding: const EdgeInsets.all(6),
-              borderRadius: 20,
+              width: 76,
+              height: 102,
+              padding: const EdgeInsets.all(5),
+              borderRadius: 17,
+              glowColor: Colors.cyanAccent,
+              hoverColor: Colors.cyanAccent.withValues(alpha: 0.15),
+              hoverBorderColor: Colors.cyanAccent,
               pulseMinOpacity: 0.3,
               onTap: () => _showGameDialog(const Center(child: ChatDialog())),
               child: OverflowBox(
                 alignment: const Alignment(0, -0.07), // Subtle pull UP
-                minWidth: 120,
-                maxWidth: 120,
-                minHeight: 120,
-                maxHeight: 120,
+                minWidth: 102,
+                maxWidth: 102,
+                minHeight: 102,
+                maxHeight: 102,
                 child: Image.asset(
                   'assets/images/dashboard/signage.png',
                   fit: BoxFit.contain,

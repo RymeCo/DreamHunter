@@ -1,12 +1,14 @@
+import 'package:dreamhunter/widgets/branding/app_logo.dart';
 import 'package:flutter/material.dart';
-import 'package:dreamhunter/services/audio_service.dart';
+import 'package:dreamhunter/services/core/audio_manager.dart';
+import 'package:dreamhunter/services/core/haptic_manager.dart';
+import 'package:dreamhunter/core/theme/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/offline_cache.dart';
-import '../services/backend_service.dart';
-import 'liquid_glass_dialog.dart';
-import 'custom_snackbar.dart';
-import 'game_widgets.dart';
-import 'clickable_image.dart';
+import 'package:dreamhunter/services/core/storage_engine.dart';
+import 'package:dreamhunter/services/identity/profile_manager.dart';
+import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
+import 'package:dreamhunter/widgets/custom_snackbar.dart';
+import 'package:dreamhunter/widgets/common_ui.dart';
 
 class SettingsDialog extends StatefulWidget {
   final VoidCallback? onLoginRequested;
@@ -19,8 +21,7 @@ class SettingsDialog extends StatefulWidget {
 class _SettingsDialogState extends State<SettingsDialog> {
   bool _isLoading = true;
   bool _isSyncing = false;
-  final BackendService _backendService = BackendService();
-  final AudioService _audioService = AudioService();
+  final AudioManager _audioService = AudioManager();
 
   @override
   void initState() {
@@ -29,7 +30,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
   Future<void> _loadSettings() async {
-    // AudioService is already initialized with settings in main.dart
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -38,12 +38,75 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
   Future<void> _updateSettings() async {
-    await OfflineCache.saveSettings({
+    await StorageEngine.instance.saveSettings({
       'music': !_audioService.isMusicMuted,
       'sfx': !_audioService.isSoundMuted,
       'musicVolume': _audioService.musicVolume,
       'sfxVolume': _audioService.soundVolume,
+      'haptics': HapticManager().isHapticEnabled,
+      'pillarboxColor': 'black',
     });
+  }
+
+  void _showAboutDialog() {
+    showGeneralDialog(
+      context: context,
+      barrierLabel: "AboutDialog",
+      barrierDismissible: true,
+      barrierColor: Colors.black87,
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Center(
+          child: LiquidGlassDialog(
+            width: 320,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const GameDialogHeader(title: 'ABOUT', showCloseButton: true),
+                const SizedBox(height: 20),
+                const AppLogo(size: 80),
+                const SizedBox(height: 16),
+                Text(
+                  'DREAMHUNTER',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    letterSpacing: 4,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'VERSION 0.1.7',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.cyanAccent,
+                    fontSize: 10,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'A technical co-founder project built with Flutter & Flame.\n\nExperience the thrill of the hunt in a dark fantasy world.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  '© 2026 RYME STUDIOS',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _performManualSync() async {
@@ -57,23 +120,26 @@ class _SettingsDialogState extends State<SettingsDialog> {
     }
 
     setState(() => _isSyncing = true);
-    final success = await _backendService.performFullSync();
 
-    if (mounted) {
-      setState(() => _isSyncing = false);
-      if (success) {
+    try {
+      await ProfileManager.instance.backupPlayer();
+      if (mounted) {
         showCustomSnackBar(
           context,
           'Cloud sync successful!',
           type: SnackBarType.success,
         );
-      } else {
+      }
+    } catch (e) {
+      if (mounted) {
         showCustomSnackBar(
           context,
           'Sync failed. Check your connection.',
           type: SnackBarType.error,
         );
       }
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
     }
   }
 
@@ -85,101 +151,136 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
     return Center(
       child: LiquidGlassDialog(
-        width: 350,
-        padding: const EdgeInsets.all(20),
+        width: 400,
+        padding: EdgeInsets.zero,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const GameDialogHeader(title: 'Settings'),
-            const SizedBox(height: 16),
-            _buildSettingSwitch(
-              title: 'Music',
-              subtitle: 'Atmospheric background tracks',
-              icon: Icons.music_note_rounded,
-              value: !_audioService.isMusicMuted,
-              onChanged: (val) async {
-                await _audioService.toggleMusicMute();
-                await _updateSettings();
-                if (mounted) setState(() {});
-              },
+            const Padding(
+              padding: EdgeInsets.fromLTRB(28, 28, 28, 12),
+              child: GameDialogHeader(title: 'SETTINGS'),
             ),
-            if (!_audioService.isMusicMuted)
-              _buildVolumeSlider(
-                value: _audioService.musicVolume,
-                onChanged: (val) {
-                  _audioService.setMusicVolume(val);
-                  if (mounted) setState(() {});
-                },
-                onChangeEnd: () => _updateSettings(),
-              ),
-            const SizedBox(height: 8),
-            _buildSettingSwitch(
-              title: 'Sound Effects',
-              subtitle: 'UI & game feedback',
-              icon: Icons.volume_up_rounded,
-              value: !_audioService.isSoundMuted,
-              onChanged: (val) async {
-                await _audioService.toggleSoundMute();
-                await _updateSettings();
-                if (mounted) setState(() {});
-              },
-            ),
-            if (!_audioService.isSoundMuted)
-              _buildVolumeSlider(
-                value: _audioService.soundVolume,
-                onChanged: (val) {
-                  _audioService.setSoundVolume(val);
-                  if (mounted) setState(() {});
-                },
-                onChangeEnd: () async {
-                  await _updateSettings();
-                  await _audioService.playClick();
-                },
-              ),
-
-            const SizedBox(height: 24),
-            const StatRow(
-              icon: Icons.cloud_sync_rounded,
-              label: 'CLOUD SYNC',
-              color: Colors.cyanAccent,
-            ),
-            const SizedBox(height: 12),
-            GlassButton(
-              onTap: _isSyncing ? null : _performManualSync,
-              width: double.infinity,
-              height: 55,
-              color: Colors.cyanAccent.withValues(alpha: 0.1),
-              borderColor: Colors.cyanAccent.withValues(alpha: 0.3),
-              child: _isSyncing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.cyanAccent,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+              child: Column(
+                children: [
+                  _buildSectionLabel(context, 'SENSORY CONTROLS'),
+                  _buildGlassBlock(
+                    context,
+                    accentColor: Colors.cyanAccent,
+                    children: [
+                      _GlassSettingItem(
+                        title: 'Atmospheric Music',
+                        icon: Icons.music_note_rounded,
+                        value: !_audioService.isMusicMuted,
+                        accentColor: Colors.cyanAccent,
+                        onChanged: (val) async {
+                          await _audioService.toggleMusicMute();
+                          await _updateSettings();
+                          if (mounted) setState(() {});
+                        },
+                        sliderValue: _audioService.musicVolume,
+                        onSliderChanged: (val) {
+                          _audioService.setMusicVolume(val);
+                          if (mounted) setState(() {});
+                        },
+                        onSliderChangeEnd: () => _updateSettings(),
                       ),
-                    )
-                  : const Text(
-                      'BACKUP DATA TO CLOUD',
-                      style: TextStyle(
-                        color: Colors.cyanAccent,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1,
-                        fontSize: 14,
+                      _buildDivider(),
+                      _GlassSettingItem(
+                        title: 'Sound Feedback',
+                        icon: Icons.volume_up_rounded,
+                        value: !_audioService.isSoundMuted,
+                        accentColor: Colors.cyanAccent,
+                        onChanged: (val) async {
+                          await _audioService.toggleSoundMute();
+                          await _updateSettings();
+                          if (mounted) setState(() {});
+                        },
+                        sliderValue: _audioService.soundVolume,
+                        onSliderChanged: (val) {
+                          _audioService.setSoundVolume(val);
+                          if (mounted) setState(() {});
+                        },
+                        onSliderChangeEnd: () async {
+                          await _updateSettings();
+                          _audioService.playClick();
+                        },
                       ),
+                      _buildDivider(),
+                      _GlassSettingItem(
+                        title: 'Haptic Feedback',
+                        subtitle: 'Tactile response on interaction',
+                        icon: Icons.vibration_rounded,
+                        value: HapticManager().isHapticEnabled,
+                        accentColor: Colors.cyanAccent,
+                        onChanged: (val) async {
+                          await HapticManager().toggleHaptics();
+                          await _updateSettings();
+                          if (mounted) setState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionLabel(context, 'CORE SYSTEM'),
+                  _buildGlassBlock(
+                    context,
+                    accentColor: Colors.deepPurpleAccent,
+                    children: [
+                      _GlassActionItem(
+                        title: 'Cloud Storage Sync',
+                        subtitle: _isSyncing
+                            ? 'Syncing...'
+                            : 'Backup your progress',
+                        icon: Icons.cloud_done_rounded,
+                        accentColor: Colors.cyanAccent,
+                        onTap: _isSyncing ? () {} : _performManualSync,
+                        trailing: _isSyncing
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.cyanAccent,
+                                ),
+                              )
+                            : null,
+                      ),
+                      _buildDivider(),
+                      _GlassActionItem(
+                        title: 'Support the Dev',
+                        subtitle: 'Keep the servers alive',
+                        icon: Icons.volunteer_activism_rounded,
+                        accentColor: Colors.pinkAccent,
+                        onTap: () {
+                          showCustomSnackBar(
+                            context,
+                            'Donation links coming soon!',
+                            type: SnackBarType.success,
+                          );
+                        },
+                      ),
+                      _buildDivider(),
+                      _GlassActionItem(
+                        title: 'About DreamHunter',
+                        subtitle: 'Credits & Project Info',
+                        icon: Icons.info_outline_rounded,
+                        accentColor: Colors.deepPurpleAccent,
+                        onTap: _showAboutDialog,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    'DREAMHUNTER V 0.1.7',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      fontSize: 10,
+                      letterSpacing: 4,
                     ),
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: Text(
-                'DREAMHUNTER V 0.1.5',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.5,
-                ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -188,72 +289,316 @@ class _SettingsDialogState extends State<SettingsDialog> {
     );
   }
 
-  Widget _buildVolumeSlider({
-    required double value,
-    required ValueChanged<double> onChanged,
-    VoidCallback? onChangeEnd,
-  }) {
+  Widget _buildSectionLabel(BuildContext context, String label) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Row(
-        children: [
-          const Icon(Icons.volume_down, size: 16, color: Colors.white38),
-          Expanded(
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 2,
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-                activeTrackColor: Colors.cyanAccent,
-                inactiveTrackColor: Colors.white10,
-                thumbColor: Colors.cyanAccent,
-                overlayColor: Colors.cyanAccent.withValues(alpha: 0.1),
-              ),
-              child: Slider(
-                value: value,
-                onChanged: onChanged,
-                onChangeEnd: onChangeEnd != null ? (_) => onChangeEnd() : null,
-              ),
-            ),
+      padding: const EdgeInsets.only(left: 4, bottom: 10),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Colors.white.withValues(alpha: 0.3),
+            fontSize: 10,
+            letterSpacing: 2.5,
           ),
-          const Icon(Icons.volume_up, size: 16, color: Colors.white38),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildSettingSwitch({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool value,
-    required ValueChanged<bool> onChanged,
+  Widget _buildGlassBlock(
+    BuildContext context, {
+    required List<Widget> children,
+    required Color accentColor,
   }) {
+    final glassTheme =
+        Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
+    const double radius = 24.0;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white.withValues(alpha: glassTheme.baseOpacity * 0.2),
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: glassTheme.borderAlpha * 0.25),
+          width: 1,
+        ),
       ),
-      child: SwitchListTile(
-        secondary: Icon(icon, color: Colors.white70),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: List.generate(children.length, (index) {
+          final child = children[index];
+          if (child is _GlassSettingItem || child is _GlassActionItem) {
+            final isFirst = index == 0;
+            final isLast = index == children.length - 1;
+            final borderRadius = BorderRadius.vertical(
+              top: isFirst ? const Radius.circular(radius) : Radius.zero,
+              bottom: isLast ? const Radius.circular(radius) : Radius.zero,
+            );
+
+            if (child is _GlassSettingItem) {
+              return child.copyWith(borderRadius: borderRadius);
+            } else if (child is _GlassActionItem) {
+              return child.copyWith(borderRadius: borderRadius);
+            }
+          }
+          return child;
+        }),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      indent: 60,
+      color: Colors.white.withValues(alpha: 0.03),
+    );
+  }
+}
+
+class _GlassSettingItem extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final IconData icon;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final Color accentColor;
+  final double? sliderValue;
+  final ValueChanged<double>? onSliderChanged;
+  final VoidCallback? onSliderChangeEnd;
+  final BorderRadius borderRadius;
+
+  const _GlassSettingItem({
+    required this.title,
+    this.subtitle,
+    required this.icon,
+    required this.value,
+    required this.onChanged,
+    required this.accentColor,
+    this.sliderValue,
+    this.onSliderChanged,
+    this.onSliderChangeEnd,
+    this.borderRadius = BorderRadius.zero,
+  });
+
+  _GlassSettingItem copyWith({BorderRadius? borderRadius}) {
+    return _GlassSettingItem(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      value: value,
+      onChanged: onChanged,
+      accentColor: accentColor,
+      sliderValue: sliderValue,
+      onSliderChanged: onSliderChanged,
+      onSliderChangeEnd: onSliderChangeEnd,
+      borderRadius: borderRadius ?? this.borderRadius,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final glassTheme =
+        Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticManager().light();
+          onChanged(!value);
+        },
+        hoverColor: accentColor.withValues(alpha: glassTheme.baseOpacity / 2),
+        splashColor: accentColor.withValues(alpha: glassTheme.baseOpacity),
+        highlightColor: accentColor.withValues(alpha: glassTheme.baseOpacity),
+        borderRadius: borderRadius,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(
+                        alpha: glassTheme.baseOpacity / 2,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: Colors.white70, size: 20),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(fontSize: 14),
+                        ),
+                        if (subtitle != null)
+                          Text(
+                            subtitle!,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: Colors.white38, fontSize: 10),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Transform.scale(
+                    scale: 0.75,
+                    child: Switch(
+                      value: value,
+                      onChanged: (v) {
+                        HapticManager().light();
+                        onChanged(v);
+                      },
+                      activeThumbColor: accentColor,
+                      activeTrackColor: accentColor.withValues(alpha: 0.2),
+                      inactiveThumbColor: Colors.white24,
+                      inactiveTrackColor: Colors.white10,
+                      trackOutlineColor: WidgetStateProperty.all(
+                        Colors.transparent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (value && sliderValue != null) ...[
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 44, right: 8),
+                  child: SizedBox(
+                    height: 24,
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 2,
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 6,
+                        ),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 12,
+                        ),
+                        activeTrackColor: accentColor.withValues(alpha: 0.4),
+                        inactiveTrackColor: Colors.white10,
+                        thumbColor: accentColor,
+                      ),
+                      child: Slider(
+                        value: sliderValue!,
+                        onChanged: onSliderChanged,
+                        onChangeEnd: onSliderChangeEnd != null
+                            ? (_) => onSliderChangeEnd!()
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(color: Colors.white54, fontSize: 11),
-        ),
-        value: value,
-        onChanged: (val) {
-          AudioService().playClick();
-          onChanged(val);
+      ),
+    );
+  }
+}
+
+class _GlassActionItem extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color accentColor;
+  final VoidCallback onTap;
+  final Widget? trailing;
+  final BorderRadius borderRadius;
+
+  const _GlassActionItem({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.accentColor,
+    required this.onTap,
+    this.trailing,
+    this.borderRadius = BorderRadius.zero,
+  });
+
+  _GlassActionItem copyWith({BorderRadius? borderRadius}) {
+    return _GlassActionItem(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      accentColor: accentColor,
+      onTap: onTap,
+      trailing: trailing,
+      borderRadius: borderRadius ?? this.borderRadius,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final glassTheme =
+        Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticManager().light();
+          onTap();
         },
-        activeThumbColor: Colors.cyanAccent,
-        activeTrackColor: Colors.cyanAccent.withValues(alpha: 0.3),
+        hoverColor: accentColor.withValues(alpha: glassTheme.baseOpacity / 2),
+        splashColor: accentColor.withValues(alpha: glassTheme.baseOpacity),
+        highlightColor: accentColor.withValues(alpha: glassTheme.baseOpacity),
+        borderRadius: borderRadius,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(
+                    alpha: glassTheme.baseOpacity / 2,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: Colors.white70, size: 20),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(fontSize: 14),
+                    ),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white38,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (trailing != null)
+                trailing!
+              else
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.white24,
+                  size: 14,
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

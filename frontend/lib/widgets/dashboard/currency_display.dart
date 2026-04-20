@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../services/audio_service.dart';
-import '../../services/connectivity_service.dart';
-import '../../services/dashboard_controller.dart';
-import '../liquid_glass_dialog.dart';
+import 'package:dreamhunter/services/core/audio_manager.dart';
+import 'package:dreamhunter/services/core/network_monitor.dart';
+import 'package:dreamhunter/services/economy/wallet_manager.dart';
+import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 
 class CurrencyDisplay extends StatelessWidget {
-  final DashboardController controller;
+  final WalletManager controller;
   final VoidCallback onProfileTap;
   final VoidCallback onExchangeTap;
   final VoidCallback onPurchaseTap;
@@ -30,7 +30,7 @@ class CurrencyDisplay extends StatelessWidget {
           children: [
             GestureDetector(
               onTap: () {
-                AudioService().playClick();
+                AudioManager().playClick();
                 onProfileTap();
               },
               child: Container(
@@ -57,7 +57,7 @@ class CurrencyDisplay extends StatelessWidget {
                       bottom: 0,
                       right: 0,
                       child: ValueListenableBuilder<bool>(
-                        valueListenable: ConnectivityService().isOnline,
+                        valueListenable: NetworkMonitor().isOnline,
                         builder: (context, isOnline, child) {
                           return Container(
                             width: 14,
@@ -84,6 +84,7 @@ class CurrencyDisplay extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildCurrencyChip(
+                    context,
                     icon: Icons.toll_rounded,
                     value: '$coins',
                     color: Colors.amberAccent,
@@ -91,6 +92,7 @@ class CurrencyDisplay extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   _buildCurrencyChip(
+                    context,
                     icon: Icons.diamond_rounded,
                     value: '$stones',
                     color: Colors.redAccent,
@@ -105,7 +107,8 @@ class CurrencyDisplay extends StatelessWidget {
     );
   }
 
-  Widget _buildCurrencyChip({
+  Widget _buildCurrencyChip(
+    BuildContext context, {
     required IconData icon,
     required String value,
     required Color color,
@@ -122,17 +125,15 @@ class CurrencyDisplay extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 13,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(fontSize: 13),
           ),
           if (onPlusTap != null) ...[
             const SizedBox(width: 8),
             GestureDetector(
               onTap: () {
-                AudioService().playClick();
+                AudioManager().playClick();
                 onPlusTap();
               },
               child: Container(

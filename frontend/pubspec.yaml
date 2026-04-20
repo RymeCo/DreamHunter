@@ -19,9 +19,6 @@ dependencies:
   audioplayers: ^6.5.1
   google_fonts: ^8.0.2
   shared_preferences: ^2.5.4
-  uuid: ^4.5.3
-  device_info_plus: ^12.3.0
-  intl: ^0.20.2
   connectivity_plus: ^7.0.0
   crypto: ^3.0.7
 

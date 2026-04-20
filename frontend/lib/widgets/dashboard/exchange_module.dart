@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../liquid_glass_dialog.dart';
-import '../game_widgets.dart';
-import '../clickable_image.dart';
-import '../../services/dashboard_controller.dart';
-import '../custom_snackbar.dart';
+import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
+import 'package:dreamhunter/widgets/common_ui.dart';
+import 'package:dreamhunter/widgets/glass_button.dart';
+import 'package:dreamhunter/services/economy/wallet_manager.dart';
+import 'package:dreamhunter/widgets/custom_snackbar.dart';
 
 class PurchaseDialogContent extends StatelessWidget {
   final VoidCallback onBackTap;
@@ -56,7 +56,7 @@ class PurchaseDialogContent extends StatelessWidget {
 
 class ExchangeDialogContent extends StatefulWidget {
   final VoidCallback onBackTap;
-  final DashboardController controller;
+  final WalletManager controller;
 
   const ExchangeDialogContent({
     super.key,
@@ -95,14 +95,14 @@ class _ExchangeDialogContentState extends State<ExchangeDialogContent> {
       if (success) {
         showCustomSnackBar(
           context,
-          'Successfully exchanged $_amountToExchange Hell Stones!',
+          'EXCHANGED: +${_amountToExchange * 100} Coins received!',
           type: SnackBarType.success,
         );
         setState(() => _amountToExchange = 1);
       } else {
         showCustomSnackBar(
           context,
-          'Exchange failed. Check your balance.',
+          'ERROR: Insufficient Hell Stones.',
           type: SnackBarType.error,
         );
       }

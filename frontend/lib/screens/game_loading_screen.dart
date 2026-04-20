@@ -1,7 +1,8 @@
+import 'package:dreamhunter/widgets/branding/app_logo.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:dreamhunter/widgets/game_widgets.dart';
-import 'package:dreamhunter/services/game_pre_loader.dart';
+import 'package:dreamhunter/widgets/common_ui.dart';
+import 'package:dreamhunter/services/loading/game_loader.dart';
 import 'package:dreamhunter/screens/game_screen.dart';
 
 class GameLoadingScreen extends StatefulWidget {
@@ -18,35 +19,25 @@ class _GameLoadingScreenState extends State<GameLoadingScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startPreloading();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startPreloading());
   }
 
   Future<void> _startPreloading() async {
-    final startTime = DateTime.now();
-
-    await GamePreLoader.loadGameAssets((progress) {
+    // 1. REAL ASSET LOADING
+    await GameLoader.loadGameAssets((progress) {
       if (mounted) {
         setState(() => _progress = progress);
       }
     });
 
-    final endTime = DateTime.now();
-    final elapsed = endTime.difference(startTime).inMilliseconds;
-    const minimumWait = 1500;
-
-    if (elapsed < minimumWait) {
-      final remaining = minimumWait - elapsed;
-      await Future.delayed(Duration(milliseconds: remaining));
-    }
-
+    // 2. Final state and brief smooth delay
     if (!mounted) return;
     setState(() => _progress = 1.0);
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 400));
 
     if (!mounted) return;
 
+    // 3. Fast transition to Gameplay
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -54,16 +45,19 @@ class _GameLoadingScreenState extends State<GameLoadingScreen> {
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
-        transitionDuration: const Duration(milliseconds: 800),
+        transitionDuration: const Duration(milliseconds: 600),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       body: Stack(
         children: [
+          // Theme-synced Background
           Positioned.fill(
             child: ImageFiltered(
               imageFilter: ImageFilter.blur(sigmaX: 0.5, sigmaY: 1.0),
@@ -73,29 +67,30 @@ class _GameLoadingScreenState extends State<GameLoadingScreen> {
               ),
             ),
           ),
-          Positioned(
-            top: MediaQuery.of(context).size.height * 0.15,
-            left: 0,
-            right: 0,
-            child: const AppLogo(size: 550),
+          // Responsive Branding
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 120),
+              child: AppLogo(size: screenWidth * 0.8),
+            ),
           ),
+          // Clean Loading Info
           Positioned(
-            bottom: 40,
+            bottom: 60,
             left: 40,
             right: 40,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   'ENTERING THE DREAM...',
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: Colors.white70,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
+                    letterSpacing: 3,
+                    fontSize: 12,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 GameLoadingBar(progress: _progress),
               ],
             ),

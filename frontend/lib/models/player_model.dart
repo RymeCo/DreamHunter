@@ -1,77 +1,64 @@
+/// The "No-Nonsense" Player Model.
+/// Focused strictly on Game Progress and ID-driven Inventory.
 class PlayerModel {
   final String uid;
-  final String displayName;
-  final String email;
-  final String photoUrl;
+  final String name;
+  final String createdAt;
+  final List<String> banned;
+
+  // Progression
   final int level;
   final int xp;
-  final int currency;
-  final List<String> inventory;
-  final DateTime? lastLogin;
+
+  /// Total seconds spent ACTIVELY playing in matches (not dashboard time).
+  final int totalGameTime;
+
+  // Economy
+  final int coins;
+  final int stones;
+
+  /// Inventory is a clean Map of Item ID -> Amount.
+  final Map<String, int> inventory;
 
   PlayerModel({
     required this.uid,
-    required this.displayName,
-    required this.email,
-    this.photoUrl = '',
+    required this.name,
+    required this.createdAt,
+    this.banned = const [],
     this.level = 1,
     this.xp = 0,
-    this.currency = 100,
-    this.inventory = const [],
-    this.lastLogin,
+    this.totalGameTime = 0,
+    this.coins = 100,
+    this.stones = 0,
+    this.inventory = const {},
   });
 
-  /// Create a PlayerModel from a Firestore Map
   factory PlayerModel.fromMap(Map<String, dynamic> data, String id) {
     return PlayerModel(
       uid: id,
-      displayName: data['displayName'] ?? 'Dreamer',
-      email: data['email'] ?? '',
-      photoUrl: data['photoUrl'] ?? '',
+      name: data['name'] ?? 'Dreamer',
+      createdAt: data['createdAt'] ?? DateTime.now().toIso8601String(),
+      banned: List<String>.from(data['banned'] ?? []),
       level: data['level'] ?? 1,
       xp: data['xp'] ?? 0,
-      currency: data['currency'] ?? 100,
-      inventory: List<String>.from(data['inventory'] ?? []),
-      lastLogin: data['lastLogin'] != null
-          ? DateTime.parse(data['lastLogin'])
-          : null,
+      totalGameTime: data['totalGameTime'] ?? 0,
+      coins: data['coins'] ?? 100,
+      stones: data['stones'] ?? 0,
+      inventory: Map<String, int>.from(data['inventory'] ?? {}),
     );
   }
 
-  /// Convert PlayerModel to a Map for Firestore
   Map<String, dynamic> toMap() {
     return {
-      'displayName': displayName,
-      'email': email,
-      'photoUrl': photoUrl,
+      'name': name,
+      'createdAt': createdAt,
+      'banned': banned,
       'level': level,
       'xp': xp,
-      'currency': currency,
+      'totalGameTime': totalGameTime,
+      'coins': coins,
+      'stones': stones,
       'inventory': inventory,
-      'lastLogin': lastLogin?.toIso8601String(),
     };
-  }
-
-  /// Create a copy of this player with some fields replaced
-  PlayerModel copyWith({
-    String? displayName,
-    String? photoUrl,
-    int? level,
-    int? xp,
-    int? currency,
-    List<String>? inventory,
-    DateTime? lastLogin,
-  }) {
-    return PlayerModel(
-      uid: uid,
-      displayName: displayName ?? this.displayName,
-      email: email,
-      photoUrl: photoUrl ?? this.photoUrl,
-      level: level ?? this.level,
-      xp: xp ?? this.xp,
-      currency: currency ?? this.currency,
-      inventory: inventory ?? this.inventory,
-      lastLogin: lastLogin ?? this.lastLogin,
-    );
   }
 }

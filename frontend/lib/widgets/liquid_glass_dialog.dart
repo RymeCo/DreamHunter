@@ -1,21 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:dreamhunter/core/theme/app_theme.dart';
 
 /// A reusable, highly-customizable "Glassmorphism" dialog component.
 /// This widget provides a blurred, semi-transparent background with a subtle border
 /// and gradient, perfect for modern indie game UIs.
-///
-/// ### How to use:
-/// ```dart
-/// LiquidGlassDialog(
-///   width: 300,
-///   height: 400,
-///   borderRadius: 15.0, // Optional
-///   blurSigma: 10.0,    // Optional
-///   padding: EdgeInsets.all(16), // Optional
-///   child: MyContentWidget(),
-/// )
-/// ```
 class LiquidGlassDialog extends StatelessWidget {
   /// The content to display inside the glass panel.
   final Widget child;
@@ -29,8 +18,8 @@ class LiquidGlassDialog extends StatelessWidget {
   /// The roundness of the corners. Defaults to 20.0.
   final double borderRadius;
 
-  /// The intensity of the background blur. Defaults to 8.0.
-  final double blurSigma;
+  /// The intensity of the background blur. If null, uses [GlassTheme.blurSigma].
+  final double? blurSigma;
 
   /// The internal padding for the content. Defaults to 20.0.
   final EdgeInsetsGeometry padding;
@@ -47,7 +36,7 @@ class LiquidGlassDialog extends StatelessWidget {
     this.width,
     this.height,
     this.borderRadius = 20.0,
-    this.blurSigma = 8.0,
+    this.blurSigma,
     this.padding = const EdgeInsets.all(20.0),
     this.color,
     this.glowColor,
@@ -55,20 +44,28 @@ class LiquidGlassDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final glassTheme =
+        Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
+    final sigma = blurSigma ?? glassTheme.blurSigma;
+
     return SizedBox(
       width: width,
       height: height,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+          filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
-              color: color ?? const Color.fromRGBO(255, 255, 255, 0.1),
+              color:
+                  color ??
+                  Colors.white.withValues(alpha: glassTheme.baseOpacity),
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
-                color: (glowColor ?? Colors.white).withValues(alpha: 0.2),
+                color: (glowColor ?? Colors.white).withValues(
+                  alpha: glassTheme.borderAlpha,
+                ),
                 width: 1.5,
               ),
               gradient: color != null
@@ -89,7 +86,11 @@ class LiquidGlassDialog extends StatelessWidget {
                 ),
               ],
             ),
-            child: Material(color: Colors.transparent, child: child),
+            child: DefaultTextStyle(
+              style:
+                  Theme.of(context).textTheme.bodyMedium ?? const TextStyle(),
+              child: Material(color: Colors.transparent, child: child),
+            ),
           ),
         ),
       ),
