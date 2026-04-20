@@ -117,6 +117,11 @@ Every non-trivial edit MUST be documented by **appending** a new entry to the `#
   - **Organization:** Renamed `game_widgets.dart` to `common_ui.dart` and extracted `AppLogo` and `RouletteWheelPainter` into dedicated files.
   - **Simplification:** Streamlined `LayoutBaseline` and standardized all utility imports to absolute package paths.
   - **Verification:** Static analysis confirmed 0 errors across 49 files.
+- [2026-04-20] DASHBOARD-CLEANUP:
+  - **Backup:** Created `dashboard_v1_backup.dart` to preserve the current high-quality UI layout.
+  - **Refactoring:** Simplified the `DashboardScreen` code by extracting the complex Auth Flow into a dedicated `AuthFlowDialog` and breaking down the `build` method into readable helper methods.
+  - **Preservation:** The visual UI layout (coordinates, images, animations) remains 100% identical as per user preference.
+  - **Verification:** Static analysis confirms 0 errors.
 - [2026-04-20] TASK-SYSTEM-REFACTOR:
   - **Model:** Introduced a structured `DailyTask` model to handle progress, completion logic, and type safety.
   - **Logic Fixes:** Resolved the "Claim" gap by integrating the dialog with `WalletManager.instance.updateBalance`. Claimed rewards are now persistent.
