@@ -2,6 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
+import 'package:dreamhunter/game/entities/door_entity.dart';
 import 'package:dreamhunter/game/dream_hunter_game.dart';
 import 'package:dreamhunter/widgets/game/upgrade_dialog.dart';
 
@@ -13,6 +14,9 @@ class BedEntity extends BaseEntity with HasGameReference<DreamHunterGame>, TapCa
   double _popupAlpha = 0.0;
   final double _fadeSpeed = 5.0; // Speed of the fade animation
   bool _hasSlept = false;
+
+  /// The door belonging to this dorm room.
+  DoorEntity? roomDoor;
 
   BedEntity({
     required super.position,
@@ -64,9 +68,7 @@ class BedEntity extends BaseEntity with HasGameReference<DreamHunterGame>, TapCa
         currentLevel: 1,
         requirements: ["None"],
         coinCost: 100,
-        onUpgrade: () {
-          debugPrint('BedEntity: Upgrade triggered');
-        },
+        onUpgrade: () {},
       );
       return;
     }
@@ -79,6 +81,9 @@ class BedEntity extends BaseEntity with HasGameReference<DreamHunterGame>, TapCa
     if (distance < 48) {
       _hasSlept = true;
       game.player.sleep(position);
+      
+      // Close the dorm room door
+      roomDoor?.close();
       
       // Hide joystick permanently
       game.joystick.removeFromParent();

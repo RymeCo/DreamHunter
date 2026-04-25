@@ -259,3 +259,8 @@ All major task completions and architectural shifts are logged here for traceabi
   - Assets: Initialized doors in the "Open" state using `door_wood_open-32x32.png`.
   - Collision: Doors are currently walkable (category `door`, but not `building`) to allow fluid movement until lock/close logic is implemented.
   - Verification: Static analysis confirms 0 errors.
+- [2026-04-25] GAME-DOOR-CLOSING-LOGIC:
+  - Logic: Implemented proximity-based door linking in `DreamHunterGame.onLoad`. Every bed now "knows" its nearest door within 250px.
+  - Interaction: Tapping a bed to sleep now triggers only that specific room's door to close.
+  - State: `DoorEntity.close()` swaps the sprite to the closed version and adds the `building` category, making the door solid and non-walkable.
+  - Verification: Static analysis confirms 0 errors. Sleep-to-secure flow is now functional.

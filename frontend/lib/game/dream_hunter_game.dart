@@ -95,6 +95,22 @@ class DreamHunterGame extends FlameGame with DragCallbacks, HasCollisionDetectio
     );
 
     debugPrint('DreamHunterGame: Map Loaded, Player Spawned, and Timers started.');
+
+    // 7. Link Beds to nearest Doors (Room Assignment)
+    final beds = world.children.whereType<BedEntity>();
+    final doors = world.children.whereType<DoorEntity>();
+    for (final bed in beds) {
+      DoorEntity? nearest;
+      double minDistance = 250; // Threshold to ensure we don't link to far away doors
+      for (final door in doors) {
+        final dist = bed.position.distanceTo(door.position);
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearest = door;
+        }
+      }
+      bed.roomDoor = nearest;
+    }
   }
 
   /// Checks if a given hitbox (at a potential position) would collide with any walls.
