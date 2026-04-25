@@ -3,6 +3,7 @@ import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/dream_hunter_game.dart';
+import 'package:dreamhunter/widgets/game/upgrade_dialog.dart';
 
 /// A static bed building.
 /// Characters cannot walk through the bed due to the 'building' category.
@@ -56,7 +57,19 @@ class BedEntity extends BaseEntity with HasGameReference<DreamHunterGame>, TapCa
 
   @override
   void onTapDown(TapDownEvent event) {
-    if (_hasSlept) return;
+    if (_hasSlept) {
+      UpgradeDialog.show(
+        game.buildContext!,
+        title: "Dream Bed",
+        currentLevel: 1,
+        requirements: ["None"],
+        coinCost: 100,
+        onUpgrade: () {
+          debugPrint('BedEntity: Upgrade triggered');
+        },
+      );
+      return;
+    }
 
     // Check distance to player
     final bedCenter = position + (size / 2);
