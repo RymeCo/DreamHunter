@@ -8,6 +8,8 @@ import 'package:dreamhunter/data/item_registry.dart';
 /// The playable character entity.
 class PlayerEntity extends BaseEntity {
   final DynamicJoystick joystick;
+  late final SpriteComponent _spriteComponent;
+  late final Sprite _sleepingSprite;
 
   PlayerEntity({required this.joystick}) : super(
     size: Vector2(32, 48), // Standard character size
@@ -28,13 +30,37 @@ class PlayerEntity extends BaseEntity {
     final imagePath = item?.image.replaceFirst('assets/images/', '') ?? 'game/characters/max_front-32x48.png';
     final sprite = await Sprite.load(imagePath);
     
+    // Create cropped sleeping head sprite (top 20 pixels)
+    _sleepingSprite = Sprite(
+      sprite.image,
+      srcPosition: sprite.srcPosition,
+      srcSize: Vector2(32, 20),
+    );
+
     // 3. Add visual representation
-    add(SpriteComponent(
+    _spriteComponent = SpriteComponent(
       sprite: sprite,
       size: size,
-    ));
+    );
+    add(_spriteComponent);
 
     // 4. Add movement behavior
     add(PlayerMovementBehavior(joystick: joystick));
+  }
+
+  /// Puts the player to sleep in the specified bed.
+  void sleep(Vector2 bedPosition) {
+    // 1. Remove movement logic permanently
+    children.whereType<PlayerMovementBehavior>().forEach((b) => b.removeFromParent());
+    
+    // 2. Change visuals to just the head
+    _spriteComponent.sprite = _sleepingSprite;
+    _spriteComponent.size = Vector2(32, 20);
+    size = Vector2(32, 20); // Shrink component size too
+    
+    // 3. Teleport to bed (aligned to pillow)
+    // Bed is 32x32. Pillow is roughly at the top center.
+    // Bed anchor is topLeft, Player anchor is center.
+    position = bedPosition + Vector2(16, 10);
   }
 }

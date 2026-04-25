@@ -205,6 +205,12 @@ All major task completions and architectural shifts are logged here for traceabi
   - Logic: Refactored `PlayerMovementBehavior` to perform separate X/Y potential-position checks, enabling fluid sliding along walls.
   - Depth: The feet-only hitbox allows the character's head and torso to overlap walls, creating a natural 2.5D perspective.
   - Verification: Static analysis confirms 0 errors. Player can no longer walk through walls or furniture.
+- [2026-04-25] SCRUM-BUILDING: BED-SLEEP-SIMULATION:
+  - UI: Made "Sleep" popup text smaller (size 8) for a cleaner look.
+  - Interaction: Implemented `TapCallbacks` on `BedEntity`. Tapping a bed while nearby now triggers a permanent sleeping state.
+  - Simulation: The player character's sprite is cropped to only show the head, which is then positioned on the bed's pillow.
+  - Controls: Once sleeping, the joystick is removed from the screen and all movement logic is disabled, simulating a deep sleep.
+  - Verification: Static analysis confirms 0 errors. Simulation is stable and immersive.
 - [2026-04-25] BUGFIX: OPACITY-EFFECT-CRASH:
   - Issue: `OpacityEffect` caused a crash because `TextComponent` and some `PositionComponent`s lacked the `OpacityProvider` mixin.
   - Fix: Implemented manual alpha animation logic in `BedEntity` and `DynamicJoystick`. This approach is more robust and prevents the "Unsupported operation" error while maintaining smooth fade-in/out transitions.

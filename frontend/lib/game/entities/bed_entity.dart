@@ -1,15 +1,17 @@
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/dream_hunter_game.dart';
 
 /// A static bed building.
 /// Characters cannot walk through the bed due to the 'building' category.
-/// Shows a "Sleep" popup when the player is nearby.
-class BedEntity extends BaseEntity with HasGameReference<DreamHunterGame> {
+/// Shows a "Sleep" popup when the player is nearby and allows tapping to sleep.
+class BedEntity extends BaseEntity with HasGameReference<DreamHunterGame>, TapCallbacks {
   late final TextComponent _popupText;
   double _popupAlpha = 0.0;
   final double _fadeSpeed = 5.0; // Speed of the fade animation
+  bool _hasSlept = false;
 
   BedEntity({
     required super.position,
@@ -32,7 +34,7 @@ class BedEntity extends BaseEntity with HasGameReference<DreamHunterGame> {
       size: size,
     ));
 
-    // Initialize popup text
+    // Initialize popup text (Smaller font size: 8)
     _popupText = TextComponent(
       text: 'Sleep',
       anchor: Anchor.bottomCenter,
@@ -40,7 +42,7 @@ class BedEntity extends BaseEntity with HasGameReference<DreamHunterGame> {
       textRenderer: TextPaint(
         style: const TextStyle(
           color: Colors.transparent, // Start transparent
-          fontSize: 10,
+          fontSize: 8,
           fontWeight: FontWeight.bold,
           letterSpacing: 1,
           shadows: [
@@ -53,15 +55,37 @@ class BedEntity extends BaseEntity with HasGameReference<DreamHunterGame> {
   }
 
   @override
+  void onTapDown(TapDownEvent event) {
+    if (_hasSlept) return;
+
+    // Check distance to player
+    final bedCenter = position + (size / 2);
+    final playerPos = game.player.position;
+    final distance = bedCenter.distanceTo(playerPos);
+
+    if (distance < 48) {
+      _hasSlept = true;
+      game.player.sleep(position);
+      
+      // Hide joystick permanently
+      game.joystick.removeFromParent();
+      
+      // Remove popup text
+      _popupText.removeFromParent();
+    }
+  }
+
+  @override
   void update(double dt) {
     super.update(dt);
+    if (_hasSlept) return;
     
     // Check distance to player for popup visibility
     final bedCenter = position + (size / 2);
     final playerPos = game.player.position;
     final distance = bedCenter.distanceTo(playerPos);
 
-    // Manual fade logic instead of OpacityEffect to prevent crashes
+    // Manual fade logic
     if (distance < 48) {
       _popupAlpha = (_popupAlpha + dt * _fadeSpeed).clamp(0.0, 1.0);
     } else {
@@ -73,7 +97,7 @@ class BedEntity extends BaseEntity with HasGameReference<DreamHunterGame> {
       _popupText.textRenderer = TextPaint(
         style: TextStyle(
           color: Colors.white.withValues(alpha: _popupAlpha),
-          fontSize: 10,
+          fontSize: 8,
           fontWeight: FontWeight.bold,
           letterSpacing: 1,
           shadows: [
