@@ -243,3 +243,19 @@ All major task completions and architectural shifts are logged here for traceabi
   - Architecture: Migrated append-only changelog from `GEMINI.md` to `CHANGELOG.md` for improved context efficiency.
   - Git Workflow: Mandated Feature Branch and PR-based development workflow in `GEMINI.md`.
   - Maintenance: Updated project documentation to reflect new workflow and log location.
+- [2026-04-25] SCRUM-BED-SLEEP: FIXED-PORTRAIT-LAYOUT-CRASH-&-3X2-HUNTER-GRID:
+  - Fix: Resolved "non-normalized width constraints" crash in `CharacterPortrait` by replacing `OverflowBox` with a combination of `ClipRect` and `FittedBox`.
+  - UI: Redesigned the Hunter List into a compact 3x2 grid of character portraits.
+  - Feature: Added a persistent "YOU" badge to the local player's portrait.
+  - Interaction: Portraits are now unclickable until the player goes to bed, at which point the camera hot-swap snap functionality is activated.
+  - Verification: Static analysis confirms 0 errors. Panning and snapping are stable.
+- [2026-04-25] SCRUM-BED-SLEEP: REUSABLE-UPGRADE-DIALOG:
+  - Architecture: Implemented a standardized, reusable `UpgradeDialog` using `LiquidGlassDialog` to maintain visual consistency across all building upgrades.
+  - Interaction: Updated `BedEntity` to trigger the `UpgradeDialog` when tapped after the player has already fallen asleep.
+  - Logic: The dialog handles name, level, requirements, and cost display with integrated audio and haptic feedback.
+  - Verification: Static analysis confirms 0 errors.
+- [2026-04-25] GAME-DOOR-FOUNDATION:
+  - Architecture: Created `DoorEntity` class and updated `DreamHunterGame` to parse "Door" objects from the Tiled map.
+  - Assets: Initialized doors in the "Open" state using `door_wood_open-32x32.png`.
+  - Collision: Doors are currently walkable (category `door`, but not `building`) to allow fluid movement until lock/close logic is implemented.
+  - Verification: Static analysis confirms 0 errors.

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/entities/player_entity.dart';
 import 'package:dreamhunter/game/entities/map_obstacle.dart';
 import 'package:dreamhunter/game/entities/bed_entity.dart';
+import 'package:dreamhunter/game/entities/door_entity.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/ui/dynamic_joystick.dart';
 
@@ -47,6 +48,10 @@ class DreamHunterGame extends FlameGame with DragCallbacks, HasCollisionDetectio
       for (final obj in objectLayer.objects) {
         if (obj.type == 'Bed') {
           world.add(BedEntity(
+            position: Vector2(obj.x, obj.y),
+          ));
+        } else if (obj.type == 'Door') {
+          world.add(DoorEntity(
             position: Vector2(obj.x, obj.y),
           ));
         }
