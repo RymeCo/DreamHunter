@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
 import 'package:dreamhunter/core/theme/app_theme.dart';
+import 'package:dreamhunter/game/dream_hunter_game.dart';
+import 'package:dreamhunter/widgets/game/character_portrait.dart';
+import 'package:dreamhunter/services/economy/shop_manager.dart';
+import 'package:dreamhunter/data/item_registry.dart';
 
-/// A compact, in-match HUD to display gameplay-specific currency (Coins & Energy Stones).
-/// Refined to stack vertically and match the scale of other UI elements.
+/// A compact, in-match HUD to display gameplay-specific currency and Hunter list for camera snapping.
 class GameEconomyHUD extends StatelessWidget {
-  const GameEconomyHUD({super.key});
+  final DreamHunterGame game;
+
+  const GameEconomyHUD({super.key, required this.game});
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +42,94 @@ class GameEconomyHUD extends StatelessWidget {
               value: '${manager.matchEnergy}',
               color: Colors.cyanAccent,
             ),
+            const SizedBox(height: 12),
+            // Hunter List (Camera Hot-Swap)
+            _buildHunterList(context),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildHunterList(BuildContext context) {
+    final characterId = ShopManager.instance.selectedCharacterId;
+    final item = ItemRegistry.get(characterId);
+    final playerImagePath = item?.image ?? 'assets/images/game/characters/max_front-32x48.png';
+
+    return SizedBox(
+      width: 110, // Width to fit 3 icons (32px + 6px spacing)
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: List.generate(6, (index) {
+          final isPlayer = index == 0;
+          return _buildHunterIcon(
+            context,
+            imagePath: isPlayer ? playerImagePath : playerImagePath, // Placeholder for AI
+            onTap: () {
+              if (game.player.isSleeping) {
+                game.centerCameraOnPlayer();
+              }
+            },
+            isLocalPlayer: isPlayer,
+            isGray: !isPlayer,
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildHunterIcon(
+    BuildContext context, {
+    required String imagePath,
+    required VoidCallback onTap,
+    bool isLocalPlayer = false,
+    bool isGray = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isLocalPlayer ? Colors.greenAccent.withValues(alpha: 0.5) : Colors.white12,
+            width: 1.5,
+          ),
+        ),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: CharacterPortrait(
+                imagePath: imagePath,
+                size: 28,
+                isGray: isGray,
+              ),
+            ),
+            if (isLocalPlayer)
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  width: double.infinity,
+                  color: Colors.greenAccent.withValues(alpha: 0.7),
+                  padding: const EdgeInsets.symmetric(vertical: 0.5),
+                  child: const Text(
+                    'YOU',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 6,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 

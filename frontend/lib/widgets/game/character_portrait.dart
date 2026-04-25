@@ -19,17 +19,20 @@ class CharacterPortrait extends StatelessWidget {
       width: size,
       height: size,
       child: ClipRect(
-        child: OverflowBox(
+        child: FittedBox(
           alignment: Alignment.topCenter,
-          maxHeight: size * (48 / 32), // Maintain 32:48 aspect ratio
-          maxWidth: size,
-          child: ColorFiltered(
-            colorFilter: isGray 
-                ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
-                : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-            child: Image.asset(
-              imagePath,
-              fit: BoxFit.fill,
+          fit: BoxFit.none,
+          child: SizedBox(
+            width: size,
+            height: size * (48 / 32),
+            child: ColorFiltered(
+              colorFilter: isGray 
+                  ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
+                  : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
+              child: Image.asset(
+                imagePath,
+                fit: BoxFit.fill,
+              ),
             ),
           ),
         ),

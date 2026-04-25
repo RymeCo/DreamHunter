@@ -127,15 +127,21 @@ class DreamHunterGame extends FlameGame with DragCallbacks, HasCollisionDetectio
     super.onDragUpdate(event);
     if (!joystick.isMounted) {
       // Free Look Mode: Pan the camera viewfinder by dividing by zoom
-      // This ensures 1:1 "grab-and-drag" movement on the screen.
-      camera.viewfinder.position.translate(
+      // We use explicit assignment here to ensure the camera dirty flag is set.
+      final panDelta = Vector2(
         -event.localDelta.x / camera.viewfinder.zoom,
         -event.localDelta.y / camera.viewfinder.zoom,
       );
+      camera.viewfinder.position = camera.viewfinder.position + panDelta;
       return;
     }
     _dragPosition += event.localDelta;
     joystick.updateDrag(_dragPosition);
+  }
+
+  /// Instantly centers the camera on the player.
+  void centerCameraOnPlayer() {
+    camera.viewfinder.position = player.position;
   }
 
   @override

@@ -13,6 +13,8 @@ class PlayerEntity extends BaseEntity with HasGameReference<DreamHunterGame> {
   final DynamicJoystick joystick;
   late final SpriteComponent _spriteComponent;
   late final Sprite _sleepingSprite;
+  
+  bool isSleeping = false;
 
   PlayerEntity({required this.joystick}) : super(
     size: Vector2(32, 48), // Standard character size
@@ -53,6 +55,8 @@ class PlayerEntity extends BaseEntity with HasGameReference<DreamHunterGame> {
 
   /// Puts the player to sleep in the specified bed.
   void sleep(Vector2 bedPosition) {
+    isSleeping = true;
+    
     // 1. Remove movement logic permanently
     children.whereType<PlayerMovementBehavior>().forEach((b) => b.removeFromParent());
     

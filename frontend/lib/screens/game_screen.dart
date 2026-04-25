@@ -134,10 +134,10 @@ class _GameScreenState extends State<GameScreen> {
             ),
 
             // Economy HUD
-            const Positioned(
+            Positioned(
               top: 45,
               left: 20,
-              child: GameEconomyHUD(),
+              child: GameEconomyHUD(game: _game),
             ),
 
             // Grace Timer Overlay
