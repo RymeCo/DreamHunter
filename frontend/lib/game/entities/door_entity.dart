@@ -4,6 +4,7 @@ import 'package:dreamhunter/game/entities/base_entity.dart';
 /// A door building that can be opened or closed.
 /// When closed, it becomes solid and blocks movement.
 class DoorEntity extends BaseEntity {
+  final String roomID;
   bool isOpen = true;
   late final SpriteComponent _spriteComponent;
   late final Sprite _openSprite;
@@ -11,6 +12,7 @@ class DoorEntity extends BaseEntity {
 
   DoorEntity({
     required super.position,
+    required this.roomID,
   }) : super(
           size: Vector2.all(32),
           anchor: Anchor.topLeft,

@@ -10,5 +10,34 @@
     "properties": [
     ],
     "propertyTypes": [
+        {
+            "id": 1,
+            "name": "Enum0",
+            "storageType": "string",
+            "type": "enum",
+            "values": [
+            ],
+            "valuesAsFlags": false
+        },
+        {
+            "color": "#ffa0a0a4",
+            "drawFill": true,
+            "id": 2,
+            "members": [
+            ],
+            "name": "Bed",
+            "type": "class",
+            "useAs": [
+                "property",
+                "map",
+                "layer",
+                "object",
+                "tile",
+                "tileset",
+                "wangcolor",
+                "wangset",
+                "project"
+            ]
+        }
     ]
 }

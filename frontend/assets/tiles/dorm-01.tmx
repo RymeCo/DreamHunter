@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="32" tileheight="32" infinite="0" nextlayerid="8" nextobjectid="453">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="32" tileheight="32" infinite="0" nextlayerid="8" nextobjectid="456">
  <tileset firstgid="1" source="dorm_tiles.tsx"/>
  <layer id="1" name="Ground Layer" width="40" height="40">
   <data encoding="csv">
@@ -46,40 +46,43 @@
 </data>
  </layer>
  <objectgroup id="4" name="Object Layer">
-  <object id="1" name="Door" type="Door" x="192" y="96" width="32" height="32"/>
-  <object id="3" name="Door" type="Door" x="128" y="320" width="32" height="32"/>
-  <object id="4" name="Door" type="Door" x="96" y="864" width="32" height="32"/>
-  <object id="5" name="Door" type="Door" x="96" y="1024" width="32" height="32"/>
-  <object id="6" name="Door" type="Door" x="352" y="768" width="32" height="32"/>
-  <object id="7" name="Door" type="Door" x="416" y="1024" width="32" height="32"/>
-  <object id="8" name="Door" type="Door" x="992" y="1024" width="32" height="32"/>
-  <object id="9" name="Door" type="Door" x="768" y="1024" width="32" height="32"/>
-  <object id="10" name="Door" type="Door" x="800" y="800" width="32" height="32"/>
-  <object id="11" name="Door" type="Door" x="544" y="800" width="32" height="32"/>
-  <object id="12" name="Door" type="Door" x="512" y="448" width="32" height="32"/>
-  <object id="13" name="Door" type="Door" x="384" y="96" width="32" height="32"/>
-  <object id="14" name="Door" type="Door" x="832" y="352" width="32" height="32"/>
-  <object id="15" name="Door" type="Door" x="800" y="192" width="32" height="32"/>
-  <object id="16" name="Door" type="Door" x="992" y="288" width="32" height="32"/>
-  <object id="19" name="Door" type="Door" x="960" y="576" width="32" height="32"/>
-  <object id="20" name="Door" type="Door" x="1088" y="800" width="32" height="32"/>
-  <object id="24" name="South" type="Bed" x="992" y="1120" width="32" height="32"/>
-  <object id="25" name="South" type="Bed" x="768" y="1120" width="32" height="32"/>
-  <object id="29" name="South" type="Bed" x="544" y="1120" width="32" height="32"/>
-  <object id="31" name="South" type="Bed" x="224" y="1120" width="32" height="32"/>
-  <object id="32" name="West" type="Bed" x="416" y="896" width="32" height="32"/>
-  <object id="33" name="South" type="Bed" x="224" y="896" width="32" height="32"/>
-  <object id="34" name="East" type="Bed" x="224" y="640" width="32" height="32"/>
-  <object id="35" name="East" type="Bed" x="224" y="512" width="32" height="32"/>
-  <object id="36" name="North" type="Bed" x="416" y="384" width="32" height="32"/>
-  <object id="37" name="North" type="Bed" x="192" y="192" width="32" height="32"/>
-  <object id="38" name="North" type="Bed" x="512" y="128" width="32" height="32"/>
-  <object id="39" name="North" type="Bed" x="800" y="128" width="32" height="32"/>
-  <object id="40" name="North" type="Bed" x="1088" y="128" width="32" height="32"/>
-  <object id="41" name="North" type="Bed" x="832" y="416" width="32" height="32"/>
-  <object id="42" name="East" type="Bed" x="1120" y="576" width="32" height="32"/>
-  <object id="43" name="South" type="Bed" x="1088" y="864" width="32" height="32"/>
-  <object id="44" name="South" type="Bed" x="800" y="864" width="32" height="32"/>
+  <object id="1" name="room_1" type="Door" x="192" y="96" width="32" height="32"/>
+  <object id="3" name="room_7" type="Door" x="128" y="320" width="32" height="32"/>
+  <object id="4" name="room_8" type="Door" x="96" y="864" width="32" height="32"/>
+  <object id="5" name="room_17" type="Door" x="96" y="1024" width="32" height="32"/>
+  <object id="6" name="room_9" type="Door" x="352" y="768" width="32" height="32"/>
+  <object id="7" name="room_16" type="Door" x="416" y="1024" width="32" height="32"/>
+  <object id="8" name="room_14" type="Door" x="992" y="1024" width="32" height="32"/>
+  <object id="9" name="room_15" type="Door" x="768" y="1024" width="32" height="32"/>
+  <object id="10" name="room_11" type="Door" x="800" y="800" width="32" height="32"/>
+  <object id="11" name="room_10" type="Door" x="544" y="800" width="32" height="32"/>
+  <object id="12" name="room_6" type="Door" x="512" y="448" width="32" height="32"/>
+  <object id="13" name="room_2" type="Door" x="384" y="96" width="32" height="32"/>
+  <object id="14" name="room_5" type="Door" x="832" y="352" width="32" height="32"/>
+  <object id="15" name="room_3" type="Door" x="800" y="192" width="32" height="32"/>
+  <object id="16" name="room_4" type="Door" x="992" y="288" width="32" height="32"/>
+  <object id="19" name="room_12" type="Door" x="960" y="576" width="32" height="32"/>
+  <object id="20" name="room_13" type="Door" x="1088" y="800" width="32" height="32"/>
+  <object id="24" name="room_14" type="Bed" x="992" y="1120" width="32" height="32"/>
+  <object id="25" name="room_15" type="Bed" x="768" y="1120" width="32" height="32"/>
+  <object id="29" name="room_16" type="Bed" x="544" y="1120" width="32" height="32"/>
+  <object id="31" name="room_17" type="Bed" x="224" y="1120" width="32" height="32"/>
+  <object id="32" name="room_10" type="Bed" x="416" y="896" width="32" height="32"/>
+  <object id="33" name="room_9" type="Bed" x="224" y="896" width="32" height="32"/>
+  <object id="34" name="room_8" type="Bed" x="224" y="640" width="32" height="32"/>
+  <object id="35" name="room_7" type="Bed" x="224" y="512" width="32" height="32"/>
+  <object id="36" name="room_6" type="Bed" x="416" y="384" width="32" height="32"/>
+  <object id="37" name="room_1" type="Bed" x="192" y="192" width="32" height="32"/>
+  <object id="38" name="room_2" type="Bed" x="512" y="128" width="32" height="32"/>
+  <object id="39" name="room_3" type="Bed" x="800" y="128" width="32" height="32"/>
+  <object id="40" name="room_4" type="Bed" x="1088" y="128" width="32" height="32"/>
+  <object id="41" name="room_5" type="Bed" x="832" y="416" width="32" height="32"/>
+  <object id="42" name="room_12" type="Bed" x="1120" y="576" width="32" height="32"/>
+  <object id="43" name="room_13" type="Bed" x="1088" y="864" width="32" height="32"/>
+  <object id="44" name="room_11" type="Bed" x="800" y="864" width="32" height="32"/>
+  <object id="453" name="DreamMonster" type="Spawn" x="608" y="1248" width="64" height="32"/>
+  <object id="454" name="DreamMonster" type="Spawn" x="1248" y="608" width="32" height="64"/>
+  <object id="455" name="DreamMonster" type="Spawn" x="0" y="608" width="32" height="64"/>
  </objectgroup>
  <objectgroup id="7" name="BuildingSlots">
   <object id="183" name="BuildingSlot" type="BuildingSlot" x="128" y="128" width="32" height="32"/>

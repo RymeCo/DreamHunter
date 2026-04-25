@@ -10,6 +10,7 @@ import 'package:dreamhunter/widgets/game/upgrade_dialog.dart';
 /// Characters cannot walk through the bed due to the 'building' category.
 /// Shows a "Sleep" popup when the player is nearby and allows tapping to sleep.
 class BedEntity extends BaseEntity with HasGameReference<DreamHunterGame>, TapCallbacks {
+  final String roomID;
   late final TextComponent _popupText;
   double _popupAlpha = 0.0;
   final double _fadeSpeed = 5.0; // Speed of the fade animation
@@ -20,6 +21,7 @@ class BedEntity extends BaseEntity with HasGameReference<DreamHunterGame>, TapCa
 
   BedEntity({
     required super.position,
+    required this.roomID,
   }) : super(
           size: Vector2.all(32),
           anchor: Anchor.topLeft,

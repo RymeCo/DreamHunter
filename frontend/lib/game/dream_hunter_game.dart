@@ -49,10 +49,12 @@ class DreamHunterGame extends FlameGame with DragCallbacks, HasCollisionDetectio
         if (obj.type == 'Bed') {
           world.add(BedEntity(
             position: Vector2(obj.x, obj.y),
+            roomID: obj.name,
           ));
         } else if (obj.type == 'Door') {
           world.add(DoorEntity(
             position: Vector2(obj.x, obj.y),
+            roomID: obj.name,
           ));
         }
       }
@@ -96,20 +98,33 @@ class DreamHunterGame extends FlameGame with DragCallbacks, HasCollisionDetectio
 
     debugPrint('DreamHunterGame: Map Loaded, Player Spawned, and Timers started.');
 
-    // 7. Link Beds to nearest Doors (Room Assignment)
+    // 7. Link Beds to Doors (Room Assignment)
     final beds = world.children.whereType<BedEntity>();
     final doors = world.children.whereType<DoorEntity>();
     for (final bed in beds) {
-      DoorEntity? nearest;
-      double minDistance = 250; // Threshold to ensure we don't link to far away doors
-      for (final door in doors) {
-        final dist = bed.position.distanceTo(door.position);
-        if (dist < minDistance) {
-          minDistance = dist;
-          nearest = door;
+      // 1. Try to link by explicit Room ID (from Tiled 'name' property)
+      if (bed.roomID.isNotEmpty) {
+        for (final door in doors) {
+          if (door.roomID == bed.roomID) {
+            bed.roomDoor = door;
+            break;
+          }
         }
       }
-      bed.roomDoor = nearest;
+
+      // 2. Fallback to proximity if no ID match was found
+      if (bed.roomDoor == null) {
+        DoorEntity? nearest;
+        double minDistance = 250; // Threshold to ensure we don't link to far away doors
+        for (final door in doors) {
+          final dist = bed.position.distanceTo(door.position);
+          if (dist < minDistance) {
+            minDistance = dist;
+            nearest = door;
+          }
+        }
+        bed.roomDoor = nearest;
+      }
     }
   }
 

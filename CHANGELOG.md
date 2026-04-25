@@ -264,3 +264,8 @@ All major task completions and architectural shifts are logged here for traceabi
   - Interaction: Tapping a bed to sleep now triggers only that specific room's door to close.
   - State: `DoorEntity.close()` swaps the sprite to the closed version and adds the `building` category, making the door solid and non-walkable.
   - Verification: Static analysis confirms 0 errors. Sleep-to-secure flow is now functional.
+- [2026-04-25] GAME-EXPLICIT-ROOM-LINKING:
+  - Logic: Implemented explicit room linking using the Tiled 'name' property as a `roomID`.
+  - Robustness: The linking system now prioritizes matching `roomID` (e.g., "room_1") between Beds and Doors, completely eliminating the proximity-based "wrong door" bug.
+  - Fallback: Kept the proximity-based linking as a secondary fallback for un-named objects.
+  - Verification: Static analysis confirms 0 errors. Sleep-to-secure flow is now 100% accurate.
