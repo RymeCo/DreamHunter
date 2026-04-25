@@ -174,6 +174,8 @@ class ShopItemCard extends StatelessWidget {
         return Colors.greenAccent;
       case ItemType.relic:
         return Colors.purpleAccent;
+      case ItemType.character:
+        return Colors.cyanAccent;
     }
   }
 }

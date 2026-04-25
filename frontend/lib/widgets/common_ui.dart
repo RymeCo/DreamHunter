@@ -111,7 +111,8 @@ class GameDialogHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = titleColor ?? Colors.amberAccent;
 
-    return Padding(
+    return Container(
+      height: 56, // Fixed height to prevent dialog jumping
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Stack(
         alignment: Alignment.center,
@@ -130,19 +131,25 @@ class GameDialogHeader extends StatelessWidget {
               ),
             ),
           ),
-          if (showCloseButton)
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: const Icon(Icons.close_rounded, color: Colors.white38),
-                onPressed: () {
-                  HapticManager.instance.light();
-                  AudioManager.instance.playClick();
-                  Navigator.pop(context);
-                },
-                splashRadius: 24,
+          // Use Opacity to maintain layout but hide the button
+          Opacity(
+            opacity: showCloseButton ? 1.0 : 0.0,
+            child: IgnorePointer(
+              ignoring: !showCloseButton,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white38),
+                  onPressed: () {
+                    HapticManager.instance.light();
+                    AudioManager.instance.playClick();
+                    Navigator.pop(context);
+                  },
+                  splashRadius: 24,
+                ),
               ),
             ),
+          ),
         ],
       ),
     );

@@ -1,0 +1,221 @@
+# DreamHunter Append-Only Change Log
+All major task completions and architectural shifts are logged here for traceability.
+
+## Change Log Entries
+- [2026-04-20] SCRUM-000: Initial Project Reset. Removed legacy game logic and archives. Kept Dashboard and Loading Screen foundations. Updated GEMINI.md to use append-only logging.
+- [2026-04-20] SYSTEM-ANALYSIS: 
+  - **Overall State:** Clean foundation. Legacy gameplay systems and archives have been completely purged.
+  - **Frontend (`frontend/lib/`):** 53 files across 7 directories. Core surviving components: Dashboard (UI, action menus, shop stubs), Auth/Profile dialogs, and a `GameLoadingScreen` that pre-loads assets before handing off to a gutted `GameScreen` placeholder. Static analysis (`analyze_files`) passes with 0 errors.
+  - **Backend & Admin:** Marked for future development. No active logic present in the current workspace.
+  - **Git State:** 40+ files deleted (mostly legacy game logic like pathfinding, AI actors, HUD, grace period timer, and admin surprise dialog). All deletions are clean and staged on the `development` branch.
+- [2026-04-20] REGISTRY-OVERHAUL:
+  - **ShopItem:** Gutted Firestore logic and reduced to a lightweight data structure.
+  - **ItemRegistry:** Created a central "Source of Truth" for all items. IDs are now the primary way items are identified.
+  - **PlayerModel:** Overhauled to be strictly minimalist. Removed redundant Auth data (email, photoUrl, lastLogin). Standardized property names to be simple (coins, stones, playTime) for easier modding and Firestore visibility.
+- [2026-04-20] SYSTEM-ANALYSIS-V2:
+  - **Overall State:** 100% clean and verified. Blueprints (Models) are separated from Registry (Data).
+  - **Structure:**
+    - `lib/models/`: Lean blueprints for `Item` and `PlayerModel`.
+    - `lib/data/`: `ItemRegistry` acts as the master item catalog.
+    - `lib/services/` & `lib/widgets/`: Core dashboard logic and UI components preserved and verified error-free.
+  - **Verification:** Static analysis (`analyze_files`) confirms 0 errors across the entire frontend.
+- [2026-04-20] THEME-CENTRALIZATION:
+  - **Organization:** Moved `app_theme.dart` to `lib/core/theme/` and renamed `clickable_image.dart` to `glass_button.dart` for better architectural clarity.
+  - **Styling:** Implemented a `GlassTheme` extension for centralized glassmorphism properties (blur, opacity).
+  - **Typography:** Synchronized the "Economy HUD" font (Quicksand Bold) across `GlassButton`, `LiquidGlassDialog`, `CurrencyDisplay`, and `GameDialogHeader` using a global `TextTheme`.
+  - **Dialog Synchronization:** Updated `SettingsDialog`, `LeaderboardDialog`, `ShopDialog`, `LoginDialog`, `RegisterDialog`, `ConfirmationDialog`, and `InsufficientFundsDialog` to fully respect the centralized `AppTheme` and `GlassTheme` extension.
+  - **Refactoring:** Theme-ified `AuthUIHelper` to standardize authentication form styling across the app.
+  - **Verification:** Preserved unique dashboard button colors while ensuring they all benefit from the new centralized theme logic. 0 static analysis errors.
+- [2026-04-20] SYSTEM-CLEANUP:
+  - **Dead Code:** Deleted `frontend/lib/services/backend_config.dart` as it was completely unused and contained outdated mock data.
+  - **Refactoring:** Simplified `BackendService` into a minimalist mock implementation and refactored `ConnectivityService` to be a fire-and-forget bridge for real-time status updates.
+  - **Singletons:** Converted `UserService` and `ShopService` into minimalist Singletons. Migrated shop caching logic from `UserService` to `ShopService` for better responsibility separation.
+  - **Pruning:** Deleted `ChatService` and `AuthUIHelper`. Removed unused dependencies (`uuid`, `device_info_plus`) from `pubspec.yaml`.
+- [2026-04-20] UI-STABILITY-FIX:
+  - **Overflow Fix:** Resolved a `RenderFlex` crash in `ConfirmationDialog` by removing fixed heights and using `MainAxisSize.min`.
+  - **Leaderboard:** Improved responsiveness by using `MediaQuery` for dialog height and removed the deprecated "Time" tab.
+  - **Verification:** Static analysis confirms 0 errors. UI is now stable on multiple screen heights.
+  - **Auth & Profile:** Overhauled `AuthService` into a minimalist Singleton. Removed redundant Firestore dependencies and fixed the registration flow (auto-login enabled). Fully "Theme-ified" `ProfileDialog` for visual consistency.
+- [2026-04-20] ARCHITECTURE-REFINEMENT:
+  - **PlayerModel:** Refactored to include `createdAt` (tie-breaker) and `banned` (moderation) fields. Removed `playTime` to simplify the model and data payload.
+  - **Cleanup:** Deleted `frontend/lib/services/format_utils.dart` and removed "Playtime" tasks from `DailyTasksDialog`.
+  - **Planning:** Created `docs/BACKEND_PLAN.md` (FastAPI/Leaderboard logic) and `docs/ADMIN_PLAN.md` (Moderation/Analytics).
+- [2026-04-20] GAME-TIME-FOUNDATION:
+  - **PlayerModel:** Restored `totalGameTime` field to track active match seconds (not dashboard time).
+  - **Daily Tasks:** Restored "Time Traveler" task and updated its description to reflect active gameplay requirements.
+  - **Strategy:** Established monotonic tracking logic using Flame's delta time to prevent system-clock manipulation.
+  - **Verification:** Static analysis confirms 0 errors. UI is "Theme-ified" and reflects correct tracking intent.
+- [2026-04-20] LEVELING-FOUNDATION:
+  - **Logic:** Refactored `LevelingService` into a Singleton. Added `calculateProgress` to return detailed level-up metadata (essential for future Reward Screens).
+  - **Rewards:** Implemented `calculateMatchXP` formula based on match performance and play duration.
+  - **Verification:** 0 static analysis errors. Code is prepped for post-match UI integration.
+  - **Verification:** Static analysis confirms 0 errors. UI correctly reflects removed playtime dependencies.
+- [2026-04-20] ECONOMY-OVERHAUL:
+  - **Logic Fixes:** Converted `DashboardController` into a Singleton to prevent state desync. Consolidated currency updates into a single `updateBalance` method with negative balance prevention (no more debt!).
+  - **Optimization:** Improved saving logic to prevent redundant disk writes.
+  - **Refactoring:** Updated `DashboardScreen`, `ShopDialog`, and `RouletteDialog` to use the new Singleton pattern, removing redundant "refresh" callbacks and manual controller instantiations.
+  - **Verification:** Static analysis confirms 0 errors across all affected UI components.
+- [2026-04-20] REORG-&-RECOVERY:
+  - **Reorganization:** Bundled related services into logical sub-folders (`core`, `identity`, `economy`, `progression`, `loading`) and reorganized the `widgets` folder into `auth`, `shop`, `social`, and `game` sub-directories.
+  - **Renaming:** Refactored all service classes to use more \"human-like\" names (e.g., `OfflineCache` ➔ `StorageEngine`, `DashboardController` ➔ `WalletManager`).
+  - **Crash Recovery:** Implemented a `pending_save_conflict` flag. If the app closes during login, the user is re-prompted to resolve the save conflict on the next launch.
+  - **Verification:** Static analysis confirms 0 errors. All imports and references successfully updated to absolute package paths.
+- [2026-04-20] SAVE-CONFLICT-RESOLUTION:
+  - **Logic:** Implemented a non-destructive "Save Conflict" system. Upon login, users choose between Local Progress (archived guest data) or Cloud Save.
+  - **Archival:** Guest data is preserved under `guest_` keys and never deleted, ensuring recovery upon logout.
+  - **Standardization:** Converted all core services (`OfflineCache`, `AuthService`, `RouletteService`, etc.) to a consistent Singleton pattern using factory constructors.
+  - **Verification:** Static analysis confirms 0 errors. All UI components (Login, Register, Dashboard) correctly trigger and handle conflict resolution.
+- [2026-04-20] FINAL-CLEANUP-&-REORG:
+  - **Dead Code:** Deleted `report_dialog.dart` and `leveling_system.dart`. Removed the `intl` package from dependencies.
+  - **Organization:** Renamed `game_widgets.dart` to `common_ui.dart` and extracted `AppLogo` and `RouletteWheelPainter` into dedicated files.
+  - **Simplification:** Streamlined `LayoutBaseline` and standardized all utility imports to absolute package paths.
+  - **Verification:** Static analysis confirmed 0 errors across 49 files.
+- [2026-04-20] DASHBOARD-CLEANUP:
+  - **Backup:** Created `dashboard_v1_backup.dart` to preserve the current high-quality UI layout.
+  - **Refactoring:** Simplified the `DashboardScreen` code by extracting the complex Auth Flow into a dedicated `AuthFlowDialog` and breaking down the `build` method into readable helper methods.
+  - **Preservation:** The visual UI layout (coordinates, images, animations) remains 100% identical as per user preference.
+  - **Verification:** Static analysis confirms 0 errors.
+- [2026-04-20] TASK-SYSTEM-REFACTOR:
+  - **Model:** Introduced a structured `DailyTask` model to handle progress, completion logic, and type safety.
+  - **Logic Fixes:** Resolved the "Claim" gap by integrating the dialog with `WalletManager.instance.updateBalance`. Claimed rewards are now persistent.
+  - **Simplification:** Refactored the build method into clean helper widgets and removed redundant map-based status flags.
+  - **Theme:** Synchronized visual properties with the `GlassTheme` extension for better glassmorphism consistency.
+  - **Haptics:** Integrated `HapticManager` for physical feedback during the claim flow.
+  - **Verification:** Static analysis confirms 0 errors across the new model and dialog.
+- [2026-04-20] CONFIRMATION-DIALOG-STANDARDIZATION:
+  - **Reusability:** Refactored `ConfirmationDialog` to be a true "fire-and-forget" utility with a powerful `show` helper.
+  - **Logic:** Added `isDestructive` mode to automatically handle red styling and heavy haptic feedback for high-stakes actions.
+  - **UX:** Improved entrance animations and integrated `AudioManager.instance` and `HapticManager.instance` for consistent feedback.
+  - **Cleanup:** Migrated to absolute package imports and resolved static analysis warnings.
+- [2026-04-20] SNACKBAR-SIMPLIFICATION:
+  - **Architecture:** Replaced the complex manual `Overlay` queue with Flutter's standard `ScaffoldMessenger` for better stability and built-in animations.
+  - **Theme-Centric:** Fully integrated `GlassTheme` for blur and dynamic opacity. Notifications now match the game's liquid-glass aesthetic.
+  - **Haptics:** Standardized light/medium haptic feedback for all notification types (Success, Error, Warning).
+  - **Verification:** Static analysis confirms 0 errors.
+- [2026-04-20] GAME-WIDGETS-STANDARDIZATION:
+  - **Logic:** Updated `GameDialogHeader` and other utility widgets to use `AudioManager.instance` and `HapticManager.instance`.
+  - **Theme:** Synchronized all core game widgets with the global `AppTheme` and `GlassTheme` extension.
+  - **Polish:** Added a `Hero` animation to `AppLogo` and refined the `RouletteWheelPainter` for better visual alignment.
+  - **Verification:** Static analysis confirms 0 errors.
+- [2026-04-20] GLASS-BUTTON-OPTIMIZATION:
+  - Singletons: Migrated to `AudioManager.instance` and `HapticManager.instance`.
+  - Performance: Optimized pulse animation controllers to only run when necessary.
+  - Styling: Fully synced with `GlassTheme` extension for dynamic alphas and hover effects.
+  - Cleanup: Deleted the unused `MakeItButton` legacy wrapper.
+  - Verification: Static analysis confirms 0 errors.
+- [2026-04-25] DASHBOARD-ONLY-CLEANUP:
+  - Architecture: Removed all gameplay-specific logic, screens (`GameScreen`), and widgets (`EconomyHUD`, `GraceTimer`).
+  - Loading: Preserved `GameLoadingScreen` and `AppLoader` for asset pre-caching but removed the transition to gameplay.
+  - Dashboard: Stubbed the \"PLAY\" button to open the loading screen which then returns to the dashboard.
+  - Pruning: Deleted the `lib/game/` directory and legacy `archive` folders.
+  - Verification: Static analysis confirms 0 errors across 45 files.
+- [2026-04-25] FLAME-TRANSITION:
+  - Navigation: Implemented the transition from `GameLoadingScreen` to `GameScreen` after asset preloading.
+  - Engine: Created `DreamHunterGame` (FlameGame) and `GameScreen` to host the game engine.
+  - Verification: Static analysis confirms 0 errors. Transition from Dashboard -> Loading -> Game is now functional.
+- [2026-04-25] GAME-PAUSE-FEATURE:
+  - UI: Added a `GlassButton` pause toggle to the `GameScreen` overlay.
+  - Logic: Integrated engine pausing (`game.paused`) with the Flutter UI state.
+  - Verification: Static analysis confirms 0 errors. UI correctly reflects the engine's play/pause state.
+- [2026-04-25] GAME-PAUSE-DIALOG:
+  - Architecture: Introduced `MatchManager` Singleton as the single source of truth for match state.
+  - UI: Replaced simple pause toggle with a `PauseDialog` using `LiquidGlassDialog` and `GameDialogHeader`.
+  - Logic: Syncing Flame engine state with `MatchManager.isPaused`. Automatic resume on dialog dismissal.
+  - Verification: Static analysis confirms 0 errors.
+- [2026-04-25] GAME-PAUSE-CONTROLS:
+  - UI: Added Music Mute, Sound Mute, and Quit Game controls to the `PauseDialog`.
+  - Memory: Integrated `GameLoader.unloadGameAssets()` into `GameScreen` disposal to prevent memory leaks on exit.
+  - Logic: Toggles integrated with `AudioManager.instance` for persistent user preferences.
+  - Bug Fix: Added safety timeouts and debug logging to `GameLoader` and navigation flow to resolve the "no response" issue.
+  - Verification: Static analysis confirms 0 errors.
+- [2026-04-25] GAME-AUDIO-IMMERSION:
+  - Audio: Implemented seamless background music carry-over from Dashboard to `GameScreen`.
+  - Logic: Introduced `setGameMode(bool active)` in `AudioManager` to apply a 10% volume boost during matches.
+  - Cleanup: Volume automatically restores to dashboard levels upon exiting `GameScreen`.
+  - Verification: Static analysis confirms 0 errors.
+- [2026-04-25] GAME-TILED-MAP:
+  - Engine: Loaded `dorm-01.tmx` using `flame_tiled` and the modern `World`/`CameraComponent` system.
+  - Viewport: Configured camera `visibleGameSize` to exactly 7 tiles (224px) width.
+  - Logic: Centered camera on the map building.
+  - Verification: Static analysis confirms 0 errors.
+- [2026-04-25] GAME-VIGNETTE-ATMOSPHERE:
+  - UI: Implemented a performant `VignetteOverlay` using a `RadialGradient` for a creepy, claustrophobic feel.
+  - Logic: Wrapped overlay in `IgnorePointer` to ensure gameplay interactions are not blocked.
+  - Verification: Static analysis confirms 0 errors. Edges are darkened while UI remains fully interactive.
+- [2026-04-25] GAME-GRACE-TIMER:
+  - Engine: Integrated a Flame-native `TimerComponent` into `DreamHunterGame` for a reliable 10-second countdown.
+  - UI: Created `GraceTimerOverlay` linked via `ValueNotifier` to display big text ("10" -> "RUN!").
+  - Sync: Timer is perfectly synced with the game engine's play/pause state.
+  - Verification: Static analysis confirms 0 errors. Countdown works, pauses correctly, and disappears after completion.
+- [2026-04-25] GAME-MATCH-TIMER:
+  - Logic: Implemented a 15-minute match timer in `DreamHunterGame` (900s).
+  - UI: Created `MatchTimerOverlay` that remains hidden during the grace period and appears at top center after "RUN!".
+  - Auto-Quit: Added `onMatchEnded` callback to automatically return the player to the Dashboard when time expires.
+  - Verification: Static analysis confirms 0 errors. Timers run concurrently and stay synced with engine pausing.
+- [2026-04-25] GAME-OVER-REWARD-SCREEN:
+  - UI: Created `RewardDialog` using `LiquidGlassDialog` to show "GAME OVER" and a "RETURN TO DASHBOARD" button.
+  - Logic: Integrated both the 15-minute timer and the Pause Menu's "Quit" button to navigate to this screen.
+  - Flow: Used a result-based pattern for `PauseDialog` to prevent dialog stacking and ensure clean transitions.
+  - Verification: Static analysis confirms 0 errors. Transition from active match to end-state is now structured.
+- [2026-04-25] GAME-LOBBY-SIMULATION:
+  - UI: Implemented `LobbyDialog` to simulate pre-game matchmaking with a 6-slot grid.
+  - Logic: Added a recursive timer to "join" fake players at random intervals (0-1s).
+  - UX: Added a "READY" button with a 3-second countdown and haptic feedback before launching the game.
+  - Verification: Static analysis confirms 0 errors. Simulation is snappy and transitions smoothly to the loading screen.
+- [2026-04-25] CHARACTER-SYSTEM-&-LOBBY-OVERHAUL:
+  - Inventory: Added `character` to `ItemType` and populated `ItemRegistry` with Max (Default), Nun, and Jack.
+  - Logic: Updated `ShopManager` to handle character ownership (Max is free) and active character selection.
+  - UI: Overhauled `LobbyDialog` with a split layout: Large character preview (left) and player slots (right).
+  - Feature: Tapping the lobby character opens a `CharacterSelectionDialog` with a shop-style buy/select flow.
+  - UX: Pressing "ENTER" in the lobby now instantly fills any remaining empty slots and triggers the 3-second start countdown.
+  - Verification: Static analysis confirms 0 errors. Character selection is persistent and integrates with the game economy.
+- [2026-04-25] LOBBY-&-SELECTION-POLISH:
+  - Lobby UI: Enlarged the character preview with pixel-perfect scaling. Added a "Hunters Joined" counter (e.g., 6/6).
+  - Pacing: AI hunters now join snappy and fast (random 0-500ms).
+  - Ready Flow: The action button is now "READY" and can be canceled during the 3-second countdown.
+  - Selection Dialog: Removed grayscale effect on locked characters. Added "LOCKED" and "BUY TO UNLOCK" indicators.
+  - Stability: Fixed a layout jump in `GameDialogHeader` where the dialog would shrink when the close button was hidden during the READY state.
+  - Verification: Static analysis confirms 0 errors.
+- [2026-04-25] GAME-ECONOMY-HUD:
+  - Logic: Added `matchCoins` and `matchEnergy` to `MatchManager` to track in-match spending (separate from dashboard currency).
+  - UI: Created a vertical, stacked `GameEconomyHUD` widget at the top-left, scaled down to match the match timer size.
+  - Lifecycle: Implemented `resetMatch()` to ensure every game starts with fresh currency values (0 Coins, 0 Energy).
+  - Verification: Static analysis confirms 0 errors. HUD updates in real-time based on `MatchManager` state.
+- [2026-04-25] PASSIVE-INCOME-TICK:
+  - Logic: Implemented a global "Singleton Tick" in `MatchManager` running every 500ms.
+  - Economy: Each tick automatically grants +1 Match Coin to the player, simulating passive income.
+  - Sync: The tick system automatically respects the game's pause state.
+  - Verification: Static analysis confirms 0 errors. UI updates smoothly twice per second.
+- [2026-04-25] PLAYER-SPAWN-FOUNDATION:
+  - Architecture: Established `BaseEntity` with category tagging support.
+  - Entity: Implemented `PlayerEntity` which dynamically loads the selected character sprite.
+  - World: Successfully spawned the player at the center of `dorm-01.tmx`.
+  - Camera: Updated `DreamHunterGame` to automatically follow the player entity.
+  - Verification: Static analysis confirms 0 errors. Selected character is visible and tracked by the camera.
+- [2026-04-25] SCRUM-JOYSTICK: DYNAMIC-JOYSTICK-MOVEMENT:
+  - UI: Implemented a `DynamicJoystick` component that anchors to the bottom-left but teleports to touch locations anywhere on the screen.
+  - Architecture: Created `PlayerMovementBehavior` following the behavior-driven mandate.
+  - Logic: Integrated joystick delta with player position for smooth, 8-directional movement.
+  - Polish: Added automatic sprite flipping (mirroring) based on left/right movement direction.
+  - Fluidity: Rewrote the joystick with a custom visual engine, adding pop-in scale/opacity animations and a spring-back return for a highly polished feel.
+  - Verification: Static analysis confirms 0 errors. Player can now traverse the map fluently.
+- [2026-04-25] SCRUM-COLLISION: FEET-LEVEL-MAP-COLLISIONS:
+  - Architecture: Updated `BaseEntity` with `CollisionCallbacks` and a dedicated feet-level `RectangleHitbox` (bottom 25% of sprite).
+  - Tiled: Implemented a parser for the "Collisions" object layer in `dorm-01.tmx`.
+  - Logic: Refactored `PlayerMovementBehavior` to perform separate X/Y potential-position checks, enabling fluid sliding along walls.
+  - Depth: The feet-only hitbox allows the character's head and torso to overlap walls, creating a natural 2.5D perspective.
+  - Verification: Static analysis confirms 0 errors. Player can no longer walk through walls or furniture.
+- [2026-04-25] BUGFIX: OPACITY-EFFECT-CRASH:
+  - Issue: `OpacityEffect` caused a crash because `TextComponent` and some `PositionComponent`s lacked the `OpacityProvider` mixin.
+  - Fix: Implemented manual alpha animation logic in `BedEntity` and `DynamicJoystick`. This approach is more robust and prevents the "Unsupported operation" error while maintaining smooth fade-in/out transitions.
+  - Verification: Static analysis confirms 0 errors. App no longer crashes on match start.
+- [2026-04-25] SCRUM-BUILDING: BED-ENTITY-SPAWNING:
+  - Entity: Implemented `BedEntity` as a static building inheriting from `BaseEntity`.
+  - Tiled: Parsed the "Object Layer" to automatically spawn beds at their TMX locations.
+  - Collision: Integrated `BedEntity` (tagged as `'building'`) into the collision system, ensuring they block player movement while maintaining the 2.5D feet-level depth.
+  - Interaction: Added proximity-based "Sleep" popup above beds. The text smoothly fades in when the character is touching/near the bed and fades out when they walk away.
+  - Verification: Static analysis confirms 0 errors. Beds are rendered, solid, and interactive.
+- [2026-04-25] SYSTEM-POLISH:
+  - Architecture: Migrated append-only changelog from `GEMINI.md` to `CHANGELOG.md` for improved context efficiency.
+  - Git Workflow: Mandated Feature Branch and PR-based development workflow in `GEMINI.md`.
+  - Maintenance: Updated project documentation to reflect new workflow and log location.

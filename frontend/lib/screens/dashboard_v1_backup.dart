@@ -18,7 +18,6 @@ import 'package:dreamhunter/widgets/community/chat_dialog.dart';
 import 'package:dreamhunter/widgets/leaderboard_dialog.dart';
 import 'package:dreamhunter/widgets/progression/daily_tasks_dialog.dart';
 import 'package:dreamhunter/widgets/progression/roulette_dialog.dart';
-import 'package:dreamhunter/game/matchmaking_dialog.dart';
 import 'package:dreamhunter/widgets/settings_dialog.dart';
 import 'package:dreamhunter/widgets/glass_button.dart';
 import 'package:dreamhunter/widgets/identity/save_resolution_dialog.dart';
@@ -61,7 +60,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     AudioManager.instance.playDashboardMusic();
 
     // 2. Initialize background services
-    await NetworkMonitor().initialize();
+    await NetworkMonitor.instance.initialize();
     await _controller.initialize();
     await DailyRoulette.instance.initialize();
 
@@ -359,9 +358,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 hoverBorderColor: Colors.tealAccent,
                 hoverTextColor: Colors.tealAccent,
                 pulseMinOpacity: 0.5,
-                onTap: () {
-                  _showGameDialog(const MatchmakingDialog());
-                },
+                onTap: () => debugPrint('Play tapped (backup)'),
               ),
             ),
           ),

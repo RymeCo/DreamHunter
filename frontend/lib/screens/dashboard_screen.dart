@@ -22,10 +22,12 @@ import 'package:dreamhunter/widgets/community/chat_dialog.dart';
 import 'package:dreamhunter/widgets/leaderboard_dialog.dart';
 import 'package:dreamhunter/widgets/progression/daily_tasks_dialog.dart';
 import 'package:dreamhunter/widgets/progression/roulette_dialog.dart';
-import 'package:dreamhunter/game/matchmaking_dialog.dart';
 import 'package:dreamhunter/widgets/settings_dialog.dart';
 import 'package:dreamhunter/widgets/glass_button.dart';
 import 'package:dreamhunter/widgets/identity/save_resolution_dialog.dart';
+import 'package:dreamhunter/widgets/game/lobby_dialog.dart';
+import 'package:dreamhunter/services/economy/shop_manager.dart';
+import 'package:dreamhunter/screens/game_loading_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -250,7 +252,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
           hoverBorderColor: Colors.tealAccent,
           hoverTextColor: Colors.tealAccent,
           pulseMinOpacity: 0.5,
-          onTap: () => _showGameDialog(const MatchmakingDialog()),
+          onTap: () {
+            debugPrint('Dashboard: PLAY button tapped - Opening Lobby');
+            _showGameDialog(
+              LobbyDialog(
+                onStartGame: () {
+                  final characterId = ShopManager.instance.selectedCharacterId;
+                  // Map 'char_max' -> 'max', 'char_nun' -> 'nun', etc for the loading screen
+                  final type = characterId.replaceFirst('char_', '');
+                  
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GameLoadingScreen(characterType: type),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
         ),
       ),
     );

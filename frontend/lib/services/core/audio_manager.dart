@@ -28,6 +28,7 @@ class AudioManager with WidgetsBindingObserver {
   double _soundVolume = 1.0;
   bool _isPlaylistActive = false;
   bool _wasPlayingBeforePause = false;
+  bool _isGameMode = false;
 
   AudioPlayer get _activeBgmPlayer => _usePlayerA ? _bgmPlayerA : _bgmPlayerB;
 
@@ -95,14 +96,30 @@ class AudioManager with WidgetsBindingObserver {
   }
 
   Future<void> _applyVolumes() async {
-    final mVol = _isMusicMuted ? 0.0 : _musicVolume;
-    final sVol = _isSoundMuted ? 0.0 : _soundVolume;
+    final double musicBoost = _isGameMode ? 1.1 : 1.0;
+    final double soundBoost = _isGameMode ? 1.1 : 1.0;
+
+    double effectiveMusicVol = (_musicVolume * musicBoost).clamp(0.0, 1.0);
+    double effectiveSoundVol = (_soundVolume * soundBoost).clamp(0.0, 1.0);
+
+    final mVol = _isMusicMuted ? 0.0 : effectiveMusicVol;
+    final sVol = _isSoundMuted ? 0.0 : effectiveSoundVol;
 
     await _bgmPlayerA.setVolume(mVol);
     await _bgmPlayerB.setVolume(mVol);
     for (final p in _sfxPool) {
       await p.setVolume(sVol);
     }
+  }
+
+  /// Activates a volume boost (10%) when in game mode.
+  Future<void> setGameMode(bool active) async {
+    _isGameMode = active;
+    await _applyVolumes();
+    developer.log(
+      'AudioManager: GameMode ${active ? 'Active (1.1x boost)' : 'Inactive'}',
+      name: 'AudioManager',
+    );
   }
 
   Future<void> _persistSettings() async {

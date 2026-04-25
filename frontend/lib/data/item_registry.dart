@@ -102,6 +102,38 @@ class ItemRegistry {
       category: 'Arcane Relics',
       maxLimit: 1,
     ),
+
+    // --- HUNTERS ---
+    'char_max': Item(
+      id: 'char_max',
+      name: 'Max (Default)',
+      description: 'The standard dream hunter.',
+      image: 'assets/images/game/characters/max_front-32x48.png',
+      price: 0,
+      type: ItemType.character,
+      category: 'Hunters',
+      maxLimit: 1,
+    ),
+    'char_nun': Item(
+      id: 'char_nun',
+      name: 'Nun',
+      description: 'Faith is her only shield.',
+      image: 'assets/images/game/characters/nun_front-32x48.png',
+      price: 1000,
+      type: ItemType.character,
+      category: 'Hunters',
+      maxLimit: 1,
+    ),
+    'char_jack': Item(
+      id: 'char_jack',
+      name: 'Jack',
+      description: 'Fast but fragile.',
+      image: 'assets/images/game/characters/jack_front-32x48.png',
+      price: 2500,
+      type: ItemType.character,
+      category: 'Hunters',
+      maxLimit: 1,
+    ),
   };
 
   /// Retrieves an item by its unique ID.

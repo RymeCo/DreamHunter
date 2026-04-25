@@ -14,9 +14,24 @@ class ShopManager extends ChangeNotifier {
 
   /// Local inventory for this session (Future: Sync with PlayerModel)
   final Map<String, int> _localInventory = {};
+  String _selectedCharacterId = 'char_max';
+
+  String get selectedCharacterId => _selectedCharacterId;
 
   int getOwnedCount(String itemId) {
+    // Gap Fix: Default character is always owned
+    if (itemId == 'char_max') return 1;
     return _localInventory[itemId] ?? 0;
+  }
+
+  bool isOwned(String itemId) => getOwnedCount(itemId) > 0;
+
+  void selectCharacter(String id) {
+    if (isOwned(id)) {
+      _selectedCharacterId = id;
+      notifyListeners();
+      _saveInventoryToCache();
+    }
   }
 
   bool canPurchase(Item item, int currentCurrency) {
@@ -38,6 +53,7 @@ class ShopManager extends ChangeNotifier {
   /// Categorization helper for UI layout
   Map<String, List<Item>> getItemsByCategory() {
     final List<String> order = [
+      'Hunters',
       'Essential Gear',
       'Ethereal Boosts',
       'Arcane Relics',
@@ -53,17 +69,22 @@ class ShopManager extends ChangeNotifier {
   Future<void> _saveInventoryToCache() async {
     await StorageEngine.instance.saveMetadata(
       'local_inventory',
-      _localInventory,
+      {
+        'inventory': _localInventory,
+        'selectedCharacterId': _selectedCharacterId,
+      },
     );
   }
 
   Future<void> loadInventoryFromCache() async {
     final cached = await StorageEngine.instance.getMetadata('local_inventory');
     if (cached != null) {
+      final inventory = cached['inventory'] as Map<String, dynamic>? ?? {};
       _localInventory.clear();
-      cached.forEach((key, value) {
+      inventory.forEach((key, value) {
         _localInventory[key] = value as int;
       });
+      _selectedCharacterId = cached['selectedCharacterId'] as String? ?? 'char_max';
       notifyListeners();
     }
   }

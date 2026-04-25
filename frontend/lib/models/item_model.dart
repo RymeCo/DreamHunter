@@ -1,4 +1,4 @@
-enum ItemType { gear, boost, relic }
+enum ItemType { gear, boost, relic, character }
 
 /// blueprint for all items inGame
 /// is used for the registry shop and inventory
