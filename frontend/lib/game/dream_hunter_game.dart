@@ -124,7 +124,11 @@ class DreamHunterGame extends FlameGame with DragCallbacks, HasCollisionDetectio
   @override
   void onDragUpdate(DragUpdateEvent event) {
     super.onDragUpdate(event);
-    if (!joystick.isMounted) return;
+    if (!joystick.isMounted) {
+      // Free Look Mode: Move the camera viewfinder in the opposite direction of the drag
+      camera.viewfinder.position.sub(event.localDelta);
+      return;
+    }
     _dragPosition += event.localDelta;
     joystick.updateDrag(_dragPosition);
   }

@@ -205,6 +205,11 @@ All major task completions and architectural shifts are logged here for traceabi
   - Logic: Refactored `PlayerMovementBehavior` to perform separate X/Y potential-position checks, enabling fluid sliding along walls.
   - Depth: The feet-only hitbox allows the character's head and torso to overlap walls, creating a natural 2.5D perspective.
   - Verification: Static analysis confirms 0 errors. Player can no longer walk through walls or furniture.
+- [2026-04-25] SCRUM-BED-SLEEP: FREE-CAMERA-&-SLEEP-POLISH:
+  - Camera: Implemented free-look panning after the player goes to sleep. The camera stops following the character, allowing the player to drag the map while maintaining the 7-tile field of view.
+  - Alignment: Fine-tuned the sleeping head position (Y=4) to ensure it rests precisely on the bed's pillow.
+  - Particles: Added drifting "Zzz" icons that rise from the character's head during sleep for better atmosphere.
+  - Verification: Static analysis confirms 0 errors. Panning is fluid and visually consistent.
 - [2026-04-25] SCRUM-BED-SLEEP: BED-POLISH-&-ZZZ-PARTICLES:
   - Alignment: Adjusted the sleeping head position to Y=4 relative to the bed, ensuring it rests perfectly on the pillow.
   - Visuals: Increased the sleeping sprite crop height to 24px for a more natural "tucked-in" look.

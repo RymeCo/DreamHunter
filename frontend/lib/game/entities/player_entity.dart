@@ -6,9 +6,10 @@ import 'package:dreamhunter/game/behaviors/player_movement_behavior.dart';
 import 'package:dreamhunter/game/ui/dynamic_joystick.dart';
 import 'package:dreamhunter/services/economy/shop_manager.dart';
 import 'package:dreamhunter/data/item_registry.dart';
+import 'package:dreamhunter/game/dream_hunter_game.dart';
 
 /// The playable character entity.
-class PlayerEntity extends BaseEntity {
+class PlayerEntity extends BaseEntity with HasGameReference<DreamHunterGame> {
   final DynamicJoystick joystick;
   late final SpriteComponent _spriteComponent;
   late final Sprite _sleepingSprite;
@@ -55,16 +56,19 @@ class PlayerEntity extends BaseEntity {
     // 1. Remove movement logic permanently
     children.whereType<PlayerMovementBehavior>().forEach((b) => b.removeFromParent());
     
-    // 2. Change visuals to just the head
+    // 2. Stop camera from following the player
+    game.camera.stop();
+
+    // 3. Change visuals to just the head
     _spriteComponent.sprite = _sleepingSprite;
     _spriteComponent.size = Vector2(32, 24);
     size = Vector2(32, 24); // Shrink component size too
     
-    // 3. Teleport to bed (aligned to pillow)
+    // 4. Teleport to bed (aligned to pillow)
     // Pillow is at the very top of the bed. We move Y to 4 so the head touches the top edge.
     position = bedPosition + Vector2(16, 4);
 
-    // 4. Add Zzz particle spawner
+    // 5. Add Zzz particle spawner
     add(TimerComponent(
       period: 1.5,
       repeat: true,
