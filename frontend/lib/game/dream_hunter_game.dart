@@ -116,9 +116,10 @@ class DreamHunterGame extends FlameGame with DragCallbacks, HasCollisionDetectio
   @override
   void onDragStart(DragStartEvent event) {
     super.onDragStart(event);
-    if (!joystick.isMounted) return;
     _dragPosition = event.localPosition;
-    joystick.startDrag(_dragPosition);
+    if (joystick.isMounted) {
+      joystick.startDrag(_dragPosition);
+    }
   }
 
   @override
@@ -140,15 +141,17 @@ class DreamHunterGame extends FlameGame with DragCallbacks, HasCollisionDetectio
   @override
   void onDragEnd(DragEndEvent event) {
     super.onDragEnd(event);
-    if (!joystick.isMounted) return;
-    joystick.endDrag();
+    if (joystick.isMounted) {
+      joystick.endDrag();
+    }
   }
 
   @override
   void onDragCancel(DragCancelEvent event) {
     super.onDragCancel(event);
-    if (!joystick.isMounted) return;
-    joystick.endDrag();
+    if (joystick.isMounted) {
+      joystick.endDrag();
+    }
   }
 
   @override

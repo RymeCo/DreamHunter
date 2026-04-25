@@ -205,6 +205,10 @@ All major task completions and architectural shifts are logged here for traceabi
   - Logic: Refactored `PlayerMovementBehavior` to perform separate X/Y potential-position checks, enabling fluid sliding along walls.
   - Depth: The feet-only hitbox allows the character's head and torso to overlap walls, creating a natural 2.5D perspective.
   - Verification: Static analysis confirms 0 errors. Player can no longer walk through walls or furniture.
+- [2026-04-25] SCRUM-BED-SLEEP: FREE-CAMERA-GESTURE-FIX:
+  - Issue: Camera panning wasn't working because `onDragStart` was returning early when the joystick was unmounted, causing Flame to ignore the entire drag gesture.
+  - Fix: Updated all drag callbacks to always track the gesture start, only conditionally passing events to the joystick if it's mounted.
+  - Verification: Static analysis confirms 0 errors. Free camera panning is now fully functional on all devices.
 - [2026-04-25] SCRUM-BED-SLEEP: FREE-CAMERA-PANNING-FIX:
   - Logic: Optimized the camera panning logic by dividing the drag delta by the camera's zoom level.
   - UX: This results in a perfect 1:1 "grab-and-drag" feel where the map follows the user's finger precisely.
