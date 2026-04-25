@@ -205,6 +205,11 @@ All major task completions and architectural shifts are logged here for traceabi
   - Logic: Refactored `PlayerMovementBehavior` to perform separate X/Y potential-position checks, enabling fluid sliding along walls.
   - Depth: The feet-only hitbox allows the character's head and torso to overlap walls, creating a natural 2.5D perspective.
   - Verification: Static analysis confirms 0 errors. Player can no longer walk through walls or furniture.
+- [2026-04-25] SCRUM-BED-SLEEP: BED-POLISH-&-ZZZ-PARTICLES:
+  - Alignment: Adjusted the sleeping head position to Y=4 relative to the bed, ensuring it rests perfectly on the pillow.
+  - Visuals: Increased the sleeping sprite crop height to 24px for a more natural "tucked-in" look.
+  - Particles: Implemented a custom `ZzzParticle` system that spawns drifting, fading "z" icons above the character's head while sleeping.
+  - Verification: Static analysis confirms 0 errors. Sleeping animation is now polished and atmospheric.
 - [2026-04-25] SCRUM-BUILDING: BED-SLEEP-SIMULATION:
   - UI: Made "Sleep" popup text smaller (size 8) for a cleaner look.
   - Interaction: Implemented `TapCallbacks` on `BedEntity`. Tapping a bed while nearby now triggers a permanent sleeping state.
