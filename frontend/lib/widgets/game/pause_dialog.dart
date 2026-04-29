@@ -29,13 +29,15 @@ class _PauseDialogState extends State<PauseDialog> {
               isCentered: true,
             ),
             const SizedBox(height: 16),
-            
+
             // Audio Controls Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildAudioToggle(
-                  icon: _audioManager.isMusicMuted ? Icons.music_off_rounded : Icons.music_note_rounded,
+                  icon: _audioManager.isMusicMuted
+                      ? Icons.music_off_rounded
+                      : Icons.music_note_rounded,
                   label: 'MUSIC',
                   isMuted: _audioManager.isMusicMuted,
                   onTap: () async {
@@ -44,7 +46,9 @@ class _PauseDialogState extends State<PauseDialog> {
                   },
                 ),
                 _buildAudioToggle(
-                  icon: _audioManager.isSoundMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                  icon: _audioManager.isSoundMuted
+                      ? Icons.volume_off_rounded
+                      : Icons.volume_up_rounded,
                   label: 'SOUND',
                   isMuted: _audioManager.isSoundMuted,
                   onTap: () async {
@@ -54,9 +58,9 @@ class _PauseDialogState extends State<PauseDialog> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Quit Button
             GlassButton(
               label: 'QUIT GAME',
@@ -68,20 +72,19 @@ class _PauseDialogState extends State<PauseDialog> {
               hoverBorderColor: Colors.redAccent,
               hoverTextColor: Colors.redAccent,
               onTap: () {
-                debugPrint('PauseDialog: Quitting requested');
                 // Return 'quit' to the caller (GameScreen) to trigger the Reward Screen
                 Navigator.pop(context, 'quit');
               },
             ),
-            
+
             const SizedBox(height: 16),
             Text(
               'THE DREAM IS FROZEN.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white24,
-                    letterSpacing: 2,
-                    fontSize: 10,
-                  ),
+                color: Colors.white24,
+                letterSpacing: 2,
+                fontSize: 10,
+              ),
             ),
           ],
         ),
@@ -104,19 +107,15 @@ class _PauseDialogState extends State<PauseDialog> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            color: isMuted ? Colors.white24 : Colors.white,
-            size: 24,
-          ),
+          Icon(icon, color: isMuted ? Colors.white24 : Colors.white, size: 24),
           const SizedBox(height: 8),
           Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: isMuted ? Colors.white24 : Colors.white70,
-                  fontSize: 10,
-                  letterSpacing: 1.5,
-                ),
+              color: isMuted ? Colors.white24 : Colors.white70,
+              fontSize: 10,
+              letterSpacing: 1.5,
+            ),
           ),
         ],
       ),

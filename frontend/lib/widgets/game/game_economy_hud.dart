@@ -14,12 +14,14 @@ class GameEconomyHUD extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final glass = Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
+    final glass =
+        Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
 
     return ListenableBuilder(
       listenable: MatchManager.instance,
       builder: (context, child) {
         final manager = MatchManager.instance;
+        final isMasked = !manager.isHunterSleeping;
 
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -30,7 +32,11 @@ class GameEconomyHUD extends StatelessWidget {
               context,
               glass,
               icon: Icons.monetization_on_rounded,
-              value: '${manager.matchCoins}',
+              value: isMasked
+                  ? '0'
+                  : (manager.matchCoins > 100000
+                        ? '100000+'
+                        : '${manager.matchCoins}'),
               color: Colors.amberAccent,
             ),
             const SizedBox(height: 6),
@@ -39,7 +45,11 @@ class GameEconomyHUD extends StatelessWidget {
               context,
               glass,
               icon: Icons.bolt_rounded,
-              value: '${manager.matchEnergy}',
+              value: isMasked
+                  ? '0'
+                  : (manager.matchEnergy > 999
+                        ? '999+'
+                        : '${manager.matchEnergy}'),
               color: Colors.cyanAccent,
             ),
             const SizedBox(height: 12),
@@ -54,25 +64,31 @@ class GameEconomyHUD extends StatelessWidget {
   Widget _buildHunterList(BuildContext context) {
     final characterId = ShopManager.instance.selectedCharacterId;
     final item = ItemRegistry.get(characterId);
-    final playerImagePath = item?.image ?? 'assets/images/game/characters/max_front-32x48.png';
+    final playerImagePath =
+        item?.image ?? 'assets/images/game/characters/max_front-32x48.png';
+    final aiSkins = MatchManager.instance.aiSkins;
 
     return SizedBox(
       width: 110, // Width to fit 3 icons (32px + 6px spacing)
       child: Wrap(
         spacing: 6,
         runSpacing: 6,
-        children: List.generate(6, (index) {
+        children: List.generate(1 + aiSkins.length, (index) {
           final isPlayer = index == 0;
+          final imagePath = isPlayer ? playerImagePath : aiSkins[index - 1];
+          final isSleeping = MatchManager.instance.isHunterSleeping;
+
           return _buildHunterIcon(
             context,
-            imagePath: isPlayer ? playerImagePath : playerImagePath, // Placeholder for AI
+            imagePath: imagePath,
             onTap: () {
-              if (game.player.isSleeping) {
-                game.centerCameraOnPlayer();
+              // Only allow camera snapping if player is sleeping
+              if (isSleeping) {
+                game.centerCameraOnHunter(index);
               }
             },
             isLocalPlayer: isPlayer,
-            isGray: !isPlayer,
+            isGray: false, // Always colorful as requested
           );
         }),
       ),
@@ -95,7 +111,9 @@ class GameEconomyHUD extends StatelessWidget {
           color: Colors.black.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isLocalPlayer ? Colors.greenAccent.withValues(alpha: 0.5) : Colors.white12,
+            color: isLocalPlayer
+                ? Colors.greenAccent.withValues(alpha: 0.5)
+                : Colors.white12,
             width: 1.5,
           ),
         ),
@@ -141,28 +159,28 @@ class GameEconomyHUD extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      // Reduced padding for a more compact look
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      width: 90, // Standardized fixed width
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1.0,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1.0),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 14), // Smaller icon
           const SizedBox(width: 6),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 11, // Smaller font to match timer scale
-              letterSpacing: 0.5,
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.left,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11, // Smaller font to match timer scale
+                letterSpacing: 0.5,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

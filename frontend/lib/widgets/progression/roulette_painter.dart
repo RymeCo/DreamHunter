@@ -15,18 +15,19 @@ class RouletteWheelPainter extends CustomPainter {
     final sweepAngle = (2 * math.pi) / rewards.length;
 
     for (int i = 0; i < rewards.length; i++) {
-      final String colorStr =
-          (rewards[i]['color'] as String).replaceFirst('0x', '');
+      final String colorStr = (rewards[i]['color'] as String).replaceFirst(
+        '0x',
+        '',
+      );
       final baseColor = Color(int.parse(colorStr, radix: 16));
 
-      final paint =
-          Paint()
-            ..shader = RadialGradient(
-              colors: [
-                baseColor.withValues(alpha: 0.95),
-                baseColor.withValues(alpha: 0.6),
-              ],
-            ).createShader(rect);
+      final paint = Paint()
+        ..shader = RadialGradient(
+          colors: [
+            baseColor.withValues(alpha: 0.95),
+            baseColor.withValues(alpha: 0.6),
+          ],
+        ).createShader(rect);
 
       canvas.drawArc(rect, rotation + i * sweepAngle, sweepAngle, true, paint);
     }
@@ -38,20 +39,19 @@ class RouletteWheelPainter extends CustomPainter {
       final segmentRotation = rotation + (i * sweepAngle) + (sweepAngle / 2);
       canvas.rotate(segmentRotation);
 
-      final tp =
-          TextPainter(
-            text: TextSpan(
-              text: rewards[i]['name'].toString().toUpperCase(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1,
-                shadows: [Shadow(color: Colors.black, blurRadius: 4)],
-              ),
-            ),
-            textDirection: TextDirection.ltr,
-          )..layout();
+      final tp = TextPainter(
+        text: TextSpan(
+          text: rewards[i]['name'].toString().toUpperCase(),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+            shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
 
       canvas.translate(radius * 0.75, 0);
       canvas.rotate(math.pi / 2);

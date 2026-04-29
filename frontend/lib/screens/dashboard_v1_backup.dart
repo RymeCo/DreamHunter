@@ -358,7 +358,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 hoverBorderColor: Colors.tealAccent,
                 hoverTextColor: Colors.tealAccent,
                 pulseMinOpacity: 0.5,
-                onTap: () => debugPrint('Play tapped (backup)'),
+                onTap: () {},
               ),
             ),
           ),

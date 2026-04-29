@@ -27,9 +27,9 @@ class StatRow extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -114,13 +114,18 @@ class GameDialogHeader extends StatelessWidget {
     return Container(
       height: 56, // Fixed height to prevent dialog jumping
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Stack(
-        alignment: Alignment.center,
+      child: Row(
+        mainAxisAlignment: isCentered
+            ? MainAxisAlignment.center
+            : MainAxisAlignment.spaceBetween,
         children: [
-          Align(
-            alignment: isCentered ? Alignment.center : Alignment.centerLeft,
+          // Fixed width spacer to balance the close button if centered
+          if (isCentered && showCloseButton) const SizedBox(width: 48),
+
+          Expanded(
             child: Text(
               title.toUpperCase(),
+              textAlign: isCentered ? TextAlign.center : TextAlign.left,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: accent,
                 fontSize: 20,
@@ -129,27 +134,23 @@ class GameDialogHeader extends StatelessWidget {
                   Shadow(color: accent.withValues(alpha: 0.4), blurRadius: 12),
                 ],
               ),
+              overflow: TextOverflow.ellipsis, // Prevent overlap
+              maxLines: 1,
             ),
           ),
-          // Use Opacity to maintain layout but hide the button
-          Opacity(
-            opacity: showCloseButton ? 1.0 : 0.0,
-            child: IgnorePointer(
-              ignoring: !showCloseButton,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.white38),
-                  onPressed: () {
-                    HapticManager.instance.light();
-                    AudioManager.instance.playClick();
-                    Navigator.pop(context);
-                  },
-                  splashRadius: 24,
-                ),
-              ),
-            ),
-          ),
+
+          if (showCloseButton)
+            IconButton(
+              icon: const Icon(Icons.close_rounded, color: Colors.white38),
+              onPressed: () {
+                HapticManager.instance.light();
+                AudioManager.instance.playClick();
+                Navigator.pop(context);
+              },
+              splashRadius: 24,
+            )
+          else if (isCentered)
+            const SizedBox(width: 48), // Spacer to maintain center alignment
         ],
       ),
     );

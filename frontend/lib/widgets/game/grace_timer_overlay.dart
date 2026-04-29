@@ -31,10 +31,7 @@ class GraceTimerOverlay extends StatelessWidget {
                   offset: const Offset(4, 4),
                   blurRadius: 10,
                 ),
-                Shadow(
-                  color: color.withValues(alpha: 0.5),
-                  blurRadius: 20,
-                ),
+                Shadow(color: color.withValues(alpha: 0.5), blurRadius: 20),
               ],
             ),
           ),

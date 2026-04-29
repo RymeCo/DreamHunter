@@ -37,11 +37,9 @@ class GameLoader {
     Function(double progress) onProgress,
   ) async {
     int loaded = 0;
-    debugPrint('GameLoader: Starting to load ${gameImages.length} assets...');
-    
+
     for (var path in gameImages) {
       try {
-        debugPrint('GameLoader: Loading $path...');
         // 1. Resolve the asset via Flutter's mechanism (uses ImageCache if available)
         final imageProvider = AssetImage('assets/images/$path');
         final Completer<ui.Image> completer = Completer<ui.Image>();
@@ -67,7 +65,7 @@ class GameLoader {
         );
 
         stream.addListener(listener);
-        
+
         // Safety timeout to prevent hanging the whole game transition
         final ui.Image image = await completer.future.timeout(
           const Duration(seconds: 3),
@@ -79,21 +77,25 @@ class GameLoader {
 
         // 2. Add the resolved image to Flame's internal cache
         Flame.images.add(path, image);
-        debugPrint('GameLoader: Successfully cached $path');
+
+        // 3. Rasterization Warmup: Force the GPU to "see" the image by drawing it
+        // This prevents the "first frame stutter" when entering the game.
+        final recorder = ui.PictureRecorder();
+        final canvas = Canvas(recorder);
+        canvas.drawImage(image, Offset.zero, Paint());
+        recorder.endRecording().dispose();
       } catch (e) {
         debugPrint('GameLoader: Skipping asset: $path - $e');
       }
       loaded++;
       onProgress(loaded / gameImages.length);
     }
-    debugPrint('GameLoader: Asset preloading complete.');
   }
 
   /// Wipes match assets from memory. Call this when the player exits the game!
   static void unloadGameAssets() {
-    for (var path in gameImages) {
-      Flame.images.clear(path);
-    }
-    debugPrint('Game Assets Wiped from Memory.');
+    // Aggressive disposal to prevent memory leaks and lag in dashboard
+    Flame.images.clearCache();
+    Flame.assets.clearCache();
   }
 }

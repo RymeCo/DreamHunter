@@ -67,13 +67,10 @@ class ShopManager extends ChangeNotifier {
 
   // --- Caching Logic (Migrated from ProfileManager) ---
   Future<void> _saveInventoryToCache() async {
-    await StorageEngine.instance.saveMetadata(
-      'local_inventory',
-      {
-        'inventory': _localInventory,
-        'selectedCharacterId': _selectedCharacterId,
-      },
-    );
+    await StorageEngine.instance.saveMetadata('local_inventory', {
+      'inventory': _localInventory,
+      'selectedCharacterId': _selectedCharacterId,
+    });
   }
 
   Future<void> loadInventoryFromCache() async {
@@ -84,7 +81,8 @@ class ShopManager extends ChangeNotifier {
       inventory.forEach((key, value) {
         _localInventory[key] = value as int;
       });
-      _selectedCharacterId = cached['selectedCharacterId'] as String? ?? 'char_max';
+      _selectedCharacterId =
+          cached['selectedCharacterId'] as String? ?? 'char_max';
       notifyListeners();
     }
   }

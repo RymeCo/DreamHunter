@@ -4,21 +4,37 @@ import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/widgets/glass_button.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
+import 'package:dreamhunter/services/game/match_manager.dart';
+
+/// Represents a specific condition that must be met for an upgrade.
+class UpgradeRequirement {
+  final String label;
+  final bool isMet;
+  const UpgradeRequirement({required this.label, required this.isMet});
+}
 
 /// A reusable, standardized dialog for upgrading buildings (Bed, Generator, Door, Turrets).
-class UpgradeDialog extends StatelessWidget {
+class UpgradeDialog extends StatefulWidget {
   final String title;
   final int currentLevel;
-  final List<String> requirements;
+  final Widget? levelDisplay;
+  final List<UpgradeRequirement> requirements;
   final int coinCost;
+  final int energyCost;
+  final String? upgradeBenefit;
+  final bool isMaxLevel;
   final VoidCallback onUpgrade;
 
   const UpgradeDialog({
     super.key,
     required this.title,
     required this.currentLevel,
+    this.levelDisplay,
     required this.requirements,
     required this.coinCost,
+    this.energyCost = 0,
+    this.upgradeBenefit,
+    this.isMaxLevel = false,
     required this.onUpgrade,
   });
 
@@ -27,8 +43,12 @@ class UpgradeDialog extends StatelessWidget {
     BuildContext context, {
     required String title,
     required int currentLevel,
-    required List<String> requirements,
+    Widget? levelDisplay,
+    required List<UpgradeRequirement> requirements,
     required int coinCost,
+    int energyCost = 0,
+    String? upgradeBenefit,
+    bool isMaxLevel = false,
     required VoidCallback onUpgrade,
   }) async {
     await showGeneralDialog<void>(
@@ -45,8 +65,12 @@ class UpgradeDialog extends StatelessWidget {
             child: UpgradeDialog(
               title: title,
               currentLevel: currentLevel,
+              levelDisplay: levelDisplay,
               requirements: requirements,
               coinCost: coinCost,
+              energyCost: energyCost,
+              upgradeBenefit: upgradeBenefit,
+              isMaxLevel: isMaxLevel,
               onUpgrade: onUpgrade,
             ),
           ),
@@ -54,6 +78,14 @@ class UpgradeDialog extends StatelessWidget {
       },
     );
   }
+
+  @override
+  State<UpgradeDialog> createState() => _UpgradeDialogState();
+}
+
+class _UpgradeDialogState extends State<UpgradeDialog> {
+  bool _showNotEnough = false;
+  bool _showReqNotMet = false;
 
   @override
   Widget build(BuildContext context) {
@@ -65,100 +97,288 @@ class UpgradeDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header
-            GameDialogHeader(title: title),
-            
+            GameDialogHeader(title: widget.title),
+
             // Level Indicator
-            _buildInfoRow(context, "Current Level", "Lv. $currentLevel", Colors.white70),
-            
-            const SizedBox(height: 16),
-            
-            // Requirements Section
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "REQUIREMENTS",
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colors.white38,
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.bold,
+            _buildLevelIndicator(context),
+
+            if (widget.upgradeBenefit != null) ...[
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "UPGRADE EFFECT",
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Colors.white38,
+                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            if (requirements.isEmpty)
-              _buildRequirementRow(context, "None", true)
-            else
-              ...requirements.map((req) => _buildRequirementRow(context, req, true)),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.greenAccent.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: _buildUpgradeBenefitText(
+                  context,
+                  widget.upgradeBenefit!,
+                ),
+              ),
+            ],
+
+            // Requirements Section
+            if (widget.requirements.isNotEmpty &&
+                widget.requirements.any((r) => !r.isMet)) ...[
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "REQUIREMENTS",
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Colors.white38,
+                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...widget.requirements.map(
+                (req) => _buildRequirementRow(context, req.label, req.isMet),
+              ),
+            ],
 
             const SizedBox(height: 24),
 
-            // Upgrade Button
-            GlassButton(
-              width: double.infinity,
-              height: 50,
-              onTap: () {
-                AudioManager.instance.playClick();
-                HapticManager.instance.medium();
-                onUpgrade();
-                Navigator.pop(context);
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "UPGRADE",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
-                    ),
+            // Upgrade Button or Max Level Indicator
+            if (widget.isMaxLevel)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Text(
+                  "MAXIMUM LEVEL",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                    fontSize: 12,
                   ),
-                  const SizedBox(width: 12),
-                  // Cost Indicator
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black26,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
+                ),
+              )
+            else
+              ListenableBuilder(
+                listenable: MatchManager.instance,
+                builder: (context, child) {
+                  final bool allRequirementsMet = widget.requirements.every(
+                    (r) => r.isMet,
+                  );
+                  final bool canAffordCoins =
+                      MatchManager.instance.matchCoins >= widget.coinCost;
+                  final bool canAffordEnergy =
+                      MatchManager.instance.matchEnergy >= widget.energyCost;
+                  final bool canUpgrade =
+                      allRequirementsMet && canAffordCoins && canAffordEnergy;
+
+                  // Determine button label
+                  String? buttonLabel;
+                  if (_showNotEnough) {
+                    buttonLabel = "NOT ENOUGH!";
+                  } else if (_showReqNotMet) {
+                    buttonLabel = "REQ NOT MET";
+                  }
+
+                  return GlassButton(
+                    width: double.infinity,
+                    height: 50,
+                    pulseEffect:
+                        canUpgrade, // Only pulse when ready to upgrade!
+                    glowColor: (_showNotEnough || _showReqNotMet)
+                        ? Colors.redAccent
+                        : (canUpgrade ? Colors.tealAccent : Colors.white10),
+                    color: canUpgrade
+                        ? null
+                        : Colors.black54, // Darker when locked/not affordable
+                    onTap: () {
+                      if (!allRequirementsMet) {
+                        if (!_showReqNotMet) {
+                          HapticManager.instance.heavy();
+                          setState(() => _showReqNotMet = true);
+                          Future.delayed(
+                            const Duration(milliseconds: 1200),
+                            () {
+                              if (mounted) {
+                                setState(() => _showReqNotMet = false);
+                              }
+                            },
+                          );
+                        }
+                        return;
+                      }
+                      if (!canAffordCoins || !canAffordEnergy) {
+                        if (!_showNotEnough) {
+                          HapticManager.instance.heavy();
+                          setState(() => _showNotEnough = true);
+                          Future.delayed(
+                            const Duration(milliseconds: 1200),
+                            () {
+                              if (mounted) {
+                                setState(() => _showNotEnough = false);
+                              }
+                            },
+                          );
+                        }
+                        return;
+                      }
+
+                      AudioManager.instance.playClick();
+                      HapticManager.instance.medium();
+                      widget.onUpgrade();
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
+                    },
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.monetization_on_rounded, color: Colors.amberAccent, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          "$coinCost",
-                          style: const TextStyle(
-                            color: Colors.amberAccent,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                        if (buttonLabel != null)
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                buttonLabel,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ),
+                          )
+                        else ...[
+                          // Coin Cost Indicator
+                          Icon(
+                            Icons.monetization_on_rounded,
+                            color: canAffordCoins
+                                ? Colors.amberAccent
+                                : Colors.white10,
+                            size: 18,
                           ),
-                        ),
+                          const SizedBox(width: 4),
+                          Text(
+                            "${widget.coinCost}",
+                            style: TextStyle(
+                              color: canAffordCoins
+                                  ? Colors.amberAccent
+                                  : Colors.white10,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+
+                          if (widget.energyCost > 0) ...[
+                            const SizedBox(width: 12),
+                            // Energy Cost Indicator
+                            Icon(
+                              Icons.bolt_rounded,
+                              color: canAffordEnergy
+                                  ? Colors.cyanAccent
+                                  : Colors.white10,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              "${widget.energyCost}",
+                              style: TextStyle(
+                                color: canAffordEnergy
+                                    ? Colors.cyanAccent
+                                    : Colors.white10,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ],
                       ],
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, String label, String value, Color valueColor) {
+  Widget _buildLevelIndicator(BuildContext context) {
+    if (widget.levelDisplay != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Current Level",
+              style: TextStyle(color: Colors.white54, fontSize: 13),
+            ),
+            widget.levelDisplay!,
+          ],
+        ),
+      );
+    }
+
+    return _buildInfoRow(
+      context,
+      "Current Level",
+      "Lv. ${widget.currentLevel}",
+      Colors.white70,
+    );
+  }
+
+  Widget _buildInfoRow(
+    BuildContext context,
+    String label,
+    String value,
+    Color valueColor,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white54, fontSize: 13)),
-          Text(
-            value,
-            style: TextStyle(
-              color: valueColor,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white54, fontSize: 13),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: TextStyle(
+                  color: valueColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],
@@ -172,19 +392,80 @@ class UpgradeDialog extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            isMet ? Icons.check_circle_outline_rounded : Icons.radio_button_unchecked_rounded,
-            color: isMet ? Colors.greenAccent : Colors.white24,
+            isMet
+                ? Icons.check_circle_outline_rounded
+                : Icons.radio_button_unchecked_rounded,
+            color: isMet
+                ? Colors.greenAccent
+                : Colors.redAccent.withValues(alpha: 0.5),
             size: 14,
           ),
           const SizedBox(width: 8),
-          Text(
-            text,
-            style: TextStyle(
-              color: isMet ? Colors.white : Colors.white24,
-              fontSize: 13,
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: isMet ? Colors.white : Colors.white24,
+                fontSize: 13,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildUpgradeBenefitText(BuildContext context, String text) {
+    final lines = text.split('\n');
+    final List<TextSpan> spans = [];
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      if (line.contains('➔')) {
+        final parts = line.split('➔');
+        spans.add(
+          TextSpan(
+            text: parts[0],
+            style: const TextStyle(color: Colors.white70),
+          ),
+        );
+        spans.add(
+          const TextSpan(
+            text: '➔',
+            style: TextStyle(color: Colors.greenAccent),
+          ),
+        );
+        spans.add(
+          TextSpan(
+            text: parts[1],
+            style: const TextStyle(color: Colors.greenAccent),
+          ),
+        );
+      } else {
+        spans.add(
+          TextSpan(
+            text: line,
+            style: const TextStyle(color: Colors.greenAccent),
+          ),
+        );
+      }
+
+      if (i < lines.length - 1) {
+        spans.add(const TextSpan(text: '\n'));
+      }
+    }
+
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          height: 1.4,
+          fontFamily:
+              'Inter', // Ensuring consistency if needed, though inherits from DefaultTextStyle
+        ),
+        children: spans,
       ),
     );
   }

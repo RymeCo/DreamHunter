@@ -7,10 +7,10 @@ import 'package:flutter/material.dart';
 class DynamicJoystick extends PositionComponent with HasPaint {
   final double baseRadius = 50.0;
   final double knobRadius = 20.0;
-  
+
   late final CircleComponent _base;
   late final CircleComponent _knob;
-  
+
   Vector2 _relativeDelta = Vector2.zero();
   Vector2 get relativeDelta => _relativeDelta;
 
@@ -28,14 +28,14 @@ class DynamicJoystick extends PositionComponent with HasPaint {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    
+
     _base = CircleComponent(
       radius: baseRadius,
       anchor: Anchor.center,
       paint: Paint()..color = Colors.white.withValues(alpha: 0),
       position: size / 2,
     );
-    
+
     _knob = CircleComponent(
       radius: knobRadius,
       anchor: Anchor.center,
@@ -55,7 +55,12 @@ class DynamicJoystick extends PositionComponent with HasPaint {
     _knob.position = size / 2;
 
     // Pop in scale effect (this one works fine on PositionComponent)
-    add(ScaleEffect.to(Vector2.all(1.0), EffectController(duration: 0.2, curve: Curves.easeOutBack)));
+    add(
+      ScaleEffect.to(
+        Vector2.all(1.0),
+        EffectController(duration: 0.2, curve: Curves.easeOutBack),
+      ),
+    );
   }
 
   /// Updates the knob position and calculates the movement delta.
@@ -65,7 +70,7 @@ class DynamicJoystick extends PositionComponent with HasPaint {
     final dragVector = currentTouchPosition - position;
     final distance = dragVector.length;
     final clampedDistance = distance.clamp(0.0, baseRadius);
-    
+
     if (distance > 0) {
       _relativeDelta = dragVector / distance * (clampedDistance / baseRadius);
     } else {
@@ -81,13 +86,18 @@ class DynamicJoystick extends PositionComponent with HasPaint {
     _relativeDelta = Vector2.zero();
 
     // Fade out scale effect
-    add(ScaleEffect.to(Vector2.all(0.5), EffectController(duration: 0.2, curve: Curves.easeIn)));
+    add(
+      ScaleEffect.to(
+        Vector2.all(0.5),
+        EffectController(duration: 0.2, curve: Curves.easeIn),
+      ),
+    );
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    
+
     // Manual opacity animation
     if (_isActive) {
       _currentOpacity = (_currentOpacity + dt * _fadeSpeed).clamp(0.0, 1.0);

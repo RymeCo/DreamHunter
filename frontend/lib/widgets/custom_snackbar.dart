@@ -16,7 +16,8 @@ class CustomSnackBar {
     VoidCallback? onAction,
   }) {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final glass = Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
+    final glass =
+        Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
 
     // Trigger standard haptics based on type
     _triggerHaptic(type);
@@ -28,17 +29,23 @@ class CustomSnackBar {
       SnackBar(
         elevation: 0,
         behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.transparent, // We use the container for glass effect
+        backgroundColor:
+            Colors.transparent, // We use the container for glass effect
         duration: const Duration(milliseconds: 2500),
         padding: EdgeInsets.zero,
         content: ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: glass.blurSigma, sigmaY: glass.blurSigma),
+            filter: ImageFilter.blur(
+              sigmaX: glass.blurSigma,
+              sigmaY: glass.blurSigma,
+            ),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: _getColor(type).withValues(alpha: glass.baseOpacity * 2.5),
+                color: _getColor(
+                  type,
+                ).withValues(alpha: glass.baseOpacity * 2.5),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _getColor(type).withValues(alpha: glass.borderAlpha),
@@ -68,7 +75,10 @@ class CustomSnackBar {
                       ),
                       child: Text(
                         actionLabel,
-                        style: const TextStyle(fontWeight: FontWeight.w900, decoration: TextDecoration.underline),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ),
                 ],
@@ -82,19 +92,27 @@ class CustomSnackBar {
 
   static Color _getColor(SnackBarType type) {
     switch (type) {
-      case SnackBarType.success: return Colors.greenAccent;
-      case SnackBarType.error: return Colors.redAccent;
-      case SnackBarType.warning: return Colors.amberAccent;
-      case SnackBarType.info: return Colors.blueAccent;
+      case SnackBarType.success:
+        return Colors.greenAccent;
+      case SnackBarType.error:
+        return Colors.redAccent;
+      case SnackBarType.warning:
+        return Colors.amberAccent;
+      case SnackBarType.info:
+        return Colors.blueAccent;
     }
   }
 
   static IconData _getIcon(SnackBarType type) {
     switch (type) {
-      case SnackBarType.success: return Icons.check_circle_rounded;
-      case SnackBarType.error: return Icons.error_rounded;
-      case SnackBarType.warning: return Icons.warning_rounded;
-      case SnackBarType.info: return Icons.info_rounded;
+      case SnackBarType.success:
+        return Icons.check_circle_rounded;
+      case SnackBarType.error:
+        return Icons.error_rounded;
+      case SnackBarType.warning:
+        return Icons.warning_rounded;
+      case SnackBarType.info:
+        return Icons.info_rounded;
     }
   }
 

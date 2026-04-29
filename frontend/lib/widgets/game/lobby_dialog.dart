@@ -6,6 +6,7 @@ import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/widgets/glass_button.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
 import 'package:dreamhunter/services/economy/shop_manager.dart';
+import 'package:dreamhunter/services/game/match_manager.dart';
 import 'package:dreamhunter/data/item_registry.dart';
 import 'package:dreamhunter/widgets/game/character_selection_dialog.dart';
 import 'package:dreamhunter/widgets/game/character_portrait.dart';
@@ -15,20 +16,23 @@ class LobbyPlayer {
   final String characterImage;
   final bool isHost;
   final bool isReady;
+  final bool isConnecting;
 
   LobbyPlayer({
     required this.name,
     required this.characterImage,
     this.isHost = false,
     this.isReady = false,
+    this.isConnecting = false,
   });
 
-  LobbyPlayer copyWith({bool? isReady}) {
+  LobbyPlayer copyWith({bool? isReady, bool? isConnecting}) {
     return LobbyPlayer(
       name: name,
       characterImage: characterImage,
       isHost: isHost,
       isReady: isReady ?? this.isReady,
+      isConnecting: isConnecting ?? this.isConnecting,
     );
   }
 }
@@ -45,9 +49,18 @@ class LobbyDialog extends StatefulWidget {
 class _LobbyDialogState extends State<LobbyDialog> {
   final List<LobbyPlayer?> _joinedPlayers = List.filled(6, null);
   final List<String> _pool = [
-    'HunterX', 'SleepyHead', 'Nightmare_99', 'DreamWalker',
-    'ZzzMaster', 'Insomniac', 'DarkSlayer', 'Lullaby',
-    'GhostBuster', 'Midnight_Sun', 'DormGhost', 'ShadowMan'
+    'HunterX',
+    'SleepyHead',
+    'Nightmare_99',
+    'DreamWalker',
+    'ZzzMaster',
+    'Insomniac',
+    'DarkSlayer',
+    'Lullaby',
+    'GhostBuster',
+    'Midnight_Sun',
+    'DormGhost',
+    'ShadowMan',
   ];
 
   final List<String> _charPool = [
@@ -89,27 +102,70 @@ class _LobbyDialogState extends State<LobbyDialog> {
   }
 
   void _simulateMatchmaking() {
-    if (_joinedPlayers.where((p) => p != null).length >= 6) return;
+    if (_joinedPlayers.where((p) => p != null).length >= 6 || _isReady) return;
 
-    final randomDelay = Random().nextInt(500);
-    _joinTimer = Timer(Duration(milliseconds: randomDelay), () {
+    // Faster join event (0.1s - 0.2s)
+    final joinDelay = 100 + Random().nextInt(100);
+    _joinTimer = Timer(Duration(milliseconds: joinDelay), () {
       if (!mounted || _isReady) return;
-      
+
       setState(() {
-        final firstEmptyIndex = _joinedPlayers.indexOf(null);
-        if (firstEmptyIndex != -1) {
-          final availablePool = _pool.where((name) => !_joinedPlayers.any((p) => p?.name == name)).toList();
-          if (availablePool.isNotEmpty) {
-            _joinedPlayers[firstEmptyIndex] = LobbyPlayer(
-              name: availablePool[Random().nextInt(availablePool.length)],
-              characterImage: _charPool[Random().nextInt(_charPool.length)],
-              isReady: Random().nextBool(), // Randomly ready or not
-            );
-            HapticManager.instance.light();
-          }
+        final emptyIndices = <int>[];
+        for (int i = 0; i < _joinedPlayers.length; i++) {
+          if (_joinedPlayers[i] == null) emptyIndices.add(i);
+        }
+
+        if (emptyIndices.isNotEmpty) {
+          final targetIndex =
+              emptyIndices[Random().nextInt(emptyIndices.length)];
+
+          _joinedPlayers[targetIndex] = LobbyPlayer(
+            name: 'Connecting...',
+            characterImage: '',
+            isConnecting: true,
+          );
+          HapticManager.instance.light();
+
+          // Faster resolve connection (0.1s - 0.3s)
+          final connectionDelay = 100 + Random().nextInt(200);
+          Timer(Duration(milliseconds: connectionDelay), () {
+            if (!mounted || _isReady || _joinedPlayers[targetIndex] == null) {
+              return;
+            }
+
+            setState(() {
+              final availableNames = _pool
+                  .where((name) => !_joinedPlayers.any((p) => p?.name == name))
+                  .toList();
+              if (availableNames.isNotEmpty) {
+                _joinedPlayers[targetIndex] = LobbyPlayer(
+                  name: availableNames[Random().nextInt(availableNames.length)],
+                  characterImage: _charPool[Random().nextInt(_charPool.length)],
+                  isConnecting: false,
+                  isReady: false,
+                );
+                HapticManager.instance.light();
+              }
+            });
+
+            // Faster ready up (0.2s - 0.4s)
+            final readyDelay = 200 + Random().nextInt(200);
+            Timer(Duration(milliseconds: readyDelay), () {
+              if (!mounted || _isReady || _joinedPlayers[targetIndex] == null) {
+                return;
+              }
+              if (_joinedPlayers[targetIndex]!.isConnecting) return;
+
+              setState(() {
+                _joinedPlayers[targetIndex] = _joinedPlayers[targetIndex]!
+                    .copyWith(isReady: true);
+                HapticManager.instance.medium();
+              });
+            });
+          });
         }
       });
-      
+
       _simulateMatchmaking();
     });
   }
@@ -123,33 +179,59 @@ class _LobbyDialogState extends State<LobbyDialog> {
   }
 
   void _instantFillAndStart() {
+    _joinTimer?.cancel();
+
     setState(() {
       _isReady = true;
       _countdown = 3;
-      // Host is now ready
+      // Host readies up first
       if (_joinedPlayers[0] != null) {
-        _joinedPlayers[0] = _joinedPlayers[0]!.copyWith(isReady: true);
-      }
-      // Instant fill all empty slots and make everyone ready
-      for (int i = 0; i < _joinedPlayers.length; i++) {
-        if (_joinedPlayers[i] == null) {
-          final availablePool = _pool.where((name) => !_joinedPlayers.any((p) => p?.name == name)).toList();
-          if (availablePool.isNotEmpty) {
-            _joinedPlayers[i] = LobbyPlayer(
-              name: availablePool[Random().nextInt(availablePool.length)],
-              characterImage: _charPool[Random().nextInt(_charPool.length)],
-              isReady: true,
-            );
-          }
-        } else {
-          // Make existing players ready
-          _joinedPlayers[i] = _joinedPlayers[i]!.copyWith(isReady: true);
-        }
+        _joinedPlayers[0] = _joinedPlayers[0]!.copyWith(
+          isReady: true,
+          isConnecting: false,
+        );
       }
     });
 
-    _joinTimer?.cancel();
-    _startCountdown();
+    // Start a periodic timer to rapidly fill and ready everyone else
+    int index = 1;
+    Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (!mounted || !_isReady) {
+        timer.cancel();
+        return;
+      }
+
+      if (index >= 6) {
+        timer.cancel();
+        _startCountdown();
+        return;
+      }
+
+      setState(() {
+        if (_joinedPlayers[index] == null ||
+            _joinedPlayers[index]!.isConnecting) {
+          final availablePool = _pool
+              .where((name) => !_joinedPlayers.any((p) => p?.name == name))
+              .toList();
+          if (availablePool.isNotEmpty) {
+            _joinedPlayers[index] = LobbyPlayer(
+              name: availablePool[Random().nextInt(availablePool.length)],
+              characterImage: _charPool[Random().nextInt(_charPool.length)],
+              isReady: true,
+              isConnecting: false,
+            );
+          }
+        } else {
+          _joinedPlayers[index] = _joinedPlayers[index]!.copyWith(
+            isReady: true,
+            isConnecting: false,
+          );
+        }
+        HapticManager.instance.light();
+      });
+
+      index++;
+    });
   }
 
   void _cancelCountdown() {
@@ -168,16 +250,23 @@ class _LobbyDialogState extends State<LobbyDialog> {
 
   void _startCountdown() {
     HapticManager.instance.medium();
-    
+
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
-      
+
       setState(() {
         if (_countdown > 1) {
           _countdown--;
           HapticManager.instance.light();
         } else {
           _countdownTimer?.cancel();
+          // Pass AI skins to MatchManager before starting
+          final aiSkins = _joinedPlayers
+              .where((p) => p != null && !p.isHost)
+              .map((p) => p!.characterImage)
+              .toList();
+          MatchManager.instance.setAISkins(aiSkins);
+
           Navigator.pop(context);
           widget.onStartGame();
         }
@@ -187,7 +276,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
 
   void _openCharacterSelection() {
     if (_isReady) return;
-    
+
     showGeneralDialog(
       context: context,
       barrierLabel: "CharacterSelection",
@@ -197,7 +286,10 @@ class _LobbyDialogState extends State<LobbyDialog> {
       pageBuilder: (context, animation, secondaryAnimation) {
         return ScaleTransition(
           scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
-          child: FadeTransition(opacity: animation, child: const CharacterSelectionDialog()),
+          child: FadeTransition(
+            opacity: animation,
+            child: const CharacterSelectionDialog(),
+          ),
         );
       },
     ).then((_) {
@@ -237,7 +329,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -265,12 +357,16 @@ class _LobbyDialogState extends State<LobbyDialog> {
                                 ),
                               ),
                               Positioned(
-                                bottom: 10, left: 0, right: 0,
+                                bottom: 10,
+                                left: 0,
+                                right: 0,
                                 child: Center(
                                   child: Text(
                                     _isReady ? 'STARTING...' : 'TAP TO SWITCH',
                                     style: TextStyle(
-                                      color: Colors.cyanAccent.withValues(alpha: 0.5),
+                                      color: Colors.cyanAccent.withValues(
+                                        alpha: 0.5,
+                                      ),
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 1,
@@ -284,70 +380,145 @@ class _LobbyDialogState extends State<LobbyDialog> {
                       ),
                     ),
                     const SizedBox(width: 20),
-                    
+
                     Expanded(
                       flex: 6,
                       child: GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: 2.5,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 8,
+                              crossAxisSpacing: 8,
+                              childAspectRatio: 2.5,
+                            ),
                         itemCount: 6,
                         itemBuilder: (context, index) {
                           final LobbyPlayer? player = _joinedPlayers[index];
                           final bool isFilled = player != null;
-                          
-                          return Container(
+                          final bool isConnecting =
+                              player?.isConnecting ?? false;
+
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 400),
+                            curve: Curves.easeInOut,
                             decoration: BoxDecoration(
-                              color: isFilled 
-                                  ? Colors.white.withValues(alpha: 0.1) 
+                              color: isFilled
+                                  ? (player.isReady
+                                        ? Colors.greenAccent.withValues(
+                                            alpha: 0.15,
+                                          )
+                                        : Colors.white.withValues(alpha: 0.1))
                                   : Colors.black.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: isFilled 
-                                    ? (player.isReady ? Colors.greenAccent : Colors.cyanAccent).withValues(alpha: 0.3) 
+                                color: isFilled
+                                    ? (player.isReady
+                                              ? Colors.greenAccent
+                                              : Colors.cyanAccent)
+                                          .withValues(alpha: 0.4)
                                     : Colors.white.withValues(alpha: 0.05),
+                                width: isFilled && player.isReady ? 1.5 : 1.0,
                               ),
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
                               child: Row(
                                 children: [
-                                  if (isFilled)
+                                  if (isFilled && !isConnecting)
                                     CharacterPortrait(
                                       imagePath: player.characterImage,
                                       size: 32,
                                     )
+                                  else if (isConnecting)
+                                    const SizedBox(
+                                      width: 32,
+                                      height: 32,
+                                      child: Center(
+                                        child: SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.cyanAccent,
+                                          ),
+                                        ),
+                                      ),
+                                    )
                                   else
-                                    const Icon(Icons.person_outline, size: 24, color: Colors.white12),
+                                    const Icon(
+                                      Icons.person_outline,
+                                      size: 24,
+                                      color: Colors.white12,
+                                    ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          player?.name ?? '---',
-                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                            color: isFilled ? Colors.white : Colors.white24,
-                                            fontWeight: isFilled ? FontWeight.bold : FontWeight.normal,
-                                            letterSpacing: 0.5,
-                                            fontSize: 10,
+                                        AnimatedSwitcher(
+                                          duration: const Duration(
+                                            milliseconds: 300,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                          child: Text(
+                                            isConnecting
+                                                ? 'LOADING...'
+                                                : (player?.name ??
+                                                      'SEARCHING...'),
+                                            key: ValueKey(
+                                              isConnecting
+                                                  ? 'loading'
+                                                  : (player?.name ??
+                                                        'searching'),
+                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: isFilled
+                                                      ? Colors.white
+                                                      : Colors.white24,
+                                                  fontWeight: isFilled
+                                                      ? FontWeight.bold
+                                                      : FontWeight.normal,
+                                                  letterSpacing: 0.5,
+                                                  fontSize: 10,
+                                                ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                         if (isFilled)
-                                          Text(
-                                            player.isReady ? 'READY' : 'JOINING...',
-                                            style: TextStyle(
-                                              color: player.isReady ? Colors.greenAccent : Colors.white38,
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.bold,
+                                          AnimatedSwitcher(
+                                            duration: const Duration(
+                                              milliseconds: 300,
+                                            ),
+                                            child: Text(
+                                              isConnecting
+                                                  ? 'CONNECTING'
+                                                  : (player.isReady
+                                                        ? 'READY'
+                                                        : 'WAITING...'),
+                                              key: ValueKey(
+                                                isConnecting
+                                                    ? 'conn'
+                                                    : (player.isReady
+                                                          ? 'ready'
+                                                          : 'wait'),
+                                              ),
+                                              style: TextStyle(
+                                                color: player.isReady
+                                                    ? Colors.greenAccent
+                                                    : Colors.white38,
+                                                fontSize: 8,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
                                       ],
@@ -362,9 +533,9 @@ class _LobbyDialogState extends State<LobbyDialog> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 GlassButton(
                   label: _isReady ? 'CANCEL ($_countdown...)' : 'READY',
                   width: double.infinity,

@@ -26,13 +26,13 @@ class CharacterPortrait extends StatelessWidget {
             width: size,
             height: size * (48 / 32),
             child: ColorFiltered(
-              colorFilter: isGray 
+              colorFilter: isGray
                   ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
-                  : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.fill,
-              ),
+                  : const ColorFilter.mode(
+                      Colors.transparent,
+                      BlendMode.multiply,
+                    ),
+              child: Image.asset(imagePath, fit: BoxFit.fill),
             ),
           ),
         ),

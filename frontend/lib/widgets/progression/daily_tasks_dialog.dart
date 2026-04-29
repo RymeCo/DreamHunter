@@ -141,12 +141,11 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
         color: Colors.white.withValues(alpha: glass?.baseOpacity ?? 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color:
-              task.claimed
-                  ? Colors.greenAccent.withValues(alpha: 0.3)
-                  : task.isCompleted
-                  ? Colors.amberAccent.withValues(alpha: 0.3)
-                  : Colors.white.withValues(alpha: 0.1),
+          color: task.claimed
+              ? Colors.greenAccent.withValues(alpha: 0.3)
+              : task.isCompleted
+              ? Colors.amberAccent.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.1),
         ),
       ),
       child: Row(
@@ -165,10 +164,8 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color:
-            (task.claimed ? Colors.greenAccent : Colors.blueAccent).withValues(
-              alpha: 0.2,
-            ),
+        color: (task.claimed ? Colors.greenAccent : Colors.blueAccent)
+            .withValues(alpha: 0.2),
         shape: BoxShape.circle,
       ),
       child: Icon(
@@ -197,10 +194,9 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
           if (!task.claimed)
             GameProgressBar(
               percent: task.percent,
-              gradientColors:
-                  task.isCompleted
-                      ? [Colors.amberAccent, Colors.orange]
-                      : [Colors.blueAccent, Colors.lightBlueAccent],
+              gradientColors: task.isCompleted
+                  ? [Colors.amberAccent, Colors.orange]
+                  : [Colors.blueAccent, Colors.lightBlueAccent],
             ),
         ],
       ),

@@ -25,10 +25,10 @@ class RewardDialog extends StatelessWidget {
               'THE HUNT HAS ENDED.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white70,
-                    letterSpacing: 2,
-                    fontSize: 12,
-                  ),
+                color: Colors.white70,
+                letterSpacing: 2,
+                fontSize: 12,
+              ),
             ),
             const SizedBox(height: 32),
             GlassButton(

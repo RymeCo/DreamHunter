@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/entities/player_entity.dart';
 import 'package:dreamhunter/game/ui/dynamic_joystick.dart';
 import 'package:dreamhunter/game/dream_hunter_game.dart';
+import 'package:dreamhunter/game/game_config.dart';
 
 /// Handles movement logic for the PlayerEntity using a Joystick.
 /// Includes collision detection with map obstacles and allows sliding.
-class PlayerMovementBehavior extends Component with ParentIsA<PlayerEntity>, HasGameReference<DreamHunterGame> {
+class PlayerMovementBehavior extends Component
+    with ParentIsA<PlayerEntity>, HasGameReference<DreamHunterGame> {
   final DynamicJoystick joystick;
-  final double speed = 150.0;
+  final double baseSpeed = 150.0;
 
   PlayerMovementBehavior({required this.joystick});
 
@@ -16,9 +18,18 @@ class PlayerMovementBehavior extends Component with ParentIsA<PlayerEntity>, Has
   void update(double dt) {
     super.update(dt);
 
+    if (parent.isSleeping) return;
+
     if (joystick.isActive && !joystick.relativeDelta.isZero()) {
-      final velocity = joystick.relativeDelta * speed;
-      
+      double currentSpeed = baseSpeed;
+
+      // Apply grace period slow (20% slow = 0.8x multiplier)
+      if (game.graceTimer.value > 0) {
+        currentSpeed *= GameConfig.graceSpeedMultiplier;
+      }
+
+      final velocity = joystick.relativeDelta * currentSpeed;
+
       // Calculate potential new positions
       final nextX = parent.position.x + (velocity.x * dt);
       final nextY = parent.position.y + (velocity.y * dt);
@@ -53,7 +64,7 @@ class PlayerMovementBehavior extends Component with ParentIsA<PlayerEntity>, Has
       if (!game.isPositionBlocked(hitboxY)) {
         parent.position.y = nextY;
       }
-      
+
       // Flip sprite based on movement direction
       if (joystick.relativeDelta.x < 0) {
         parent.scale.x = -1; // Face left

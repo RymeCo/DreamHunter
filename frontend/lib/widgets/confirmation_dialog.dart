@@ -52,7 +52,11 @@ class ConfirmationDialog extends StatelessWidget {
             message: message,
             confirmLabel: confirmLabel,
             cancelLabel: cancelLabel,
-            icon: icon ?? (isDestructive ? Icons.delete_forever_rounded : Icons.warning_amber_rounded),
+            icon:
+                icon ??
+                (isDestructive
+                    ? Icons.delete_forever_rounded
+                    : Icons.warning_amber_rounded),
             color: color,
             isDestructive: isDestructive,
           ),
@@ -70,8 +74,10 @@ class ConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final glass = Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
-    final accentColor = color ?? (isDestructive ? Colors.redAccent : Colors.amberAccent);
+    final glass =
+        Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
+    final accentColor =
+        color ?? (isDestructive ? Colors.redAccent : Colors.amberAccent);
 
     return LiquidGlassDialog(
       width: 340,
@@ -89,7 +95,7 @@ class ConfirmationDialog extends StatelessWidget {
             child: Icon(icon, color: accentColor, size: 40),
           ),
           const SizedBox(height: 20),
-          
+
           // Content
           Text(
             title.toUpperCase(),

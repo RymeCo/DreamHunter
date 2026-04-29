@@ -98,13 +98,17 @@ class _GlassButtonState extends State<GlassButton>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final glass =
+        Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
+    final min = widget.pulseMinOpacity ?? glass.pulseMinOpacity;
+
     if (widget.pulseEffect) {
-      final glass = Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
-      final min = widget.pulseMinOpacity ?? glass.pulseMinOpacity;
-      
       _pulseAnimation = Tween<double>(begin: min, end: 1.0).animate(
         CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
       );
+    } else {
+      // Logic Gap Fix: Default to min opacity when pulse is disabled, not 1.0
+      _pulseAnimation = AlwaysStoppedAnimation(min);
     }
   }
 
@@ -116,6 +120,13 @@ class _GlassButtonState extends State<GlassButton>
 
   void _handleTap() {
     if (!widget.isClickable) return;
+
+    // Logic Gap Fix: Clear states on tap to prevent "Hover Stick" on mobile
+    setState(() {
+      _isHovering = false;
+      _isTapped = false;
+    });
+
     AudioManager.instance.playClick();
     HapticManager.instance.light();
     widget.onTap?.call();
@@ -123,7 +134,8 @@ class _GlassButtonState extends State<GlassButton>
 
   @override
   Widget build(BuildContext context) {
-    final glass = Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
+    final glass =
+        Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
     final bool active = widget.isClickable && (_isHovering || _isTapped);
     final accent = widget.glowColor ?? Colors.white;
 
@@ -132,12 +144,18 @@ class _GlassButtonState extends State<GlassButton>
       button: true,
       enabled: widget.isClickable,
       child: MouseRegion(
-        cursor: widget.isClickable ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        cursor: widget.isClickable
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
         onEnter: (_) => setState(() => _isHovering = true),
         onExit: (_) => setState(() => _isHovering = false),
         child: GestureDetector(
-          onTapDown: widget.isClickable && widget.clickResponsiveness ? (_) => setState(() => _isTapped = true) : null,
-          onTapUp: widget.isClickable && widget.clickResponsiveness ? (_) => setState(() => _isTapped = false) : null,
+          onTapDown: widget.isClickable && widget.clickResponsiveness
+              ? (_) => setState(() => _isTapped = true)
+              : null,
+          onTapUp: widget.isClickable && widget.clickResponsiveness
+              ? (_) => setState(() => _isTapped = false)
+              : null,
           onTapCancel: () => setState(() => _isTapped = false),
           onTap: _handleTap,
           child: AnimatedScale(
@@ -147,23 +165,35 @@ class _GlassButtonState extends State<GlassButton>
             child: AnimatedBuilder(
               animation: _pulseAnimation,
               builder: (context, child) {
-                final pulse = (widget.pulseEffect && widget.isClickable) ? _pulseAnimation.value : 1.0;
-                
+                final pulse = (widget.pulseEffect && widget.isClickable)
+                    ? _pulseAnimation.value
+                    : 1.0;
+
                 // Theme-centric alpha calculations
-                final double bgAlpha = active ? 0.25 : (glass.baseOpacity * pulse);
-                final double borderAlpha = active ? 0.6 : (glass.borderAlpha * pulse);
+                final double bgAlpha = active
+                    ? 0.25
+                    : (glass.baseOpacity * pulse);
+                final double borderAlpha = active
+                    ? 0.6
+                    : (glass.borderAlpha * pulse);
 
                 return Container(
                   width: widget.width,
                   height: widget.height,
                   padding: widget.padding,
                   decoration: BoxDecoration(
-                    color: (active ? (widget.hoverColor ?? widget.color ?? accent) : (widget.color ?? Colors.white))
-                        .withValues(alpha: bgAlpha),
+                    color:
+                        (active
+                                ? (widget.hoverColor ?? widget.color ?? accent)
+                                : (widget.color ?? Colors.white))
+                            .withValues(alpha: bgAlpha),
                     borderRadius: BorderRadius.circular(widget.borderRadius),
                     border: Border.all(
-                      color: (active ? (widget.hoverBorderColor ?? accent) : (widget.borderColor ?? Colors.white))
-                          .withValues(alpha: borderAlpha),
+                      color:
+                          (active
+                                  ? (widget.hoverBorderColor ?? accent)
+                                  : (widget.borderColor ?? Colors.white))
+                              .withValues(alpha: borderAlpha),
                       width: 1.5,
                     ),
                     boxShadow: active
@@ -196,7 +226,9 @@ class _GlassButtonState extends State<GlassButton>
         child: Text(
           widget.label!.toUpperCase(),
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: active ? (widget.hoverTextColor ?? Colors.white) : Colors.white,
+            color: active
+                ? (widget.hoverTextColor ?? Colors.white)
+                : Colors.white,
             fontSize: 14,
             letterSpacing: 1.2,
           ),

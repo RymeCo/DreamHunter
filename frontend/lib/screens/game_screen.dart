@@ -26,30 +26,28 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint('GameScreen: initState - Game starting');
-    
+
     // Reset economy and pause state for a new match
     _matchManager.resetMatch();
-    
+
     _game = DreamHunterGame(
       onMatchEnded: () {
-        debugPrint('GameScreen: Match timer expired - showing Reward Screen');
         _showRewardDialog();
       },
     );
     // Sync Flame engine with Singleton state
     _game.paused = _matchManager.isPaused;
     _matchManager.addListener(_onMatchStateChanged);
-    
+
     // Apply 10% volume boost for game immersion
     AudioManager.instance.setGameMode(true);
   }
 
   @override
   void dispose() {
-    debugPrint('GameScreen: dispose - Cleaning up');
     _matchManager.removeListener(_onMatchStateChanged);
     // Ensure game state is clean for next run
+    _matchManager.stopTickSystem();
     _matchManager.resumeGame();
     // Memory Management: Clear Flame image cache
     GameLoader.unloadGameAssets();
@@ -60,9 +58,13 @@ class _GameScreenState extends State<GameScreen> {
 
   void _onMatchStateChanged() {
     if (mounted) {
-      setState(() {
-        _game.paused = _matchManager.isPaused;
-      });
+      // Only rebuild GameScreen if the paused state actually changed.
+      // Economy updates are handled by ListenableBuilders in the HUD.
+      if (_game.paused != _matchManager.isPaused) {
+        setState(() {
+          _game.paused = _matchManager.isPaused;
+        });
+      }
     }
   }
 
@@ -105,7 +107,10 @@ class _GameScreenState extends State<GameScreen> {
       pageBuilder: (context, animation, secondaryAnimation) {
         return ScaleTransition(
           scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
-          child: FadeTransition(opacity: animation, child: const RewardDialog()),
+          child: FadeTransition(
+            opacity: animation,
+            child: const RewardDialog(),
+          ),
         );
       },
     );
@@ -122,23 +127,13 @@ class _GameScreenState extends State<GameScreen> {
         body: Stack(
           children: [
             // The Game
-            Positioned.fill(
-              child: GameWidget(
-                game: _game,
-              ),
-            ),
-            
+            Positioned.fill(child: GameWidget(game: _game)),
+
             // Atmosphere Overlay
-            Positioned.fill(
-              child: const VignetteOverlay(),
-            ),
+            Positioned.fill(child: const VignetteOverlay()),
 
             // Economy HUD
-            Positioned(
-              top: 45,
-              left: 20,
-              child: GameEconomyHUD(game: _game),
-            ),
+            Positioned(top: 45, left: 20, child: GameEconomyHUD(game: _game)),
 
             // Grace Timer Overlay
             Positioned(
@@ -176,7 +171,9 @@ class _GameScreenState extends State<GameScreen> {
                     borderRadius: 25,
                     onTap: _showPauseDialog,
                     child: Icon(
-                      _matchManager.isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                      _matchManager.isPaused
+                          ? Icons.play_arrow_rounded
+                          : Icons.pause_rounded,
                       color: Colors.white,
                       size: 30,
                     ),

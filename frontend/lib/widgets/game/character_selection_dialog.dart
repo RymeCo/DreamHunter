@@ -16,7 +16,8 @@ class CharacterSelectionDialog extends StatefulWidget {
   const CharacterSelectionDialog({super.key});
 
   @override
-  State<CharacterSelectionDialog> createState() => _CharacterSelectionDialogState();
+  State<CharacterSelectionDialog> createState() =>
+      _CharacterSelectionDialogState();
 }
 
 class _CharacterSelectionDialogState extends State<CharacterSelectionDialog> {
@@ -28,7 +29,11 @@ class _CharacterSelectionDialogState extends State<CharacterSelectionDialog> {
 
     if (currentCoins < character.price) {
       if (mounted) {
-        InsufficientFundsDialog.show(context, needed: character.price, current: currentCoins);
+        InsufficientFundsDialog.show(
+          context,
+          needed: character.price,
+          current: currentCoins,
+        );
       }
       return;
     }
@@ -40,12 +45,20 @@ class _CharacterSelectionDialogState extends State<CharacterSelectionDialog> {
     );
 
     if (confirmed == true && mounted) {
-      final success = await _walletManager.updateBalance(coinsDelta: -character.price);
+      final success = await _walletManager.updateBalance(
+        coinsDelta: -character.price,
+      );
       if (success) {
         _shopManager.purchaseItemLocally(character.id);
         _shopManager.selectCharacter(character.id);
         HapticManager.instance.medium();
-        if (mounted) showCustomSnackBar(context, '${character.name} Unlocked!', type: SnackBarType.success);
+        if (mounted) {
+          showCustomSnackBar(
+            context,
+            '${character.name} Unlocked!',
+            type: SnackBarType.success,
+          );
+        }
       }
     }
   }
@@ -69,28 +82,34 @@ class _CharacterSelectionDialogState extends State<CharacterSelectionDialog> {
                   isCentered: true,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Compact 3-Column Grid
                 Flexible(
                   child: GridView.builder(
                     shrinkWrap: true,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                      childAspectRatio: 0.65, // Slightly taller for text
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                          childAspectRatio: 0.65, // Slightly taller for text
+                        ),
                     itemCount: characters.length,
                     itemBuilder: (context, index) {
                       final character = characters[index];
                       final bool isOwned = _shopManager.isOwned(character.id);
-                      final bool isSelected = _shopManager.selectedCharacterId == character.id;
+                      final bool isSelected =
+                          _shopManager.selectedCharacterId == character.id;
 
-                      return _buildCompactCharacterCard(character, isOwned, isSelected);
+                      return _buildCompactCharacterCard(
+                        character,
+                        isOwned,
+                        isSelected,
+                      );
                     },
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
                 GlassButton(
                   label: 'CLOSE',
@@ -106,7 +125,11 @@ class _CharacterSelectionDialogState extends State<CharacterSelectionDialog> {
     );
   }
 
-  Widget _buildCompactCharacterCard(Item character, bool isOwned, bool isSelected) {
+  Widget _buildCompactCharacterCard(
+    Item character,
+    bool isOwned,
+    bool isSelected,
+  ) {
     return GestureDetector(
       onTap: () {
         if (isOwned) {
@@ -120,13 +143,13 @@ class _CharacterSelectionDialogState extends State<CharacterSelectionDialog> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: isSelected 
-              ? Colors.cyanAccent.withValues(alpha: 0.15) 
+          color: isSelected
+              ? Colors.cyanAccent.withValues(alpha: 0.15)
               : Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected 
-                ? Colors.cyanAccent 
+            color: isSelected
+                ? Colors.cyanAccent
                 : Colors.white.withValues(alpha: 0.1),
             width: isSelected ? 2 : 1,
           ),
@@ -142,7 +165,7 @@ class _CharacterSelectionDialogState extends State<CharacterSelectionDialog> {
             ),
             const SizedBox(height: 6),
             Text(
-              character.name.split(' ')[0], 
+              character.name.split(' ')[0],
               style: TextStyle(
                 color: isOwned ? Colors.white : Colors.white70,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -166,16 +189,28 @@ class _CharacterSelectionDialogState extends State<CharacterSelectionDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.cloud_circle, size: 10, color: Colors.amberAccent),
+                  const Icon(
+                    Icons.cloud_circle,
+                    size: 10,
+                    color: Colors.amberAccent,
+                  ),
                   const SizedBox(width: 2),
                   Text(
                     '${character.price}',
-                    style: const TextStyle(color: Colors.amberAccent, fontSize: 9, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.amberAccent,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
             ] else if (isSelected)
-              const Icon(Icons.check_circle, size: 12, color: Colors.cyanAccent),
+              const Icon(
+                Icons.check_circle,
+                size: 12,
+                color: Colors.cyanAccent,
+              ),
             const SizedBox(height: 8),
           ],
         ),

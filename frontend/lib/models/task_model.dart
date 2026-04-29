@@ -7,7 +7,7 @@ class DailyTask {
   final int target;
   final int reward;
   final TaskType type;
-  
+
   int progress;
   bool claimed;
 
@@ -41,11 +41,16 @@ class DailyTask {
 
   static TaskType _parseType(String? type) {
     switch (type) {
-      case 'chat': return TaskType.chat;
-      case 'spin': return TaskType.spin;
-      case 'playtime': return TaskType.playtime;
-      case 'login': return TaskType.login;
-      default: return TaskType.generic;
+      case 'chat':
+        return TaskType.chat;
+      case 'spin':
+        return TaskType.spin;
+      case 'playtime':
+        return TaskType.playtime;
+      case 'login':
+        return TaskType.login;
+      default:
+        return TaskType.generic;
     }
   }
 }

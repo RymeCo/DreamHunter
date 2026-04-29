@@ -23,7 +23,6 @@ class _GameLoadingScreenState extends State<GameLoadingScreen> {
   }
 
   Future<void> _startPreloading() async {
-    debugPrint('GameLoadingScreen: Starting preloading sequence');
     // 1. REAL ASSET LOADING
     await GameLoader.loadGameAssets((progress) {
       if (mounted) {
@@ -33,14 +32,12 @@ class _GameLoadingScreenState extends State<GameLoadingScreen> {
 
     // 2. Final state and brief smooth delay
     if (!mounted) return;
-    debugPrint('GameLoadingScreen: Assets loaded, final delay');
     setState(() => _progress = 1.0);
     await Future.delayed(const Duration(milliseconds: 400));
 
     if (!mounted) return;
 
     // 3. Transition to Game
-    debugPrint('GameLoadingScreen: Transitioning to GameScreen');
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const GameScreen()),

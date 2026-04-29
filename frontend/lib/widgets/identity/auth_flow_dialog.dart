@@ -41,23 +41,33 @@ class _AuthFlowDialogState extends State<AuthFlowDialog> {
     switch (_currentType) {
       case AuthDialogType.login:
         content = LoginDialog(
-          onRegisterRequested: () => setState(() => _currentType = AuthDialogType.register),
+          onRegisterRequested: () =>
+              setState(() => _currentType = AuthDialogType.register),
           onLoginSuccess: () {
             setState(() {
               _isLoggedIn = true;
               _currentType = AuthDialogType.profile;
             });
             widget.onAuthStateChanged(true);
-            showCustomSnackBar(context, 'Welcome back!', type: SnackBarType.success);
+            showCustomSnackBar(
+              context,
+              'Welcome back!',
+              type: SnackBarType.success,
+            );
           },
         );
         break;
       case AuthDialogType.register:
         content = RegisterDialog(
-          onLoginRequested: () => setState(() => _currentType = AuthDialogType.login),
+          onLoginRequested: () =>
+              setState(() => _currentType = AuthDialogType.login),
           onRegisterSuccess: () {
             setState(() => _currentType = AuthDialogType.login);
-            showCustomSnackBar(context, 'Account created! Please log in.', type: SnackBarType.success);
+            showCustomSnackBar(
+              context,
+              'Account created! Please log in.',
+              type: SnackBarType.success,
+            );
           },
         );
         break;
@@ -77,11 +87,7 @@ class _AuthFlowDialogState extends State<AuthFlowDialog> {
     return Center(
       child: Transform.translate(
         offset: const Offset(0, 100), // Original UI offset
-        child: SizedBox(
-          width: width,
-          height: height,
-          child: content,
-        ),
+        child: SizedBox(width: width, height: height, child: content),
       ),
     );
   }

@@ -47,7 +47,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     unawaited(_backgroundInit());
 
     _isLoggedIn = FirebaseAuth.instance.currentUser != null;
-    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((
+      user,
+    ) {
       if (mounted) setState(() => _isLoggedIn = user != null);
     });
   }
@@ -69,11 +71,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final state = DailyRoulette.instance.state;
       if (state.isSpinning) {
         if (state.lastSpinWasPaid) {
-          await _controller.updateBalance(coinsDelta: DailyRoulette.paidSpinCost);
-          if (mounted) showCustomSnackBar(context, 'RECOVERY: ${DailyRoulette.paidSpinCost} Coins refunded.', type: SnackBarType.info);
+          await _controller.updateBalance(
+            coinsDelta: DailyRoulette.paidSpinCost,
+          );
+          if (mounted) {
+            showCustomSnackBar(
+              context,
+              'RECOVERY: ${DailyRoulette.paidSpinCost} Coins refunded.',
+              type: SnackBarType.info,
+            );
+          }
         } else {
           await DailyRoulette.instance.addFreeSpins(1);
-          if (mounted) showCustomSnackBar(context, 'RECOVERY: 1 Free Spin restored.', type: SnackBarType.info);
+          if (mounted) {
+            showCustomSnackBar(
+              context,
+              'RECOVERY: 1 Free Spin restored.',
+              type: SnackBarType.info,
+            );
+          }
         }
         await DailyRoulette.instance.setSpinning(false);
       }
@@ -106,7 +122,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _showGameDialog(
       AuthFlowDialog(
         initialIsLoggedIn: _isLoggedIn,
-        onAuthStateChanged: (loggedIn) => setState(() => _isLoggedIn = loggedIn),
+        onAuthStateChanged: (loggedIn) =>
+            setState(() => _isLoggedIn = loggedIn),
       ),
     );
   }
@@ -140,10 +157,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     },
                     onSettingsTap: () {
                       Navigator.pop(context);
-                      _showGameDialog(SettingsDialog(onLoginRequested: () {
-                        Navigator.pop(context);
-                        _showAuthDialog();
-                      }));
+                      _showGameDialog(
+                        SettingsDialog(
+                          onLoginRequested: () {
+                            Navigator.pop(context);
+                            _showAuthDialog();
+                          },
+                        ),
+                      );
                     },
                     onExitTap: () {
                       if (Platform.isAndroid || Platform.isIOS) {
@@ -191,13 +212,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: CurrencyDisplay(
           controller: _controller,
           onProfileTap: _showAuthDialog,
-          onExchangeTap: () => _showGameDialog(ExchangeDialogContent(
-            onBackTap: () => Navigator.pop(context),
-            controller: _controller,
-          )),
-          onPurchaseTap: () => _showGameDialog(PurchaseDialogContent(
-            onBackTap: () => Navigator.pop(context),
-          )),
+          onExchangeTap: () => _showGameDialog(
+            ExchangeDialogContent(
+              onBackTap: () => Navigator.pop(context),
+              controller: _controller,
+            ),
+          ),
+          onPurchaseTap: () => _showGameDialog(
+            PurchaseDialogContent(onBackTap: () => Navigator.pop(context)),
+          ),
         ),
       ),
       actions: [
@@ -210,8 +233,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             pulseMinOpacity: 0.7,
             onTap: _showDropdownMenu,
             child: OverflowBox(
-              minWidth: 45, maxWidth: 45, minHeight: 45, maxHeight: 45,
-              child: Image.asset('assets/images/dashboard/sandwich.png', fit: BoxFit.contain),
+              minWidth: 45,
+              maxWidth: 45,
+              minHeight: 45,
+              maxHeight: 45,
+              child: Image.asset(
+                'assets/images/dashboard/sandwich.png',
+                fit: BoxFit.contain,
+              ),
             ),
           ),
         ),
@@ -221,14 +250,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildBackground() {
     return Positioned.fill(
-      child: Image.asset('assets/images/dashboard/main_background.png', fit: BoxFit.cover),
+      child: Image.asset(
+        'assets/images/dashboard/main_background.png',
+        fit: BoxFit.cover,
+      ),
     );
   }
 
   Widget _buildDormGraphic() {
     return Positioned(
       bottom: MediaQuery.of(context).size.height * 0.15,
-      left: 0, right: 0,
+      left: 0,
+      right: 0,
       child: Center(
         child: Image.asset(
           'assets/images/dashboard/core/dorm.png',
@@ -242,29 +275,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildPlayButton() {
     return Positioned(
       bottom: MediaQuery.of(context).size.height * 0.18,
-      left: 0, right: 0,
+      left: 0,
+      right: 0,
       child: Center(
         child: GlassButton(
           label: 'PLAY',
-          width: 140, height: 49, borderRadius: 25,
+          width: 140,
+          height: 49,
+          borderRadius: 25,
           glowColor: Colors.tealAccent,
           hoverColor: Colors.tealAccent.withValues(alpha: 0.15),
           hoverBorderColor: Colors.tealAccent,
           hoverTextColor: Colors.tealAccent,
           pulseMinOpacity: 0.5,
           onTap: () {
-            debugPrint('Dashboard: PLAY button tapped - Opening Lobby');
             _showGameDialog(
               LobbyDialog(
                 onStartGame: () {
                   final characterId = ShopManager.instance.selectedCharacterId;
                   // Map 'char_max' -> 'max', 'char_nun' -> 'nun', etc for the loading screen
                   final type = characterId.replaceFirst('char_', '');
-                  
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => GameLoadingScreen(characterType: type),
+                      builder: (context) =>
+                          GameLoadingScreen(characterType: type),
                     ),
                   );
                 },
@@ -278,18 +314,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildRouletteButton() {
     return Positioned(
-      bottom: 10, left: 10,
+      bottom: 10,
+      left: 10,
       child: GlassButton(
-        width: 148, height: 148, padding: const EdgeInsets.all(5),
-        borderRadius: 28, glowColor: Colors.pinkAccent,
+        width: 148,
+        height: 148,
+        padding: const EdgeInsets.all(5),
+        borderRadius: 28,
+        glowColor: Colors.pinkAccent,
         hoverColor: Colors.pinkAccent.withValues(alpha: 0.15),
         hoverBorderColor: Colors.pinkAccent,
         pulseMinOpacity: 0.3,
-        onTap: () => _showGameDialog(RouletteDialog(controller: _controller, parentContext: context)),
+        onTap: () => _showGameDialog(
+          RouletteDialog(controller: _controller, parentContext: context),
+        ),
         child: OverflowBox(
           alignment: const Alignment(0, -0.07),
-          minWidth: 204, maxWidth: 204, minHeight: 204, maxHeight: 204,
-          child: Image.asset('assets/images/dashboard/roulette_man.png', fit: BoxFit.contain),
+          minWidth: 204,
+          maxWidth: 204,
+          minHeight: 204,
+          maxHeight: 204,
+          child: Image.asset(
+            'assets/images/dashboard/roulette_man.png',
+            fit: BoxFit.contain,
+          ),
         ),
       ),
     );
@@ -297,19 +345,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildShopButton() {
     return Positioned(
-      bottom: 10, right: 10,
+      bottom: 10,
+      right: 10,
       child: GlassButton(
-        width: 157, height: 162,
+        width: 157,
+        height: 162,
         padding: const EdgeInsets.only(left: 5, top: 5, right: 5, bottom: 10),
-        borderRadius: 28, glowColor: Colors.amberAccent,
+        borderRadius: 28,
+        glowColor: Colors.amberAccent,
         hoverColor: Colors.amberAccent.withValues(alpha: 0.15),
         hoverBorderColor: Colors.amberAccent,
         pulseMinOpacity: 0.3,
         onTap: () => _showGameDialog(ShopDialog(controller: _controller)),
         child: OverflowBox(
           alignment: const Alignment(0, -0.07),
-          minWidth: 204, maxWidth: 204, minHeight: 204, maxHeight: 204,
-          child: Image.asset('assets/images/dashboard/shop_stall.png', fit: BoxFit.contain),
+          minWidth: 204,
+          maxWidth: 204,
+          minHeight: 204,
+          maxHeight: 204,
+          child: Image.asset(
+            'assets/images/dashboard/shop_stall.png',
+            fit: BoxFit.contain,
+          ),
         ),
       ),
     );
@@ -320,16 +377,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottom: MediaQuery.of(context).size.height * 0.22,
       left: 15,
       child: GlassButton(
-        width: 76, height: 102, padding: const EdgeInsets.all(5),
-        borderRadius: 17, glowColor: Colors.cyanAccent,
+        width: 76,
+        height: 102,
+        padding: const EdgeInsets.all(5),
+        borderRadius: 17,
+        glowColor: Colors.cyanAccent,
         hoverColor: Colors.cyanAccent.withValues(alpha: 0.15),
         hoverBorderColor: Colors.cyanAccent,
         pulseMinOpacity: 0.3,
         onTap: () => _showGameDialog(const Center(child: ChatDialog())),
         child: OverflowBox(
           alignment: const Alignment(0, -0.07),
-          minWidth: 102, maxWidth: 102, minHeight: 102, maxHeight: 102,
-          child: Image.asset('assets/images/dashboard/signage.png', fit: BoxFit.contain),
+          minWidth: 102,
+          maxWidth: 102,
+          minHeight: 102,
+          maxHeight: 102,
+          child: Image.asset(
+            'assets/images/dashboard/signage.png',
+            fit: BoxFit.contain,
+          ),
         ),
       ),
     );
