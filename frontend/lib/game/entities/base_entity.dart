@@ -54,6 +54,15 @@ abstract class BaseEntity extends PositionComponent
   // Sleeping state
   bool isSleeping = false;
 
+  /// Index of the hunter (0 for player, 1+ for AI).
+  /// Null if this is not a hunter entity.
+  int? hunterIndex;
+
+  // Health System
+  double hp = 1.0;
+  double maxHp = 1.0;
+  bool isDestroyed = false;
+
   int _lastTickCount = 0;
 
   /// The level of the bed this entity is currently occupying.
@@ -217,5 +226,21 @@ abstract class BaseEntity extends PositionComponent
         game.registerBuildingSlot(this);
       }
     }
+  }
+
+  /// Reduces health and handles destruction if health reaches zero.
+  void takeDamage(double amount) {
+    if (isDestroyed) return;
+    hp = (hp - amount).clamp(0, maxHp);
+    if (hp <= 0) {
+      destroy();
+    }
+  }
+
+  /// Handles the destruction of this entity.
+  void destroy() {
+    if (isDestroyed) return;
+    isDestroyed = true;
+    removeFromParent();
   }
 }

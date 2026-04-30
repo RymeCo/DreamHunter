@@ -77,18 +77,20 @@ class GameEconomyHUD extends StatelessWidget {
           final isPlayer = index == 0;
           final imagePath = isPlayer ? playerImagePath : aiSkins[index - 1];
           final isSleeping = MatchManager.instance.isHunterSleeping;
+          final isAlive = MatchManager.instance.hunterAliveStatus[index];
 
           return _buildHunterIcon(
             context,
             imagePath: imagePath,
             onTap: () {
-              // Only allow camera snapping if player is sleeping
-              if (isSleeping) {
+              // Only allow camera snapping if player is sleeping and hunter is alive
+              if (isSleeping && isAlive) {
                 game.centerCameraOnHunter(index);
               }
             },
             isLocalPlayer: isPlayer,
             isGray: false, // Always colorful as requested
+            isAlive: isAlive,
           );
         }),
       ),
@@ -101,6 +103,7 @@ class GameEconomyHUD extends StatelessWidget {
     required VoidCallback onTap,
     bool isLocalPlayer = false,
     bool isGray = false,
+    bool isAlive = true,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -121,12 +124,24 @@ class GameEconomyHUD extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: CharacterPortrait(
-                imagePath: imagePath,
-                size: 28,
-                isGray: isGray,
+              child: Opacity(
+                opacity: isAlive ? 1.0 : 0.4,
+                child: CharacterPortrait(
+                  imagePath: imagePath,
+                  size: 28,
+                  isGray: isGray,
+                ),
               ),
             ),
+            if (!isAlive)
+              const Center(
+                child: Icon(
+                  Icons.close_rounded,
+                  color: Colors.redAccent,
+                  size: 24,
+                  shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                ),
+              ),
             if (isLocalPlayer)
               Align(
                 alignment: Alignment.bottomCenter,

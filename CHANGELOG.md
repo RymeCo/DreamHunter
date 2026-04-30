@@ -456,3 +456,11 @@ All major task completions and architectural shifts are logged here for traceabi
 - 2026-04-30: Enhanced Build Menu readability, added direct building of all generator/ore levels, and improved Ore Mine upgrade UI with income difference (+X).
 - 2026-04-30: Fixed Turret asset display in Build Menu by layering base and head sprites and fixing scaling logic.
 - 2026-04-30: Reverted Generator to Level 1 only in build menu; added global multiplier description for Level 5 Ore Mine.
+- [2026-04-30] MONSTER-AI-IMPLEMENTATION:
+  - Base Systems: Added `hp`, `maxHp`, and `takeDamage` to `BaseEntity`. Implemented `hunterAliveStatus` and `killHunter` in `MatchManager`.
+  - HUD: Added a red "X" indicator on hunter portraits in `GameEconomyHUD` to signify death.
+  - Monster Entity: Created `MonsterEntity` with a scaling level-up system (XP from attacks/destructions).
+  - Monster AI: Implemented `MonsterAIBehavior` with a state machine (Idle, Hunting, Attacking, Retreating).
+  - Pathfinding: Added a BFS-based `getShortestPath` in `DreamHunterGame` for monster navigation.
+  - Skills: Added a "Stun" skill to the monster that disables turrets within range.
+  - Mechanics: Monsters now heal at spawn points with a 25% chance to resume attacking every 10% health regained. Bed destruction now kills the owner.

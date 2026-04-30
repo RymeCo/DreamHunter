@@ -11,6 +11,7 @@ import 'package:dreamhunter/game/entities/door_entity.dart';
 import 'package:dreamhunter/game/entities/building_slot_entity.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
+import 'package:dreamhunter/game/entities/monster_entity.dart';
 import 'package:dreamhunter/game/ui/dynamic_joystick.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
 
@@ -41,6 +42,9 @@ class DreamHunterGame extends FlameGame
 
   /// Pre-calculated distance maps for every bed (Key: roomID)
   final Map<String, List<List<int>>> bedFlowFields = {};
+
+  /// Monster Spawn Points (from Tiled)
+  final List<Vector2> monsterSpawnPoints = [];
 
   /// Global TextPaint for building slots to prevent GC lag.
   /// Re-instantiated once per frame with new opacity.
@@ -98,6 +102,8 @@ class DreamHunterGame extends FlameGame
           final door = DoorEntity(position: pos, roomID: roomID);
           parsedDoors.add(door);
           world.add(door);
+        } else if (obj.name == 'DreamMonster' || obj.type == 'DreamMonster') {
+          monsterSpawnPoints.add(pos + (Vector2(obj.width, obj.height) / 2));
         }
       }
     }
@@ -114,6 +120,17 @@ class DreamHunterGame extends FlameGame
           );
           parsedSlots.add(slot);
           world.add(slot);
+        }
+      }
+    }
+
+    // New: Also check dedicated Spawn layer for monsters
+    final spawnLayer = map.tileMap.getLayer<ObjectGroup>('Spawn');
+    if (spawnLayer != null) {
+      for (final obj in spawnLayer.objects) {
+        if (obj.name == 'DreamMonster' || obj.type == 'DreamMonster') {
+          final pos = Vector2(obj.x, obj.y);
+          monsterSpawnPoints.add(pos + (Vector2(obj.width, obj.height) / 2));
         }
       }
     }
@@ -135,6 +152,7 @@ class DreamHunterGame extends FlameGame
     camera.follow(player);
 
     // 6. Combined Timer Logic (Flame Native)
+    bool monsterSpawned = false;
     add(
       TimerComponent(
         period: 1,
@@ -143,6 +161,10 @@ class DreamHunterGame extends FlameGame
           // Grace Period Countdown
           if (graceTimer.value >= 0) {
             graceTimer.value--;
+            if (graceTimer.value == 0 && !monsterSpawned) {
+              monsterSpawned = true;
+              _spawnMonster();
+            }
           }
 
           // 15-Minute Match Countdown
@@ -260,6 +282,7 @@ class DreamHunterGame extends FlameGame
           spawnTile.y * 32.0 + 16.0 + (i * 2),
         ),
       );
+      ai.hunterIndex = i + 1;
 
       assignedBed.reservedBy = ai;
       aiHunters.add(ai);
@@ -378,6 +401,14 @@ class DreamHunterGame extends FlameGame
     }
   }
 
+  /// Spawns the Dream Monster at a random spawn point.
+  void _spawnMonster() {
+    if (monsterSpawnPoints.isEmpty) return;
+    final spawnPoint =
+        monsterSpawnPoints[math.Random().nextInt(monsterSpawnPoints.length)];
+    world.add(MonsterEntity(position: spawnPoint));
+  }
+
   @override
   void onDragEnd(DragEndEvent event) {
     super.onDragEnd(event);
@@ -446,5 +477,58 @@ class DreamHunterGame extends FlameGame
       }
     }
     return field;
+  }
+
+  /// Finds the shortest path between two positions using BFS on the wallGrid.
+  /// Ignores dynamic buildings (doors, turrets) so the monster can navigate to them.
+  List<Vector2> getShortestPath(Vector2 start, Vector2 end) {
+    final startX = (start.x / 32).floor().clamp(0, gridW - 1);
+    final startY = (start.y / 32).floor().clamp(0, gridH - 1);
+    final endX = (end.x / 32).floor().clamp(0, gridW - 1);
+    final endY = (end.y / 32).floor().clamp(0, gridH - 1);
+
+    if (startX == endX && startY == endY) return [];
+
+    final queue = <math.Point<int>>[math.Point(startX, startY)];
+    final parentMap = <math.Point<int>, math.Point<int>>{};
+    final visited = <math.Point<int>>{math.Point(startX, startY)};
+
+    bool found = false;
+    while (queue.isNotEmpty) {
+      final current = queue.removeAt(0);
+      if (current.x == endX && current.y == endY) {
+        found = true;
+        break;
+      }
+
+      for (final dir in [
+        const math.Point(1, 0),
+        const math.Point(-1, 0),
+        const math.Point(0, 1),
+        const math.Point(0, -1),
+      ]) {
+        final next = math.Point(current.x + dir.x, current.y + dir.y);
+        if (next.x >= 0 &&
+            next.x < gridW &&
+            next.y >= 0 &&
+            next.y < gridH &&
+            !wallGrid[next.x][next.y] &&
+            !visited.contains(next)) {
+          visited.add(next);
+          parentMap[next] = current;
+          queue.add(next);
+        }
+      }
+    }
+
+    if (!found) return [];
+
+    final path = <Vector2>[];
+    math.Point<int>? curr = math.Point(endX, endY);
+    while (curr != null) {
+      path.add(Vector2(curr.x * 32.0 + 16, curr.y * 32.0 + 16));
+      curr = parentMap[curr];
+    }
+    return path.reversed.toList();
   }
 }

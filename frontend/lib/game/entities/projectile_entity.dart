@@ -48,7 +48,7 @@ class ProjectileEntity extends SpriteComponent
     super.onCollisionStart(intersectionPoints, other);
 
     if (other is BaseEntity && other.hasCategory('monster')) {
-      // TODO: Implement damage logic on monster
+      other.takeDamage(damage);
       removeFromParent();
     }
   }

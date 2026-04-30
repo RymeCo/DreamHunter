@@ -38,6 +38,8 @@ class BedEntity extends BaseEntity with TapCallbacks {
     : super(size: Vector2.all(32), anchor: Anchor.topLeft) {
     addCategory('bed');
     addCategory('building');
+    maxHp = 100.0;
+    hp = maxHp;
   }
 
   @override
@@ -134,6 +136,19 @@ class BedEntity extends BaseEntity with TapCallbacks {
     }
 
     return false;
+  }
+
+  @override
+  void destroy() {
+    if (isDestroyed) return;
+    
+    // Kill the owner if one exists
+    if (owner != null && owner!.hunterIndex != null) {
+      MatchManager.instance.killHunter(owner!.hunterIndex!);
+      owner!.destroy(); // Remove the hunter visual too
+    }
+    
+    super.destroy();
   }
 
   @override

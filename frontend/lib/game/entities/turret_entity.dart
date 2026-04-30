@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/entities/projectile_entity.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
@@ -19,6 +20,9 @@ class TurretEntity extends BaseEntity with TapCallbacks {
   double _fireTimer = 0;
   double _scanTimer = 0;
   BaseEntity? _currentTarget;
+
+  bool isStunned = false;
+  double _stunTimer = 0;
 
   late Sprite _baseSprite;
   late Sprite _headSprite;
@@ -164,6 +168,15 @@ class TurretEntity extends BaseEntity with TapCallbacks {
   void update(double dt) {
     super.update(dt);
 
+    if (isStunned) {
+      _stunTimer -= dt;
+      if (_stunTimer <= 0) {
+        isStunned = false;
+        head.paint.color = Colors.white;
+      }
+      return;
+    }
+
     _fireTimer += dt;
     _scanTimer += dt;
 
@@ -187,6 +200,13 @@ class TurretEntity extends BaseEntity with TapCallbacks {
         _fire();
       }
     }
+  }
+
+  /// Stuns the turret for a specific duration.
+  void stun(double duration) {
+    isStunned = true;
+    _stunTimer = duration;
+    head.paint.color = Colors.blueGrey.withValues(alpha: 0.7);
   }
 
   BaseEntity? _findNearestMonster() {

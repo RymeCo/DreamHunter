@@ -15,7 +15,6 @@ class DoorEntity extends BaseEntity with TapCallbacks {
   @override
   final String roomID;
   bool isOpen = true;
-  bool isDestroyed = false;
 
   // Level and Health Properties
   int totalUpgrades = 0; // Current Level (0 to 14)
@@ -26,8 +25,6 @@ class DoorEntity extends BaseEntity with TapCallbacks {
 
   String get levelName => currentUpgrade.name;
 
-  double maxHp = 35; // Default Wood I HP
-  late double currentHp;
   double shieldHp = 0; // Added shield support for Fridge
 
   late final SpriteComponent _spriteComponent;
@@ -48,7 +45,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     : super(size: Vector2.all(32), anchor: Anchor.topLeft) {
     addCategory('door');
     maxHp = currentUpgrade.hp;
-    currentHp = maxHp;
+    hp = maxHp;
   }
 
   @override
@@ -162,6 +159,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     }
   }
 
+  @override
   void takeDamage(double amount) {
     if (isDestroyed) return;
 
@@ -177,16 +175,16 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     }
 
     if (amount > 0) {
-      currentHp = (currentHp - amount).clamp(0, maxHp);
+      hp = (hp - amount).clamp(0, maxHp);
     }
 
     _updateHealthBar();
-    if (currentHp <= 0) destroy();
+    if (hp <= 0) destroy();
   }
 
   void _updateHealthBar() {
     if (isDestroyed) return;
-    final bool isDamaged = currentHp < maxHp || shieldHp > 0;
+    final bool isDamaged = hp < maxHp || shieldHp > 0;
 
     if (isDamaged && !isOpen) {
       _hbBackground.renderBar = true;
@@ -194,7 +192,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       _hbShield.renderBar = shieldHp > 0;
 
       // Fill Green bar based on HP
-      _hbFill.size.x = (currentHp / maxHp) * 24.0;
+      _hbFill.size.x = (hp / maxHp) * 24.0;
 
       // Fill Cyan bar based on Shield
       if (shieldHp > 0) {
@@ -213,7 +211,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
         _spriteComponent.paint.color = Colors.white;
       }
 
-      final hpPercent = currentHp / maxHp;
+      final hpPercent = hp / maxHp;
       if (hpPercent < 0.25) {
         _hbFill.paint.color = Colors.redAccent;
       } else if (hpPercent < 0.5) {
@@ -237,13 +235,14 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     _updateHealthBar();
   }
 
+  @override
   void destroy() {
     if (isDestroyed) return;
-    isDestroyed = true;
     _spriteComponent.removeFromParent();
     _hbBackground.removeFromParent();
     categories.remove('building');
     HapticManager.instance.heavy();
+    super.destroy();
   }
 
   void close() {
@@ -292,7 +291,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     if (success) {
       totalUpgrades++;
       maxHp = currentUpgrade.hp;
-      currentHp = maxHp;
+      hp = maxHp;
 
       _updateSprites(); // Sprite load is async but safe to fire and forget here
       _updateLevelText();

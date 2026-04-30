@@ -18,6 +18,7 @@ class PlayerEntity extends BaseEntity {
         anchor: Anchor.bottomCenter,
       ) {
     addCategory('player');
+    hunterIndex = 0;
   }
 
   @override

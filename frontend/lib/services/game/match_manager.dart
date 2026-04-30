@@ -37,6 +37,10 @@ class MatchManager extends ChangeNotifier {
   final List<String> _aiSkins = [];
   List<String> get aiSkins => _aiSkins;
 
+  // Life Status (Index 0 = Player, 1+ = AI)
+  final List<bool> _hunterAliveStatus = [true];
+  List<bool> get hunterAliveStatus => List.unmodifiable(_hunterAliveStatus);
+
   /// Resets match state for a fresh start.
   void resetMatch() {
     _isPaused = false;
@@ -49,6 +53,9 @@ class MatchManager extends ChangeNotifier {
     _incomePerTick = 1;
     _energyIncomePerTick = 0;
 
+    _hunterAliveStatus.clear();
+    _hunterAliveStatus.add(true); // Reset player to alive
+
     notifyListeners();
   }
 
@@ -56,6 +63,21 @@ class MatchManager extends ChangeNotifier {
   void setAISkins(List<String> skins) {
     _aiSkins.clear();
     _aiSkins.addAll(skins);
+
+    // Initialize alive status for AI
+    _hunterAliveStatus.clear();
+    _hunterAliveStatus.add(true); // Player
+    for (int i = 0; i < skins.length; i++) {
+      _hunterAliveStatus.add(true);
+    }
+  }
+
+  /// Marks a hunter as killed.
+  void killHunter(int index) {
+    if (index >= 0 && index < _hunterAliveStatus.length) {
+      _hunterAliveStatus[index] = false;
+      _safeNotify(notifyListeners);
+    }
   }
 
   /// Progresses the match logic based on delta time.
