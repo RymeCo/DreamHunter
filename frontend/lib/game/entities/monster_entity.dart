@@ -1,5 +1,7 @@
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/behaviors/monster_ai_behavior.dart';
 
@@ -38,8 +40,9 @@ class MonsterEntity extends BaseEntity {
 
   void gainExperience(int amount) {
     experience += amount;
-    if (experience >= 20) {
-      experience -= 20;
+    final int nextLevelXP = (100 * math.pow(1.1, monsterLevel - 1)).floor();
+    if (experience >= nextLevelXP) {
+      experience -= nextLevelXP;
       _levelUp();
     }
   }
@@ -48,9 +51,15 @@ class MonsterEntity extends BaseEntity {
     monsterLevel++;
     maxHp *= 1.2;
     hp = maxHp; // Full heal on level up
-    attackDamage *= 1.1;
+    attackDamage = 5.0 * math.pow(1.15, monsterLevel - 1);
     
-    // Visual feedback for level up could be added here
+    // Visual feedback for level up: Grow and pulse
+    add(
+      ScaleEffect.to(
+        Vector2.all(1.5),
+        EffectController(duration: 0.2, reverseDuration: 0.2),
+      ),
+    );
   }
 
   @override

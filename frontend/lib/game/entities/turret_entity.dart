@@ -35,6 +35,8 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     : super(size: Vector2.all(32), anchor: Anchor.center) {
     addCategory('building');
     addCategory('turret');
+    maxHp = 1.0;
+    hp = maxHp;
   }
 
   @override

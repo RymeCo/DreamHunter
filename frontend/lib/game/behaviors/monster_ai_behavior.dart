@@ -237,7 +237,21 @@ class MonsterAIBehavior extends Component
       ),
     );
 
-    target!.takeDamage(parent.attackDamage);
-    parent.gainExperience(target!.isDestroyed ? 10 : 1);
+    final double damage = parent.attackDamage;
+    final bool wasDestroyed = target!.isDestroyed;
+
+    target!.takeDamage(damage);
+
+    // XP Logic: Only Doors give XP
+    if (target is DoorEntity) {
+      final door = target as DoorEntity;
+      // 1 XP for every 1% of max HP removed
+      final double xpGained = (damage / door.maxHp) * 100;
+      
+      // Bonus XP for destruction
+      final double bonusXP = (!wasDestroyed && door.isDestroyed) ? 20.0 : 0.0;
+      
+      parent.gainExperience((xpGained + bonusXP).floor());
+    }
   }
 }

@@ -63,7 +63,8 @@ abstract class BaseEntity extends PositionComponent
   double maxHp = 1.0;
   bool isDestroyed = false;
 
-  int _lastTickCount = 0;
+  int _lastCoinTick = 0;
+  int _lastEnergyTick = 0;
 
   /// The level of the bed this entity is currently occupying.
   int? currentBedLevel;
@@ -93,11 +94,12 @@ abstract class BaseEntity extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
-    final currentTicks = MatchManager.instance.tickCount;
-    if (currentTicks > _lastTickCount) {
-      _lastTickCount = currentTicks;
+    final manager = MatchManager.instance;
 
-      // 1. Generate Income (Runs constantly, even during grace period)
+    // 1. Coin Generation (1 Tick / 1 Second)
+    if (manager.coinTickCount > _lastCoinTick) {
+      _lastCoinTick = manager.coinTickCount;
+
       final income = incomePerTick;
       if (income > 0) {
         matchCoins += income;
@@ -115,14 +117,8 @@ abstract class BaseEntity extends PositionComponent
         }
       }
 
-      // 2. Generate Energy (Runs constantly)
-      final energy = energyIncomePerTick;
-      if (energy > 0) {
-        matchEnergy += energy;
-      }
-
-      // 3. Visual Feedback for Zzz (Every 3 ticks, only when sleeping)
-      if (isSleeping && currentTicks % 3 == 0) {
+      // Visual Feedback for Zzz (Every 3 coin ticks, only when sleeping)
+      if (isSleeping && _lastCoinTick % 3 == 0) {
         game.world.add(
           FloatingFeedback(
             label: math.Random().nextBool() ? 'z' : 'Z',
@@ -130,6 +126,16 @@ abstract class BaseEntity extends PositionComponent
             position: position + Vector2(size.x * 0.3, 0), // Other side offset
           ),
         );
+      }
+    }
+
+    // 2. Energy Generation (1 Tick / 2 Seconds)
+    if (manager.energyTickCount > _lastEnergyTick) {
+      _lastEnergyTick = manager.energyTickCount;
+
+      final energy = energyIncomePerTick;
+      if (energy > 0) {
+        matchEnergy += energy;
       }
     }
   }

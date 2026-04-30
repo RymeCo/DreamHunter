@@ -24,12 +24,19 @@ class MatchManager extends ChangeNotifier {
   int get matchEnergy => _matchEnergy;
 
   // Tick System
-  double _tickAccumulator = 0.0;
-  int _tickCount = 0;
+  double _coinTickAccumulator = 0.0;
+  double _energyTickAccumulator = 0.0;
+  int _coinTickCount = 0;
+  int _energyTickCount = 0;
   int _incomePerTick = 1;
   int _energyIncomePerTick = 0;
 
-  int get tickCount => _tickCount;
+  int get coinTickCount => _coinTickCount;
+  int get energyTickCount => _energyTickCount;
+
+  // Legacy getter for backward compatibility
+  int get tickCount => _coinTickCount;
+
   int get incomePerTick => _incomePerTick;
   int get energyIncomePerTick => _energyIncomePerTick;
 
@@ -48,8 +55,10 @@ class MatchManager extends ChangeNotifier {
     _currentRoomID = '';
     _matchCoins = 0;
     _matchEnergy = 0;
-    _tickCount = 0;
-    _tickAccumulator = 0.0;
+    _coinTickCount = 0;
+    _energyTickCount = 0;
+    _coinTickAccumulator = 0.0;
+    _energyTickAccumulator = 0.0;
     _incomePerTick = 1;
     _energyIncomePerTick = 0;
 
@@ -85,15 +94,26 @@ class MatchManager extends ChangeNotifier {
   void update(double dt) {
     if (_isPaused) return;
 
-    _tickAccumulator += dt;
+    _coinTickAccumulator += dt;
+    _energyTickAccumulator += dt;
 
-    // Trigger a logic tick every 1.0s (as per user request: 1tick/1second)
-    if (_tickAccumulator >= 1.0) {
-      _tickAccumulator -= 1.0;
-      _tickCount++;
+    bool shouldNotify = false;
 
-      // Note: Income generation is now handled by BaseEntity.update()
-      // to allow both Player and AI hunters to earn individually.
+    // Trigger Coin Logic Tick every 1.0s
+    if (_coinTickAccumulator >= 1.0) {
+      _coinTickAccumulator -= 1.0;
+      _coinTickCount++;
+      shouldNotify = true;
+    }
+
+    // Trigger Energy Logic Tick every 2.0s
+    if (_energyTickAccumulator >= 2.0) {
+      _energyTickAccumulator -= 2.0;
+      _energyTickCount++;
+      shouldNotify = true;
+    }
+
+    if (shouldNotify) {
       _safeNotify(notifyListeners);
     }
   }

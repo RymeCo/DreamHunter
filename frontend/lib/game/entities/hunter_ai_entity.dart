@@ -35,6 +35,8 @@ class HunterAIEntity extends BaseEntity {
          anchor: Anchor.bottomCenter,
        ) {
     addCategory('ai_hunter');
+    maxHp = 1.0;
+    hp = maxHp;
   }
 
   @override

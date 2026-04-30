@@ -21,6 +21,8 @@ class OreEntity extends BaseEntity with TapCallbacks {
     : super(size: Vector2.all(32), anchor: Anchor.topLeft) {
     addCategory('building');
     addCategory('ore');
+    maxHp = 1.0;
+    hp = maxHp;
   }
 
   @override

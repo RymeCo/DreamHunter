@@ -16,10 +16,11 @@ class FridgeEntity extends BaseEntity with TapCallbacks {
   DoorEntity? _targetDoor;
 
   FridgeEntity({required super.position, required this.roomID})
-    : super(size: Vector2.all(32), anchor: Anchor.center) {
+      : super(size: Vector2.all(32), anchor: Anchor.center) {
     addCategory('building');
-    addCategory('defense');
     addCategory('fridge');
+    maxHp = 1.0;
+    hp = maxHp;
   }
 
   @override

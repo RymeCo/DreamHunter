@@ -16,7 +16,7 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
   int level = 1;
   @override
   final String roomID;
-  int _lastTickCount = 0;
+  int _lastEnergyTick = 0;
 
   late final SpriteComponent _spriteComponent;
   late Sprite _spriteLv1;
@@ -38,6 +38,8 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
   }) : super(size: Vector2.all(32), anchor: Anchor.topLeft) {
     addCategory('building');
     addCategory('generator');
+    maxHp = 1.0;
+    hp = maxHp;
   }
 
   @override
@@ -96,9 +98,9 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
     super.update(dt);
 
     // Visual feedback for energy generation
-    final currentTicks = MatchManager.instance.tickCount;
-    if (currentTicks > _lastTickCount) {
-      _lastTickCount = currentTicks;
+    final currentTicks = MatchManager.instance.energyTickCount;
+    if (currentTicks > _lastEnergyTick) {
+      _lastEnergyTick = currentTicks;
       _spawnEnergyParticle();
     }
   }

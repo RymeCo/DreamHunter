@@ -19,6 +19,8 @@ class PlayerEntity extends BaseEntity {
       ) {
     addCategory('player');
     hunterIndex = 0;
+    maxHp = 1.0;
+    hp = maxHp;
   }
 
   @override
