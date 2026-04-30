@@ -12,6 +12,7 @@ import 'package:dreamhunter/game/game_config.dart';
 /// Every 5 upgrades increases the Tier (Wood -> Iron -> Gold).
 /// The Level within a Tier is represented by Suffixes (I, II, III, IV, V).
 class DoorEntity extends BaseEntity with TapCallbacks {
+  @override
   final String roomID;
   bool isOpen = true;
   bool isDestroyed = false;
@@ -27,6 +28,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
 
   double maxHp = 35; // Default Wood I HP
   late double currentHp;
+  double shieldHp = 0; // Added shield support for Fridge
 
   late final SpriteComponent _spriteComponent;
   late Sprite _openSprite;
@@ -34,9 +36,13 @@ class DoorEntity extends BaseEntity with TapCallbacks {
 
   late final TextComponent _levelText;
 
+  // Ice Overlay (Subtle frost effect)
+  late final RectangleComponent _iceOverlay;
+
   // Health Bar Components
   late final _RoundedBarComponent _hbBackground;
   late final _RoundedBarComponent _hbFill;
+  late final _RoundedBarComponent _hbShield; // Added shield bar
 
   DoorEntity({required super.position, required this.roomID})
     : super(size: Vector2.all(32), anchor: Anchor.topLeft) {
@@ -58,7 +64,27 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     );
     add(_spriteComponent);
 
-    // 2. Initialize Health Bar
+    // 2. Initialize Ice Overlay (Subtle)
+    _iceOverlay = RectangleComponent(
+      size: size,
+      paint: Paint()
+        ..color = Colors.cyanAccent.withValues(alpha: 0.15)
+        ..style = PaintingStyle.fill,
+      children: [
+        RectangleComponent(
+          size: size,
+          paint: Paint()
+            ..color = Colors.cyanAccent.withValues(alpha: 0.4)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1,
+        ),
+      ],
+    );
+    // Hide by default
+    _iceOverlay.scale = Vector2.zero();
+    add(_iceOverlay);
+
+    // 3. Initialize Health Bar
     _hbBackground = _RoundedBarComponent(
       position: Vector2(4, 16),
       size: Vector2(24, 5),
@@ -73,10 +99,18 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       paint: Paint()..color = Colors.greenAccent,
     );
 
+    _hbShield = _RoundedBarComponent(
+      position: Vector2(0, 0),
+      size: Vector2(0, 5),
+      radius: 2.5,
+      paint: Paint()..color = Colors.cyanAccent,
+    );
+
     _hbBackground.add(_hbFill);
+    _hbBackground.add(_hbShield);
     add(_hbBackground);
 
-    // 3. Initialize Level Text Indicator
+    // 4. Initialize Level Text Indicator
     _levelText = TextComponent(
       text: romanNumeral,
       textRenderer: TextPaint(
@@ -130,19 +164,55 @@ class DoorEntity extends BaseEntity with TapCallbacks {
 
   void takeDamage(double amount) {
     if (isDestroyed) return;
-    currentHp = (currentHp - amount).clamp(0, maxHp);
+
+    // Apply Shield Logic
+    if (shieldHp > 0) {
+      if (shieldHp >= amount) {
+        shieldHp -= amount;
+        amount = 0;
+      } else {
+        amount -= shieldHp;
+        shieldHp = 0;
+      }
+    }
+
+    if (amount > 0) {
+      currentHp = (currentHp - amount).clamp(0, maxHp);
+    }
+
     _updateHealthBar();
     if (currentHp <= 0) destroy();
   }
 
   void _updateHealthBar() {
     if (isDestroyed) return;
-    final bool isDamaged = currentHp < maxHp;
+    final bool isDamaged = currentHp < maxHp || shieldHp > 0;
 
     if (isDamaged && !isOpen) {
       _hbBackground.renderBar = true;
       _hbFill.renderBar = true;
+      _hbShield.renderBar = shieldHp > 0;
+
+      // Fill Green bar based on HP
       _hbFill.size.x = (currentHp / maxHp) * 24.0;
+
+      // Fill Cyan bar based on Shield
+      if (shieldHp > 0) {
+        _hbShield.size.x = (shieldHp / maxHp).clamp(0, 1) * 24.0;
+        _iceOverlay.scale = Vector2.all(1.0);
+
+        // Subtle color filter instead of solid tint
+        _spriteComponent.paint.colorFilter = const ColorFilter.mode(
+          Colors.cyanAccent,
+          BlendMode.plus,
+        );
+        _spriteComponent.paint.color = Colors.white.withValues(alpha: 0.9);
+      } else {
+        _iceOverlay.scale = Vector2.zero();
+        _spriteComponent.paint.colorFilter = null;
+        _spriteComponent.paint.color = Colors.white;
+      }
+
       final hpPercent = currentHp / maxHp;
       if (hpPercent < 0.25) {
         _hbFill.paint.color = Colors.redAccent;
@@ -154,7 +224,17 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     } else {
       _hbBackground.renderBar = false;
       _hbFill.renderBar = false;
+      _hbShield.renderBar = false;
+      _iceOverlay.scale = Vector2.zero();
+      _spriteComponent.paint.colorFilter = null;
+      _spriteComponent.paint.color = Colors.white;
     }
+  }
+
+  /// Sets the shield HP for this door.
+  void setShield(double amount) {
+    shieldHp = amount;
+    _updateHealthBar();
   }
 
   void destroy() {
@@ -182,6 +262,47 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     categories.remove('building');
     _updateLevelText();
     _updateHealthBar();
+  }
+
+  /// Attempts to upgrade the door using the resources of the provided entity.
+  /// Returns true if the upgrade was successful.
+  bool tryUpgrade(BaseEntity entity) {
+    if (totalUpgrades >= GameConfig.doorUpgrades.length - 1) return false;
+
+    final nextUpgrade = GameConfig.doorUpgrades[totalUpgrades + 1];
+
+    // 2. Resource Check & Deduction
+    bool success = false;
+    if (entity.hasCategory('player')) {
+      // Player uses MatchManager
+      success = MatchManager.instance.spendResources(
+        coins: nextUpgrade.cost.coins,
+        energy: nextUpgrade.cost.energy,
+      );
+    } else {
+      // AI uses their own matchCoins/matchEnergy
+      if (entity.matchCoins >= nextUpgrade.cost.coins &&
+          entity.matchEnergy >= nextUpgrade.cost.energy) {
+        entity.matchCoins -= nextUpgrade.cost.coins;
+        entity.matchEnergy -= nextUpgrade.cost.energy;
+        success = true;
+      }
+    }
+
+    if (success) {
+      totalUpgrades++;
+      maxHp = currentUpgrade.hp;
+      currentHp = maxHp;
+
+      _updateSprites(); // Sprite load is async but safe to fire and forget here
+      _updateLevelText();
+      _updateHealthBar();
+
+      HapticManager.instance.medium();
+      return true;
+    }
+
+    return false;
   }
 
   @override
@@ -217,19 +338,11 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       energyCost: nextUpgrade.cost.energy,
       upgradeBenefit:
           "Lv. ${totalUpgrades + 1} ➔ Lv. ${totalUpgrades + 2}\n${maxHp.toInt()} ➔ ${nextUpgrade.hp.toInt()} HP",
-      onUpgrade: () async {
-        final success = MatchManager.instance.spendResources(
-          coins: nextUpgrade.cost.coins,
-          energy: nextUpgrade.cost.energy,
+      onUpgrade: () {
+        tryUpgrade(
+          MatchManager.instance.isHunterSleeping ? game.player : game.player,
         );
-        if (success) {
-          totalUpgrades++;
-          maxHp = currentUpgrade.hp;
-          currentHp = maxHp;
-          await _updateSprites();
-          _updateLevelText();
-          _updateHealthBar();
-        }
+        // Note: simplified target selection for player, assuming game.player is always relevant
       },
     );
   }

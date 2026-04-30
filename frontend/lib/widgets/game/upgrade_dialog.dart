@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/widgets/glass_button.dart';
@@ -110,24 +111,39 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                   "UPGRADE EFFECT",
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: Colors.white38,
-                    letterSpacing: 1.5,
-                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2.0,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
+                  horizontal: 16,
+                  vertical: 14,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.greenAccent.withValues(alpha: 0.1),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.greenAccent.withValues(alpha: 0.1),
+                      Colors.black26,
+                    ],
                   ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.greenAccent.withValues(alpha: 0.2),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.greenAccent.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      spreadRadius: -2,
+                    ),
+                  ],
                 ),
                 child: _buildUpgradeBenefitText(
                   context,
@@ -271,27 +287,29 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                           )
                         else ...[
                           // Coin Cost Indicator
-                          Icon(
-                            Icons.monetization_on_rounded,
-                            color: canAffordCoins
-                                ? Colors.amberAccent
-                                : Colors.white10,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            "${widget.coinCost}",
-                            style: TextStyle(
+                          if (widget.coinCost > 0) ...[
+                            Icon(
+                              Icons.monetization_on_rounded,
                               color: canAffordCoins
                                   ? Colors.amberAccent
                                   : Colors.white10,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
+                              size: 18,
                             ),
-                          ),
+                            const SizedBox(width: 4),
+                            Text(
+                              "${widget.coinCost}",
+                              style: TextStyle(
+                                color: canAffordCoins
+                                    ? Colors.amberAccent
+                                    : Colors.white10,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
 
                           if (widget.energyCost > 0) ...[
-                            const SizedBox(width: 12),
+                            if (widget.coinCost > 0) const SizedBox(width: 12),
                             // Energy Cost Indicator
                             Icon(
                               Icons.bolt_rounded,
@@ -432,21 +450,30 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
         );
         spans.add(
           const TextSpan(
-            text: '➔',
-            style: TextStyle(color: Colors.greenAccent),
+            text: ' ➔ ',
+            style: TextStyle(
+              color: Colors.greenAccent,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         );
         spans.add(
           TextSpan(
             text: parts[1],
-            style: const TextStyle(color: Colors.greenAccent),
+            style: const TextStyle(
+              color: Colors.greenAccent,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         );
       } else {
         spans.add(
           TextSpan(
             text: line,
-            style: const TextStyle(color: Colors.greenAccent),
+            style: const TextStyle(
+              color: Colors.greenAccent,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         );
       }
@@ -458,13 +485,7 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
 
     return RichText(
       text: TextSpan(
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          height: 1.4,
-          fontFamily:
-              'Inter', // Ensuring consistency if needed, though inherits from DefaultTextStyle
-        ),
+        style: GoogleFonts.quicksand(fontSize: 16, height: 1.5),
         children: spans,
       ),
     );

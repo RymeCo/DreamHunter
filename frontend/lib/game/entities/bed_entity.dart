@@ -14,15 +14,25 @@ import 'package:dreamhunter/services/identity/auth_manager.dart';
 /// Characters cannot walk through the bed due to the 'building' category.
 /// Shows a "Sleep" popup when the player is nearby and allows tapping to sleep.
 class BedEntity extends BaseEntity with TapCallbacks {
+  @override
   final String roomID;
   int level = 1;
   late final TextComponent _popupText;
   double _popupAlpha = 0.0;
   final double _fadeSpeed = 5.0; // Speed of the fade animation
-  bool _hasSlept = false;
+
+  /// The entity that currently occupies this bed.
+  BaseEntity? owner;
+  bool get isOccupied => owner != null;
+
+  /// The entity that is currently heading towards this bed.
+  BaseEntity? reservedBy;
 
   /// The door belonging to this dorm room.
   DoorEntity? roomDoor;
+
+  /// Hardcoded track of grid-center coordinates from spawn to this bed.
+  final List<Vector2> predefinedPath = [];
 
   BedEntity({required super.position, required this.roomID})
     : super(size: Vector2.all(32), anchor: Anchor.topLeft) {
@@ -56,15 +66,83 @@ class BedEntity extends BaseEntity with TapCallbacks {
     add(_popupText);
   }
 
+  /// Called when a hunter (AI or Player) enters the bed.
+  void occupy(BaseEntity hunter) {
+    if (isOccupied) return;
+
+    owner = hunter;
+    hunter.currentBedLevel = level;
+
+    // Close the dorm room door
+    roomDoor?.close();
+
+    // Remove popup text
+    _popupText.removeFromParent();
+
+    // If the owner is the player, handle player-specific logic
+    if (hunter.hasCategory('player')) {
+      MatchManager.instance.setCurrentRoom(roomID);
+      game.joystick.removeFromParent();
+    }
+  }
+
+  /// Attempts to upgrade the bed using the resources of the provided entity.
+  /// Returns true if the upgrade was successful.
+  bool tryUpgrade(BaseEntity entity) {
+    if (level >= GameConfig.bedUpgrades.length) return false;
+
+    final nextUpgrade = GameConfig.bedUpgrades[level];
+
+    // 1. Check Requirements (Door level)
+    if (nextUpgrade.requirementLabel != null) {
+      final bool isMet = nextUpgrade.checkRequirement!(roomDoor);
+      if (!isMet) return false;
+    }
+
+    // 2. Resource Check & Deduction
+    bool success = false;
+    if (entity.hasCategory('player')) {
+      // Player uses MatchManager
+      success = MatchManager.instance.spendResources(
+        coins: nextUpgrade.cost.coins,
+        energy: nextUpgrade.cost.energy,
+      );
+    } else {
+      // AI uses their own matchCoins/matchEnergy
+      if (entity.matchCoins >= nextUpgrade.cost.coins &&
+          entity.matchEnergy >= nextUpgrade.cost.energy) {
+        entity.matchCoins -= nextUpgrade.cost.coins;
+        entity.matchEnergy -= nextUpgrade.cost.energy;
+        success = true;
+      }
+    }
+
+    if (success) {
+      level++;
+
+      // Update visuals/income
+      if (entity.hasCategory('player')) {
+        MatchManager.instance.setIncomePerTick(nextUpgrade.income);
+      }
+
+      // Sync owner's bed level
+      entity.currentBedLevel = level;
+
+      HapticManager.instance.medium();
+      AudioManager.instance.playClick();
+      return true;
+    }
+
+    return false;
+  }
+
   @override
   void onTapUp(TapUpEvent event) {
-    if (_hasSlept) {
-      final currentUpgrade = GameConfig.bedUpgrades[level - 1];
+    // Only allow player to interact with their OWN bed or an EMPTY bed
+    if (owner != null && !owner!.hasCategory('player')) return;
 
-      // NOTE: When Firebase/FastAPI integration is finalized:
-      // 1. Fetch real username from ProfileManager.
-      // 2. Default to "Hunter's Bed" if guest account or not logged in.
-      // 3. Fallback to "Hunter's Bed" if the username exceeds reasonable length (Logic gap protection).
+    if (owner != null && owner!.hasCategory('player')) {
+      final currentUpgrade = GameConfig.bedUpgrades[level - 1];
       final user = AuthManager.instance.currentUser;
       final String ownerName =
           (user?.displayName != null && user!.displayName!.isNotEmpty)
@@ -110,16 +188,7 @@ class BedEntity extends BaseEntity with TapCallbacks {
         upgradeBenefit:
             "Lv. $level ➔ Lv. ${level + 1}\n${currentUpgrade.income} ➔ ${nextUpgrade.income} Coins/Sec",
         onUpgrade: () {
-          final success = MatchManager.instance.spendResources(
-            coins: nextUpgrade.cost.coins,
-            energy: nextUpgrade.cost.energy,
-          );
-          if (success) {
-            level++;
-            MatchManager.instance.setIncomePerTick(nextUpgrade.income);
-            HapticManager.instance.medium();
-            AudioManager.instance.playClick();
-          }
+          tryUpgrade(owner!);
         },
       );
       return;
@@ -131,27 +200,15 @@ class BedEntity extends BaseEntity with TapCallbacks {
     final distance = bedCenter.distanceTo(playerPos);
 
     if (distance < 48) {
-      _hasSlept = true;
       game.player.sleep(position);
-
-      // Claim this room in the MatchManager
-      MatchManager.instance.setCurrentRoom(roomID);
-
-      // Close the dorm room door
-      roomDoor?.close();
-
-      // Hide joystick permanently
-      game.joystick.removeFromParent();
-
-      // Remove popup text
-      _popupText.removeFromParent();
+      occupy(game.player);
     }
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    if (_hasSlept) return;
+    if (isOccupied) return;
 
     // Check distance to player for popup visibility
     final bedCenter = position + (size / 2);

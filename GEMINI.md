@@ -48,6 +48,7 @@ Every non-trivial edit MUST be documented by **appending** a new entry to the `C
 - **Categorization:** Every entity MUST have a `categories` property (tags).
 - **Effects Engine:** Buffs/debuffs MUST use the `Effect` and `EffectReceiverBehavior` system.
 - **Tiled Map Sync:** Map architecture MUST stay synced with `dorm-01.tmx`.
+- **Static Map Performance:** All map objects (walls, obstacles, furniture) are treated as static. To prevent O(N) iteration lag, the game MUST use O(1) cached lookups (e.g., `_obstacles` and `_buildings` lists) for collision detection instead of querying the Flame component tree every frame.
 
 ## 8. Change Log Reference
 The append-only change log has been migrated to a dedicated file for better maintainability and context efficiency.

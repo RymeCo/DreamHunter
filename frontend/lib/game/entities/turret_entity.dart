@@ -9,6 +9,8 @@ import 'package:dreamhunter/services/game/match_manager.dart';
 import 'package:dreamhunter/widgets/game/upgrade_dialog.dart';
 
 class TurretEntity extends BaseEntity with TapCallbacks {
+  @override
+  final String roomID;
   int level = 1;
   double fireRate = 1.0; // Seconds between shots
   double range = 150.0;
@@ -25,7 +27,7 @@ class TurretEntity extends BaseEntity with TapCallbacks {
   late SpriteComponent _baseComponent;
   late TurretHeadComponent head;
 
-  TurretEntity({required super.position})
+  TurretEntity({required super.position, required this.roomID})
     : super(size: Vector2.all(32), anchor: Anchor.center) {
     addCategory('building');
     addCategory('turret');
@@ -96,10 +98,6 @@ class TurretEntity extends BaseEntity with TapCallbacks {
 
   @override
   void onTapUp(TapUpEvent event) {
-    final int cost = level * 150;
-    final double nextDamage = 10.0 + level * 10.0;
-    final double nextRange = 150.0 + level * 20.0;
-
     if (level >= 9) {
       UpgradeDialog.show(
         game.buildContext!,
@@ -114,6 +112,10 @@ class TurretEntity extends BaseEntity with TapCallbacks {
       return;
     }
 
+    final int cost = level * 150;
+    final double nextDamage = 10.0 + level * 10.0;
+    final double nextRange = 150.0 + level * 20.0;
+
     UpgradeDialog.show(
       game.buildContext!,
       title: "Defense Turret",
@@ -123,16 +125,39 @@ class TurretEntity extends BaseEntity with TapCallbacks {
       upgradeBenefit:
           "Lv. $level ➔ Lv. ${level + 1}\nDmg: ${damage.toInt()}➔${nextDamage.toInt()}, Range: ${range.toInt()}➔${nextRange.toInt()}",
       onUpgrade: () async {
-        final success = MatchManager.instance.spendMatchCoins(cost);
-        if (success) {
-          level++;
-          _applyStats();
-          await _updateSprites();
-          HapticManager.instance.medium();
-          AudioManager.instance.playReward(); // Use reward sound for upgrade
-        }
+        tryUpgrade(game.player);
       },
     );
+  }
+
+  /// Attempts to upgrade the turret using the resources of the provided entity.
+  /// Returns true if the upgrade was successful.
+  Future<bool> tryUpgrade(BaseEntity entity) async {
+    if (level >= 9) return false;
+
+    final int cost = level * 150;
+
+    // Resource Check & Deduction
+    bool success = false;
+    if (entity.hasCategory('player')) {
+      success = MatchManager.instance.spendMatchCoins(cost);
+    } else {
+      if (entity.matchCoins >= cost) {
+        entity.matchCoins -= cost;
+        success = true;
+      }
+    }
+
+    if (success) {
+      level++;
+      _applyStats();
+      await _updateSprites();
+      HapticManager.instance.medium();
+      AudioManager.instance.playReward(); // Use reward sound for upgrade
+      return true;
+    }
+
+    return false;
   }
 
   @override

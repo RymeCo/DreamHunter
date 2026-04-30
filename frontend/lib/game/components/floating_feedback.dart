@@ -8,14 +8,15 @@ class FloatingFeedback extends PositionComponent {
   final String label;
   final IconData? icon;
   final Color color;
+  final bool isCoin;
 
   // Animation state
   double _timer = 0;
   double _alpha = 1.0;
   final double _duration = 1.5;
-  final double _upSpeed = 25.0;
-  final double _driftAmplitude = 4.0;
-  final double _driftFrequency = 4.0;
+  final double _upSpeed = 30.0; // Slightly faster
+  final double _driftAmplitude = 6.0; // More drift
+  final double _driftFrequency = 3.0;
   final double _randomOffset = math.Random().nextDouble() * 100;
 
   FloatingFeedback({
@@ -23,15 +24,17 @@ class FloatingFeedback extends PositionComponent {
     this.icon,
     required this.color,
     required super.position,
-  }) : super(anchor: Anchor.center);
+    this.isCoin = false,
+  }) : super(anchor: Anchor.center, priority: 9999);
 
   @override
   void onLoad() {
     final tp = TextPaint(
       style: TextStyle(
         color: color,
-        fontSize: 9, // Slightly larger for readability
+        fontSize: 10, // Larger
         fontWeight: FontWeight.w900,
+        fontStyle: FontStyle.italic,
         shadows: const [
           Shadow(color: Colors.black, blurRadius: 4),
           Shadow(color: Colors.black, offset: Offset(1, 1)),
@@ -47,39 +50,54 @@ class FloatingFeedback extends PositionComponent {
     final textComponent = TextComponent(text: label, textRenderer: tp);
     container.add(textComponent);
 
-    // Wait for the component to calculate its size (usually happens on next update,
-    // but in onLoad we can force it or just use the renderer directly if we knew the method).
-    // Actually, TextComponent calculates its size in its constructor or immediately.
     final textWidth = textComponent.size.x;
     double totalWidth = textWidth;
 
-    // 2. Optional Icon
-    if (icon != null) {
-      final iconComp = TextComponent(
-        text: String.fromCharCode(icon!.codePoint),
-        position: Vector2(textWidth + 3, 0), // 3px padding
-        textRenderer: TextPaint(
-          style: TextStyle(
-            color: color,
-            fontSize: 9,
-            fontFamily: icon!.fontFamily,
-            package: icon!.fontPackage,
-            shadows: const [
-              Shadow(color: Colors.black, blurRadius: 4),
-              Shadow(color: Colors.black, offset: Offset(1, 1)),
-            ],
+    // 2. Optional Icon or Coin Sprite
+    if (isCoin || icon != null) {
+      final double iconSize = 10.0;
+      final Component iconComp;
+
+      if (isCoin) {
+        // Create a "Sprite-like" coin using components
+        iconComp = CircleComponent(
+          radius: iconSize / 2,
+          position: Vector2(textWidth + 4, 0),
+          paint: Paint()..color = Colors.amber,
+          children: [
+            // Inner circle for detail
+            CircleComponent(
+              radius: iconSize / 3,
+              position: Vector2(iconSize / 6, iconSize / 6),
+              paint: Paint()..color = Colors.orangeAccent,
+            ),
+          ],
+        );
+      } else {
+        iconComp = TextComponent(
+          text: String.fromCharCode(icon!.codePoint),
+          position: Vector2(textWidth + 4, 0),
+          textRenderer: TextPaint(
+            style: TextStyle(
+              color: color,
+              fontSize: iconSize,
+              fontFamily: icon!.fontFamily,
+              package: icon!.fontPackage,
+              shadows: const [
+                Shadow(color: Colors.black, blurRadius: 4),
+                Shadow(color: Colors.black, offset: Offset(1, 1)),
+              ],
+            ),
           ),
-        ),
-      );
+        );
+      }
+
       container.add(iconComp);
-      totalWidth = textWidth + 3 + iconComp.size.x;
+      totalWidth = textWidth + 4 + iconSize;
     }
 
     // Center the container relative to this component's position
-    container.position = Vector2(
-      -totalWidth / 2,
-      -4.5,
-    ); // 4.5 is half of fontSize 9
+    container.position = Vector2(-totalWidth / 2, -5);
 
     // 3. Initial "Pop" scaling
     scale = Vector2.all(0.4);

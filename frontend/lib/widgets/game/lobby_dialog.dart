@@ -70,6 +70,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
   ];
 
   bool _isReady = false;
+  bool _isInstantStarting = false;
   int _countdown = 3;
   Timer? _joinTimer;
   Timer? _countdownTimer;
@@ -174,8 +175,42 @@ class _LobbyDialogState extends State<LobbyDialog> {
     if (_isReady) {
       _cancelCountdown();
     } else {
-      _instantFillAndStart();
+      // Check if everyone else is already ready
+      final aiPlayers = _joinedPlayers.sublist(1);
+      final allAiReady = aiPlayers.every((p) => p != null && p.isReady);
+
+      if (allAiReady) {
+        _instantStart();
+      } else {
+        _instantFillAndStart();
+      }
     }
+  }
+
+  void _instantStart() {
+    _joinTimer?.cancel();
+    HapticManager.instance.medium();
+
+    setState(() {
+      _isReady = true;
+      _isInstantStarting = true;
+      if (_joinedPlayers[0] != null) {
+        _joinedPlayers[0] = _joinedPlayers[0]!.copyWith(isReady: true);
+      }
+    });
+
+    Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+
+      final aiSkins = _joinedPlayers
+          .where((p) => p != null && !p.isHost)
+          .map((p) => p!.characterImage)
+          .toList();
+      MatchManager.instance.setAISkins(aiSkins);
+
+      Navigator.pop(context);
+      widget.onStartGame();
+    });
   }
 
   void _instantFillAndStart() {
@@ -237,6 +272,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
   void _cancelCountdown() {
     setState(() {
       _isReady = false;
+      _isInstantStarting = false;
       _countdown = 3;
       // Host is no longer ready
       if (_joinedPlayers[0] != null) {
@@ -537,7 +573,9 @@ class _LobbyDialogState extends State<LobbyDialog> {
                 const SizedBox(height: 32),
 
                 GlassButton(
-                  label: _isReady ? 'CANCEL ($_countdown...)' : 'READY',
+                  label: _isInstantStarting
+                      ? 'STARTING...'
+                      : (_isReady ? 'CANCEL ($_countdown...)' : 'READY'),
                   width: double.infinity,
                   height: 50,
                   borderRadius: 15,

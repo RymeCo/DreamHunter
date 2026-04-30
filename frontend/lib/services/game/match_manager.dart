@@ -70,14 +70,18 @@ class MatchManager extends ChangeNotifier {
       _tickAccumulator -= 1.0;
       _tickCount++;
 
-      // Resource generation - Safely defer notification to end of frame
-      // to avoid "setState() called during build" errors from the Flame loop.
-      _safeNotify(() {
-        _matchCoins = (_matchCoins + _incomePerTick).clamp(0, 999999);
-        _matchEnergy = (_matchEnergy + _energyIncomePerTick).clamp(0, 9999);
-        notifyListeners();
-      });
+      // Note: Income generation is now handled by BaseEntity.update()
+      // to allow both Player and AI hunters to earn individually.
+      _safeNotify(notifyListeners);
     }
+  }
+
+  /// Synchronizes the global player wallet values (used for HUD)
+  /// with the local PlayerEntity wallet.
+  void syncPlayerWallet(int coins, int energy) {
+    _matchCoins = coins;
+    _matchEnergy = energy;
+    _safeNotify(notifyListeners);
   }
 
   /// Safely triggers a callback that might notify listeners.
@@ -109,7 +113,7 @@ class MatchManager extends ChangeNotifier {
   }
 
   void updateEnergyIncomePerTick(int delta) {
-    _energyIncomePerTick = (_energyIncomePerTick + delta).clamp(0, 9999);
+    _energyIncomePerTick = (_energyIncomePerTick + delta).clamp(0, 100000);
     _safeNotify(notifyListeners);
   }
 
@@ -117,43 +121,71 @@ class MatchManager extends ChangeNotifier {
   void stopTickSystem() {}
 
   void updateMatchCoins(int delta) {
+    final oldBalance = _matchCoins;
     _matchCoins = (_matchCoins + delta).clamp(0, 999999);
+    debugPrint('[ECONOMY] COINS: $oldBalance -> $_matchCoins (Change: $delta)');
     notifyListeners();
   }
 
   /// Attempts to spend match coins. Returns true if successful.
   bool spendMatchCoins(int amount) {
     if (_matchCoins >= amount) {
+      final oldBalance = _matchCoins;
       _matchCoins -= amount;
+      debugPrint(
+        '[ECONOMY] SPEND COINS: $oldBalance -> $_matchCoins (Amount: $amount)',
+      );
       _safeNotify(notifyListeners);
       return true;
     }
+    debugPrint(
+      '[ECONOMY] FAILED SPEND COINS: Balance $_matchCoins < Need $amount',
+    );
     return false;
   }
 
   /// Attempts to spend match energy. Returns true if successful.
   bool spendMatchEnergy(int amount) {
     if (_matchEnergy >= amount) {
+      final oldBalance = _matchEnergy;
       _matchEnergy -= amount;
+      debugPrint(
+        '[ECONOMY] SPEND ENERGY: $oldBalance -> $_matchEnergy (Amount: $amount)',
+      );
       _safeNotify(notifyListeners);
       return true;
     }
+    debugPrint(
+      '[ECONOMY] FAILED SPEND ENERGY: Balance $_matchEnergy < Need $amount',
+    );
     return false;
   }
 
   /// Attempts to spend both coins and energy. Returns true if successful.
   bool spendResources({int coins = 0, int energy = 0}) {
     if (_matchCoins >= coins && _matchEnergy >= energy) {
+      final oldCoins = _matchCoins;
+      final oldEnergy = _matchEnergy;
       _matchCoins -= coins;
       _matchEnergy -= energy;
+      debugPrint(
+        '[ECONOMY] SPEND MULTI: Coins $oldCoins->$_matchCoins, Energy $oldEnergy->$_matchEnergy',
+      );
       _safeNotify(notifyListeners);
       return true;
     }
+    debugPrint(
+      '[ECONOMY] FAILED MULTI SPEND: Need ($coins C, $energy E) | Have ($_matchCoins C, $_matchEnergy E)',
+    );
     return false;
   }
 
   void updateMatchEnergy(int delta) {
-    _matchEnergy = (_matchEnergy + delta).clamp(0, 999);
+    final oldBalance = _matchEnergy;
+    _matchEnergy = (_matchEnergy + delta).clamp(0, 100000);
+    debugPrint(
+      '[ECONOMY] ENERGY: $oldBalance -> $_matchEnergy (Change: $delta)',
+    );
     notifyListeners();
   }
 

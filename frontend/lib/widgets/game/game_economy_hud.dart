@@ -34,7 +34,7 @@ class GameEconomyHUD extends StatelessWidget {
               icon: Icons.monetization_on_rounded,
               value: isMasked
                   ? '0'
-                  : (manager.matchCoins > 100000
+                  : (manager.matchCoins >= 100000
                         ? '100000+'
                         : '${manager.matchCoins}'),
               color: Colors.amberAccent,
@@ -47,8 +47,8 @@ class GameEconomyHUD extends StatelessWidget {
               icon: Icons.bolt_rounded,
               value: isMasked
                   ? '0'
-                  : (manager.matchEnergy > 999
-                        ? '999+'
+                  : (manager.matchEnergy >= 100000
+                        ? '100000+'
                         : '${manager.matchEnergy}'),
               color: Colors.cyanAccent,
             ),
@@ -159,7 +159,7 @@ class GameEconomyHUD extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      width: 90, // Standardized fixed width
+      width: 100, // Increased width for 100000+
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.5),

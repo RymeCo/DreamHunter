@@ -1,6 +1,12 @@
+import 'dart:math' as math;
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/dream_hunter_game.dart';
+import 'package:dreamhunter/services/game/match_manager.dart';
+import 'package:dreamhunter/game/components/floating_feedback.dart';
+import 'package:dreamhunter/game/entities/ore_entity.dart';
+import 'package:dreamhunter/game/game_config.dart';
 
 /// The foundational class for all game objects (players, monsters, furniture, etc.)
 /// Adheres to the Composition & Behavior Architecture mandate.
@@ -9,14 +15,63 @@ abstract class BaseEntity extends PositionComponent
   /// Tags for categorizing entities (e.g., 'player', 'monster', 'obstacle')
   final Set<String> categories = {};
 
+  // In-match Economy
+  int _localMatchCoins = 0;
+  int _localMatchEnergy = 0;
+
+  int get matchCoins {
+    if (hasCategory('player')) return MatchManager.instance.matchCoins;
+    return _localMatchCoins;
+  }
+
+  set matchCoins(int value) {
+    if (hasCategory('player')) {
+      MatchManager.instance.syncPlayerWallet(
+        value,
+        MatchManager.instance.matchEnergy,
+      );
+    } else {
+      _localMatchCoins = value;
+    }
+  }
+
+  int get matchEnergy {
+    if (hasCategory('player')) return MatchManager.instance.matchEnergy;
+    return _localMatchEnergy;
+  }
+
+  set matchEnergy(int value) {
+    if (hasCategory('player')) {
+      MatchManager.instance.syncPlayerWallet(
+        MatchManager.instance.matchCoins,
+        value,
+      );
+    } else {
+      _localMatchEnergy = value;
+    }
+  }
+
+  // Sleeping state
+  bool isSleeping = false;
+
+  int _lastTickCount = 0;
+
+  /// The level of the bed this entity is currently occupying.
+  int? currentBedLevel;
+
+  /// Gets the room ID this entity is associated with.
+  String get roomID {
+    if (hasCategory('player')) return MatchManager.instance.currentRoomID;
+    return '';
+  }
+
   BaseEntity({super.position, super.size, super.anchor});
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Add a hitbox at the feet (bottom of the sprite)
-    // For a 32x48 sprite, we'll make it 24x12 centered at the bottom
+    // Standard Hitbox: 75% width, 25% height at the feet.
     add(
       RectangleHitbox(
         size: Vector2(size.x * 0.75, size.y * 0.25),
@@ -26,10 +81,108 @@ abstract class BaseEntity extends PositionComponent
   }
 
   @override
+  void update(double dt) {
+    super.update(dt);
+
+    final currentTicks = MatchManager.instance.tickCount;
+    if (currentTicks > _lastTickCount) {
+      _lastTickCount = currentTicks;
+
+      // 1. Generate Income (Runs constantly, even during grace period)
+      final income = incomePerTick;
+      if (income > 0) {
+        matchCoins += income;
+
+        // Visual Feedback for Coins only shows when sleeping
+        if (isSleeping) {
+          game.world.add(
+            FloatingFeedback(
+              label: '+$income',
+              isCoin: true,
+              color: Colors.amberAccent,
+              position: position + Vector2(size.x * 0.7, 0), // Side offset
+            ),
+          );
+        }
+      }
+
+      // 2. Generate Energy (Runs constantly)
+      final energy = energyIncomePerTick;
+      if (energy > 0) {
+        matchEnergy += energy;
+      }
+
+      // 3. Visual Feedback for Zzz (Every 3 ticks, only when sleeping)
+      if (isSleeping && currentTicks % 3 == 0) {
+        game.world.add(
+          FloatingFeedback(
+            label: math.Random().nextBool() ? 'z' : 'Z',
+            color: Colors.white,
+            position: position + Vector2(size.x * 0.3, 0), // Other side offset
+          ),
+        );
+      }
+    }
+  }
+
+  /// The number of coins this entity earns per tick.
+  int get incomePerTick {
+    int baseIncome = 0;
+    if (currentBedLevel != null) {
+      // 1. Bed Income
+      final level = currentBedLevel!;
+      if (level > 0 && level <= GameConfig.bedUpgrades.length) {
+        baseIncome = GameConfig.bedUpgrades[level - 1].income;
+      }
+    } else {
+      // Fallback/Default
+      if (hasCategory('player')) {
+        baseIncome = MatchManager.instance.incomePerTick;
+      } else if (hasCategory('ai_hunter')) {
+        baseIncome = 1;
+      }
+    }
+
+    // 2. Ore Income (from self)
+    if (this is OreEntity) {
+      baseIncome = (this as OreEntity).incomePerTick;
+    }
+
+    // 3. Apply Room Multiplier (e.g., Level 5 Ore)
+    double multiplier = 1.0;
+    final myRoom = roomID;
+    if (myRoom.isNotEmpty) {
+      final ores = game.world.children.whereType<OreEntity>().where(
+        (ore) => ore.roomID == myRoom,
+      );
+
+      for (final ore in ores) {
+        if (ore.level == 5) {
+          multiplier *= 1.5;
+        }
+      }
+    }
+
+    return (baseIncome * multiplier).floor();
+  }
+
+  /// The number of energy this entity earns per tick.
+  int get energyIncomePerTick {
+    if (hasCategory('player')) return MatchManager.instance.energyIncomePerTick;
+    return 0;
+  }
+
+  @override
   void onMount() {
     super.onMount();
     if (categories.contains('monster')) {
       game.monsters.add(this);
+    }
+    if (categories.contains('building')) {
+      game.registerBuilding(this);
+    }
+    if (categories.contains('building_slot')) {
+      game.registerBuildingSlot(this);
     }
   }
 
@@ -37,6 +190,12 @@ abstract class BaseEntity extends PositionComponent
   void onRemove() {
     if (categories.contains('monster')) {
       game.monsters.remove(this);
+    }
+    if (categories.contains('building')) {
+      game.unregisterBuilding(this);
+    }
+    if (categories.contains('building_slot')) {
+      game.unregisterBuildingSlot(this);
     }
     super.onRemove();
   }
@@ -47,8 +206,16 @@ abstract class BaseEntity extends PositionComponent
   /// Helper to add a category.
   void addCategory(String category) {
     categories.add(category);
-    if (isMounted && category == 'monster') {
-      game.monsters.add(this);
+    if (isMounted) {
+      if (category == 'monster') {
+        game.monsters.add(this);
+      }
+      if (category == 'building') {
+        game.registerBuilding(this);
+      }
+      if (category == 'building_slot') {
+        game.registerBuildingSlot(this);
+      }
     }
   }
 }

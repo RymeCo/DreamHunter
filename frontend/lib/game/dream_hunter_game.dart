@@ -29,6 +29,24 @@ class DreamHunterGame extends FlameGame
   /// Active monsters in the world for turret targeting
   final Set<BaseEntity> monsters = {};
 
+  /// Cached lists for high-performance collision checks (Updated in onLoad/onRemove)
+  final List<MapObstacle> _obstacles = [];
+  final List<BaseEntity> _buildings = [];
+  final List<BaseEntity> buildingSlots = [];
+
+  /// Global grid for AI pathfinding
+  late final List<List<bool>> wallGrid;
+  static const int gridW = 40; // 1280 / 32
+  static const int gridH = 40;
+
+  /// Pre-calculated distance maps for every bed (Key: roomID)
+  final Map<String, List<List<int>>> bedFlowFields = {};
+
+  /// Global TextPaint for building slots to prevent GC lag.
+  /// Re-instantiated once per frame with new opacity.
+  late TextPaint buildingSlotPaint;
+  double _pulseTimer = 0;
+
   // Track the current drag position manually for maximum fluidity and compatibility
   Vector2 _dragPosition = Vector2.zero();
 
@@ -38,6 +56,15 @@ class DreamHunterGame extends FlameGame
   Future<void> onLoad() async {
     await super.onLoad();
 
+    // Initialize global paint
+    buildingSlotPaint = TextPaint(
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+
     // 1. Load Map
     final map = await TiledComponent.load('dorm-01.tmx', Vector2.all(32));
     world.add(map);
@@ -46,39 +73,47 @@ class DreamHunterGame extends FlameGame
     final collisionLayer = map.tileMap.getLayer<ObjectGroup>('Collisions');
     if (collisionLayer != null) {
       for (final obj in collisionLayer.objects) {
-        world.add(
-          MapObstacle(
-            position: Vector2(obj.x, obj.y),
-            size: Vector2(obj.width, obj.height),
-          ),
+        final obstacle = MapObstacle(
+          position: Vector2(obj.x, obj.y),
+          size: Vector2(obj.width, obj.height),
         );
+        _obstacles.add(obstacle);
+        world.add(obstacle);
       }
     }
 
     // 3. Parse Objects (Beds, etc.) from Tiled
     final objectLayer = map.tileMap.getLayer<ObjectGroup>('Object Layer');
+    final List<BedEntity> parsedBeds = [];
+    final List<DoorEntity> parsedDoors = [];
     if (objectLayer != null) {
       for (final obj in objectLayer.objects) {
         final pos = Vector2(obj.x, obj.y);
+        final roomID = obj.name.trim();
         if (obj.type == 'Bed') {
-          world.add(BedEntity(position: pos, roomID: obj.name));
+          final bed = BedEntity(position: pos, roomID: roomID);
+          parsedBeds.add(bed);
+          world.add(bed);
         } else if (obj.type == 'Door') {
-          world.add(DoorEntity(position: pos, roomID: obj.name));
+          final door = DoorEntity(position: pos, roomID: roomID);
+          parsedDoors.add(door);
+          world.add(door);
         }
       }
     }
 
     // New: Parse Building Slots from its dedicated layer
+    final List<BuildingSlotEntity> parsedSlots = [];
     final slotsLayer = map.tileMap.getLayer<ObjectGroup>('BuildingSlots');
     if (slotsLayer != null) {
       for (final obj in slotsLayer.objects) {
         if (obj.type == 'BuildingSlot') {
-          world.add(
-            BuildingSlotEntity(
-              position: Vector2(obj.x, obj.y),
-              roomID: obj.name,
-            ),
+          final slot = BuildingSlotEntity(
+            position: Vector2(obj.x, obj.y),
+            roomID: obj.name.trim(),
           );
+          parsedSlots.add(slot);
+          world.add(slot);
         }
       }
     }
@@ -92,23 +127,7 @@ class DreamHunterGame extends FlameGame
     player.position = Vector2(1280 / 2, 1280 / 2); // Center of the dorm map
     world.add(player);
 
-    // 4.1 Spawn AI Hunters from Lobby
     aiHunters.clear();
-    final aiSkins = MatchManager.instance.aiSkins;
-    for (int i = 0; i < aiSkins.length; i++) {
-      // Clustered spawn offsets around the player (within 32-48px radius)
-      final angle = (i * (2 * 3.14159 / 5)); // Spread around a circle
-      final offset = Vector2(
-        32 * math.cos(angle),
-        32 * math.sin(angle),
-      );
-      final ai = HunterAIEntity(
-        skinPath: aiSkins[i],
-        position: player.position + offset,
-      );
-      aiHunters.add(ai);
-      world.add(ai);
-    }
 
     // 5. Configure Camera
     camera.viewfinder.visibleGameSize = Vector2(7 * 32, 0);
@@ -137,93 +156,178 @@ class DreamHunterGame extends FlameGame
       ),
     );
 
-    // 7. Link Beds to Doors (Room Assignment)
-    final beds = world.children.whereType<BedEntity>();
-    final doors = world.children.whereType<DoorEntity>();
-    final slots = world.children.whereType<BuildingSlotEntity>();
+    // 7. Link ALL Beds to their Doors (Resilient Strategy)
+    for (final bed in parsedBeds) {
+      final bedID = bed.roomID.toLowerCase();
 
-    // Cleanup: Remove slots that overlap with Beds or Doors (Distance < 24)
-    for (final slot in slots.toList()) {
-      bool isOverlapping = false;
-
-      for (final bed in beds) {
-        if (slot.position.distanceTo(bed.position) < 24) {
-          isOverlapping = true;
-          break;
-        }
-      }
-
-      if (!isOverlapping) {
-        for (final door in doors) {
-          if (slot.position.distanceTo(door.position) < 24) {
-            isOverlapping = true;
-            break;
-          }
-        }
-      }
-
-      if (isOverlapping) {
-        slot.removeFromParent();
-      }
-    }
-
-    for (final bed in beds) {
-      // 1. Try to link by explicit Room ID (from Tiled 'name' property)
-      if (bed.roomID.isNotEmpty) {
-        for (final door in doors) {
-          if (door.roomID == bed.roomID) {
+      // Attempt 1: Exact roomID match (Standardized to lowercase)
+      if (bedID.isNotEmpty) {
+        for (final door in parsedDoors) {
+          if (door.roomID.toLowerCase() == bedID) {
             bed.roomDoor = door;
             break;
           }
         }
       }
 
-      // 2. Fallback to proximity if no ID match was found
+      // Attempt 2: Proximity Fallback (If no roomID match or roomID is empty)
       if (bed.roomDoor == null) {
-        DoorEntity? nearest;
-        double minDistance =
-            250; // Threshold to ensure we don't link to far away doors
-        final bedCenter = bed.position + (bed.size / 2);
+        DoorEntity? nearestDoor;
+        double minDist = 300; // Max proximity range (300px is roughly 9 tiles)
 
-        for (final door in doors) {
-          final doorCenter = door.position + (door.size / 2);
-          final dist = bedCenter.distanceTo(doorCenter);
-          if (dist < minDistance) {
-            minDistance = dist;
-            nearest = door;
+        for (final door in parsedDoors) {
+          final dist = bed.position.distanceTo(door.position);
+          if (dist < minDist) {
+            minDist = dist;
+            nearestDoor = door;
           }
         }
-        bed.roomDoor = nearest;
+        bed.roomDoor = nearestDoor;
       }
+    }
+
+    // 8. Furniture Cleanup (Remove slots that overlap with Beds or Doors)
+    for (final slot in parsedSlots) {
+      bool overlaps = false;
+
+      // Check Bed Overlap
+      for (final bed in parsedBeds) {
+        if (slot.position.distanceTo(bed.position) < 16) {
+          overlaps = true;
+          break;
+        }
+      }
+      if (overlaps) {
+        slot.removeFromParent();
+        continue;
+      }
+
+      // Check Door Overlap
+      for (final door in parsedDoors) {
+        if (slot.position.distanceTo(door.position) < 16) {
+          overlaps = true;
+          break;
+        }
+      }
+      if (overlaps) {
+        slot.removeFromParent();
+      }
+    }
+    // MAP ANALYSIS: Mark every 32x32 square as "Ground" or "Wall"
+    wallGrid = List.generate(gridW, (_) => List.generate(gridH, (_) => false));
+
+    for (final obstacle in _obstacles) {
+      final rect = obstacle.toRect();
+      // Calculate tile boundaries that this obstacle touches
+      final startX = (rect.left / 32.0).floor().clamp(0, gridW - 1);
+      final endX = (rect.right / 32.0).floor().clamp(0, gridW - 1);
+      final startY = (rect.top / 32.0).floor().clamp(0, gridH - 1);
+      final endY = (rect.bottom / 32.0).floor().clamp(0, gridH - 1);
+
+      for (int x = startX; x <= endX; x++) {
+        for (int y = startY; y <= endY; y++) {
+          final tileRect = Rect.fromLTWH(x * 32.0, y * 32.0, 32.0, 32.0);
+          if (rect.overlaps(tileRect)) {
+            wallGrid[x][y] = true;
+          }
+        }
+      }
+    }
+
+    final aiSkins = MatchManager.instance.aiSkins;
+    parsedBeds.shuffle(math.Random());
+
+    // PRE-CALCULATE FLOW FIELDS: Every bed gets a gravity map
+    for (final bed in parsedBeds) {
+      bedFlowFields[bed.roomID] = _generateFlowField(bed);
+    }
+
+    // THE START: All AI hunters spawn at the player's tile center.
+    final spawnX = (player.position.x / 32).floor().clamp(0, gridW - 1);
+    final spawnY = (player.position.y / 32).floor().clamp(0, gridH - 1);
+    final spawnTile = math.Point(spawnX, spawnY);
+
+    for (int i = 0; i < aiSkins.length; i++) {
+      if (parsedBeds.isEmpty) break;
+      final assignedBed = parsedBeds.removeAt(0);
+
+      // SPAWN: Add the hunter to the world.
+      final ai = HunterAIEntity(
+        skinPath: aiSkins[i],
+        targetBed: assignedBed,
+        position: Vector2(
+          spawnTile.x * 32.0 + 16.0 + (i * 2),
+          spawnTile.y * 32.0 + 16.0 + (i * 2),
+        ),
+      );
+
+      assignedBed.reservedBy = ai;
+      aiHunters.add(ai);
+      world.add(ai);
     }
   }
 
   /// Checks if a given hitbox (at a potential position) would collide with any walls.
-  bool isPositionBlocked(Rect hitbox) {
-    // Check Tiled Map Obstacles
-    final obstacles = world.children.whereType<MapObstacle>();
-    for (final obstacle in obstacles) {
+  /// Note: Hunters (Player and AI) do not block each other's movement; they pass through.
+  bool isPositionBlocked(Rect hitbox, {List<BaseEntity>? ignoredEntities}) {
+    // Check Tiled Map Obstacles (Stone walls)
+    for (final obstacle in _obstacles) {
       if (obstacle.toRect().overlaps(hitbox)) {
         return true;
       }
     }
 
-    // Check Buildings (Beds, etc.)
-    final buildings = world.children.whereType<BaseEntity>().where(
-      (e) => e.hasCategory('building'),
-    );
-    for (final building in buildings) {
+    // Check Buildings (Doors, etc.)
+    for (final building in _buildings) {
+      if (ignoredEntities != null && ignoredEntities.contains(building)) {
+        continue;
+      }
       if (building.toRect().overlaps(hitbox)) {
         return true;
       }
     }
-
     return false;
+  }
+
+  /// Registers a building for collision tracking.
+  void registerBuilding(BaseEntity building) {
+    if (!_buildings.contains(building)) {
+      _buildings.add(building);
+    }
+  }
+
+  /// Unregisters a building from collision tracking.
+  void unregisterBuilding(BaseEntity building) {
+    _buildings.remove(building);
+  }
+
+  /// Registers a building slot for AI lookup.
+  void registerBuildingSlot(BaseEntity slot) {
+    if (!buildingSlots.contains(slot)) {
+      buildingSlots.add(slot);
+    }
+  }
+
+  /// Unregisters a building slot.
+  void unregisterBuildingSlot(BaseEntity slot) {
+    buildingSlots.remove(slot);
   }
 
   @override
   void update(double dt) {
     super.update(dt);
+
+    // Update global building slot pulse
+    _pulseTimer += dt;
+    final double opacity =
+        ((math.sin(_pulseTimer * (math.pi / 1.5)) + 1) / 4); // Range [0.0, 0.5]
+    buildingSlotPaint = TextPaint(
+      style: TextStyle(
+        color: Colors.white.withValues(alpha: opacity),
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+      ),
+    );
 
     // Drive the frame-independent match logic (coins, energy, ticks)
     MatchManager.instance.update(dt);
@@ -295,5 +399,52 @@ class DreamHunterGame extends FlameGame
     graceTimer.dispose();
     matchTimer.dispose();
     super.onRemove();
+  }
+
+  /// Generates a distance map (Flow Field) for a specific bed.
+  /// Every tile stores its distance to the bed. 9999 = Unreachable.
+  List<List<int>> _generateFlowField(BedEntity bed) {
+    final field = List.generate(
+      gridW,
+      (_) => List.generate(gridH, (_) => 9999),
+    );
+
+    final targetX = (bed.position.x / 32).floor().clamp(0, gridW - 1);
+    final targetY = (bed.position.y / 32).floor().clamp(0, gridH - 1);
+    final targetTile = math.Point(targetX, targetY);
+
+    final List<math.Point<int>> queue = [targetTile];
+    field[targetX][targetY] = 0;
+    int head = 0;
+
+    while (head < queue.length) {
+      final current = queue[head++];
+      final currentDist = field[current.x][current.y];
+
+      for (final dir in [
+        const math.Point(1, 0),
+        const math.Point(-1, 0),
+        const math.Point(0, 1),
+        const math.Point(0, -1),
+      ]) {
+        final next = math.Point(current.x + dir.x, current.y + dir.y);
+        if (next.x >= 0 && next.x < gridW && next.y >= 0 && next.y < gridH) {
+          bool isBlocked = wallGrid[next.x][next.y];
+
+          // Treat the room's own door as walkable so the AI can enter
+          if (bed.roomDoor != null) {
+            final dx = (bed.roomDoor!.position.x / 32).floor();
+            final dy = (bed.roomDoor!.position.y / 32).floor();
+            if (next.x == dx && next.y == dy) isBlocked = false;
+          }
+
+          if (!isBlocked && field[next.x][next.y] == 9999) {
+            field[next.x][next.y] = currentDist + 1;
+            queue.add(next);
+          }
+        }
+      }
+    }
+    return field;
   }
 }
