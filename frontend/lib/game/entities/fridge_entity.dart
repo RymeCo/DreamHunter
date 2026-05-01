@@ -4,6 +4,7 @@ import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/entities/door_entity.dart';
+import 'package:dreamhunter/game/components/wrench_component.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
 
@@ -14,13 +15,39 @@ class FridgeEntity extends BaseEntity with TapCallbacks {
   final String roomID;
   late final SpriteComponent _spriteComponent;
   DoorEntity? _targetDoor;
+  double _regenTimer = 0;
 
   FridgeEntity({required super.position, required this.roomID})
-      : super(size: Vector2.all(32), anchor: Anchor.center) {
+    : super(size: Vector2.all(32), anchor: Anchor.center) {
     addCategory('building');
     addCategory('fridge');
-    maxHp = 1.0;
+    maxHp = 50.0;
     hp = maxHp;
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (isDestroyed) {
+      isBeingRepaired = false;
+      return;
+    }
+
+    // Manual Repair Visualization
+    if (isBeingRepaired && children.whereType<WrenchComponent>().isEmpty) {
+      add(WrenchComponent()..position = size / 2);
+    }
+
+    // Manual Repair Logic: 2% every 1s (ONLY when isBeingRepaired is true)
+    if (isBeingRepaired && hp < maxHp) {
+      _regenTimer += dt;
+      if (_regenTimer >= 1.0) {
+        _regenTimer = 0;
+        hp = (hp + maxHp * 0.02).clamp(0, maxHp);
+      }
+    } else {
+      _regenTimer = 0;
+    }
   }
 
   @override
@@ -66,16 +93,23 @@ class FridgeEntity extends BaseEntity with TapCallbacks {
 
   void _applyEffect() {
     if (_targetDoor != null && !_targetDoor!.isDestroyed) {
-      _targetDoor!.setShield(_targetDoor!.maxHp);
+      _targetDoor!.setShield(_targetDoor!.maxHp, _targetDoor!.maxHp);
+
+      // Visual feedback: Go big then shrink
+      _spriteComponent.add(
+        ScaleEffect.to(
+          Vector2.all(1.5),
+          EffectController(duration: 0.2, reverseDuration: 0.2),
+        ),
+      );
     }
   }
 
   @override
   void onRemove() {
-    // When the fridge is destroyed, should we remove the shield?
-    // User didn't specify, but usually, the effect ends when the building is gone.
+    // When the fridge is destroyed, remove the shield completely
     if (_targetDoor != null && !_targetDoor!.isDestroyed) {
-      _targetDoor!.setShield(0);
+      _targetDoor!.setShield(0, 0);
     }
     super.onRemove();
   }

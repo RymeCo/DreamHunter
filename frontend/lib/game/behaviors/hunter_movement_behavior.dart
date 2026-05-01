@@ -8,8 +8,8 @@ import 'package:dreamhunter/game/entities/bed_entity.dart';
 /// AI follows its target bed's Flow Field (Gravity Map) using a smooth gradient.
 class HunterMovementBehavior extends Component
     with ParentIsA<HunterAIEntity>, HasGameReference<DreamHunterGame> {
-  /// AI Speed is 90.0 (Slower than the player's 150.0 base speed)
-  final double speed = 90.0;
+  /// AI Speed is 80.0 (Slower than the player's 150.0 base speed)
+  final double speed = 80.0;
 
   @override
   void update(double dt) {

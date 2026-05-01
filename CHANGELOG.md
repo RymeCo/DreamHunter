@@ -464,3 +464,42 @@ All major task completions and architectural shifts are logged here for traceabi
   - Pathfinding: Added a BFS-based `getShortestPath` in `DreamHunterGame` for monster navigation.
   - Skills: Added a "Stun" skill to the monster that disables turrets within range.
   - Mechanics: Monsters now heal at spawn points with a 25% chance to resume attacking every 10% health regained. Bed destruction now kills the owner.
+- [2026-04-30] BUGFIX: GAME-ECONOMY-HUD-RANGE-ERROR:
+  - Issue: Resolved a `RangeError` that occurred when entering the match, caused by `hunterAliveStatus` being out of sync with `aiSkins`.
+  - Root Cause: `MatchManager.resetMatch` was clearing the alive status list but leaving the AI skins intact, leading to an index-out-of-bounds error during UI building.
+  - Fix: Updated `resetMatch` to automatically re-initialize `hunterAliveStatus` based on the current `aiSkins` count.
+  - Safety: Added an index-bounds check in `GameEconomyHUD` to prevent future UI crashes even if state becomes momentarily inconsistent.
+  - Verification: Static analysis confirms 0 errors. UI is now stable during match transitions.
+- [2026-04-30] AI-SPEED-ADJUSTMENT: Set AI hunter speed to 80.0 as requested.
+- [2026-04-30] MONSTER-LIFECYCLE-&-TARGETING-REFINEMENT:
+  - Lifecycle: Modified `DreamHunterGame` to spawn the `MonsterEntity` immediately at the start of the match.
+  - Behavior: Updated `MonsterAIBehavior` to remain stationary and idle as long as the `graceTimer` is active.
+  - Targeting: Implemented "Room Occupancy" awareness. The monster now treats unoccupied rooms as invisible, strictly targeting only doors and beds in rooms that contain a hunter.
+  - Verification: Static analysis confirms 0 errors. Monster spawns correctly but waits for the "RUN!" signal before hunting occupied rooms.
+- [2026-04-30] MONSTER-VISUALS-&-AI-POLISH:
+  - Sprites: Implemented a directional sprite system for the `MonsterEntity`. The ghost now changes its appearance based on movement direction (Back, Side, Diagonal) and flips horizontally for left/right transitions.
+  - Pathfinding: Enhanced targeting logic to prioritize the bed in a room immediately after destroying its door.
+  - Aggression: Adjusted attack distances to ensure the monster "enters" the room to attack beds while staying outside for doors.
+  - Lethality: Verified and ensured that destroying a bed correctly kills the occupying Hunter (Player or AI).
+- [2026-04-30] FOG-OF-WAR-&-DEATH-LOGIC-FIXES:
+  - Fog of War: Implemented a misty Fog of War system. All rooms start with a semi-transparent (70% opacity) mist that strictly covers the room interiors, leaving walls and hallways visible. Rooms are revealed when occupied or explored.
+  - Mist Animation: Added a performant "creeping" animation to the mist using layered offsets and trigonometric drift. To ensure high FPS, animations only run for rooms currently visible in the camera's viewport.
+  - Monster Lethality: Fixed a bug where the monster could pass through hunters without effect. Added collision handling in `BaseEntity` to ensure the monster deals lethal damage upon contact with any hunter (Player or AI).
+  - Game Over Flow: Resolved an issue where player death didn't end the game. Updated `PlayerEntity.destroy()` to correctly notify `MatchManager` (updating the HUD with a red "X") and trigger the "GAME OVER" reward screen.
+  - Verification: Static analysis confirms 0 errors. Room visibility and death transitions are now functional and fair.
+
+
+
+2026-04-30: SCRUM-124: Implemented red-tinted Fog of War for hunter deaths. Updated BaseEntity and HunterAIEntity to notify FogOfWar and MatchManager upon destruction.
+2026-04-30: SCRUM-124: Refined BedEntity occupancy logic to ensure Fog of War returns immediately upon hunter death.
+2026-04-30: SCRUM-124: Debugging Fog of War visibility. Improved initialization with logging and refined rendering logic in _RoomFog.
+2026-04-30: SCRUM-125: Fixed monster pathfinding to correctly respect closed doors. Added dynamic building collision checks in MonsterAIBehavior to prevent passing through doors.
+2026-04-30: SCRUM-126: Synchronized Fog of War features with precise room bounds and atmospheric animations. Implemented Monster Proximity Aggro (6 tiles) for non-sleeping hunters.
+2026-04-30: SCRUM-127: Redesigned Fog of War to be a blurry/hazy overlay targeting only room elements (Beds/Slots). Removed creeping animation for a simple pulse.
+2026-04-30: SCRUM-127: Darkened the hazy Fog of War effect by changing the base color to black and increasing opacity.
+2026-04-30: SCRUM-128: Increased monster speed by 20% (96.0). Fixed monster behavior to immediately stop chasing hunters who enter a bed (sleeping).
+2026-04-30: SCRUM-129: Implemented monster AI fallbacks. Added stuck detection (3s threshold) and a 10% chaos factor to targeting to prevent predictable loop glitches. Fixed targeting flow to prioritize doors when hunters start sleeping.
+2026-05-01: SCRUM-130: Fixed monster attack range and pathfinding precision. (1) Switched to center-to-center distance logic for anchor-agnostic ranging. (2) Reduced attack thresholds to prevent "long-range" door attacks. (3) Thinned monster movement hitbox (30% width) for better doorway navigation. (4) Implemented "Smash Through" logic allowing monsters to target and destroy any building blocking their path. (5) Improved targeting to prioritize nearby hunters and follow them into rooms more aggressively.
+2026-05-01: SCRUM-131: Resolved monster "standing still" logic gap. (1) Implemented `ignoredEntities` in collision checks, allowing the monster to ignore its own target's collision box. This prevents it from getting stuck just outside attack range of beds/buildings. (2) Added proactive target switching: monsters now instantly switch from a hunter to their bed as soon as the hunter falls asleep. (3) Increased attack and tracking thresholds (40px/52px) to improve reliability against larger entities like beds.
+2026-05-01: SCRUM-132: Implemented "Smash vs. Pathfind" logic for monster movement. (1) Explicit check for breakables (buildings/doors) vs unbreakables (walls). (2) If a building blocks the path, the monster immediately targets and smashes it. (3) If a static wall blocks the path, the monster triggers an immediate path recalculation to find a way around. This ensures monsters cannot be trapped inside rooms by closed doors and will always choose to smash their way out.
+2026-05-01: SCRUM-133: Fixed monster "stuck in doorway" bug by simplifying AI targeting. (1) Removed complex priority layers in target selection; monsters now simply pick the nearest valid target (non-sleeping hunter, door of occupied room, or occupied bed). (2) Shortened stuck detection timer to 1.5s for faster recovery. (3) Enhanced attack visual pulse for better player feedback. (4) Ensured immediate re-evaluation if a target falls asleep mid-chase.

@@ -52,6 +52,19 @@ class PlayerEntity extends BaseEntity {
     add(PlayerMovementBehavior(joystick: joystick));
   }
 
+  @override
+  void destroy() {
+    if (isDestroyed) return;
+
+    // Notify MatchManager (shows X on HUD)
+    MatchManager.instance.killHunter(0);
+
+    super.destroy();
+
+    // Trigger Game Over
+    game.onMatchEnded?.call();
+  }
+
   /// Puts the player to sleep in the specified bed.
   void sleep(Vector2 bedPosition) {
     isSleeping = true;

@@ -38,7 +38,69 @@ class AIBuildBehavior extends Component
   void _checkBuild() {
     if (!parent.isSleeping) return;
 
+    final door = parent.targetBed.roomDoor;
+    final bed = parent.targetBed;
+
+    // --- PANIC CHECK: Is my home being destroyed? ---
+    bool isPanic = false;
+    if (door != null && !door.isDestroyed && door.hp / door.maxHp < 0.4) {
+      isPanic = true;
+    } else if (bed.hp / bed.maxHp < 0.4) {
+      isPanic = true;
+    }
+
+    if (isPanic) {
+      // PANIC UPGRADE: Try to save the door or bed to get that instant heal!
+      if (door != null && !door.isDestroyed && door.hp < door.maxHp) {
+        if (door.tryUpgrade(parent)) {
+          _resetTimer();
+          return;
+        }
+      }
+      if (bed.hp < bed.maxHp) {
+        if (bed.tryUpgrade(parent)) {
+          _resetTimer();
+          return;
+        }
+      }
+
+      // PANIC OFFENSE: Build or Upgrade Turrets to kill the intruder
+      final myTurrets = game.world.children
+          .whereType<TurretEntity>()
+          .where((t) => parent.targetBed.roomID == t.roomID)
+          .toList();
+
+      for (final turret in myTurrets) {
+        if (turret.level < 9) {
+          // Attempt upgrade if possible
+          turret.tryUpgrade(parent);
+          // Don't return, keep panicking!
+        }
+      }
+
+      // If we have empty slots, fill them with Turrets NOW
+      final mySlots = game.buildingSlots
+          .whereType<BuildingSlotEntity>()
+          .where((slot) => slot.roomID == parent.targetBed.roomID)
+          .toList();
+      
+      if (mySlots.isNotEmpty && parent.matchCoins >= GameConfig.turretBuildCost) {
+        final slot = mySlots[_random.nextInt(mySlots.length)];
+        parent.matchCoins -= GameConfig.turretBuildCost;
+        slot.tryBuild('turret');
+      }
+      
+      // If we are panicking, check again very soon
+      _timer.limit = 0.5; 
+    } else {
+      // Normal behavior: Reset timer to standard intervals if we were previously panicking
+      if (_timer.limit < 1.0 && parent.speed == AISpeed.slow) {
+        _resetTimer();
+      }
+    }
+
     // --- PRIORITY 1: Core Economy (Bed Lv1 -> Lv3) ---
+    // Hoarding Logic: Only upgrade if we are safe or already have plenty of coins
     if (parent.targetBed.level == 1) {
       if (parent.targetBed.tryUpgrade(parent)) {
         _resetTimer();
@@ -46,7 +108,6 @@ class AIBuildBehavior extends Component
       }
     }
 
-    final door = parent.targetBed.roomDoor;
     if (parent.targetBed.level == 2 &&
         door != null &&
         door.totalUpgrades == 0) {

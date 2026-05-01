@@ -77,7 +77,9 @@ class GameEconomyHUD extends StatelessWidget {
           final isPlayer = index == 0;
           final imagePath = isPlayer ? playerImagePath : aiSkins[index - 1];
           final isSleeping = MatchManager.instance.isHunterSleeping;
-          final isAlive = MatchManager.instance.hunterAliveStatus[index];
+          final isAlive = index < MatchManager.instance.hunterAliveStatus.length
+              ? MatchManager.instance.hunterAliveStatus[index]
+              : true;
 
           return _buildHunterIcon(
             context,

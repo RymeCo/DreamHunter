@@ -5,6 +5,9 @@ import 'package:dreamhunter/game/behaviors/hunter_movement_behavior.dart';
 import 'package:dreamhunter/game/behaviors/ai_build_behavior.dart';
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/entities/bed_entity.dart';
+import 'package:dreamhunter/game/entities/door_entity.dart';
+import 'package:dreamhunter/game/entities/fridge_entity.dart';
+import 'package:dreamhunter/services/game/match_manager.dart';
 
 enum AIPersonality { defense, offense, randos }
 
@@ -91,7 +94,84 @@ class HunterAIEntity extends BaseEntity {
       if (_walletLabel.parent == null) {
         add(_walletLabel);
       }
+
+      // NEW: AI Repair Behavior
+      _handleAIRepairs();
     }
+  }
+
+  void _handleAIRepairs() {
+    final myRoom = roomID;
+    if (myRoom.isEmpty) return;
+
+    final buildings = game.world.children
+        .whereType<DoorEntity>()
+        .where((d) => d.roomID == myRoom)
+        .cast<BaseEntity>()
+        .followedBy(
+          game.world.children
+              .whereType<FridgeEntity>()
+              .where((f) => f.roomID == myRoom)
+              .cast<BaseEntity>(),
+        );
+
+    bool anyDamaged = false;
+    for (final b in buildings) {
+      if (b.hp < b.maxHp) {
+        anyDamaged = true;
+        break;
+      }
+      if (b is DoorEntity && b.shieldHp < b.maxShieldHp) {
+        anyDamaged = true;
+        break;
+      }
+    }
+
+    if (anyDamaged) {
+      // AI check for cooldown
+      if (repairCooldown > 0) return;
+
+      // Defensive personalities repair instantly. Others are lazier (repair below 80% HP).
+      bool shouldRepair = personality == AIPersonality.defense;
+      if (!shouldRepair) {
+        for (final b in buildings) {
+          if (b.hp / b.maxHp < 0.8) {
+            shouldRepair = true;
+            break;
+          }
+        }
+      }
+
+      if (shouldRepair) {
+        for (final b in buildings) {
+          b.isBeingRepaired = true;
+        }
+        return;
+      }
+    }
+
+    // Turn off repair if everything is healthy
+    bool wasRepairing = false;
+    for (final b in buildings) {
+      if (b.isBeingRepaired) wasRepairing = true;
+      b.isBeingRepaired = false;
+    }
+
+    if (wasRepairing) {
+      repairCooldown = 20.0;
+    }
+  }
+
+  @override
+  void destroy() {
+    if (isDestroyed) return;
+
+    // Notify MatchManager (shows X on HUD)
+    if (hunterIndex != null) {
+      MatchManager.instance.killHunter(hunterIndex!);
+    }
+
+    super.destroy();
   }
 
   /// Puts the AI hunter to sleep.

@@ -210,6 +210,7 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
       final currentUpgrade = GameConfig.generatorUpgrades[level - 1];
       final incomeDelta = nextUpgrade.income - currentUpgrade.income;
       level++;
+      hp = maxHp; // Heal to max HP on upgrade
 
       if (entity.hasCategory('player')) {
         MatchManager.instance.updateEnergyIncomePerTick(incomeDelta);

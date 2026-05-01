@@ -3,6 +3,7 @@ import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
+import 'package:dreamhunter/game/components/wrench_component.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
 import 'package:dreamhunter/widgets/game/upgrade_dialog.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
@@ -25,7 +26,11 @@ class DoorEntity extends BaseEntity with TapCallbacks {
 
   String get levelName => currentUpgrade.name;
 
-  double shieldHp = 0; // Added shield support for Fridge
+  double shieldHp = 0; // Current shield
+  double maxShieldHp = 0; // Max shield provided by fridge
+
+  @override
+  int get entityLevel => totalUpgrades;
 
   late final SpriteComponent _spriteComponent;
   late Sprite _openSprite;
@@ -40,6 +45,8 @@ class DoorEntity extends BaseEntity with TapCallbacks {
   late final _RoundedBarComponent _hbBackground;
   late final _RoundedBarComponent _hbFill;
   late final _RoundedBarComponent _hbShield; // Added shield bar
+
+  double _regenTimer = 0;
 
   DoorEntity({required super.position, required this.roomID})
     : super(size: Vector2.all(32), anchor: Anchor.topLeft) {
@@ -137,6 +144,42 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     }
   }
 
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (isDestroyed || isOpen) {
+      isBeingRepaired = false;
+      return;
+    }
+
+    // Manual Repair Visualization
+    if (isBeingRepaired && children.whereType<WrenchComponent>().isEmpty) {
+      add(WrenchComponent()..position = Vector2(size.x - 4, size.y / 2));
+    }
+
+    // Manual Repair Logic: 2% every 1s (ONLY when isBeingRepaired is true)
+    if (isBeingRepaired && (hp < maxHp || shieldHp < maxShieldHp)) {
+      _regenTimer += dt;
+      if (_regenTimer >= 1.0) {
+        _regenTimer = 0;
+
+        // Heal HP
+        if (hp < maxHp) {
+          hp = (hp + maxHp * 0.02).clamp(0, maxHp);
+        }
+
+        // Heal Shield
+        if (shieldHp < maxShieldHp) {
+          shieldHp = (shieldHp + maxShieldHp * 0.02).clamp(0, maxShieldHp);
+        }
+
+        _updateHealthBar();
+      }
+    } else {
+      _regenTimer = 0;
+    }
+  }
+
   void _updateLevelText() {
     if (isDestroyed) return;
     _levelText.text = isOpen ? '' : romanNumeral;
@@ -230,8 +273,9 @@ class DoorEntity extends BaseEntity with TapCallbacks {
   }
 
   /// Sets the shield HP for this door.
-  void setShield(double amount) {
-    shieldHp = amount;
+  void setShield(double current, double max) {
+    shieldHp = current;
+    maxShieldHp = max;
     _updateHealthBar();
   }
 

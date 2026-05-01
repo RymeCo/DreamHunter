@@ -63,7 +63,10 @@ class MatchManager extends ChangeNotifier {
     _energyIncomePerTick = 0;
 
     _hunterAliveStatus.clear();
-    _hunterAliveStatus.add(true); // Reset player to alive
+    _hunterAliveStatus.add(true); // Player
+    for (int i = 0; i < _aiSkins.length; i++) {
+      _hunterAliveStatus.add(true);
+    }
 
     notifyListeners();
   }

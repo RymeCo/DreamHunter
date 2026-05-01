@@ -121,6 +121,7 @@ class OreEntity extends BaseEntity with TapCallbacks {
 
     if (success) {
       level++;
+      hp = maxHp; // Heal to max HP on upgrade
       _updateVisuals();
       HapticManager.instance.medium();
       AudioManager.instance.playReward();

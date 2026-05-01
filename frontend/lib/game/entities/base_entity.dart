@@ -6,6 +6,7 @@ import 'package:dreamhunter/game/dream_hunter_game.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
 import 'package:dreamhunter/game/components/floating_feedback.dart';
 import 'package:dreamhunter/game/entities/ore_entity.dart';
+import 'package:dreamhunter/game/components/fog_of_war.dart';
 import 'package:dreamhunter/game/game_config.dart';
 
 /// The foundational class for all game objects (players, monsters, furniture, etc.)
@@ -54,6 +55,12 @@ abstract class BaseEntity extends PositionComponent
   // Sleeping state
   bool isSleeping = false;
 
+  /// Whether this entity is currently being repaired (manual repair mode).
+  bool isBeingRepaired = false;
+
+  /// Cooldown for the manual repair tool (20 seconds).
+  double repairCooldown = 0;
+
   /// Index of the hunter (0 for player, 1+ for AI).
   /// Null if this is not a hunter entity.
   int? hunterIndex;
@@ -75,6 +82,9 @@ abstract class BaseEntity extends PositionComponent
     return '';
   }
 
+  /// Gets the current level of this entity (for AI targeting decisions).
+  int get entityLevel => 0;
+
   BaseEntity({super.position, super.size, super.anchor});
 
   @override
@@ -93,6 +103,10 @@ abstract class BaseEntity extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+
+    if (repairCooldown > 0) {
+      repairCooldown = (repairCooldown - dt).clamp(0, 20);
+    }
 
     final manager = MatchManager.instance;
 
@@ -215,6 +229,20 @@ abstract class BaseEntity extends PositionComponent
     super.onRemove();
   }
 
+  @override
+  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollision(intersectionPoints, other);
+
+    // Monster attacking Hunter/Player
+    if (hasCategory('monster') &&
+        (other is BaseEntity &&
+            (other.hasCategory('player') || other.hasCategory('ai_hunter')))) {
+      if (!other.isDestroyed) {
+        other.takeDamage(100.0); // Lethal touch
+      }
+    }
+  }
+
   /// Helper to check if this entity has a specific category.
   bool hasCategory(String category) => categories.contains(category);
 
@@ -247,6 +275,15 @@ abstract class BaseEntity extends PositionComponent
   void destroy() {
     if (isDestroyed) return;
     isDestroyed = true;
+
+    // Notify FogOfWar of death if this is a hunter
+    if (hasCategory('player') || hasCategory('ai_hunter')) {
+      final fow = game.world.children.whereType<FogOfWar>().firstOrNull;
+      if (fow != null) {
+        fow.markDeath(roomID);
+      }
+    }
+
     removeFromParent();
   }
 }

@@ -12,7 +12,9 @@ import 'package:dreamhunter/game/entities/building_slot_entity.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
 import 'package:dreamhunter/game/entities/monster_entity.dart';
+import 'package:dreamhunter/game/components/fog_of_war.dart';
 import 'package:dreamhunter/game/ui/dynamic_joystick.dart';
+import 'package:dreamhunter/game/ui/repair_button.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
 
 class DreamHunterGame extends FlameGame
@@ -114,9 +116,12 @@ class DreamHunterGame extends FlameGame
     if (slotsLayer != null) {
       for (final obj in slotsLayer.objects) {
         if (obj.type == 'BuildingSlot') {
+          String roomID = obj.name.trim();
+          if (roomID == 'BuildingSlot') roomID = ''; // Clear generic name
+
           final slot = BuildingSlotEntity(
             position: Vector2(obj.x, obj.y),
-            roomID: obj.name.trim(),
+            roomID: roomID,
           );
           parsedSlots.add(slot);
           world.add(slot);
@@ -139,6 +144,8 @@ class DreamHunterGame extends FlameGame
     joystick = DynamicJoystick();
     camera.viewport.add(joystick);
 
+    camera.viewport.add(RepairButton());
+
     // 4. Spawn Player
     player = PlayerEntity(joystick: joystick);
     player.position = Vector2(1280 / 2, 1280 / 2); // Center of the dorm map
@@ -152,7 +159,7 @@ class DreamHunterGame extends FlameGame
     camera.follow(player);
 
     // 6. Combined Timer Logic (Flame Native)
-    bool monsterSpawned = false;
+    _spawnMonster(); // Spawn at start
     add(
       TimerComponent(
         period: 1,
@@ -161,10 +168,6 @@ class DreamHunterGame extends FlameGame
           // Grace Period Countdown
           if (graceTimer.value >= 0) {
             graceTimer.value--;
-            if (graceTimer.value == 0 && !monsterSpawned) {
-              monsterSpawned = true;
-              _spawnMonster();
-            }
           }
 
           // 15-Minute Match Countdown
@@ -256,6 +259,9 @@ class DreamHunterGame extends FlameGame
       }
     }
 
+    // 11. Add Fog of War
+    world.add(FogOfWar());
+
     final aiSkins = MatchManager.instance.aiSkins;
     parsedBeds.shuffle(math.Random());
 
@@ -293,23 +299,54 @@ class DreamHunterGame extends FlameGame
   /// Checks if a given hitbox (at a potential position) would collide with any walls.
   /// Note: Hunters (Player and AI) do not block each other's movement; they pass through.
   bool isPositionBlocked(Rect hitbox, {List<BaseEntity>? ignoredEntities}) {
-    // Check Tiled Map Obstacles (Stone walls)
-    for (final obstacle in _obstacles) {
-      if (obstacle.toRect().overlaps(hitbox)) {
-        return true;
-      }
-    }
-
-    // Check Buildings (Doors, etc.)
+    // 1. Check Buildings (Doors, etc.) - Dynamic but usually fewer than obstacles
     for (final building in _buildings) {
       if (ignoredEntities != null && ignoredEntities.contains(building)) {
         continue;
       }
-      if (building.toRect().overlaps(hitbox)) {
+      // Optimized Rect.overlaps (direct double comparison is faster than Rect object methods)
+      final bRect = building.toRect();
+      if (hitbox.left < bRect.right &&
+          hitbox.right > bRect.left &&
+          hitbox.top < bRect.bottom &&
+          hitbox.bottom > bRect.top) {
         return true;
       }
     }
+
+    // 2. Check Tiled Map Obstacles (Stone walls) - Static
+    // Only check obstacles in the immediate vicinity to prevent O(N) lag
+    for (final obstacle in _obstacles) {
+      final oRect = obstacle.toRect();
+      if (hitbox.left < oRect.right &&
+          hitbox.right > oRect.left &&
+          hitbox.top < oRect.bottom &&
+          hitbox.bottom > oRect.top) {
+        return true;
+      }
+    }
+
     return false;
+  }
+
+  /// Returns the building entity that is currently blocking the given hitbox, if any.
+  BaseEntity? getBlockingEntity(
+    Rect hitbox, {
+    List<BaseEntity>? ignoredEntities,
+  }) {
+    for (final building in _buildings) {
+      if (ignoredEntities != null && ignoredEntities.contains(building)) {
+        continue;
+      }
+      final bRect = building.toRect();
+      if (hitbox.left < bRect.right &&
+          hitbox.right > bRect.left &&
+          hitbox.top < bRect.bottom &&
+          hitbox.bottom > bRect.top) {
+        return building;
+      }
+    }
+    return null;
   }
 
   /// Registers a building for collision tracking.

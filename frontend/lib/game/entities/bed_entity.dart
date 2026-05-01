@@ -21,9 +21,12 @@ class BedEntity extends BaseEntity with TapCallbacks {
   double _popupAlpha = 0.0;
   final double _fadeSpeed = 5.0; // Speed of the fade animation
 
+  @override
+  int get entityLevel => level;
+
   /// The entity that currently occupies this bed.
   BaseEntity? owner;
-  bool get isOccupied => owner != null;
+  bool get isOccupied => owner != null && !owner!.isDestroyed;
 
   /// The entity that is currently heading towards this bed.
   BaseEntity? reservedBy;
@@ -121,6 +124,7 @@ class BedEntity extends BaseEntity with TapCallbacks {
 
     if (success) {
       level++;
+      hp = maxHp; // Heal to max HP on upgrade
 
       // Update visuals/income
       if (entity.hasCategory('player')) {
@@ -141,13 +145,13 @@ class BedEntity extends BaseEntity with TapCallbacks {
   @override
   void destroy() {
     if (isDestroyed) return;
-    
+
     // Kill the owner if one exists
     if (owner != null && owner!.hunterIndex != null) {
       MatchManager.instance.killHunter(owner!.hunterIndex!);
       owner!.destroy(); // Remove the hunter visual too
     }
-    
+
     super.destroy();
   }
 
