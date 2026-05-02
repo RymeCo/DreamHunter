@@ -9,6 +9,7 @@ import 'package:dreamhunter/game/entities/fridge_entity.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
+import 'package:dreamhunter/game/game_config.dart';
 
 /// A HUD button that toggles manual repair mode for the current room.
 class RepairButton extends PositionComponent
@@ -72,8 +73,8 @@ class RepairButton extends PositionComponent
     if (_isToggled) {
       _activeTimer = 10.0; // Start 10s active duration
     } else {
-      // Start 20s cooldown when turning OFF manually
-      game.player.repairCooldown = 20.0;
+      // Start cooldown when turning OFF manually
+      game.player.repairCooldown = GameConfig.repairCooldown;
       _activeTimer = 0;
     }
 
@@ -140,7 +141,7 @@ class RepairButton extends PositionComponent
       if (_activeTimer <= 0) {
         // AUTO-TIMEOUT: Repair ends after 10s
         _isToggled = false;
-        game.player.repairCooldown = 20.0;
+        game.player.repairCooldown = GameConfig.repairCooldown;
         _updateVisualState();
         _updateRoomRepairs();
       }
@@ -149,7 +150,7 @@ class RepairButton extends PositionComponent
       _cooldownOverlay.isActiveIndicator = true;
     } else {
       // Show cooldown progress (filling)
-      _cooldownOverlay.progress = game.player.repairCooldown / 20.0;
+      _cooldownOverlay.progress = game.player.repairCooldown / GameConfig.repairCooldown;
       _cooldownOverlay.isActiveIndicator = false;
     }
 
@@ -163,7 +164,7 @@ class RepairButton extends PositionComponent
           game.player.isDestroyed ||
           !game.player.isSleeping) {
         _isToggled = false;
-        game.player.repairCooldown = 20.0;
+        game.player.repairCooldown = GameConfig.repairCooldown;
         _activeTimer = 0;
         _updateVisualState();
         _updateRoomRepairs();

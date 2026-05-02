@@ -58,8 +58,13 @@ class _GameScreenState extends State<GameScreen> {
 
   void _onMatchStateChanged() {
     if (mounted) {
-      // Only rebuild GameScreen if the paused state actually changed.
-      // Economy updates are handled by ListenableBuilders in the HUD.
+      // 1. Victory Check
+      if (_matchManager.isGameWon) {
+        _showRewardDialog();
+        return;
+      }
+
+      // 2. Pause Check
       if (_game.paused != _matchManager.isPaused) {
         setState(() {
           _game.paused = _matchManager.isPaused;
@@ -151,7 +156,7 @@ class _GameScreenState extends State<GameScreen> {
               child: Align(
                 alignment: Alignment.topCenter,
                 child: MatchTimerOverlay(
-                  matchNotifier: _game.matchTimer,
+                  matchNotifier: _game.stopwatch,
                   graceNotifier: _game.graceTimer,
                 ),
               ),

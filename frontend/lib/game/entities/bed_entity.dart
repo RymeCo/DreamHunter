@@ -115,7 +115,10 @@ class BedEntity extends BaseEntity with TapCallbacks {
     // 1. Check Requirements (Door level)
     if (nextUpgrade.requirementLabel != null) {
       final bool isMet = nextUpgrade.checkRequirement!(roomDoor);
-      if (!isMet) return false;
+      if (!isMet) {
+        debugPrint('[UPGRADE] Bed in $roomID failed upgrade: Requirement not met (${nextUpgrade.requirementLabel})');
+        return false;
+      }
     }
 
     // 2. Resource Check & Deduction
@@ -156,9 +159,11 @@ class BedEntity extends BaseEntity with TapCallbacks {
 
       HapticManager.instance.medium();
       AudioManager.instance.playClick();
+      debugPrint('[UPGRADE] Bed in $roomID successfully upgraded to Lv$level');
       return true;
     }
 
+    debugPrint('[UPGRADE] Bed in $roomID failed upgrade: Insufficient resources');
     return false;
   }
 

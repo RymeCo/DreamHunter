@@ -21,6 +21,7 @@ class PlayerEntity extends BaseEntity {
     hunterIndex = 0;
     maxHp = 1.0;
     hp = maxHp;
+    priority = 3000; // Above Fog (2200)
   }
 
   @override

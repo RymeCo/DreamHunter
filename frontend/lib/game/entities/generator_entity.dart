@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
@@ -77,9 +78,8 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
 
     _updateSprite();
 
-    // Start generating energy immediately based on current level
-    final income = GameConfig.generatorUpgrades[level - 1].income;
-    MatchManager.instance.updateEnergyIncomePerTick(income);
+    // The energy generation logic has been migrated to BaseEntity.energyIncomePerTick
+    // to correctly attribute energy to the hunter in the same room (Player or AI).
   }
 
   void _updateSprite() {
@@ -139,12 +139,12 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
     final List<UpgradeRequirement> reqs = [];
 
     if (nextUpgrade.requirementLabel != null) {
-      final turrets = game.world.children.whereType<TurretEntity>();
+      final turrets = game.world.children
+          .whereType<TurretEntity>()
+          .where((t) => t.roomID == roomID);
       int maxTurretLv = 0;
       if (turrets.isNotEmpty) {
-        maxTurretLv = turrets
-            .map((t) => t.level)
-            .reduce((a, b) => a > b ? a : b);
+        maxTurretLv = turrets.map((t) => t.level).reduce(math.max);
       }
 
       final bool isMet = nextUpgrade.checkRequirement!(maxTurretLv);
@@ -179,15 +179,18 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
 
     // 1. Check Requirements (Turret level)
     if (nextUpgrade.requirementLabel != null) {
-      final turrets = game.world.children.whereType<TurretEntity>();
+      final turrets = game.world.children
+          .whereType<TurretEntity>()
+          .where((t) => t.roomID == roomID);
       int maxTurretLv = 0;
       if (turrets.isNotEmpty) {
-        maxTurretLv = turrets
-            .map((t) => t.level)
-            .reduce((a, b) => a > b ? a : b);
+        maxTurretLv = turrets.map((t) => t.level).reduce(math.max);
       }
       final bool isMet = nextUpgrade.checkRequirement!(maxTurretLv);
-      if (!isMet) return false;
+      if (!isMet) {
+        debugPrint('[UPGRADE] Generator in $roomID failed upgrade: Requirement not met (${nextUpgrade.requirementLabel})');
+        return false;
+      }
     }
 
     // 2. Resource Check & Deduction
@@ -207,29 +210,17 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
     }
 
     if (success) {
-      final currentUpgrade = GameConfig.generatorUpgrades[level - 1];
-      final incomeDelta = nextUpgrade.income - currentUpgrade.income;
       level++;
       hp = maxHp; // Heal to max HP on upgrade
-
-      if (entity.hasCategory('player')) {
-        MatchManager.instance.updateEnergyIncomePerTick(incomeDelta);
-      }
 
       _updateSprite();
       HapticManager.instance.medium();
       AudioManager.instance.playClick();
+      debugPrint('[UPGRADE] Generator in $roomID successfully upgraded to Lv$level');
       return true;
     }
 
+    debugPrint('[UPGRADE] Generator in $roomID failed upgrade: Insufficient resources');
     return false;
-  }
-
-  @override
-  void onRemove() {
-    // Stop generating energy if destroyed/removed
-    final currentIncome = GameConfig.generatorUpgrades[level - 1].income;
-    MatchManager.instance.updateEnergyIncomePerTick(-currentIncome);
-    super.onRemove();
   }
 }

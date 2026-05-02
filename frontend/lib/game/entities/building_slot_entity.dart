@@ -92,7 +92,7 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
     HapticManager.instance.light();
 
     // Check if a fridge already exists in this room
-    final bool hasFridge = game.world.children.whereType<FridgeEntity>().any(
+    final bool hasFridge = game.buildings.whereType<FridgeEntity>().any(
       (f) => f.roomID == roomID,
     );
 
@@ -126,6 +126,7 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
       );
       game.world.add(generator);
       removeFromParent();
+      debugPrint('[BUILD] Successfully built $baseId Lv$level in room $roomID');
       return true;
     } else if (baseId == 'turret') {
       final turret = TurretEntity(
@@ -134,15 +135,17 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
       );
       game.world.add(turret);
       removeFromParent();
+      debugPrint('[BUILD] Successfully built $baseId in room $roomID');
       return true;
     } else if (baseId == 'fridge') {
       // Restriction: Only one Fridge per room
-      final bool alreadyHasFridge = game.world.children
+      final bool alreadyHasFridge = game.buildings
           .whereType<FridgeEntity>()
           .any((f) => f.roomID == roomID);
 
       if (alreadyHasFridge) {
         // Show a brief message or just reject
+        debugPrint('[BUILD] Failed to build $baseId in room $roomID: Already exists.');
         return false;
       }
 
@@ -152,6 +155,7 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
       );
       game.world.add(fridge);
       removeFromParent();
+      debugPrint('[BUILD] Successfully built $baseId in room $roomID');
       return true;
     } else if (baseId == 'ore') {
       final ore = OreEntity(
@@ -161,8 +165,11 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
       );
       game.world.add(ore);
       removeFromParent();
+      debugPrint('[BUILD] Successfully built $baseId Lv$level in room $roomID');
       return true;
     }
+    
+    debugPrint('[BUILD] Failed to build $baseId: Unknown building ID.');
     return false;
   }
 }

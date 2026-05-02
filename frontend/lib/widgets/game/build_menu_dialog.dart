@@ -140,7 +140,7 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
           name: 'Turret',
           imagePath: 'assets/images/game/defenses/turret_sheet-32x32.png',
           coinCost: GameConfig.turretBuildCost,
-          benefit: 'Output: 10-90 DMG/s',
+          benefit: '10-90 DMG/s (Max 2 Active/Room)',
           productionIcon: Icons.security_rounded,
           glowColor: Colors.orangeAccent,
           isSpriteSheet: true,

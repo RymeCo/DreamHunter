@@ -5,10 +5,12 @@ import 'dart:math' as math;
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/behaviors/monster_ai_behavior.dart';
 import 'package:dreamhunter/game/components/floating_feedback.dart';
+import 'package:dreamhunter/services/game/match_manager.dart';
+import 'package:flame/collisions.dart';
 
 class MonsterEntity extends BaseEntity {
   double speed = 96.0; // Increased by 20% from 80.0
-  double attackDamage = 5.0;
+  double attackDamage = 6.0; // Reduced from 10.0 (-40%) for early game balance
   int monsterLevel = 1;
   int experience = 0;
 
@@ -30,6 +32,15 @@ class MonsterEntity extends BaseEntity {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+
+    // COMBAT HITBOX: The monster needs a full-body hitbox to be hit by projectiles.
+    // The base class only adds a foot-level hitbox for navigation.
+    add(
+      RectangleHitbox(
+        size: Vector2(size.x * 0.8, size.y * 0.8),
+        position: Vector2(size.x * 0.1, size.y * 0.1),
+      ),
+    );
 
     // Load sprites
     _idleSprite = await Sprite.load('game/monsters/ghost_idle-32x48.png');
@@ -99,27 +110,13 @@ class MonsterEntity extends BaseEntity {
     monsterLevel++;
     maxHp *= 1.2;
     hp = maxHp; // Full heal on level up
-    attackDamage = 5.0 * math.pow(1.15, monsterLevel - 1);
+    attackDamage = 6.0 * math.pow(1.20, monsterLevel - 1);
 
-    // Visual feedback for level up: Grow, pulse, and color flash
-    add(
-      ScaleEffect.to(
-        Vector2.all(1.8),
-        EffectController(
-          duration: 0.1,
-          reverseDuration: 0.3,
-          curve: Curves.easeOut,
-        ),
-      ),
-    );
+    debugPrint('[MONSTER] LEVEL UP! Now Level $monsterLevel. HP: $maxHp, Damage: ${attackDamage.toStringAsFixed(1)}');
 
-    _spriteComponent.add(
-      ColorEffect(
-        Colors.redAccent,
-        EffectController(duration: 0.2, reverseDuration: 0.2),
-        opacityTo: 0.5,
-      ),
-    );
+    // Visual feedback for level up: Grow and flash
+    pulse(1.8);
+    flashColor(Colors.redAccent);
 
     // Announce Level Up
     game.world.add(
@@ -132,10 +129,45 @@ class MonsterEntity extends BaseEntity {
     );
   }
 
+  /// Flashes the monster a certain color.
+  void flashColor(Color color) {
+    _spriteComponent.add(
+      ColorEffect(
+        color,
+        EffectController(duration: 0.2, reverseDuration: 0.2),
+        opacityTo: 0.5,
+      ),
+    );
+  }
+
+  /// Pulses the monster's scale.
+  void pulse(double scale) {
+    add(
+      ScaleEffect.to(
+        Vector2.all(scale),
+        EffectController(
+          duration: 0.1,
+          reverseDuration: 0.3,
+          curve: Curves.easeOut,
+        ),
+      ),
+    );
+  }
+
   @override
   void takeDamage(double amount) {
     super.takeDamage(amount);
     _healthBar.updateVisuals();
+  }
+
+  @override
+  void destroy() {
+    if (isDestroyed) return;
+    super.destroy();
+    
+    // Notify MatchManager that the monster is dead (Victory!)
+    MatchManager.instance.winMatch();
+    debugPrint('[MONSTER] Monster defeated! Game over (Win).');
   }
 }
 

@@ -157,6 +157,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       if (_passiveHealTimer >= 10.0) {
         _passiveHealTimer = 0;
         hp = (hp + 1).clamp(0, maxHp);
+        debugPrint('[DOOR] Passive Heal: +1 HP in room $roomID (HP: $hp/$maxHp)');
         _updateHealthBar();
 
         // Show +1hp feedback
@@ -205,6 +206,9 @@ class DoorEntity extends BaseEntity with TapCallbacks {
         // Heal HP
         if (hp < maxHp) {
           hp = (hp + hpHeal).clamp(0, maxHp);
+          debugPrint(
+            '[DOOR] Repair Heal: +${hpHeal.toInt()} HP in room $roomID (HP: $hp/$maxHp)',
+          );
           // Bigger feedback for active repair
           game.world.add(
             FloatingFeedback(
@@ -221,7 +225,11 @@ class DoorEntity extends BaseEntity with TapCallbacks {
 
         // Heal Shield
         if (shieldHp < maxShieldHp) {
+          final oldShield = shieldHp;
           shieldHp = (shieldHp + shieldHeal).clamp(0, maxShieldHp);
+          debugPrint(
+            '[DOOR] Repair Shield: +${(shieldHp - oldShield).toInt()} in room $roomID (Shield: $shieldHp/$maxShieldHp)',
+          );
         }
 
         _updateHealthBar();
@@ -339,9 +347,11 @@ class DoorEntity extends BaseEntity with TapCallbacks {
   @override
   void destroy() {
     if (isDestroyed) return;
+    debugPrint('[DOOR] Door in room $roomID has been DESTROYED!');
     _spriteComponent.removeFromParent();
     _hbBackground.removeFromParent();
     categories.remove('building');
+    categories.remove('door'); // Fully clear categories to avoid being targeted
     HapticManager.instance.heavy();
     super.destroy();
   }
@@ -406,9 +416,11 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       _updateHealthBar();
 
       HapticManager.instance.medium();
+      debugPrint('[UPGRADE] Door in $roomID successfully upgraded to ${currentUpgrade.name} (${currentUpgrade.suffix})');
       return true;
     }
 
+    debugPrint('[UPGRADE] Door in $roomID failed upgrade: Insufficient resources');
     return false;
   }
 

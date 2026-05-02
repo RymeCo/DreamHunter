@@ -107,13 +107,27 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
               const SizedBox(height: 16),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  "UPGRADE EFFECT",
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white38,
-                    letterSpacing: 2.0,
-                    fontWeight: FontWeight.w900,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "UPGRADE EFFECT",
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colors.white38,
+                        letterSpacing: 2.0,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const Text(
+                      "FULL HEAL",
+                      style: TextStyle(
+                        color: Colors.amberAccent,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 10),

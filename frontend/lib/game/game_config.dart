@@ -77,6 +77,7 @@ class GameConfig {
   static const double tickInterval = 1.0;
   static const int gracePeriodSeconds = 30;
   static const double graceSpeedMultiplier = 0.8; // 20% slow
+  static const double repairCooldown = 30.0; // Seconds between repairs
 
   static const int turretBuildCost = 100;
   static const int fridgeBuildCost = 200;

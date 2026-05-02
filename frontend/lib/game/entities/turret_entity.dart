@@ -21,9 +21,6 @@ class TurretEntity extends BaseEntity with TapCallbacks {
   double _scanTimer = 0;
   BaseEntity? _currentTarget;
 
-  bool isStunned = false;
-  double _stunTimer = 0;
-
   late Sprite _baseSprite;
   late Sprite _headSprite;
   late Sprite _projectileSprite;
@@ -62,11 +59,17 @@ class TurretEntity extends BaseEntity with TapCallbacks {
   }
 
   void _applyStats() {
-    // Scaling:
-    // Lv 1: 10 dmg, 150 range
-    // Lv 9: 90 dmg, 310 range
-    damage = 10.0 + (level - 1) * 10.0;
-    range = 150.0 + (level - 1) * 20.0;
+    // NEW SCALE PROTOCOL:
+    // Range: Minimum 3 tiles (96px) + 0.5 tiles (16px) per level increase.
+    // Lv 1: 96px (3 tiles)
+    // Lv 9: 96 + (8 * 16) = 224px (7 tiles)
+    range = 96.0 + (level - 1) * 16.0;
+
+    // SWEET SPOT DAMAGE:
+    // Starts higher but scales slightly less aggressively than before.
+    // Base 12 + 8 per level. Lv 9 = 76 (Standard ghost HP is ~100-200)
+    damage = 12.0 + (level - 1) * 8.0;
+
     // Fire rate increases slightly (gets faster)
     fireRate = (1.0 - (level - 1) * 0.05).clamp(0.4, 1.0);
   }
@@ -120,8 +123,8 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     }
 
     final int cost = level * 150;
-    final double nextDamage = 10.0 + level * 10.0;
-    final double nextRange = 150.0 + level * 20.0;
+    final double nextDamage = 12.0 + level * 8.0;
+    final double nextRange = 96.0 + level * 16.0;
 
     UpgradeDialog.show(
       game.buildContext!,
@@ -130,7 +133,7 @@ class TurretEntity extends BaseEntity with TapCallbacks {
       requirements: [], // No hard requirements for turrets yet
       coinCost: cost,
       upgradeBenefit:
-          "Lv. $level ➔ Lv. ${level + 1}\nDmg: ${damage.toInt()}➔${nextDamage.toInt()}, Range: ${range.toInt()}➔${nextRange.toInt()}",
+          "Lv. $level ➔ Lv. ${level + 1}\nDmg: ${damage.toInt()}➔${nextDamage.toInt()}, Range: ${range.toInt()}➔${nextRange.toInt()}\nMax 2 Active Per Room",
       onUpgrade: () async {
         tryUpgrade(game.player);
       },
@@ -158,12 +161,15 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     if (success) {
       level++;
       _applyStats();
+      hp = maxHp; // Full heal on upgrade
       await _updateSprites();
       HapticManager.instance.medium();
       AudioManager.instance.playReward(); // Use reward sound for upgrade
+      debugPrint('[UPGRADE] Turret in $roomID successfully upgraded to Lv$level');
       return true;
     }
 
+    debugPrint('[UPGRADE] Turret in $roomID failed upgrade: Insufficient resources');
     return false;
   }
 
@@ -178,12 +184,11 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     super.update(dt);
 
     if (isStunned) {
-      _stunTimer -= dt;
-      if (_stunTimer <= 0) {
-        isStunned = false;
-        head.paint.color = Colors.white;
-      }
+      head.paint.color = Colors.blueGrey.withValues(alpha: 0.7);
+      _currentTarget = null;
       return;
+    } else {
+      head.paint.color = Colors.white;
     }
 
     _fireTimer += dt;
@@ -192,14 +197,35 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     // Throttle scanning to once every 200ms
     if (_scanTimer >= 0.2) {
       _scanTimer = 0;
-      _currentTarget = _findNearestMonster();
+
+      // EXCLUSIVE TARGETING PROTOCOL: 
+      // Only TWO turrets per room can be "active" at a time to reduce visual clutter 
+      // and prevent multiple turrets from wasting ammo on the same target.
+      final activeTurretsCount = game.turrets.whereType<TurretEntity>().where((t) => 
+        t != this && 
+        t.roomID == roomID && 
+        t._currentTarget != null && 
+        !t.isStunned
+      ).length;
+
+      if (activeTurretsCount >= 2) {
+        _currentTarget = null;
+      } else {
+        _currentTarget = _findNearestMonster();
+      }
     }
 
     if (_currentTarget != null) {
-      // Rotate head to target
+      // LINE OF SIGHT CHECK: Don't shoot through walls
+      if (!game.hasLineOfSight(center, _currentTarget!.center)) {
+        _currentTarget = null;
+        return;
+      }
+
+      // Rotate head to target center
       final angle = atan2(
-        _currentTarget!.position.y - position.y,
-        _currentTarget!.position.x - position.x,
+        _currentTarget!.center.y - center.y,
+        _currentTarget!.center.x - center.x,
       );
       head.angle = angle;
 
@@ -211,19 +237,13 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     }
   }
 
-  /// Stuns the turret for a specific duration.
-  void stun(double duration) {
-    isStunned = true;
-    _stunTimer = duration;
-    head.paint.color = Colors.blueGrey.withValues(alpha: 0.7);
-  }
-
   BaseEntity? _findNearestMonster() {
     BaseEntity? nearest;
     double minDistance = range;
 
     for (final monster in game.monsters) {
-      final dist = position.distanceTo(monster.position);
+      if (monster.isDestroyed) continue;
+      final dist = center.distanceTo(monster.center);
       if (dist < minDistance) {
         minDistance = dist;
         nearest = monster;
@@ -233,14 +253,20 @@ class TurretEntity extends BaseEntity with TapCallbacks {
   }
 
   void _fire() {
+    if (_currentTarget == null) return;
+    
+    // Play sound and rumble
     AudioManager.instance.playClick();
+    
+    debugPrint('[TURRET] Firing at ${_currentTarget.runtimeType} (Dmg: $damage)');
 
-    final velocity = Vector2(cos(head.angle), sin(head.angle)) * 400;
+    // VELOCITY UPGRADE: 1000px/s makes it virtually a 100% hit (tracer speed)
+    final velocity = Vector2(cos(head.angle), sin(head.angle)) * 1000;
 
     game.world.add(
       ProjectileEntity(
         sprite: _projectileSprite,
-        position: position.clone(),
+        position: center.clone(),
         velocity: velocity,
         damage: damage,
       ),

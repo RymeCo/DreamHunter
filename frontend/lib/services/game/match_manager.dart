@@ -10,6 +10,9 @@ class MatchManager extends ChangeNotifier {
   bool _isPaused = false;
   bool get isPaused => _isPaused;
 
+  bool _isGameWon = false;
+  bool get isGameWon => _isGameWon;
+
   bool _isHunterSleeping = false;
   bool get isHunterSleeping => _isHunterSleeping;
 
@@ -92,6 +95,7 @@ class MatchManager extends ChangeNotifier {
   /// Resets match state for a fresh start.
   void resetMatch() {
     _isPaused = false;
+    _isGameWon = false;
     _isHunterSleeping = false;
     _currentRoomID = '';
     _matchCoins = 0;
@@ -114,6 +118,14 @@ class MatchManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Ends the match in a win.
+  void winMatch() {
+    if (_isGameWon) return;
+    _isGameWon = true;
+    _isPaused = true;
+    _safeNotify(notifyListeners);
+  }
+
   /// Sets the list of AI skins joining the match
   void setAISkins(List<String> skins) {
     _aiSkins.clear();
@@ -134,6 +146,12 @@ class MatchManager extends ChangeNotifier {
       _attackTimers.remove(index);
       _safeNotify(notifyListeners);
     }
+  }
+
+  /// Checks if a hunter is currently alive.
+  bool isHunterAlive(int index) {
+    if (index < 0 || index >= _hunterAliveStatus.length) return false;
+    return _hunterAliveStatus[index];
   }
 
   /// Marks a hunter as under attack for a duration.
@@ -227,6 +245,12 @@ class MatchManager extends ChangeNotifier {
 
   void setIncomePerTick(int value) {
     _incomePerTick = value;
+    _safeNotify(notifyListeners);
+  }
+
+  void setEnergyIncomePerTick(int value) {
+    if (_energyIncomePerTick == value) return;
+    _energyIncomePerTick = value.clamp(0, 100000);
     _safeNotify(notifyListeners);
   }
 

@@ -6,7 +6,7 @@ import 'package:dreamhunter/game/dream_hunter_game.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
 import 'package:dreamhunter/game/components/floating_feedback.dart';
 import 'package:dreamhunter/game/entities/ore_entity.dart';
-import 'package:dreamhunter/game/components/fog_of_war.dart';
+import 'package:dreamhunter/game/entities/generator_entity.dart';
 import 'package:dreamhunter/game/game_config.dart';
 
 /// The foundational class for all game objects (players, monsters, furniture, etc.)
@@ -58,6 +58,10 @@ abstract class BaseEntity extends PositionComponent
   /// Whether this entity is currently being repaired (manual repair mode).
   bool isBeingRepaired = false;
 
+  /// Whether this entity is currently stunned (disabled).
+  bool isStunned = false;
+  double stunTimer = 0.0;
+
   /// Cooldown for the manual repair tool (20 seconds).
   double repairCooldown = 0;
 
@@ -103,9 +107,19 @@ abstract class BaseEntity extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+    if (isDestroyed) return;
+
+    // Stun logic
+    if (isStunned) {
+      stunTimer -= dt;
+      if (stunTimer <= 0) {
+        isStunned = false;
+        stunTimer = 0;
+      }
+    }
 
     if (repairCooldown > 0) {
-      repairCooldown = (repairCooldown - dt).clamp(0, 20);
+      repairCooldown = (repairCooldown - dt).clamp(0, GameConfig.repairCooldown);
     }
 
     final manager = MatchManager.instance;
@@ -151,11 +165,22 @@ abstract class BaseEntity extends PositionComponent
       if (energy > 0) {
         matchEnergy += energy;
       }
+
+      // Sync energy income rate to MatchManager for HUD/UX if this is the player
+      if (hasCategory('player')) {
+        MatchManager.instance.setEnergyIncomePerTick(energy);
+      }
     }
   }
 
   /// The number of coins this entity earns per tick.
   int get incomePerTick {
+    // 0. Dead hunters earn nothing
+    if (hunterIndex != null &&
+        !MatchManager.instance.isHunterAlive(hunterIndex!)) {
+      return 0;
+    }
+
     int baseIncome = 0;
     if (currentBedLevel != null) {
       // 1. Bed Income
@@ -196,8 +221,28 @@ abstract class BaseEntity extends PositionComponent
 
   /// The number of energy this entity earns per tick.
   int get energyIncomePerTick {
-    if (hasCategory('player')) return MatchManager.instance.energyIncomePerTick;
-    return 0;
+    // 0. Dead hunters earn nothing
+    if (hunterIndex != null &&
+        !MatchManager.instance.isHunterAlive(hunterIndex!)) {
+      return 0;
+    }
+
+    final myRoom = roomID;
+    if (myRoom.isEmpty) return 0;
+
+    // PERFORMANCE OPTIMIZATION: Use game's cached buildings list to find generators in this room
+    final generators =
+        game.getBuildingsInRoom(myRoom).whereType<GeneratorEntity>();
+
+    int income = 0;
+    for (final gen in generators) {
+      // Generators are 1-indexed for level, GameConfig is 0-indexed
+      if (gen.level > 0 && gen.level <= GameConfig.generatorUpgrades.length) {
+        income += GameConfig.generatorUpgrades[gen.level - 1].income;
+      }
+    }
+
+    return income;
   }
 
   @override
@@ -237,9 +282,20 @@ abstract class BaseEntity extends PositionComponent
         (other is BaseEntity &&
             (other.hasCategory('player') || other.hasCategory('ai_hunter')))) {
       if (!other.isDestroyed) {
-        other.takeDamage(100.0); // Lethal touch
+        // LINE OF SIGHT SAFETY: Prevent kills through walls or closed doors
+        if (game.hasLineOfSight(center, other.center)) {
+          other.takeDamage(100.0); // Lethal touch
+        }
       }
     }
+  }
+
+  /// Stuns this entity for a specific duration.
+  void stun(double duration) {
+    if (isDestroyed) return;
+    isStunned = true;
+    stunTimer = duration;
+    isBeingRepaired = false; // Stun stops repair!
   }
 
   /// Helper to check if this entity has a specific category.
@@ -274,14 +330,6 @@ abstract class BaseEntity extends PositionComponent
   void destroy() {
     if (isDestroyed) return;
     isDestroyed = true;
-
-    // Notify FogOfWar of death if this is a hunter
-    if (hasCategory('player') || hasCategory('ai_hunter')) {
-      final fow = game.world.children.whereType<FogOfWar>().firstOrNull;
-      if (fow != null) {
-        fow.markDeath(roomID);
-      }
-    }
 
     removeFromParent();
   }

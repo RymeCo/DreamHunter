@@ -8,10 +8,11 @@ import 'package:dreamhunter/game/entities/bed_entity.dart';
 import 'package:dreamhunter/game/entities/door_entity.dart';
 import 'package:dreamhunter/game/entities/fridge_entity.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
+import 'package:dreamhunter/game/game_config.dart';
 
-enum AIPersonality { defense, offense, randos }
+enum AIPersonality { defense, offense, randos, dumb, smart, baiter }
 
-enum AISpeed { fast, slow }
+enum AISpeed { fast, slow, glacier }
 
 /// An AI-controlled hunter entity.
 class HunterAIEntity extends BaseEntity {
@@ -43,7 +44,7 @@ class HunterAIEntity extends BaseEntity {
   }
 
   @override
-  String get roomID => targetBed.roomID;
+  String get roomID => isMounted ? game.getRoomIDAt(position) : targetBed.roomID;
 
   @override
   Future<void> onLoad() async {
@@ -150,7 +151,7 @@ class HunterAIEntity extends BaseEntity {
     }
 
     if (wasRepairing) {
-      repairCooldown = 20.0;
+      repairCooldown = GameConfig.repairCooldown;
     }
   }
 
@@ -170,6 +171,8 @@ class HunterAIEntity extends BaseEntity {
   void sleep(Vector2 bedPosition) {
     isSleeping = true;
     scale.x = 1.0;
+
+    debugPrint('[AI_STATE] $skinPath is now SLEEPING in room $roomID');
 
     // Change visuals to just the head
     _spriteComponent.sprite = _sleepingSprite;

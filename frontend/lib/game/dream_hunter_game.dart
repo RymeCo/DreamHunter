@@ -12,16 +12,20 @@ import 'package:dreamhunter/game/entities/building_slot_entity.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
 import 'package:dreamhunter/game/entities/monster_entity.dart';
-import 'package:dreamhunter/game/components/fog_of_war.dart';
+import 'package:dreamhunter/game/components/room_fog_layer.dart';
 import 'package:dreamhunter/game/ui/dynamic_joystick.dart';
 import 'package:dreamhunter/game/ui/repair_button.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
+import 'package:dreamhunter/services/economy/shop_manager.dart';
+import 'package:dreamhunter/data/item_registry.dart';
+
+import 'package:dreamhunter/game/components/floating_feedback.dart';
 
 class DreamHunterGame extends FlameGame
     with DragCallbacks, HasCollisionDetection {
   final VoidCallback? onMatchEnded;
   final ValueNotifier<int> graceTimer = ValueNotifier(30);
-  final ValueNotifier<int> matchTimer = ValueNotifier(15 * 60);
+  final ValueNotifier<int> stopwatch = ValueNotifier(0);
 
   late final PlayerEntity player;
   late final DynamicJoystick joystick;
@@ -35,9 +39,12 @@ class DreamHunterGame extends FlameGame
   /// Cached lists for high-performance collision checks (Updated in onLoad/onRemove)
   final List<MapObstacle> _obstacles = [];
   final List<BaseEntity> _buildings = [];
+  Iterable<BaseEntity> get buildings => _buildings;
   final List<BaseEntity> buildingSlots = [];
   final List<BaseEntity> turrets = []; // For O(1) stun/targeting
   final Map<String, BedEntity> roomBeds = {}; // For O(1) occupancy checks
+  final Map<math.Point<int>, DoorEntity> doorMap = {}; // For O(1) LoS checks
+  final Map<String, RoomFogLayer> roomFog = {}; // For O(1) room reveals
 
   /// Global grid for AI pathfinding
   late final List<List<bool>> wallGrid;
@@ -46,6 +53,9 @@ class DreamHunterGame extends FlameGame
 
   /// Pre-calculated distance maps for every bed (Key: roomID)
   final Map<String, List<List<int>>> bedFlowFields = {};
+
+  /// Map of tile coordinates to room IDs for fast lookup (Fog of War)
+  final Map<math.Point<int>, String> tileRoomMap = {};
 
   /// Monster Spawn Points (from Tiled)
   final List<Vector2> monsterSpawnPoints = [];
@@ -56,6 +66,8 @@ class DreamHunterGame extends FlameGame
 
   // Track the current drag position manually for maximum fluidity and compatibility
   Vector2 _dragPosition = Vector2.zero();
+
+  double _evictionMessageCooldown = 0;
 
   DreamHunterGame({this.onMatchEnded});
 
@@ -70,42 +82,79 @@ class DreamHunterGame extends FlameGame
     // 2. Parse Collisions from Tiled
     final collisionLayer = map.tileMap.getLayer<ObjectGroup>('Collisions');
     if (collisionLayer != null) {
-      for (final obj in collisionLayer.objects) {
-        final obstacle = MapObstacle(
+      final obstacles = collisionLayer.objects.map((obj) {
+        return MapObstacle(
           position: Vector2(obj.x, obj.y),
           size: Vector2(obj.width, obj.height),
         );
-        _obstacles.add(obstacle);
-        world.add(obstacle);
+      }).toList();
+      _obstacles.addAll(obstacles);
+      world.addAll(obstacles);
+    }
+
+    // MAP ANALYSIS: Mark every 32x32 square as "Ground" or "Wall"
+    wallGrid = List.generate(gridW, (_) => List.generate(gridH, (_) => false));
+
+    for (final obstacle in _obstacles) {
+      final rect = obstacle.toRect();
+      final startX = (rect.left / 32.0).floor().clamp(0, gridW - 1);
+      final endX = ((rect.right - 0.1) / 32.0).floor().clamp(0, gridW - 1);
+      final startY = (rect.top / 32.0).floor().clamp(0, gridH - 1);
+      final endY = ((rect.bottom - 0.1) / 32.0).floor().clamp(0, gridH - 1);
+
+      for (int x = startX; x <= endX; x++) {
+        for (int y = startY; y <= endY; y++) {
+          wallGrid[x][y] = true;
+        }
       }
     }
 
     // 3. Parse Objects (Beds, etc.) from Tiled
-    final objectLayer = map.tileMap.getLayer<ObjectGroup>('Object Layer');
+    var objectLayer = map.tileMap.getLayer<ObjectGroup>('Object Layer');
+    // Fallback if named slightly differently
+    objectLayer ??= map.tileMap.getLayer<ObjectGroup>('Objects');
+    objectLayer ??= map.tileMap.getLayer<ObjectGroup>('objects');
+    
     final List<BedEntity> parsedBeds = [];
     final List<DoorEntity> parsedDoors = [];
     if (objectLayer != null) {
       for (final obj in objectLayer.objects) {
         final pos = Vector2(obj.x, obj.y);
         final roomID = obj.name.trim();
-        if (obj.type == 'Bed') {
+        final type = obj.type.toLowerCase();
+        
+        if (type == 'bed') {
           final bed = BedEntity(position: pos, roomID: roomID);
           parsedBeds.add(bed);
           if (roomID.isNotEmpty) roomBeds[roomID] = bed;
-          world.add(bed);
-        } else if (obj.type == 'Door') {
+        } else if (type == 'door') {
           final door = DoorEntity(position: pos, roomID: roomID);
           parsedDoors.add(door);
-          world.add(door);
-        } else if (obj.name == 'DreamMonster' || obj.type == 'DreamMonster') {
-          monsterSpawnPoints.add(pos + (Vector2(obj.width, obj.height) / 2));
+          
+          // Map to grid for O(1) LoS
+          final tx = (pos.x / 32.0).floor();
+          final ty = (pos.y / 32.0).floor();
+          doorMap[math.Point(tx, ty)] = door;
+        } else if (obj.name.toLowerCase() == 'dreammonster' || type == 'dreammonster') {
+          final centerPos = pos + (Vector2(obj.width, obj.height) / 2);
+          // NUDGE: Ensure spawn points aren't inside boundary walls
+          if (centerPos.x < 64) centerPos.x = 64;
+          if (centerPos.x > 1216) centerPos.x = 1216;
+          if (centerPos.y < 64) centerPos.y = 64;
+          if (centerPos.y > 1216) centerPos.y = 1216;
+          monsterSpawnPoints.add(centerPos);
         }
       }
+      world.addAll(parsedBeds);
+      world.addAll(parsedDoors);
     }
 
     // New: Parse Building Slots from its dedicated layer
     final List<BuildingSlotEntity> parsedSlots = [];
-    final slotsLayer = map.tileMap.getLayer<ObjectGroup>('BuildingSlots');
+    var slotsLayer = map.tileMap.getLayer<ObjectGroup>('BuildingSlots');
+    slotsLayer ??= map.tileMap.getLayer<ObjectGroup>('building_slots');
+    slotsLayer ??= map.tileMap.getLayer<ObjectGroup>('Building Slots');
+
     if (slotsLayer != null) {
       for (final obj in slotsLayer.objects) {
         if (obj.type == 'BuildingSlot') {
@@ -117,23 +166,61 @@ class DreamHunterGame extends FlameGame
             roomID: roomID,
           );
           parsedSlots.add(slot);
-          world.add(slot);
         }
       }
+      world.addAll(parsedSlots);
     }
 
     // New: Also check dedicated Spawn layer for monsters
-    final spawnLayer = map.tileMap.getLayer<ObjectGroup>('Spawn');
+    var spawnLayer = map.tileMap.getLayer<ObjectGroup>('Spawn');
+    spawnLayer ??= map.tileMap.getLayer<ObjectGroup>('spawn');
     if (spawnLayer != null) {
       for (final obj in spawnLayer.objects) {
         if (obj.name == 'DreamMonster' || obj.type == 'DreamMonster') {
-          final pos = Vector2(obj.x, obj.y);
-          monsterSpawnPoints.add(pos + (Vector2(obj.width, obj.height) / 2));
+          final centerPos =
+              Vector2(obj.x, obj.y) + (Vector2(obj.width, obj.height) / 2);
+          // NUDGE: Ensure spawn points aren't inside boundary walls
+          if (centerPos.x < 64) centerPos.x = 64;
+          if (centerPos.x > 1216) centerPos.x = 1216;
+          if (centerPos.y < 64) centerPos.y = 64;
+          if (centerPos.y > 1216) centerPos.y = 1216;
+          monsterSpawnPoints.add(centerPos);
         }
       }
     }
 
-    // 4. Initialize Joystick
+    // 4. GRID-BASED FOG: Flood-fill from each bed to find all tiles in its room
+    // This ensures full coverage for non-rectangular rooms.
+    final doorTilesForFog = parsedDoors
+        .map((d) =>
+            math.Point((d.position.x / 32).floor(), (d.position.y / 32).floor()))
+        .toSet();
+
+    final Set<math.Point<int>> allRoomTiles = {};
+
+    for (final roomID in roomBeds.keys) {
+      final bed = roomBeds[roomID]!;
+      final startX = (bed.position.x / 32).floor();
+      final startY = (bed.position.y / 32).floor();
+
+      final roomTiles = _floodFillRoom(startX, startY, doorTiles: doorTilesForFog);
+      allRoomTiles.addAll(roomTiles);
+
+      // OPTIMIZATION: Register tiles for fast room lookup
+      for (final tile in roomTiles) {
+        tileRoomMap[tile] = roomID;
+      }
+
+      final fogLayer = RoomFogLayer(
+        roomID: roomID,
+        tiles: roomTiles,
+      );
+      
+      world.add(fogLayer);
+      roomFog[roomID] = fogLayer;
+    }
+
+    // 5. Initialize Joystick
     joystick = DynamicJoystick();
     camera.viewport.add(joystick);
 
@@ -163,13 +250,8 @@ class DreamHunterGame extends FlameGame
             graceTimer.value--;
           }
 
-          // 15-Minute Match Countdown
-          if (matchTimer.value > 0) {
-            matchTimer.value--;
-            if (matchTimer.value == 0) {
-              onMatchEnded?.call();
-            }
-          }
+          // Stopwatch Incremental Timer
+          stopwatch.value++;
         },
       ),
     );
@@ -231,31 +313,25 @@ class DreamHunterGame extends FlameGame
         slot.removeFromParent();
       }
     }
-    // MAP ANALYSIS: Mark every 32x32 square as "Ground" or "Wall"
-    wallGrid = List.generate(gridW, (_) => List.generate(gridH, (_) => false));
-
-    for (final obstacle in _obstacles) {
-      final rect = obstacle.toRect();
-      // Calculate tile boundaries that this obstacle touches
-      final startX = (rect.left / 32.0).floor().clamp(0, gridW - 1);
-      final endX = (rect.right / 32.0).floor().clamp(0, gridW - 1);
-      final startY = (rect.top / 32.0).floor().clamp(0, gridH - 1);
-      final endY = (rect.bottom / 32.0).floor().clamp(0, gridH - 1);
-
-      for (int x = startX; x <= endX; x++) {
-        for (int y = startY; y <= endY; y++) {
-          final tileRect = Rect.fromLTWH(x * 32.0, y * 32.0, 32.0, 32.0);
-          if (rect.overlaps(tileRect)) {
-            wallGrid[x][y] = true;
-          }
-        }
-      }
-    }
-
-    // 11. Add Fog of War
-    world.add(FogOfWar());
 
     final aiSkins = MatchManager.instance.aiSkins;
+    
+    // ASSET OPTIMIZATION: Pre-load all skins (Player + AI) in parallel before spawning
+    final List<Future> skinLoads = [];
+    
+    // 1. Player skin
+    final characterId = ShopManager.instance.selectedCharacterId;
+    final item = ItemRegistry.get(characterId);
+    final playerSkin = item?.image.replaceFirst('assets/images/', '') ??
+        'game/characters/max_front-32x48.png';
+    skinLoads.add(images.load(playerSkin));
+
+    // 2. AI skins
+    for (final skin in aiSkins) {
+      skinLoads.add(images.load(skin.replaceFirst('assets/images/', '')));
+    }
+    await Future.wait(skinLoads);
+
     parsedBeds.shuffle(math.Random());
 
     // STARTUP OPTIMIZATION: Removed pre-calculation of all flow fields.
@@ -304,33 +380,94 @@ class DreamHunterGame extends FlameGame
   }
 
 
+  /// Checks if there is a clear line of sight between two positions (no wall tiles).
+  bool hasLineOfSight(Vector2 start, Vector2 end) {
+    final startTileX = (start.x / 32.0).floor();
+    final startTileY = (start.y / 32.0).floor();
+    final endTileX = (end.x / 32.0).floor();
+    final endTileY = (end.y / 32.0).floor();
+
+    if (startTileX == endTileX && startTileY == endTileY) return true;
+
+    // Simple ray-stepping logic
+    final diff = end - start;
+    final distance = diff.length;
+    final steps = (distance / 16.0).ceil(); // Step every half-tile
+    final stepVec = diff / steps.toDouble();
+
+    for (int i = 1; i < steps; i++) {
+      final point = start + stepVec * i.toDouble();
+      final px = (point.x / 32.0).floor().clamp(0, gridW - 1);
+      final py = (point.y / 32.0).floor().clamp(0, gridH - 1);
+      
+      // 1. Check Static Walls
+      if (wallGrid[px][py]) {
+        if (px == startTileX && py == startTileY) continue;
+        if (px == endTileX && py == endTileY) continue;
+        return false;
+      }
+
+      // 2. PERFORMANCE OPTIMIZED: Check for Closed Doors using doorMap
+      final door = doorMap[math.Point(px, py)];
+      if (door != null && !door.isOpen && !door.isDestroyed) {
+        // Allow if it's the target tile
+        if (px == endTileX && py == endTileY) continue;
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   /// Checks if a given hitbox (at a potential position) would collide with any walls.
   /// Note: Hunters (Player and AI) do not block each other's movement; they pass through.
-  bool isPositionBlocked(Rect hitbox, {List<BaseEntity>? ignoredEntities}) {
-    // 1. Check Buildings (Doors, etc.) - Dynamic but usually fewer than obstacles
+  bool isPositionBlocked(
+    Rect hitbox, {
+    List<BaseEntity>? ignoredEntities,
+    Vector2? targetPos,
+  }) {
+    // 1. Check Buildings (Doors, etc.) - Full Rect Check (Dynamic)
     for (final building in _buildings) {
       if (ignoredEntities != null && ignoredEntities.contains(building)) {
         continue;
       }
+
+      // DO NOT block if the building is destroyed
+      if (building.isDestroyed) continue;
+
+      // DO NOT block if it's an open door
+      if (building is DoorEntity && building.isOpen) continue;
+
       final bRect = building.toRect();
-      if (hitbox.left < bRect.right &&
-          hitbox.right > bRect.left &&
-          hitbox.top < bRect.bottom &&
-          hitbox.bottom > bRect.top) {
+      if (hitbox.overlaps(bRect)) {
         return true;
       }
     }
 
-    // 2. PERFORMANCE OPTIMIZATION: Check wallGrid (Static Walls) - O(1)
-    // Instead of iterating through ALL _obstacles, we check the grid tiles this hitbox touches.
+    // 2. PERFORMANCE & STABILITY FIX: Check wallGrid (Static Walls) - O(1)
+    // Check all tiles overlapped by the hitbox for 100% collision integrity
     final startX = (hitbox.left / 32.0).floor().clamp(0, gridW - 1);
     final endX = (hitbox.right / 32.0).floor().clamp(0, gridW - 1);
     final startY = (hitbox.top / 32.0).floor().clamp(0, gridH - 1);
     final endY = (hitbox.bottom / 32.0).floor().clamp(0, gridH - 1);
 
-    for (int x = startX; x <= endX; x++) {
-      for (int y = startY; y <= endY; y++) {
-        if (wallGrid[x][y]) return true;
+    for (int tx = startX; tx <= endX; tx++) {
+      for (int ty = startY; ty <= endY; ty++) {
+        if (wallGrid[tx][ty]) {
+          // TARGET OVERRIDE: If the monster is trying to reach a BUILDING placed ON a wall,
+          // we must allow it to enter that specific wall tile to perform the attack.
+          // This does NOT apply to hunters; monsters must stay in halls while chasing them.
+          if (targetPos != null && 
+              ignoredEntities != null && 
+              ignoredEntities.any((e) => e is DoorEntity || e is BedEntity)) {
+            final targetTileX = (targetPos.x / 32.0).floor().clamp(0, gridW - 1);
+            final targetTileY = (targetPos.y / 32.0).floor().clamp(0, gridH - 1);
+            if (tx == targetTileX && ty == targetTileY) {
+              continue; // Allow overlapping the target tile
+            }
+          }
+          return true;
+        }
       }
     }
 
@@ -346,6 +483,13 @@ class DreamHunterGame extends FlameGame
       if (ignoredEntities != null && ignoredEntities.contains(building)) {
         continue;
       }
+
+      // DO NOT block if the building is destroyed
+      if (building.isDestroyed) continue;
+
+      // DO NOT block if it's an open door
+      if (building is DoorEntity && building.isOpen) continue;
+
       final bRect = building.toRect();
       if (hitbox.left < bRect.right &&
           hitbox.right > bRect.left &&
@@ -387,7 +531,8 @@ class DreamHunterGame extends FlameGame
   /// Optimized lookup for buildings in a specific room
   Iterable<BaseEntity> getBuildingsInRoom(String roomID) {
     if (roomID.isEmpty) return const [];
-    return _buildings.where((b) => b.roomID == roomID);
+    // Only return buildings that are NOT destroyed
+    return _buildings.where((b) => b.roomID == roomID && !b.isDestroyed);
   }
 
   /// Registers a turret for monster stun logic.
@@ -412,8 +557,85 @@ class DreamHunterGame extends FlameGame
     // Speed reduced, Peak further reduced (0.15 instead of 0.2)
     slotOpacity = ((math.sin(_pulseTimer * (math.pi / 3.0)) + 1) / 13.0); // Range [0.0, 0.15]
 
+    // 1. Fog of War: Update player's current room in MatchManager
+    final currentRoom = getRoomIDAt(player.position);
+    if (MatchManager.instance.currentRoomID != currentRoom) {
+      MatchManager.instance.setCurrentRoom(currentRoom);
+    }
+
+    // EVICTION LOGIC: Continuously check if player is trespassing in an AI's room
+    if (_evictionMessageCooldown > 0) _evictionMessageCooldown -= dt;
+
+    if (currentRoom.isNotEmpty) {
+      final bed = roomBeds[currentRoom];
+      if (bed != null && bed.isOccupied && !bed.owner!.hasCategory('player')) {
+        if (bed.roomDoor != null) {
+          // TELEPORT: Move player to the hallway (where roomID is empty and no obstacles)
+          final safePos = _findSafeHallwayPosition(bed.roomDoor!.position);
+          player.position = safePos;
+
+          // THROW FEEDBACK: Only once every 2 seconds to avoid the "text wall" spam
+          if (_evictionMessageCooldown <= 0) {
+            _evictionMessageCooldown = 2.0;
+            world.add(
+              FloatingFeedback(
+                label: 'Tenant kicked you out!',
+                color: Colors.orangeAccent,
+                position: player.position.clone(),
+                icon: Icons.gavel,
+              ),
+            );
+          }
+        }
+      }
+    }
+
     // Drive the frame-independent match logic (coins, energy, ticks)
     MatchManager.instance.update(dt);
+  }
+
+  /// Returns the room ID at the given world position.
+  String getRoomIDAt(Vector2 position) {
+    final tx = (position.x / 32).floor();
+    final ty = (position.y / 32).floor();
+    return tileRoomMap[math.Point(tx, ty)] ?? '';
+  }
+
+  /// Helper to find a safe hallway position near a door.
+  /// Ensures the target is NOT in a room, NOT a wall, and NOT a building slot.
+  Vector2 _findSafeHallwayPosition(Vector2 doorPos) {
+    // Candidates: 48px (1.5 tiles) in each cardinal direction
+    final List<Vector2> candidates = [
+      doorPos + Vector2(0, 48),  // Down
+      doorPos + Vector2(0, -48), // Up
+      doorPos + Vector2(48, 0),  // Right
+      doorPos + Vector2(-48, 0), // Left
+    ];
+
+    for (final pos in candidates) {
+      // 1. Is it a hallway? (roomID must be empty)
+      if (getRoomIDAt(pos).isNotEmpty) continue;
+
+      // 2. Is it physically blocked? (Walls/Buildings)
+      // We check a small box at the target position
+      final checkRect = Rect.fromCenter(
+        center: pos.toOffset(),
+        width: 16,
+        height: 16,
+      );
+      
+      if (isPositionBlocked(checkRect)) continue;
+
+      // 3. Is it a building slot? (We don't want to stand on slots)
+      bool isOnSlot = buildingSlots.any((slot) => slot.toRect().overlaps(checkRect));
+      if (isOnSlot) continue;
+
+      // Found a safe spot!
+      return pos;
+    }
+
+    // fallback if everything is weirdly blocked (rare)
+    return doorPos + Vector2(0, 64);
   }
 
   @override
@@ -488,7 +710,7 @@ class DreamHunterGame extends FlameGame
   @override
   void onRemove() {
     graceTimer.dispose();
-    matchTimer.dispose();
+    stopwatch.dispose();
     super.onRemove();
   }
 
@@ -541,6 +763,51 @@ class DreamHunterGame extends FlameGame
 
   /// Finds the shortest path between two positions using BFS on the wallGrid.
   /// Ignores dynamic buildings (doors, turrets) so the monster can navigate to them.
+  /// Flood-fill to find all walkable tiles connected to a starting point,
+  /// stopped by walls and doors.
+  Set<math.Point<int>> _floodFillRoom(int startX, int startY,
+      {Set<math.Point<int>>? doorTiles}) {
+    final Set<math.Point<int>> tiles = {};
+    final List<math.Point<int>> queue = [math.Point(startX, startY)];
+    final visited = <math.Point<int>>{math.Point(startX, startY)};
+
+    // Get all doors to use as boundaries
+    final boundaries = doorTiles ??
+        _buildings
+            .whereType<DoorEntity>()
+            .map((d) => math.Point(
+                (d.position.x / 32).floor(), (d.position.y / 32).floor()))
+            .toSet();
+
+    while (queue.isNotEmpty) {
+      final curr = queue.removeLast();
+      tiles.add(curr);
+
+      for (final dir in [
+        const math.Point(0, 1),
+        const math.Point(0, -1),
+        const math.Point(1, 0),
+        const math.Point(-1, 0),
+      ]) {
+        final next = math.Point(curr.x + dir.x, curr.y + dir.y);
+
+        if (next.x >= 0 &&
+            next.x < gridW &&
+            next.y >= 0 &&
+            next.y < gridH &&
+            !visited.contains(next)) {
+          visited.add(next);
+
+          // Stop if it's a wall or a door
+          if (!wallGrid[next.x][next.y] && !boundaries.contains(next)) {
+            queue.add(next);
+          }
+        }
+      }
+    }
+    return tiles;
+  }
+
   List<Vector2> getShortestPath(Vector2 start, Vector2 end) {
     final startX = (start.x / 32).floor().clamp(0, gridW - 1);
     final startY = (start.y / 32).floor().clamp(0, gridH - 1);
@@ -572,11 +839,33 @@ class DreamHunterGame extends FlameGame
             next.x < gridW &&
             next.y >= 0 &&
             next.y < gridH &&
-            !wallGrid[next.x][next.y] &&
             !visited.contains(next)) {
-          visited.add(next);
-          parentMap[next] = current;
-          queue.add(next);
+          // PATHFINDING FIX: 
+          // 1. Check static walls
+          bool isBlocked = wallGrid[next.x][next.y];
+
+          // 2. Check dynamic buildings (Closed Doors)
+          // We allow the target tile even if it's a door, so the monster can path TO it.
+          bool isTargetTile = (next.x == endX && next.y == endY);
+          
+          if (!isBlocked && !isTargetTile) {
+            for (final building in _buildings) {
+              if (building is DoorEntity && !building.isOpen && !building.isDestroyed) {
+                final dx = (building.position.x / 32).floor();
+                final dy = (building.position.y / 32).floor();
+                if (next.x == dx && next.y == dy) {
+                  isBlocked = true;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (!isBlocked || isTargetTile) {
+            visited.add(next);
+            parentMap[next] = current;
+            queue.add(next);
+          }
         }
       }
     }
