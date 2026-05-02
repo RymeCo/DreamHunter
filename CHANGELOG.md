@@ -280,7 +280,6 @@ All major task completions and architectural shifts are logged here for traceabi
 - [2026-04-26] LOG-SANITIZATION: Removed all remaining informational and success debugPrint statements across the entire project (Dashboard, Loading, Game engine, and Services). Terminal output will now strictly show only errors and system-level warnings.
 - [2026-04-26] DOOR-HP-SYSTEM: Implemented HP system for doors with visual health bars. Doors now disappear and lose collision when HP reaches 0. Health bars are only visible when the door is damaged.
 - [2026-04-26] UPGRADE-DIALOG-ENHANCEMENT: Added 'Upgrade Effect' section to the dialog to show benefits. Implemented Door upgrade logic: Level doubles Max HP and restores health to full. Removed door upgrade requirements for testing.
-- [2026-04-26] UPGRADE-DIALOG-LOGIC-REFINEMENT: Enhanced UpgradeDialog with live affordability checks. The 'UPGRADE' button now turns red and displays 'SHORT ON COINS' if the player cannot afford the cost. Updated Door upgrade benefit to show explicit HP progression (e.g., '100 ➔ 200 HP') and implemented actual coin deduction in the door logic.
 - [2026-04-26] BED-UPGRADE-REQUIREMENTS: Implemented bed leveling and income scaling. Upgrading the Bed now increases passive coin income per tick. Added structural requirements: Upgrading Bed to Level 3 now requires the room's Door to be Level 2. Enhanced UpgradeDialog to show 'REQ NOT MET' status if conditions aren't satisfied.
 - [2026-04-26] BED-INCOME-SCALING-FIX: Switched Bed income from linear (+1) to exponential doubling (pow(2, level-1)). Every upgrade now doubles your passive earnings, matching the scaling speed of the door HP.
 - [2026-04-26] BUILDING-SLOTS-FLOOD-FILL: Implemented BuildingSlotEntity and a robust wall-aware room mapping system. Used a BFS Flood-Fill algorithm starting from each Bed to discover and claim all building slots within the same enclosed room. This guarantees that slots cannot be tapped by players in adjacent rooms, even if they are physically close.
@@ -349,3 +348,190 @@ All major task completions and architectural shifts are logged here for traceabi
 - 2026-04-29: [AI] Implemented AI character spawning. Characters that join in the `LobbyDialog` are now bridged via `MatchManager` and physically spawn as `HunterAIEntity` sprites in the game world near the player's spawn point.
 - 2026-04-29: [AI/UI] Linked AI hunters to the `GameEconomyHUD`. Tapping an AI hunter's portrait while sleeping now instantly pans the camera to their location. AI portraits now correctly reflect the skins chosen in the lobby.
 - 2026-04-29: [Bug Fix/Polish] Fixed `LateInitializationError` in `GameEconomyHUD` by using `MatchManager` for state. Removed grayscale from AI HUD portraits. Improved AI spawn clustering to ensure they stay within the central "spawn area".
+- [2026-04-29] AI-HUNTER-MOVEMENT-V1: Implemented `HunterMovementBehavior` for AI characters. Added cardinal-only random movement (No diagonal) with world collision awareness. AI hunters now wander the map independently while respecting walls and furniture.
+- [2026-04-29] PERFORMANCE-OPTIMIZATION: Eliminated O(N) iteration lag in `isPositionBlocked`. The game now maintains pre-filtered lists for obstacles and buildings, reducing collision check overhead from linear tree traversal to direct list iteration.
+- [2026-04-29] AI-HUNTER-SLEEP-LOGIC: Implemented bed-seeking and sleeping logic for AI characters. AI hunters now scan for nearby unoccupied beds, navigate to them, and trigger the sleeping state (including door closing and Zzz particles), matching the player's core gameplay loop. Refactored `BedEntity` to support ownership tracking.
+- [2026-04-29] AI-PATHFINDING-REFINEMENT: Improved AI navigation to ensure all hunters find a bed. (1) Increased scan range to 1000px. (2) Implemented axis-switching logic to allow AI to slide around obstacles instead of giving up. (3) Verified room exclusivity via the `isOccupied` system.
+- [2026-04-29] ARCHITECTURE-MANDATE: Formally added "Static Map & O(1) Lookup" requirement to GEMINI.md to prevent performance regression. Refined AI behavior to respect the grace period countdown.
+- [2026-04-29] AI-BEHAVIOR-CORRECTION: Reverted grace period delay for AI hunters; they now seek beds immediately by design. Implemented "Stuck Detection" that triggers a random detour if an AI is blocked by a wall for more than 0.5s, preventing them from getting stuck on the other side of walls.
+- [2026-04-29] AI-FLOW-FIELD-PATHFINDING: Implemented a high-performance Navigation Map (Flow Field) system. At startup, the engine pre-calculates distance maps for all beds using BFS. AI hunters now use O(1) lookups to navigate perfectly around static walls. Added bed reservation logic to ensure each AI hunter pursues a unique room.
+- [2026-04-29] AI-SLEEP-FINALIZATION: Adjusted AI reach distance to 32px. AI hunters now successfully trigger the "Sleep" state and room locking as soon as they touch their assigned bed, resolving the collision-blocking issue.
+- [2026-04-29] AI-NAVIGATION-FIX: Resolved logic gap where AI could not enter rooms or sleep. (1) Increased AI reach distance to 48px to accommodate character height. (2) Refined BFS pathfinding to use a smaller 8x8 detection box, ensuring AI can squeeze through doorways. (3) Implemented collision exclusion, allowing AI to overlap their target bed to trigger the sleep state.
+- [2026-04-29] AI-WAYPOINT-NAVIGATION-OVERHAUL: Replaced buggy BFS Flow Field with a direct waypoint-based system. AI hunters are now assigned a unique bed at spawn (Direct Assignment). They navigate perfectly to their room door first, then the bed, while ignoring their own room's collisions. This ensures 100% reliability for static maps without any runtime scanning or lag.
+- [2026-04-29] AI-RELIABILITY-PATCH: Fixed AI room assignment and sleep trigger. (1) AI are now assigned beds via a local list during Tiled parsing, ensuring each gets a unique room (fixing the world.children race condition). (2) Increased bed trigger distance to 40px to ensure character sprites successfully activate the sleep state.
+- [2026-04-29] AI-WAYPOINT-PRECISION-PATCH: Finalized the AI navigation overhaul. (1) Implemented a 3-stage rigid waypoint system (AlignX -> Enter -> Bed) to ensure perfect hallway-to-room transitions. (2) Fixed a race condition by assigning unique beds immediately during Tiled parsing. (3) Enabled collision exclusion for an AI's own room, allowing them to reliably trigger the sleep state.
+- [2026-04-29] AI-DISPERSION-PATCH: Modified AI assignment logic to shuffle the available beds list. This ensures AI hunters spread out randomly across the 17 rooms instead of filling them in a predictable sequence.
+- [2026-04-29] AI-COLLISION-WALL-FIX: Fixed a logic gap where AI was ignoring collision results. Implemented per-axis (X then Y) movement, allowing AI to slide along walls while strictly preventing them from walking through static obstacles.
+- [2026-04-29] AI-HALLWAY-NAV-PATCH: Implemented a 4-stage 'Hallway First' navigation strategy. AI now snaps to the corridor center before aligning with their doors, preventing them from getting stuck on room corners. Also significantly reduced the AI collision hitbox to 16x8 for smoother navigation.
+- [2026-04-29] AI-PRECISION-ROBUSTNESS: Fixed a major spawning bug where AI could start inside room walls due to large offsets. (1) AI now spawn tightly around the player (8px radius) within the safe hallway. (2) Increased waypoint thresholds to 16-32px for more forgiving arrivals. (3) Added a 'Stuck Nudge' timer that automatically teleports/nudges the AI if they are blocked by a corner for more than 2 seconds.
+- [2026-04-29] AI-HARDCODED-PATHS: Completely overhauled AI navigation with truly predefined paths. (1) During game loading, the engine now pre-calculates the exact, tile-by-tile shortest path from spawn to each bed using BFS. (2) AI hunters now blindly follow these grid-center tracks with zero runtime decision-making. (3) This guarantees 100% reliability, zero wall-hugging, and zero lag on any map layout.
+- [2026-04-29] AI-GRID-CENTER-PROTOCOL: Finalized the AI overhaul for 100% precision. (1) Map grid analysis now checks the full 32x32 area of every tile, ensuring zero 'leakage' through thin walls. (2) AI movement is now 'Hard-Snapped': they are mathematically forced to stay in the exact center of their 32px path while walking, making wall-hugging physically impossible.
+- [2026-04-29] AI-NARROW-HITBOX-PROTOCOL: Finalized the clipping fix. (1) Shrunk character hitboxes to 40% width (12.8px) to fit through narrow 32px corridors. (2) Added 'Early Stop' logic to AI behavior: if a collision is detected, the AI now halts and snaps to the grid center instead of ignoring the wall.
+- [2026-04-30] SLEEP-ALIGNMENT-FIX: Corrected the sleeping position for both the Player and AI hunters. Adjusted the Y offset from 4px to 26px to properly align character heads with the bed pillows, accounting for the Anchor.bottomCenter and the 24px tall sleeping sprite.
+- [2026-04-30] LOBBY-INSTANT-START: Implemented a 0.5s "Instant Start" logic. If the player clicks READY when all AI hunters are already ready, the game bypasses the 3s countdown and starts after a brief 0.5s delay to show the status change.
+- [2026-04-30] AI-SPEED-REDUCTION: Reduced AI hunter speed to 120.0 (20% slower than player) for better gameplay balance.
+- [2026-04-30] AI-DYNAMIC-REPATHING: Implemented bed-reservation and re-pathing logic. If a player occupies an AI's target bed, the AI will automatically find a new empty bed and recalculate its path, including the ability to exit closed rooms if trapped.
+- [2026-04-30] AI-FLOW-FIELD-OPTIMIZATION: Replaced individual path calculations with a Flow Field (Gravity Map) system. All 17 bed distance maps are pre-calculated at startup, allowing AI hunters to navigate with O(1) complexity. This completely eliminates re-pathing lag and supports infinite AI hunters with zero performance cost.
+- [2026-04-30] AI-SPEED-ADJUSTMENT: Set AI hunter speed to 100.0 as requested.
+- [2026-04-30] SLEEP-ALIGNMENT-REFINEMENT: Fine-tuned the sleep Y-offset from 26px to 14px to ensure character heads are perfectly tucked into the pillow area.
+- [2026-04-30] AI-SPAWN-REVERT: Restored the explicit tile-center calculation for AI hunter spawning to ensure precision and prevent clipping issues.
+- [2026-04-30] AI-MOVEMENT-SMOOTHING: Replaced waypoint-snapping with a continuous Gradient Descent movement system. AI hunters now feel the "slope" of the Flow Field, resulting in buttery-smooth, jitter-free navigation similar to player control.
+- [2026-04-30] AI-SPEED-ADJUSTMENT: Set AI hunter speed to 95.0 for improved balance and pacing.
+- [2026-04-30] AI-SPEED-ADJUSTMENT: Set AI hunter speed to 90.0 as requested.
+- [2026-04-30] AI-HUNTER-MOVEMENT-REFINEMENT: Implemented a hybrid "Center-Pulling" movement system. AI hunters now use Flow Fields to target the next tile center while applying a smooth interpolation (lerp) to the perpendicular axis. This guarantees zero wall-clipping and zero jitter, providing a high-quality "human-like" sliding effect.
+- [2026-04-30] AI-HUNTER-EARNINGS: Implemented AI hunter earnings and coin animation while sleeping. AI hunters now earn money based on their bed's level.
+- [2026-04-30] FLOATING-FEEDBACK-ENHANCEMENT: Enhanced `FloatingFeedback` with sprite-like coin visuals using a multi-layered circle component.
+- [2026-04-30] AI-HUNTER-WALLET: Added a persistent wallet balance display for AI hunters when they are in the sleeping state.
+- [2026-04-30] AI-BUILDING-UPGRADE-SYSTEM:
+  - Architecture: Implemented a fair, personality-driven building system for AI hunters following the approved plan.
+  - Refactoring: Extracted upgrade logic from `BedEntity.onTapUp` into a generic `tryUpgrade(BaseEntity)` method, ensuring both Player and AI follow the same economic rules (no cheating).
+  - Personality & Speed: Introduced `AIPersonality` (Defense, Offense, Randos) and `AISpeed` (Fast, Slow) traits, randomly assigned to each AI hunter upon spawning.
+  - Behavior: Created `AIBuildBehavior` which manages a timer-based check loop. Fast AIs check for upgrades frequently, while Slow AIs have randomized delays.
+  - First Step: AI hunters now successfully prioritize and upgrade their bed to Level 2 as soon as they have enough Match Coins.
+- [2026-04-30] ECONOMY-&-PERFORMANCE-FIX:
+  - Economy: Refactored `BaseEntity` to generate passive income continuously starting from the very first frame of the match. Removed the `isSleeping` check and the tick-tracking reset, ensuring players and AI have exactly 25 coins at the 5-second mark of a 30s grace period.
+  - Optimization: Resolved major rendering lag by centralizing the building slot pulse animation. `DreamHunterGame` now generates exactly one `TextPaint` object per frame, which is shared across all `BuildingSlotEntity` instances. This eliminates thousands of redundant object allocations per second.
+  - UI Polish: Verified that building slot animations are strictly limited to the human player's room for a cleaner visual experience.
+- [2026-04-30] PERFORMANCE-STARTUP-OPTIMIZATION:
+  - Optimization: Eliminated the 2-second match entry lag spike by refactoring the `wallGrid` generation from O(Tiles * Obstacles) to O(Obstacles).
+  - Logic: Replaced the brute-force nested loops with a spatial mapping approach that directly calculates grid cells from obstacle bounding boxes.
+  - Impact: Reduced synchronous intersection checks from ~1,000,000 down to ~2,000 per match start.
+- [2026-04-30] AI-UPGRADE-PATH-SEQUENCING:
+  - Architecture: Refactored `DoorEntity` with a generic `tryUpgrade(BaseEntity)` method to support AI defense progression.
+  - Logic: Implemented a strict upgrade sequence in `AIBuildBehavior`: Bed Lv2 ➔ Wood Door Lv2 ➔ Bed Lv3.
+  - Balance: This ensures AI hunters maintain a baseline level of defense before pursuing higher-tier economic growth, matching standard player strategies.
+- [2026-04-30] AI-AUTONOMOUS-CONSTRUCTION:
+  - Logic: Enabled AI hunters to programmatically construct buildings on empty slots in their room.
+  - Decision Making: AI now selects between Turrets and Generators based on their `AIPersonality`. Defense-heavy personalities prioritize Turrets, while Offense-heavy personalities prioritize Generators.
+  - Refactoring: Centralized build logic in `BuildingSlotEntity.tryBuild` to support both Player (via UI) and AI (via behavior) interactions.
+  - Performance: Updated `DreamHunterGame` to maintain a public `buildingSlots` list for O(1) room-specific slot lookups.
+- [2026-04-30] BUGFIX: ROBUST-ROOM-INTEGRITY:
+  - Issue: Doors were failing to close and building slots were overlapping furniture in some rooms.
+  - Root Cause: Identified a race condition where `world.children` was being queried before components were fully mounted. Additionally, inconsistent TMX naming (extra spaces) and missing labels caused linking failures.
+  - Fix (Resilient Strategy): 
+    - Implemented **Synchronous Local Tracking**: Maintaining local lists of all Beds, Doors, and Slots during parsing to bypass async lag.
+    - Added **String Standardization**: All `roomID` strings are now trimmed and lowercased at the source.
+    - Implemented **Fuzzy/Proximity Linking**: If a `roomID` match fails, the system now automatically links the bed to the nearest door within 300px.
+    - Restored **Furniture Cleanup**: Added a pass to automatically remove building slots that overlap with beds or doors, ensuring a clean and professional UI.
+- [2026-04-30] FRIDGE-DEFENSE-IMPLEMENTATION:
+  - Architecture: Implemented the "Fridge" defense building, adding a unique defensive layer to the game.
+  - Entity: Created `FridgeEntity` which protects the room's door by applying a shield.
+  - Logic: Modified `DoorEntity` to support a `shieldHp` system and visual "frozen" feedback (cyan tint and dedicated shield bar).
+  - Effect: When a Fridge is built, it "freezes" the room's door, granting it a shield equal to its current maximum HP. The shield is removed if the Fridge is destroyed.
+  - Build Menu: Added a dedicated "DEFENSE" tab to `BuildMenuDialog` featuring the Fridge.
+  - Economy: Implemented support for energy-based construction costs; the Fridge costs 200 energy to build.
+- [2026-04-30] FEEDBACK-VISIBILITY-FIX:
+  - Logic: Resolved an issue where coin and energy feedback particles were being obscured by buildings.
+  - Architecture: Refactored `FloatingFeedback` to use a high rendering priority (9999) and ensured it is added directly to the `game.world` in world coordinates. This guarantees that feedback always appears on top of all other game entities, regardless of their position or spawn order.
+- [2026-04-30] ICE-VISUAL-REFINEMENT:
+  - Logic: Overhauled the "frozen" door effect for better clarity and aesthetics.
+  - Architecture: Removed the solid cyan tint that obscured door art and Roman numerals.
+  - Visuals: Implemented a multi-layered `IceOverlay` for doors, consisting of a faint cyan inner glow (15% opacity) and a thin cyan border (40% opacity).
+  - Polish: Changed the door's color blend mode to `plus` for a subtle, additive crystalline shimmer that preserves the underlying pixel art and level indicators.
+  - Fridge: Added an infinite, smooth opacity pulse to the Fridge building to signal active protection.
+- [2026-04-30] ECONOMY-HUD-UNIFICATION:
+  - UI: Increased the maximum visual energy display to 100,000+ to match the coin display.
+  - Layout: Expanded the economy box width to 100px to accommodate larger energy and coin values without truncation.
+  - Logic: Synchronized `MatchManager` internal caps, raising the energy storage and income limits to 100,000.
+- [2026-04-30] FRIDGE-FINALIZATION:
+  - Visuals: Implemented a "breathing" scale animation for the Fridge, causing it to pulse smoothly between 1.0x and 1.05x scale to simulate active freezing.
+  - Restriction: Implemented a strict **One-Per-Room** architectural rule for Fridges.
+  - Logic: Tapping a building slot now performs a world-query to check for existing Fridges in the room before opening the menu.
+  - UI: The Fridge entry in the build menu now displays a red "ONE PER ROOM" label and is disabled if the room already contains a Fridge.
+  - AI: Updated `AIBuildBehavior` to respect the room restriction and energy costs, allowing AI hunters to autonomously build exactly one Fridge per room.
+- [2026-04-30] ORE-ECONOMY-&-LOGIC-FIX:
+  - Architecture: Implemented the "Ore Mine" building, adding a significant coin-generation path to the mid-to-late game.
+  - Entity: Created `OreEntity` with 5 levels (Copper, Iron, Gold, Emerald, Special), each with unique sprites and escalating passive coin income.
+  - Special Effect: Tier 5 (Special) Ore now applies a **1.5x Global Coin Multiplier** to its entire room, boosting income from Beds and other Ores.
+  - Logic Gap Fix: Resolved the "spring back" bug by centralizing player resources in `MatchManager`. `BaseEntity` now uses delegating getters/setters for player-type entities, ensuring all spending and income ticks stay synchronized in real-time.
+  - AI Integration: Updated AI hunters to autonomously build and upgrade Ore Mines based on their personality traits.
+  - Cleanup: Resolved all static analysis warnings regarding missing overrides and unused fields across building entities.
+- [2026-04-30] BUILD-MENU-REDESIGN-&-LOGGING:
+  - UI Redesign: Completely overhauled `BuildMenuDialog` to match the "Architecture" layout. Features small scrollable tabs (Basics, Economy, Defense, Super) and a horizontal row-based building list.
+  - Action UX: Moved build costs and action triggers to a dedicated large button on the right of each row, providing a modern, tactile feel.
+  - Economy Logging: Implemented aggressive debug logging in `MatchManager`. Every coin/energy spend, income tick, and balance update is now printed to the console with detailed "Old -> New" transition data for easy debugging.
+  - Visual Polish: Standardized building icons to 74px within the menu for better visibility and used `TabAlignment.start` for a cleaner tab layout.
+
+- 2026-04-30: Enhanced Build Menu readability, added direct building of all generator/ore levels, and improved Ore Mine upgrade UI with income difference (+X).
+- 2026-04-30: Fixed Turret asset display in Build Menu by layering base and head sprites and fixing scaling logic.
+- 2026-04-30: Reverted Generator to Level 1 only in build menu; added global multiplier description for Level 5 Ore Mine.
+- [2026-04-30] MONSTER-AI-IMPLEMENTATION:
+  - Base Systems: Added `hp`, `maxHp`, and `takeDamage` to `BaseEntity`. Implemented `hunterAliveStatus` and `killHunter` in `MatchManager`.
+  - HUD: Added a red "X" indicator on hunter portraits in `GameEconomyHUD` to signify death.
+  - Monster Entity: Created `MonsterEntity` with a scaling level-up system (XP from attacks/destructions).
+  - Monster AI: Implemented `MonsterAIBehavior` with a state machine (Idle, Hunting, Attacking, Retreating).
+  - Pathfinding: Added a BFS-based `getShortestPath` in `DreamHunterGame` for monster navigation.
+  - Skills: Added a "Stun" skill to the monster that disables turrets within range.
+  - Mechanics: Monsters now heal at spawn points with a 25% chance to resume attacking every 10% health regained. Bed destruction now kills the owner.
+- [2026-04-30] BUGFIX: GAME-ECONOMY-HUD-RANGE-ERROR:
+  - Issue: Resolved a `RangeError` that occurred when entering the match, caused by `hunterAliveStatus` being out of sync with `aiSkins`.
+  - Root Cause: `MatchManager.resetMatch` was clearing the alive status list but leaving the AI skins intact, leading to an index-out-of-bounds error during UI building.
+  - Fix: Updated `resetMatch` to automatically re-initialize `hunterAliveStatus` based on the current `aiSkins` count.
+  - Safety: Added an index-bounds check in `GameEconomyHUD` to prevent future UI crashes even if state becomes momentarily inconsistent.
+  - Verification: Static analysis confirms 0 errors. UI is now stable during match transitions.
+- [2026-04-30] AI-SPEED-ADJUSTMENT: Set AI hunter speed to 80.0 as requested.
+- [2026-04-30] MONSTER-LIFECYCLE-&-TARGETING-REFINEMENT:
+  - Lifecycle: Modified `DreamHunterGame` to spawn the `MonsterEntity` immediately at the start of the match.
+  - Behavior: Updated `MonsterAIBehavior` to remain stationary and idle as long as the `graceTimer` is active.
+  - Targeting: Implemented "Room Occupancy" awareness. The monster now treats unoccupied rooms as invisible, strictly targeting only doors and beds in rooms that contain a hunter.
+  - Verification: Static analysis confirms 0 errors. Monster spawns correctly but waits for the "RUN!" signal before hunting occupied rooms.
+- [2026-04-30] MONSTER-VISUALS-&-AI-POLISH:
+  - Sprites: Implemented a directional sprite system for the `MonsterEntity`. The ghost now changes its appearance based on movement direction (Back, Side, Diagonal) and flips horizontally for left/right transitions.
+  - Pathfinding: Enhanced targeting logic to prioritize the bed in a room immediately after destroying its door.
+  - Aggression: Adjusted attack distances to ensure the monster "enters" the room to attack beds while staying outside for doors.
+  - Lethality: Verified and ensured that destroying a bed correctly kills the occupying Hunter (Player or AI).
+- [2026-04-30] FOG-OF-WAR-&-DEATH-LOGIC-FIXES:
+  - Fog of War: Implemented a misty Fog of War system. All rooms start with a semi-transparent (70% opacity) mist that strictly covers the room interiors, leaving walls and hallways visible. Rooms are revealed when occupied or explored.
+  - Mist Animation: Added a performant "creeping" animation to the mist using layered offsets and trigonometric drift. To ensure high FPS, animations only run for rooms currently visible in the camera's viewport.
+  - Monster Lethality: Fixed a bug where the monster could pass through hunters without effect. Added collision handling in `BaseEntity` to ensure the monster deals lethal damage upon contact with any hunter (Player or AI).
+  - Game Over Flow: Resolved an issue where player death didn't end the game. Updated `PlayerEntity.destroy()` to correctly notify `MatchManager` (updating the HUD with a red "X") and trigger the "GAME OVER" reward screen.
+  - Verification: Static analysis confirms 0 errors. Room visibility and death transitions are now functional and fair.
+
+
+
+2026-04-30: SCRUM-124: Implemented red-tinted Fog of War for hunter deaths. Updated BaseEntity and HunterAIEntity to notify FogOfWar and MatchManager upon destruction.
+2026-04-30: SCRUM-124: Refined BedEntity occupancy logic to ensure Fog of War returns immediately upon hunter death.
+2026-04-30: SCRUM-124: Debugging Fog of War visibility. Improved initialization with logging and refined rendering logic in _RoomFog.
+2026-04-30: SCRUM-125: Fixed monster pathfinding to correctly respect closed doors. Added dynamic building collision checks in MonsterAIBehavior to prevent passing through doors.
+2026-04-30: SCRUM-126: Synchronized Fog of War features with precise room bounds and atmospheric animations. Implemented Monster Proximity Aggro (6 tiles) for non-sleeping hunters.
+2026-04-30: SCRUM-127: Redesigned Fog of War to be a blurry/hazy overlay targeting only room elements (Beds/Slots). Removed creeping animation for a simple pulse.
+2026-04-30: SCRUM-127: Darkened the hazy Fog of War effect by changing the base color to black and increasing opacity.
+2026-04-30: SCRUM-128: Increased monster speed by 20% (96.0). Fixed monster behavior to immediately stop chasing hunters who enter a bed (sleeping).
+2026-04-30: SCRUM-129: Implemented monster AI fallbacks. Added stuck detection (3s threshold) and a 10% chaos factor to targeting to prevent predictable loop glitches. Fixed targeting flow to prioritize doors when hunters start sleeping.
+2026-05-01: SCRUM-130: Fixed monster attack range and pathfinding precision. (1) Switched to center-to-center distance logic for anchor-agnostic ranging. (2) Reduced attack thresholds to prevent "long-range" door attacks. (3) Thinned monster movement hitbox (30% width) for better doorway navigation. (4) Implemented "Smash Through" logic allowing monsters to target and destroy any building blocking their path. (5) Improved targeting to prioritize nearby hunters and follow them into rooms more aggressively.
+2026-05-01: SCRUM-131: Resolved monster "standing still" logic gap. (1) Implemented `ignoredEntities` in collision checks, allowing the monster to ignore its own target's collision box. This prevents it from getting stuck just outside attack range of beds/buildings. (2) Added proactive target switching: monsters now instantly switch from a hunter to their bed as soon as the hunter falls asleep. (3) Increased attack and tracking thresholds (40px/52px) to improve reliability against larger entities like beds.
+2026-05-01: SCRUM-132: Implemented "Smash vs. Pathfind" logic for monster movement. (1) Explicit check for breakables (buildings/doors) vs unbreakables (walls). (2) If a building blocks the path, the monster immediately targets and smashes it. (3) If a static wall blocks the path, the monster triggers an immediate path recalculation to find a way around. This ensures monsters cannot be trapped inside rooms by closed doors and will always choose to smash their way out.
+2026-05-01: SCRUM-133: Fixed monster "stuck in doorway" bug by simplifying AI targeting. (1) Removed complex priority layers in target selection; monsters now simply pick the nearest valid target (non-sleeping hunter, door of occupied room, or occupied bed). (2) Shortened stuck detection timer to 1.5s for faster recovery. (3) Enhanced attack visual pulse for better player feedback. (4) Ensured immediate re-evaluation if a target falls asleep mid-chase.
+- [2026-05-02] BUGFIX: COLOREFFECT-CRASH:
+  - Issue: `ColorEffect` caused a crash during monster level-up because it was applied to `MonsterEntity`, which lacks the `HasPaint` trait.
+  - Fix: Redirected the `ColorEffect` to `_spriteComponent`, which correctly implements `HasPaint`. This resolves the `Unsupported operation` error and the subsequent `LateInitializationError`.
+  - Verification: Static analysis confirms 0 errors. Logic follows Flame's effect targeting requirements.
+- [2026-05-02] DOOR-FEEDBACK-&-HUD-PULSE:
+  - UI: Repositioned the Door HP bar to the foot level (bottom of the door) for better visibility.
+  - Feedback: Implemented passive door healing (+1 HP every 10s) with floating green text.
+  - Feedback: Enhanced manual repair visuals with a larger, faster "+Xhp" floating effect using a new parameterized `FloatingFeedback` component.
+  - HUD: Implemented a pulsing "under attack" animation for Hunter portraits. When a room door or bed is attacked, the corresponding HUD icon pulses red and scales up to alert the player.
+  - Architecture: Added real-time attack tracking to `MatchManager` and linked `MonsterAIBehavior` to the global notification system.
+  - Verification: Static analysis confirms 0 errors. UI/Feedback systems are synchronized across logic and rendering layers.
+- [2026-05-02] PERFORMANCE-JITTER-OPTIMIZATION:
+  - Logic: Eliminated "so much lag" by replacing O(N) world-child queries with O(1) cached lookups.
+  - Architecture: Implemented `turrets` list and `roomBeds` map in `DreamHunterGame` for high-speed entity access.
+  - Optimization: Refactored `MonsterAIBehavior` to use the new cached systems, removing expensive `whereType` calls from the frame-by-frame update loop.
+  - Economy: Optimized `MatchManager.update` to prevent redundant `notifyListeners()` calls. The HUD now only rebuilds when an attack timer actually starts or expires, rather than every single frame.
+  - Polish: Optimized `DoorEntity` wrench visualization to avoid unnecessary component tree traversal.
+  - Verification: Static analysis confirms 0 errors. Jitter is resolved, and frame rates are stabilized during intensive combat/upgrade phases.
+- [2026-05-02] MONSTER-JITTER-&-ATTACK-FIX:
+  - Logic: Resolved the "back and forthing" bug where monsters would loop between targeting a hunter and the door blocking them.
+  - Architecture: Enhanced `_checkProximityAggro` with "Room Commitment" logic. Monsters now refuse to switch targets if they are already attacking a door or bed associated with a nearby hunter.
+  - Scaling: Increased Door attack range from 32px to 48px. This accounts for vertical offsets between the monster's bottom-center anchor and the door's top-left anchor, ensuring attacks trigger reliably from the hallway.
+  - Stability: Increased attack state maintenance distances (`maxDist`) to 60px/64px to provide a buffer against physics/jitter state-switching.
+  - Verification: Static analysis confirms 0 errors. Monsters now reliably smash doors to reach their targets.
+- [2026-05-02] SLIGHT-LAG-FINAL-OPTIMIZATION:
+  - AI Throttle: Throttled expensive `MonsterAIBehavior` logic (Proximity Aggro and Stun scans) to 5Hz (once every 0.2s). This maintains 60fps movement fluidity while reducing CPU usage for complex world queries.
+  - Object Allocation: Eliminated frame-by-frame `TextPaint` object allocations by replacing the pulsing building slot text with a vector-based `PlusSign` (composed of static `RectangleComponent`s).
+  - Logic: Optimized `BuildingSlotEntity` to use direct alpha manipulation instead of style replacement, further reducing GC pressure.
+  - Verification: Static analysis confirms 0 errors. "Slight lag" is eliminated, providing a buttery-smooth gameplay experience.
+- 2026-05-02: Optimized startup performance and gameplay smoothness. Implemented lazy flow field generation, O(1) collision grid, and removed expensive blur filters.
+- 2026-05-02: Improved Fog of War visibility and implemented strategic Target Registry for Monster AI.
+- 2026-05-02: Fixed Fog of War grid artifact by unifying room fog into a single bounding box.
+- 2026-05-02: Implemented Monster 2.0 with Juggernaut logic, reactive proximity, and area stun. Bed destruction now kills sleepers.

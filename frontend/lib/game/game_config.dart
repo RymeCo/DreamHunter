@@ -1,5 +1,3 @@
-// No changes needed, just removing the import line.
-
 class UpgradeCost {
   final int coins;
   final int energy;
@@ -41,6 +39,22 @@ class GeneratorUpgrade {
   });
 }
 
+class OreUpgrade {
+  final int level;
+  final int income;
+  final UpgradeCost cost;
+  final String material;
+  final double globalMultiplier;
+
+  const OreUpgrade({
+    required this.level,
+    required this.income,
+    required this.material,
+    this.cost = const UpgradeCost(),
+    this.globalMultiplier = 1.0,
+  });
+}
+
 class DoorUpgrade {
   final int level; // Total level 1-15
   final String material; // Wood, Iron, Gold
@@ -63,6 +77,10 @@ class GameConfig {
   static const double tickInterval = 1.0;
   static const int gracePeriodSeconds = 30;
   static const double graceSpeedMultiplier = 0.8; // 20% slow
+
+  static const int turretBuildCost = 100;
+  static const int fridgeBuildCost = 200;
+  static const int oreBuildCost = 128; // Energy cost for Lv1
 
   // Bed Upgrades
   static final List<BedUpgrade> bedUpgrades = [
@@ -148,6 +166,41 @@ class GameConfig {
       cost: const UpgradeCost(coins: 6400),
       requirementLabel: "Turret VII",
       checkRequirement: (turretLv) => (turretLv as int) >= 7,
+    ),
+  ];
+
+  // Ore Upgrades
+  static final List<OreUpgrade> oreUpgrades = [
+    const OreUpgrade(
+      level: 1,
+      material: "Copper",
+      income: 8,
+      cost: UpgradeCost(energy: 128),
+    ),
+    const OreUpgrade(
+      level: 2,
+      material: "Iron",
+      income: 32,
+      cost: UpgradeCost(energy: 1024),
+    ),
+    const OreUpgrade(
+      level: 3,
+      material: "Gold",
+      income: 128,
+      cost: UpgradeCost(energy: 2028),
+    ),
+    const OreUpgrade(
+      level: 4,
+      material: "Emerald",
+      income: 512,
+      cost: UpgradeCost(energy: 4096),
+    ),
+    const OreUpgrade(
+      level: 5,
+      material: "Special",
+      income: 512,
+      cost: UpgradeCost(energy: 8192),
+      globalMultiplier: 1.5,
     ),
   ];
 

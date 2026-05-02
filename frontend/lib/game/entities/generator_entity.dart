@@ -14,8 +14,9 @@ import 'package:dreamhunter/game/game_config.dart';
 /// A building that generates Match Energy passively over time.
 class GeneratorEntity extends BaseEntity with TapCallbacks {
   int level = 1;
+  @override
   final String roomID;
-  int _lastTickCount = 0;
+  int _lastEnergyTick = 0;
 
   late final SpriteComponent _spriteComponent;
   late Sprite _spriteLv1;
@@ -30,10 +31,15 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
     return level.toString();
   }
 
-  GeneratorEntity({required super.position, required this.roomID})
-    : super(size: Vector2.all(32), anchor: Anchor.topLeft) {
+  GeneratorEntity({
+    required super.position,
+    required this.roomID,
+    this.level = 1,
+  }) : super(size: Vector2.all(32), anchor: Anchor.topLeft) {
     addCategory('building');
     addCategory('generator');
+    maxHp = 1.0;
+    hp = maxHp;
   }
 
   @override
@@ -71,8 +77,9 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
 
     _updateSprite();
 
-    // Start generating energy immediately
-    MatchManager.instance.updateEnergyIncomePerTick(1);
+    // Start generating energy immediately based on current level
+    final income = GameConfig.generatorUpgrades[level - 1].income;
+    MatchManager.instance.updateEnergyIncomePerTick(income);
   }
 
   void _updateSprite() {
@@ -91,29 +98,27 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
     super.update(dt);
 
     // Visual feedback for energy generation
-    final currentTicks = MatchManager.instance.tickCount;
-    if (currentTicks > _lastTickCount) {
-      _lastTickCount = currentTicks;
+    final currentTicks = MatchManager.instance.energyTickCount;
+    if (currentTicks > _lastEnergyTick) {
+      _lastEnergyTick = currentTicks;
       _spawnEnergyParticle();
     }
   }
 
   void _spawnEnergyParticle() {
     final income = GameConfig.generatorUpgrades[level - 1].income;
-    add(
+    game.world.add(
       FloatingFeedback(
         label: '+$income',
         icon: Icons.bolt_rounded,
         color: Colors.cyanAccent,
-        position: size / 2,
+        position: position + (size / 2),
       ),
     );
   }
 
   @override
   void onTapUp(TapUpEvent event) {
-    final currentUpgrade = GameConfig.generatorUpgrades[level - 1];
-
     // Max Level Check
     if (level >= GameConfig.generatorUpgrades.length) {
       UpgradeDialog.show(
@@ -129,6 +134,7 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
       return;
     }
 
+    final currentUpgrade = GameConfig.generatorUpgrades[level - 1];
     final nextUpgrade = GameConfig.generatorUpgrades[level];
     final List<UpgradeRequirement> reqs = [];
 
@@ -147,6 +153,8 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
       );
     }
 
+    final diff = nextUpgrade.income - currentUpgrade.income;
+
     UpgradeDialog.show(
       game.buildContext!,
       title: "Generator",
@@ -155,22 +163,66 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
       coinCost: nextUpgrade.cost.coins,
       energyCost: nextUpgrade.cost.energy,
       upgradeBenefit:
-          "Lv. $level ➔ Lv. ${level + 1}\n${currentUpgrade.income} ➔ ${nextUpgrade.income} Energy/Sec",
+          "Lv. $level ➔ Lv. ${level + 1}\n${currentUpgrade.income} ➔ ${nextUpgrade.income} (+$diff) Energy/Sec",
       onUpgrade: () {
-        final success = MatchManager.instance.spendResources(
-          coins: nextUpgrade.cost.coins,
-          energy: nextUpgrade.cost.energy,
-        );
-        if (success) {
-          final incomeDelta = nextUpgrade.income - currentUpgrade.income;
-          level++;
-          MatchManager.instance.updateEnergyIncomePerTick(incomeDelta);
-          _updateSprite();
-          HapticManager.instance.medium();
-          AudioManager.instance.playClick();
-        }
+        tryUpgrade(game.player);
       },
     );
+  }
+
+  /// Attempts to upgrade the generator using the resources of the provided entity.
+  /// Returns true if the upgrade was successful.
+  bool tryUpgrade(BaseEntity entity) {
+    if (level >= GameConfig.generatorUpgrades.length) return false;
+
+    final nextUpgrade = GameConfig.generatorUpgrades[level];
+
+    // 1. Check Requirements (Turret level)
+    if (nextUpgrade.requirementLabel != null) {
+      final turrets = game.world.children.whereType<TurretEntity>();
+      int maxTurretLv = 0;
+      if (turrets.isNotEmpty) {
+        maxTurretLv = turrets
+            .map((t) => t.level)
+            .reduce((a, b) => a > b ? a : b);
+      }
+      final bool isMet = nextUpgrade.checkRequirement!(maxTurretLv);
+      if (!isMet) return false;
+    }
+
+    // 2. Resource Check & Deduction
+    bool success = false;
+    if (entity.hasCategory('player')) {
+      success = MatchManager.instance.spendResources(
+        coins: nextUpgrade.cost.coins,
+        energy: nextUpgrade.cost.energy,
+      );
+    } else {
+      if (entity.matchCoins >= nextUpgrade.cost.coins &&
+          entity.matchEnergy >= nextUpgrade.cost.energy) {
+        entity.matchCoins -= nextUpgrade.cost.coins;
+        entity.matchEnergy -= nextUpgrade.cost.energy;
+        success = true;
+      }
+    }
+
+    if (success) {
+      final currentUpgrade = GameConfig.generatorUpgrades[level - 1];
+      final incomeDelta = nextUpgrade.income - currentUpgrade.income;
+      level++;
+      hp = maxHp; // Heal to max HP on upgrade
+
+      if (entity.hasCategory('player')) {
+        MatchManager.instance.updateEnergyIncomePerTick(incomeDelta);
+      }
+
+      _updateSprite();
+      HapticManager.instance.medium();
+      AudioManager.instance.playClick();
+      return true;
+    }
+
+    return false;
   }
 
   @override

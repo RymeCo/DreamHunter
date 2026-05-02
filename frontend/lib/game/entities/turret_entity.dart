@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/entities/projectile_entity.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
@@ -9,6 +10,8 @@ import 'package:dreamhunter/services/game/match_manager.dart';
 import 'package:dreamhunter/widgets/game/upgrade_dialog.dart';
 
 class TurretEntity extends BaseEntity with TapCallbacks {
+  @override
+  final String roomID;
   int level = 1;
   double fireRate = 1.0; // Seconds between shots
   double range = 150.0;
@@ -18,6 +21,9 @@ class TurretEntity extends BaseEntity with TapCallbacks {
   double _scanTimer = 0;
   BaseEntity? _currentTarget;
 
+  bool isStunned = false;
+  double _stunTimer = 0;
+
   late Sprite _baseSprite;
   late Sprite _headSprite;
   late Sprite _projectileSprite;
@@ -25,15 +31,18 @@ class TurretEntity extends BaseEntity with TapCallbacks {
   late SpriteComponent _baseComponent;
   late TurretHeadComponent head;
 
-  TurretEntity({required super.position})
+  TurretEntity({required super.position, required this.roomID})
     : super(size: Vector2.all(32), anchor: Anchor.center) {
     addCategory('building');
     addCategory('turret');
+    maxHp = 1.0;
+    hp = maxHp;
   }
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    game.registerTurret(this);
     await _updateSprites();
 
     // Add Base (Stationary)
@@ -96,10 +105,6 @@ class TurretEntity extends BaseEntity with TapCallbacks {
 
   @override
   void onTapUp(TapUpEvent event) {
-    final int cost = level * 150;
-    final double nextDamage = 10.0 + level * 10.0;
-    final double nextRange = 150.0 + level * 20.0;
-
     if (level >= 9) {
       UpgradeDialog.show(
         game.buildContext!,
@@ -114,6 +119,10 @@ class TurretEntity extends BaseEntity with TapCallbacks {
       return;
     }
 
+    final int cost = level * 150;
+    final double nextDamage = 10.0 + level * 10.0;
+    final double nextRange = 150.0 + level * 20.0;
+
     UpgradeDialog.show(
       game.buildContext!,
       title: "Defense Turret",
@@ -123,21 +132,59 @@ class TurretEntity extends BaseEntity with TapCallbacks {
       upgradeBenefit:
           "Lv. $level ➔ Lv. ${level + 1}\nDmg: ${damage.toInt()}➔${nextDamage.toInt()}, Range: ${range.toInt()}➔${nextRange.toInt()}",
       onUpgrade: () async {
-        final success = MatchManager.instance.spendMatchCoins(cost);
-        if (success) {
-          level++;
-          _applyStats();
-          await _updateSprites();
-          HapticManager.instance.medium();
-          AudioManager.instance.playReward(); // Use reward sound for upgrade
-        }
+        tryUpgrade(game.player);
       },
     );
+  }
+
+  /// Attempts to upgrade the turret using the resources of the provided entity.
+  /// Returns true if the upgrade was successful.
+  Future<bool> tryUpgrade(BaseEntity entity) async {
+    if (level >= 9) return false;
+
+    final int cost = level * 150;
+
+    // Resource Check & Deduction
+    bool success = false;
+    if (entity.hasCategory('player')) {
+      success = MatchManager.instance.spendMatchCoins(cost);
+    } else {
+      if (entity.matchCoins >= cost) {
+        entity.matchCoins -= cost;
+        success = true;
+      }
+    }
+
+    if (success) {
+      level++;
+      _applyStats();
+      await _updateSprites();
+      HapticManager.instance.medium();
+      AudioManager.instance.playReward(); // Use reward sound for upgrade
+      return true;
+    }
+
+    return false;
+  }
+
+  @override
+  void onRemove() {
+    game.unregisterTurret(this);
+    super.onRemove();
   }
 
   @override
   void update(double dt) {
     super.update(dt);
+
+    if (isStunned) {
+      _stunTimer -= dt;
+      if (_stunTimer <= 0) {
+        isStunned = false;
+        head.paint.color = Colors.white;
+      }
+      return;
+    }
 
     _fireTimer += dt;
     _scanTimer += dt;
@@ -162,6 +209,13 @@ class TurretEntity extends BaseEntity with TapCallbacks {
         _fire();
       }
     }
+  }
+
+  /// Stuns the turret for a specific duration.
+  void stun(double duration) {
+    isStunned = true;
+    _stunTimer = duration;
+    head.paint.color = Colors.blueGrey.withValues(alpha: 0.7);
   }
 
   BaseEntity? _findNearestMonster() {

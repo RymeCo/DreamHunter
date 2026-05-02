@@ -34,7 +34,7 @@ class GameEconomyHUD extends StatelessWidget {
               icon: Icons.monetization_on_rounded,
               value: isMasked
                   ? '0'
-                  : (manager.matchCoins > 100000
+                  : (manager.matchCoins >= 100000
                         ? '100000+'
                         : '${manager.matchCoins}'),
               color: Colors.amberAccent,
@@ -47,8 +47,8 @@ class GameEconomyHUD extends StatelessWidget {
               icon: Icons.bolt_rounded,
               value: isMasked
                   ? '0'
-                  : (manager.matchEnergy > 999
-                        ? '999+'
+                  : (manager.matchEnergy >= 100000
+                        ? '100000+'
                         : '${manager.matchEnergy}'),
               color: Colors.cyanAccent,
             ),
@@ -77,18 +77,23 @@ class GameEconomyHUD extends StatelessWidget {
           final isPlayer = index == 0;
           final imagePath = isPlayer ? playerImagePath : aiSkins[index - 1];
           final isSleeping = MatchManager.instance.isHunterSleeping;
+          final isAlive = index < MatchManager.instance.hunterAliveStatus.length
+              ? MatchManager.instance.hunterAliveStatus[index]
+              : true;
 
           return _buildHunterIcon(
             context,
             imagePath: imagePath,
             onTap: () {
-              // Only allow camera snapping if player is sleeping
-              if (isSleeping) {
+              // Only allow camera snapping if player is sleeping and hunter is alive
+              if (isSleeping && isAlive) {
                 game.centerCameraOnHunter(index);
               }
             },
             isLocalPlayer: isPlayer,
             isGray: false, // Always colorful as requested
+            isAlive: isAlive,
+            index: index,
           );
         }),
       ),
@@ -101,53 +106,93 @@ class GameEconomyHUD extends StatelessWidget {
     required VoidCallback onTap,
     bool isLocalPlayer = false,
     bool isGray = false,
+    bool isAlive = true,
+    int index = -1,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isLocalPlayer
-                ? Colors.greenAccent.withValues(alpha: 0.5)
-                : Colors.white12,
-            width: 1.5,
-          ),
-        ),
-        child: Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: CharacterPortrait(
-                imagePath: imagePath,
-                size: 28,
-                isGray: isGray,
+    final manager = MatchManager.instance;
+    final isUnderAttack = manager.attackTimers.containsKey(index);
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 1.0, end: isUnderAttack ? 1.2 : 1.0),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: scale,
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: isUnderAttack
+                    ? Colors.redAccent.withValues(alpha: 0.6)
+                    : Colors.black.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isUnderAttack
+                      ? Colors.redAccent
+                      : (isLocalPlayer
+                          ? Colors.greenAccent.withValues(alpha: 0.5)
+                          : Colors.white12),
+                  width: isUnderAttack ? 2.0 : 1.5,
+                ),
+                boxShadow: isUnderAttack
+                    ? [
+                        BoxShadow(
+                          color: Colors.redAccent.withValues(alpha: 0.5),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        )
+                      ]
+                    : null,
               ),
-            ),
-            if (isLocalPlayer)
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  width: double.infinity,
-                  color: Colors.greenAccent.withValues(alpha: 0.7),
-                  padding: const EdgeInsets.symmetric(vertical: 0.5),
-                  child: const Text(
-                    'YOU',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 6,
-                      fontWeight: FontWeight.w900,
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Opacity(
+                      opacity: isAlive ? 1.0 : 0.4,
+                      child: CharacterPortrait(
+                        imagePath: imagePath,
+                        size: 28,
+                        isGray: isGray,
+                      ),
                     ),
                   ),
-                ),
+                  if (!isAlive)
+                    const Center(
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: Colors.redAccent,
+                        size: 24,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                      ),
+                    ),
+                  if (isLocalPlayer)
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        width: double.infinity,
+                        color: Colors.greenAccent.withValues(alpha: 0.7),
+                        padding: const EdgeInsets.symmetric(vertical: 0.5),
+                        child: const Text(
+                          'YOU',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 6,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-          ],
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -159,7 +204,7 @@ class GameEconomyHUD extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      width: 90, // Standardized fixed width
+      width: 100, // Increased width for 100000+
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.5),
