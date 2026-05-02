@@ -93,6 +93,7 @@ class GameEconomyHUD extends StatelessWidget {
             isLocalPlayer: isPlayer,
             isGray: false, // Always colorful as requested
             isAlive: isAlive,
+            index: index,
           );
         }),
       ),
@@ -106,65 +107,92 @@ class GameEconomyHUD extends StatelessWidget {
     bool isLocalPlayer = false,
     bool isGray = false,
     bool isAlive = true,
+    int index = -1,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isLocalPlayer
-                ? Colors.greenAccent.withValues(alpha: 0.5)
-                : Colors.white12,
-            width: 1.5,
-          ),
-        ),
-        child: Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Opacity(
-                opacity: isAlive ? 1.0 : 0.4,
-                child: CharacterPortrait(
-                  imagePath: imagePath,
-                  size: 28,
-                  isGray: isGray,
+    final manager = MatchManager.instance;
+    final isUnderAttack = manager.attackTimers.containsKey(index);
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 1.0, end: isUnderAttack ? 1.2 : 1.0),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: scale,
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: isUnderAttack
+                    ? Colors.redAccent.withValues(alpha: 0.6)
+                    : Colors.black.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isUnderAttack
+                      ? Colors.redAccent
+                      : (isLocalPlayer
+                          ? Colors.greenAccent.withValues(alpha: 0.5)
+                          : Colors.white12),
+                  width: isUnderAttack ? 2.0 : 1.5,
                 ),
+                boxShadow: isUnderAttack
+                    ? [
+                        BoxShadow(
+                          color: Colors.redAccent.withValues(alpha: 0.5),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        )
+                      ]
+                    : null,
               ),
-            ),
-            if (!isAlive)
-              const Center(
-                child: Icon(
-                  Icons.close_rounded,
-                  color: Colors.redAccent,
-                  size: 24,
-                  shadows: [Shadow(color: Colors.black, blurRadius: 4)],
-                ),
-              ),
-            if (isLocalPlayer)
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  width: double.infinity,
-                  color: Colors.greenAccent.withValues(alpha: 0.7),
-                  padding: const EdgeInsets.symmetric(vertical: 0.5),
-                  child: const Text(
-                    'YOU',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 6,
-                      fontWeight: FontWeight.w900,
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Opacity(
+                      opacity: isAlive ? 1.0 : 0.4,
+                      child: CharacterPortrait(
+                        imagePath: imagePath,
+                        size: 28,
+                        isGray: isGray,
+                      ),
                     ),
                   ),
-                ),
+                  if (!isAlive)
+                    const Center(
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: Colors.redAccent,
+                        size: 24,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                      ),
+                    ),
+                  if (isLocalPlayer)
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        width: double.infinity,
+                        color: Colors.greenAccent.withValues(alpha: 0.7),
+                        padding: const EdgeInsets.symmetric(vertical: 0.5),
+                        child: const Text(
+                          'YOU',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 6,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-          ],
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 

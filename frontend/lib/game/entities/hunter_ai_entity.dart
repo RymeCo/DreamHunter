@@ -104,16 +104,8 @@ class HunterAIEntity extends BaseEntity {
     final myRoom = roomID;
     if (myRoom.isEmpty) return;
 
-    final buildings = game.world.children
-        .whereType<DoorEntity>()
-        .where((d) => d.roomID == myRoom)
-        .cast<BaseEntity>()
-        .followedBy(
-          game.world.children
-              .whereType<FridgeEntity>()
-              .where((f) => f.roomID == myRoom)
-              .cast<BaseEntity>(),
-        );
+    // PERFORMANCE OPTIMIZATION: Use game's cached _buildings list
+    final buildings = game.getBuildingsInRoom(myRoom).where((b) => b is DoorEntity || b is FridgeEntity);
 
     bool anyDamaged = false;
     for (final b in buildings) {

@@ -181,9 +181,8 @@ abstract class BaseEntity extends PositionComponent
     double multiplier = 1.0;
     final myRoom = roomID;
     if (myRoom.isNotEmpty) {
-      final ores = game.world.children.whereType<OreEntity>().where(
-        (ore) => ore.roomID == myRoom,
-      );
+      // PERFORMANCE OPTIMIZATION: Use cached buildings list
+      final ores = game.getBuildingsInRoom(myRoom).whereType<OreEntity>();
 
       for (final ore in ores) {
         if (ore.level == 5) {

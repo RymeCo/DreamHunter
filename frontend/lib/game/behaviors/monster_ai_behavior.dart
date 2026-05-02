@@ -10,6 +10,7 @@ import 'package:dreamhunter/game/entities/bed_entity.dart';
 import 'package:dreamhunter/game/entities/turret_entity.dart';
 import 'package:dreamhunter/game/entities/player_entity.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
+import 'package:dreamhunter/services/game/match_manager.dart';
 
 enum MonsterState { idle, hunting, attacking, retreating }
 
@@ -24,6 +25,7 @@ class MonsterAIBehavior extends Component
   double attackTimer = 0;
   double stunTimer = 0;
   double healAggressionTimer = 0;
+  double _scanThrottleTimer = 0;
 
   double _frustrationTimer = 0;
   BaseEntity? _lastFrustratedTarget;
@@ -44,6 +46,14 @@ class MonsterAIBehavior extends Component
 
     if (parent.isDestroyed) return;
 
+    // Throttle expensive checks (aggro, skills, path recalculation) to 5Hz
+    _scanThrottleTimer += dt;
+    bool shouldScan = false;
+    if (_scanThrottleTimer >= 0.2) {
+      _scanThrottleTimer = 0;
+      shouldScan = true;
+    }
+
     // Anti-Glitch: Check if making progress
     if (state == MonsterState.hunting || state == MonsterState.attacking) {
       if (parent.position.distanceTo(_lastPosition) < 0.5) {
@@ -51,7 +61,7 @@ class MonsterAIBehavior extends Component
         if (_stuckTimer > 1.5) {
           // Stuck for 1.5 seconds
           _stuckTimer = 0;
-          _pickNewTarget(); // Force re-evaluation
+          if (shouldScan) _pickNewTarget(); // Force re-evaluation only on scan frames
         }
       } else {
         _stuckTimer = 0;
@@ -67,14 +77,13 @@ class MonsterAIBehavior extends Component
       return;
     }
 
-    // New: Proximity Aggro Check (6 tiles = 192px)
-    // If a hunter is nearby, they become the primary target.
-    _checkProximityAggro();
+    // Expensive logic throttled to 5Hz
+    if (shouldScan) {
+      _checkProximityAggro();
+      _updateSkills(dt);
+    }
 
-    // 1. Skill Management (Stun)
-    _updateSkills(dt);
-
-    // 2. State Machine
+    // 2. State Machine (Movement and simple attack timers remain at full FPS)
     switch (state) {
       case MonsterState.idle:
         _handleIdle(dt);
@@ -95,9 +104,6 @@ class MonsterAIBehavior extends Component
     // 6 tiles * 32px = 192px
     const double aggroRange = 192.0;
 
-    // Smart Jitter Fix: If we are attacking/hunting a Door/Bed,
-    // ignore proximity aggro ONLY if the entity is inside that same room.
-    // This allows us to still notice people running past in the hallway.
     bool isInsideTargetRoom(BaseEntity entity) {
       if (target is DoorEntity) {
         return entity.roomID == (target as DoorEntity).roomID;
@@ -108,72 +114,60 @@ class MonsterAIBehavior extends Component
       return false;
     }
 
-    // RULE: If we are already hunting a hunter,
-    // don't let proximity aggro jitter our target unless the new one is "better".
+    bool isBusyInRoom = target is DoorEntity || target is BedEntity;
     bool isHuntingHuman = target is PlayerEntity;
     bool isOccupiedWithAI = target is HunterAIEntity;
 
-    // Check Player
-    if (!game.player.isDestroyed) {
-      if (parent.position.distanceTo(game.player.position) < aggroRange) {
-        if (target == game.player) return;
+    void tryAggro(BaseEntity entity) {
+      if (entity.isDestroyed) return;
+      final dist = parent.position.distanceTo(entity.position);
+      
+      if (dist < aggroRange) {
+        if (target == entity) return;
+        if (isInsideTargetRoom(entity)) return;
 
-        // Smart Jitter Fix
-        if (isInsideTargetRoom(game.player)) return;
+        // Simplified aggro logic (No reactive proximity)
+        if ((isOccupiedWithAI || isBusyInRoom) && math.Random().nextDouble() < 0.85) return;
+        if (entity.isSleeping && (isHuntingHuman || isOccupiedWithAI || isBusyInRoom)) return;
 
-        // NEW DECISION LOGIC: 75% chance to ignore human aggro if we are already busy
-        // with an AI hunter or just "don't feel like it" right now.
-        if (isOccupiedWithAI && math.Random().nextDouble() < 0.75) {
-          return;
-        }
-
-        // If the player is sleeping, only aggro if we are idle or hunting something low-value.
-        if (game.player.isSleeping && (isHuntingHuman || isOccupiedWithAI)) {
-          return;
-        }
-
-        target = game.player;
+        target = entity;
         state = MonsterState.hunting;
         _calculatePathToTarget();
-        return;
       }
     }
 
-    // Check AI Hunters
+    tryAggro(game.player);
     for (final ai in game.aiHunters) {
-      if (!ai.isDestroyed) {
-        if (parent.position.distanceTo(ai.position) < aggroRange) {
-          if (target == ai) return;
-
-          // Smart Jitter Fix
-          if (isInsideTargetRoom(ai)) continue;
-
-          if (ai.isSleeping && (isHuntingHuman || isOccupiedWithAI)) {
-            continue;
-          }
-
-          target = ai;
-          state = MonsterState.hunting;
-          _calculatePathToTarget();
-          return;
-        }
-      }
+      tryAggro(ai);
     }
   }
 
   void _updateSkills(double dt) {
     stunTimer += dt;
     if (stunTimer >= stunCooldown) {
-      // Only stun turrets in occupied rooms
-      final turrets = game.world.children
-          .whereType<TurretEntity>()
-          .where((t) => t.position.distanceTo(parent.position) < stunRange)
-          .where((t) => _isRoomOccupied(t.roomID));
+      // STRATEGIC AREA STUN: Disable buildings and repairs in a 3-tile radius
+      const double areaStunRange = 96.0; 
+      
+      final buildings = game.getBuildings()
+          .where((b) => b.position.distanceTo(parent.position) < areaStunRange);
 
-      if (turrets.isNotEmpty) {
+      if (buildings.isNotEmpty) {
         stunTimer = 0;
-        for (final turret in turrets) {
-          turret.stun(stunDuration);
+        // Visual feedback for area stun
+        parent.add(
+          ColorEffect(
+            Colors.purpleAccent,
+            EffectController(duration: 0.2, reverseDuration: 0.2),
+            opacityTo: 0.5,
+          ),
+        );
+
+        for (final b in buildings) {
+          if (b is TurretEntity) {
+            b.stun(stunDuration);
+          }
+          // Disable repairs for everyone in range
+          b.isBeingRepaired = false;
         }
       }
     }
@@ -181,12 +175,8 @@ class MonsterAIBehavior extends Component
 
   bool _isRoomOccupied(String roomID) {
     if (roomID.isEmpty) return false;
-    // Find the bed for this room and check occupancy
-    final bed = game.world.children
-        .whereType<BedEntity>()
-        .where((b) => b.roomID == roomID)
-        .firstOrNull;
-
+    // Optimized: Use roomBeds Map for O(1) lookup
+    final bed = game.roomBeds[roomID];
     return bed?.isOccupied ?? false;
   }
 
@@ -212,7 +202,8 @@ class MonsterAIBehavior extends Component
     // Using centers to be anchor-agnostic and more precise
     double dist = parent.center.distanceTo(target!.center);
     // Increased thresholds to account for bed size vs ghost center
-    double attackDist = (target is DoorEntity) ? 32 : 40;
+    // Door range increased to 48 to allow attacking from hallway centers
+    double attackDist = (target is DoorEntity) ? 48 : 52;
     if (dist < attackDist) {
       state = MonsterState.attacking;
       currentPath = [];
@@ -227,7 +218,7 @@ class MonsterAIBehavior extends Component
     }
 
     if (currentPath.isEmpty || pathIndex >= currentPath.length) {
-      if (parent.center.distanceTo(target!.center) < 44) {
+      if (parent.center.distanceTo(target!.center) < 56) {
         state = MonsterState.attacking;
       } else {
         _calculatePathToTarget();
@@ -254,18 +245,17 @@ class MonsterAIBehavior extends Component
         parent.size.y * 0.1,
       );
 
-      // 1. Check for Breakables (Buildings/Doors)
-      // We ignore our CURRENT target so we can walk "into" its attack range
+      // DYNAMIC SMASHING: Smash through breakable buildings in path
+      // REFINED: Only happens if we are already inside a room heading for the BED.
       final blockingEntity = game.getBlockingEntity(
         nextRect,
         ignoredEntities: [target!],
       );
-      if (blockingEntity != null) {
-        // SMASH THROUGH: The path is blocked by a breakable object.
-        // Change target to the obstacle and start hunting/attacking it.
+      if (blockingEntity != null && target is BedEntity) {
+        // Switch to attacking the obstacle immediately
         target = blockingEntity;
-        state = MonsterState.hunting;
-        _calculatePathToTarget();
+        state = MonsterState.attacking;
+        currentPath = [];
         return;
       }
 
@@ -296,6 +286,14 @@ class MonsterAIBehavior extends Component
       return;
     }
 
+    // Health check for retreat (Ensure monster retreats if taking too much damage mid-fight)
+    if (parent.hp / parent.maxHp < 0.2) {
+      state = MonsterState.retreating;
+      _healAccumulator = 0;
+      _calculatePathToSpawn();
+      return;
+    }
+
     // NEW: Surprise Check (Did the target just upgrade/heal?)
     if (target!.hp > _lastTargetHp + 1.0) {
       // SURPRISE! The monster is confused by the sudden repair.
@@ -309,7 +307,8 @@ class MonsterAIBehavior extends Component
 
     // Must stay close to keep attacking
     double dist = parent.center.distanceTo(target!.center);
-    double maxDist = (target is DoorEntity) ? 44 : 52;
+    // MaxDist must be larger than attackDist to prevent jitter
+    double maxDist = (target is DoorEntity) ? 60 : 64;
     if (dist > maxDist) {
       state = MonsterState.hunting;
       _frustrationTimer = 0; // Reset frustration if we lose contact
@@ -337,13 +336,18 @@ class MonsterAIBehavior extends Component
     }
   }
 
+  double _healAccumulator = 0;
+
   void _handleRetreating(double dt) {
-    // NEW: Handle Surprise Retreat
+    // Handle Surprise Retreat Cooldown
     if (_surpriseTimer > 0) {
       _surpriseTimer -= dt;
       if (_surpriseTimer <= 0) {
-        _pickNewTarget();
-        return;
+        // If we are still healthy, go back to hunting. Otherwise, keep retreating.
+        if (parent.hp / parent.maxHp >= 0.2) {
+          _pickNewTarget();
+          return;
+        }
       }
     }
 
@@ -357,14 +361,16 @@ class MonsterAIBehavior extends Component
     }
 
     if (atSpawn) {
-      parent.hp = (parent.hp + parent.maxHp * 0.01 * dt).clamp(0, parent.maxHp);
-
-      healAggressionTimer += dt;
-      if (healAggressionTimer >= 10.0) {
-        // Every 10 seconds of healing
-        healAggressionTimer = 0;
-        // 25% chance to be "Brave" and stop retreating
-        if (math.Random().nextDouble() < 0.25) {
+      final double healAmount = parent.maxHp * 0.05 * dt; // 5% per second at spawn
+      parent.hp = (parent.hp + healAmount).clamp(0, parent.maxHp);
+      
+      _healAccumulator += healAmount;
+      final double tenPercent = parent.maxHp * 0.1;
+      
+      // Every 10% healed, 50% chance to attack again
+      if (_healAccumulator >= tenPercent) {
+        _healAccumulator -= tenPercent;
+        if (math.Random().nextDouble() < 0.5) {
           _pickNewTarget();
           return;
         }
@@ -393,121 +399,41 @@ class MonsterAIBehavior extends Component
   }
 
   void _pickNewTarget() {
-    final potentialTargets = <BaseEntity>[];
-
-    // 1. Hunters (Prioritize active ones, but include sleeping ones)
-    final activeAIHunters = <HunterAIEntity>[];
-    final sleepingAIHunters = <HunterAIEntity>[];
-    PlayerEntity? humanPlayer;
-
-    if (!game.player.isDestroyed) {
-      humanPlayer = game.player;
-    }
-
-    for (final ai in game.aiHunters) {
-      if (!ai.isDestroyed) {
-        if (ai.isSleeping) {
-          sleepingAIHunters.add(ai);
-        } else {
-          activeAIHunters.add(ai);
-        }
-      }
-    }
-
-    // NEW: Phase-Based AI Bias (Fairness Scaling)
-    double aiBias = 0.75;
-    final remainingSeconds = game.matchTimer.value;
-    if (remainingSeconds > 720) {
-      // Phase 1 (15m to 12m): 95% AI Bias (Mercy for Player)
-      aiBias = 0.95;
-    } else if (remainingSeconds > 300) {
-      // Phase 2 (12m to 5m): 75% AI Bias (Standard)
-      aiBias = 0.75;
-    } else {
-      // Phase 3 (5m to 0m): 50% AI Bias (Late-game ruthless)
-      aiBias = 0.50;
-    }
-
-    final bool preferAI = math.Random().nextDouble() < aiBias;
-
-    // 2. Doors of occupied rooms
-    final occupiedDoors = game.world.children
-        .whereType<DoorEntity>()
-        .where((d) => !d.isDestroyed && _isRoomOccupied(d.roomID))
-        .toList();
-
-    // 3. Occupied beds
-    final occupiedBeds = game.world.children
-        .whereType<BedEntity>()
-        .where((b) => !b.isDestroyed && b.isOccupied)
-        .toList();
-
-    potentialTargets.addAll(activeAIHunters);
-    if (humanPlayer != null && !humanPlayer.isSleeping) {
-      potentialTargets.add(humanPlayer);
-    }
-    potentialTargets.addAll(occupiedDoors);
-    potentialTargets.addAll(occupiedBeds);
-    potentialTargets.addAll(sleepingAIHunters);
-    if (humanPlayer != null && humanPlayer.isSleeping) {
-      potentialTargets.add(humanPlayer);
-    }
-
-    if (potentialTargets.isEmpty) {
+    // STRATEGIC REFACTOR: Use the Target Registry instead of scanning the map.
+    final bestTargetIDs = MatchManager.instance.getBestTargets();
+    
+    if (bestTargetIDs.isEmpty) {
       state = MonsterState.idle;
       target = null;
       return;
     }
 
-    // Sort with Weighting
-    potentialTargets.sort((a, b) {
-      final distA = parent.position.distanceTo(a.position);
-      final distB = parent.position.distanceTo(b.position);
+    // Find the first target from the registry that exists in the world
+    for (final id in bestTargetIDs) {
+      // Find door or bed in this room
+      final buildings = game.getBuildingsInRoom(id);
+      if (buildings.isNotEmpty) {
+        // Prefer Door if not destroyed
+        final door = buildings.whereType<DoorEntity>().firstOrNull;
+        if (door != null && !door.isDestroyed) {
+          target = door;
+          state = MonsterState.hunting;
+          _calculatePathToTarget();
+          return;
+        }
 
-      double scoreA = distA;
-      double scoreB = distB;
-
-      // Penalty for sleeping (500px)
-      if (a is HunterAIEntity && a.isSleeping) scoreA += 500;
-      if (b is HunterAIEntity && b.isSleeping) scoreB += 500;
-      if (a is PlayerEntity && a.isSleeping) scoreA += 500;
-      if (b is PlayerEntity && b.isSleeping) scoreB += 500;
-
-      // Weighting Bias
-      if (preferAI) {
-        // If we prefer AI, give Human Player a "distance penalty" (800px)
-        if (a is PlayerEntity) scoreA += 800;
-        if (b is PlayerEntity) scoreB += 800;
-      } else {
-        // If we prefer Human, give AI Hunters a "distance penalty" (800px)
-        if (a is HunterAIEntity) scoreA += 800;
-        if (b is HunterAIEntity) scoreB += 800;
+        final bed = buildings.whereType<BedEntity>().firstOrNull;
+        if (bed != null && !bed.isDestroyed) {
+          target = bed;
+          state = MonsterState.hunting;
+          _calculatePathToTarget();
+          return;
+        }
       }
-
-      // NEW: Frustration Penalty (+2000px)
-      if (a == _lastFrustratedTarget) scoreA += 2000;
-      if (b == _lastFrustratedTarget) scoreB += 2000;
-
-      // NEW: Level-Based Priority
-      // Each level adds 100 to the score (making it less attractive)
-      // Level 1: +100, Level 5: +500
-      scoreA += a.entityLevel * 100;
-      scoreB += b.entityLevel * 100;
-
-      return scoreA.compareTo(scoreB);
-    });
-
-    final newTarget = potentialTargets.first;
-
-    // Reset frustration if we actually switched to something else
-    if (newTarget != _lastFrustratedTarget) {
-      _lastFrustratedTarget = null;
     }
 
-    target = newTarget;
-    _lastTargetHp = target?.hp ?? 0;
-    state = MonsterState.hunting;
-    _calculatePathToTarget();
+    state = MonsterState.idle;
+    target = null;
   }
 
   void _calculatePathToTarget() {
@@ -549,6 +475,24 @@ class MonsterAIBehavior extends Component
 
     target!.takeDamage(damage);
 
+    // NEW: Notify HUD if target is a room building (Door/Bed)
+    if (target is DoorEntity || target is BedEntity) {
+      final roomID = (target is DoorEntity)
+          ? (target as DoorEntity).roomID
+          : (target as BedEntity).roomID;
+
+      // Optimized: Use roomBeds Map for O(1) lookup
+      final bed = game.roomBeds[roomID];
+
+      if (bed != null && bed.isOccupied && bed.owner?.hunterIndex != null) {
+        MatchManager.instance.setHunterUnderAttack(bed.owner!.hunterIndex!);
+      }
+    } else if (target!.hasCategory('player') || target!.hasCategory('ai_hunter')) {
+      if (target!.hunterIndex != null) {
+        MatchManager.instance.setHunterUnderAttack(target!.hunterIndex!);
+      }
+    }
+
     // If target was a Hunter and just died, check if we need to escape a room
     if ((target is PlayerEntity || target is HunterAIEntity) &&
         !wasDestroyedBefore &&
@@ -557,7 +501,7 @@ class MonsterAIBehavior extends Component
       return;
     }
 
-    // XP Logic: Only Doors give XP
+    // XP Logic: Only Doors give XP (Beds do NOT give XP)
     if (target is DoorEntity) {
       final door = target as DoorEntity;
       // 1 XP for every 1% of max HP removed
@@ -570,11 +514,20 @@ class MonsterAIBehavior extends Component
 
       parent.gainExperience((xpGained + bonusXP).floor());
     }
+
+    // NEW: Kill sleeping hunter if bed is destroyed
+    if (target is BedEntity && !wasDestroyedBefore && target!.isDestroyed) {
+      final bed = target as BedEntity;
+      if (bed.owner != null && !bed.owner!.isDestroyed) {
+        bed.owner!.takeDamage(1000.0); // Kill the sleeper
+      }
+    }
   }
 
   void _escapeRoomAfterKill() {
     // We just killed a hunter. If we are in a room, we need to smash the door to get out.
-    final doors = game.world.children.whereType<DoorEntity>().where(
+    // PERFORMANCE OPTIMIZATION: Use cached _buildings list
+    final doors = game.getBuildings().whereType<DoorEntity>().where(
       (d) => !d.isDestroyed,
     );
     if (doors.isEmpty) {

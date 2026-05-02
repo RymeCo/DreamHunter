@@ -16,7 +16,7 @@ import 'package:dreamhunter/services/core/haptic_manager.dart';
 class BuildingSlotEntity extends BaseEntity with TapCallbacks {
   @override
   final String roomID;
-  late final TextComponent _plusText;
+  late final Component _plusSign;
   bool _isVisible = false;
 
   BuildingSlotEntity({required super.position, required this.roomID})
@@ -28,20 +28,29 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Visual: A simple '+' icon
-    _plusText = TextComponent(
-      text: '+',
-      textRenderer: TextPaint(
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+    // Visual: A simple '+' icon built from rectangles (higher performance than text)
+    _plusSign = PositionComponent(
+      size: Vector2.all(14),
       anchor: Anchor.center,
       position: size / 2,
+      children: [
+        // Horizontal bar
+        RectangleComponent(
+          size: Vector2(14, 3),
+          anchor: Anchor.center,
+          position: Vector2(7, 7),
+          paint: Paint()..color = Colors.white,
+        ),
+        // Vertical bar
+        RectangleComponent(
+          size: Vector2(3, 14),
+          anchor: Anchor.center,
+          position: Vector2(7, 7),
+          paint: Paint()..color = Colors.white,
+        ),
+      ],
     );
-    add(_plusText);
+    add(_plusSign);
 
     // Initial visibility check
     _updateVisibility();
@@ -53,7 +62,11 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
     _updateVisibility();
 
     if (_isVisible) {
-      _plusText.textRenderer = game.buildingSlotPaint;
+      // Update opacity of the shapes
+      final alpha = (game.slotOpacity * 255).toInt();
+      for (final child in _plusSign.children.whereType<RectangleComponent>()) {
+        child.paint.color = Colors.white.withAlpha(alpha);
+      }
     }
   }
 

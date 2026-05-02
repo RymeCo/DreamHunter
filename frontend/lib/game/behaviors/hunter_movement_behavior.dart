@@ -33,8 +33,8 @@ class HunterMovementBehavior extends Component
       return;
     }
 
-    // 3. Find target tile using Flow Field
-    final flowField = game.bedFlowFields[parent.targetBed.roomID];
+    // 3. Find target tile using Flow Field (Lazy Loaded)
+    final flowField = game.getFlowField(parent.targetBed.roomID);
     if (flowField == null) return;
 
     final curX = (parent.position.x / 32)

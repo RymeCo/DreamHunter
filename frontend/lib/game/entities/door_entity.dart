@@ -8,6 +8,7 @@ import 'package:dreamhunter/services/game/match_manager.dart';
 import 'package:dreamhunter/widgets/game/upgrade_dialog.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
 import 'package:dreamhunter/game/game_config.dart';
+import 'package:dreamhunter/game/components/floating_feedback.dart';
 
 /// A door building that can be opened or closed.
 /// Every 5 upgrades increases the Tier (Wood -> Iron -> Gold).
@@ -47,6 +48,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
   late final _RoundedBarComponent _hbShield; // Added shield bar
 
   double _regenTimer = 0;
+  double _passiveHealTimer = 0;
 
   DoorEntity({required super.position, required this.roomID})
     : super(size: Vector2.all(32), anchor: Anchor.topLeft) {
@@ -88,9 +90,9 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     _iceOverlay.scale = Vector2.zero();
     add(_iceOverlay);
 
-    // 3. Initialize Health Bar
+    // 3. Initialize Health Bar (Moved to foot level: y=26)
     _hbBackground = _RoundedBarComponent(
-      position: Vector2(4, 16),
+      position: Vector2(4, 26),
       size: Vector2(24, 5),
       radius: 2.5,
       paint: Paint()..color = Colors.black.withValues(alpha: 0.7),
@@ -147,14 +149,48 @@ class DoorEntity extends BaseEntity with TapCallbacks {
   @override
   void update(double dt) {
     super.update(dt);
-    if (isDestroyed || isOpen) {
+    if (isDestroyed) return;
+
+    // Passive Healing: +1 HP every 10 seconds if closed and not at max HP
+    if (!isOpen && hp < maxHp && !isBeingRepaired) {
+      _passiveHealTimer += dt;
+      if (_passiveHealTimer >= 10.0) {
+        _passiveHealTimer = 0;
+        hp = (hp + 1).clamp(0, maxHp);
+        _updateHealthBar();
+
+        // Show +1hp feedback
+        game.world.add(
+          FloatingFeedback(
+            label: '+1hp',
+            color: Colors.greenAccent,
+            position: position + Vector2(size.x / 2, 0),
+            icon: Icons.add_circle_outline_rounded,
+          ),
+        );
+      }
+    } else {
+      _passiveHealTimer = 0;
+    }
+
+    if (isOpen) {
       isBeingRepaired = false;
       return;
     }
 
     // Manual Repair Visualization
-    if (isBeingRepaired && children.whereType<WrenchComponent>().isEmpty) {
-      add(WrenchComponent()..position = Vector2(size.x - 4, size.y / 2));
+    if (isBeingRepaired) {
+      // Check if wrench already exists (optimized)
+      bool hasWrench = false;
+      for (final child in children) {
+        if (child is WrenchComponent) {
+          hasWrench = true;
+          break;
+        }
+      }
+      if (!hasWrench) {
+        add(WrenchComponent()..position = Vector2(size.x - 4, size.y / 2));
+      }
     }
 
     // Manual Repair Logic: 2% every 1s (ONLY when isBeingRepaired is true)
@@ -163,14 +199,29 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       if (_regenTimer >= 1.0) {
         _regenTimer = 0;
 
+        final double hpHeal = maxHp * 0.02;
+        final double shieldHeal = maxShieldHp * 0.02;
+
         // Heal HP
         if (hp < maxHp) {
-          hp = (hp + maxHp * 0.02).clamp(0, maxHp);
+          hp = (hp + hpHeal).clamp(0, maxHp);
+          // Bigger feedback for active repair
+          game.world.add(
+            FloatingFeedback(
+              label: '+${hpHeal.toInt()}hp',
+              color: Colors.greenAccent,
+              position: position + Vector2(size.x / 2, -8),
+              icon: Icons.handyman_rounded,
+              duration: 1.0, // Faster
+              upSpeed: 60.0, // Double speed
+              baseScale: 1.4, // Bigger
+            ),
+          );
         }
 
         // Heal Shield
         if (shieldHp < maxShieldHp) {
-          shieldHp = (shieldHp + maxShieldHp * 0.02).clamp(0, maxShieldHp);
+          shieldHp = (shieldHp + shieldHeal).clamp(0, maxShieldHp);
         }
 
         _updateHealthBar();
@@ -220,6 +271,12 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     if (amount > 0) {
       hp = (hp - amount).clamp(0, maxHp);
     }
+
+    // Update Target Registry
+    MatchManager.instance.updateTargetValue(
+      id: roomID,
+      hpPercent: hp / maxHp,
+    );
 
     _updateHealthBar();
     if (hp <= 0) destroy();
@@ -336,6 +393,13 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       totalUpgrades++;
       maxHp = currentUpgrade.hp;
       hp = maxHp;
+
+      // Update Target Registry
+      MatchManager.instance.updateTargetValue(
+        id: roomID,
+        entityLevel: totalUpgrades,
+        hpPercent: hp / maxHp,
+      );
 
       _updateSprites(); // Sprite load is async but safe to fire and forget here
       _updateLevelText();

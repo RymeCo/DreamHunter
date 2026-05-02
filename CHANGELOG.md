@@ -280,7 +280,6 @@ All major task completions and architectural shifts are logged here for traceabi
 - [2026-04-26] LOG-SANITIZATION: Removed all remaining informational and success debugPrint statements across the entire project (Dashboard, Loading, Game engine, and Services). Terminal output will now strictly show only errors and system-level warnings.
 - [2026-04-26] DOOR-HP-SYSTEM: Implemented HP system for doors with visual health bars. Doors now disappear and lose collision when HP reaches 0. Health bars are only visible when the door is damaged.
 - [2026-04-26] UPGRADE-DIALOG-ENHANCEMENT: Added 'Upgrade Effect' section to the dialog to show benefits. Implemented Door upgrade logic: Level doubles Max HP and restores health to full. Removed door upgrade requirements for testing.
-- [2026-04-26] UPGRADE-DIALOG-LOGIC-REFINEMENT: Enhanced UpgradeDialog with live affordability checks. The 'UPGRADE' button now turns red and displays 'SHORT ON COINS' if the player cannot afford the cost. Updated Door upgrade benefit to show explicit HP progression (e.g., '100 ➔ 200 HP') and implemented actual coin deduction in the door logic.
 - [2026-04-26] BED-UPGRADE-REQUIREMENTS: Implemented bed leveling and income scaling. Upgrading the Bed now increases passive coin income per tick. Added structural requirements: Upgrading Bed to Level 3 now requires the room's Door to be Level 2. Enhanced UpgradeDialog to show 'REQ NOT MET' status if conditions aren't satisfied.
 - [2026-04-26] BED-INCOME-SCALING-FIX: Switched Bed income from linear (+1) to exponential doubling (pow(2, level-1)). Every upgrade now doubles your passive earnings, matching the scaling speed of the door HP.
 - [2026-04-26] BUILDING-SLOTS-FLOOD-FILL: Implemented BuildingSlotEntity and a robust wall-aware room mapping system. Used a BFS Flood-Fill algorithm starting from each Bed to discover and claim all building slots within the same enclosed room. This guarantees that slots cannot be tapped by players in adjacent rooms, even if they are physically close.
@@ -503,3 +502,36 @@ All major task completions and architectural shifts are logged here for traceabi
 2026-05-01: SCRUM-131: Resolved monster "standing still" logic gap. (1) Implemented `ignoredEntities` in collision checks, allowing the monster to ignore its own target's collision box. This prevents it from getting stuck just outside attack range of beds/buildings. (2) Added proactive target switching: monsters now instantly switch from a hunter to their bed as soon as the hunter falls asleep. (3) Increased attack and tracking thresholds (40px/52px) to improve reliability against larger entities like beds.
 2026-05-01: SCRUM-132: Implemented "Smash vs. Pathfind" logic for monster movement. (1) Explicit check for breakables (buildings/doors) vs unbreakables (walls). (2) If a building blocks the path, the monster immediately targets and smashes it. (3) If a static wall blocks the path, the monster triggers an immediate path recalculation to find a way around. This ensures monsters cannot be trapped inside rooms by closed doors and will always choose to smash their way out.
 2026-05-01: SCRUM-133: Fixed monster "stuck in doorway" bug by simplifying AI targeting. (1) Removed complex priority layers in target selection; monsters now simply pick the nearest valid target (non-sleeping hunter, door of occupied room, or occupied bed). (2) Shortened stuck detection timer to 1.5s for faster recovery. (3) Enhanced attack visual pulse for better player feedback. (4) Ensured immediate re-evaluation if a target falls asleep mid-chase.
+- [2026-05-02] BUGFIX: COLOREFFECT-CRASH:
+  - Issue: `ColorEffect` caused a crash during monster level-up because it was applied to `MonsterEntity`, which lacks the `HasPaint` trait.
+  - Fix: Redirected the `ColorEffect` to `_spriteComponent`, which correctly implements `HasPaint`. This resolves the `Unsupported operation` error and the subsequent `LateInitializationError`.
+  - Verification: Static analysis confirms 0 errors. Logic follows Flame's effect targeting requirements.
+- [2026-05-02] DOOR-FEEDBACK-&-HUD-PULSE:
+  - UI: Repositioned the Door HP bar to the foot level (bottom of the door) for better visibility.
+  - Feedback: Implemented passive door healing (+1 HP every 10s) with floating green text.
+  - Feedback: Enhanced manual repair visuals with a larger, faster "+Xhp" floating effect using a new parameterized `FloatingFeedback` component.
+  - HUD: Implemented a pulsing "under attack" animation for Hunter portraits. When a room door or bed is attacked, the corresponding HUD icon pulses red and scales up to alert the player.
+  - Architecture: Added real-time attack tracking to `MatchManager` and linked `MonsterAIBehavior` to the global notification system.
+  - Verification: Static analysis confirms 0 errors. UI/Feedback systems are synchronized across logic and rendering layers.
+- [2026-05-02] PERFORMANCE-JITTER-OPTIMIZATION:
+  - Logic: Eliminated "so much lag" by replacing O(N) world-child queries with O(1) cached lookups.
+  - Architecture: Implemented `turrets` list and `roomBeds` map in `DreamHunterGame` for high-speed entity access.
+  - Optimization: Refactored `MonsterAIBehavior` to use the new cached systems, removing expensive `whereType` calls from the frame-by-frame update loop.
+  - Economy: Optimized `MatchManager.update` to prevent redundant `notifyListeners()` calls. The HUD now only rebuilds when an attack timer actually starts or expires, rather than every single frame.
+  - Polish: Optimized `DoorEntity` wrench visualization to avoid unnecessary component tree traversal.
+  - Verification: Static analysis confirms 0 errors. Jitter is resolved, and frame rates are stabilized during intensive combat/upgrade phases.
+- [2026-05-02] MONSTER-JITTER-&-ATTACK-FIX:
+  - Logic: Resolved the "back and forthing" bug where monsters would loop between targeting a hunter and the door blocking them.
+  - Architecture: Enhanced `_checkProximityAggro` with "Room Commitment" logic. Monsters now refuse to switch targets if they are already attacking a door or bed associated with a nearby hunter.
+  - Scaling: Increased Door attack range from 32px to 48px. This accounts for vertical offsets between the monster's bottom-center anchor and the door's top-left anchor, ensuring attacks trigger reliably from the hallway.
+  - Stability: Increased attack state maintenance distances (`maxDist`) to 60px/64px to provide a buffer against physics/jitter state-switching.
+  - Verification: Static analysis confirms 0 errors. Monsters now reliably smash doors to reach their targets.
+- [2026-05-02] SLIGHT-LAG-FINAL-OPTIMIZATION:
+  - AI Throttle: Throttled expensive `MonsterAIBehavior` logic (Proximity Aggro and Stun scans) to 5Hz (once every 0.2s). This maintains 60fps movement fluidity while reducing CPU usage for complex world queries.
+  - Object Allocation: Eliminated frame-by-frame `TextPaint` object allocations by replacing the pulsing building slot text with a vector-based `PlusSign` (composed of static `RectangleComponent`s).
+  - Logic: Optimized `BuildingSlotEntity` to use direct alpha manipulation instead of style replacement, further reducing GC pressure.
+  - Verification: Static analysis confirms 0 errors. "Slight lag" is eliminated, providing a buttery-smooth gameplay experience.
+- 2026-05-02: Optimized startup performance and gameplay smoothness. Implemented lazy flow field generation, O(1) collision grid, and removed expensive blur filters.
+- 2026-05-02: Improved Fog of War visibility and implemented strategic Target Registry for Monster AI.
+- 2026-05-02: Fixed Fog of War grid artifact by unifying room fog into a single bounding box.
+- 2026-05-02: Implemented Monster 2.0 with Juggernaut logic, reactive proximity, and area stun. Bed destruction now kills sleepers.

@@ -42,6 +42,7 @@ class TurretEntity extends BaseEntity with TapCallbacks {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    game.registerTurret(this);
     await _updateSprites();
 
     // Add Base (Stationary)
@@ -164,6 +165,12 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     }
 
     return false;
+  }
+
+  @override
+  void onRemove() {
+    game.unregisterTurret(this);
+    super.onRemove();
   }
 
   @override

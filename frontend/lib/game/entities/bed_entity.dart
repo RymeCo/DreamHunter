@@ -78,6 +78,13 @@ class BedEntity extends BaseEntity with TapCallbacks {
     owner = hunter;
     hunter.currentBedLevel = level;
 
+    // Update Target Registry
+    MatchManager.instance.updateTargetValue(
+      id: roomID,
+      isOccupied: true,
+      entityLevel: level,
+    );
+
     // Close the dorm room door
     roomDoor?.close();
 
@@ -125,6 +132,12 @@ class BedEntity extends BaseEntity with TapCallbacks {
     if (success) {
       level++;
       hp = maxHp; // Heal to max HP on upgrade
+
+      // Update Target Registry
+      MatchManager.instance.updateTargetValue(
+        id: roomID,
+        entityLevel: level,
+      );
 
       // Update visuals/income
       if (entity.hasCategory('player')) {

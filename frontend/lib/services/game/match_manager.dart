@@ -44,9 +44,47 @@ class MatchManager extends ChangeNotifier {
   final List<String> _aiSkins = [];
   List<String> get aiSkins => _aiSkins;
 
+  // Attack Tracking (Index -> Remaining Pulse Duration)
+  final Map<int, double> _attackTimers = {};
+  Map<int, double> get attackTimers => _attackTimers;
+
   // Life Status (Index 0 = Player, 1+ = AI)
   final List<bool> _hunterAliveStatus = [true];
   List<bool> get hunterAliveStatus => List.unmodifiable(_hunterAliveStatus);
+
+  /// Centralized Target Registry for Monster AI (Key: Target ID/Room ID)
+  /// Tracks the "value" of a target to help the monster make strategic decisions.
+  final Map<String, _TargetValue> _targetRegistry = {};
+
+  /// Registers or updates a target's strategic value.
+  void updateTargetValue({
+    required String id,
+    int? entityLevel,
+    bool? isOccupied,
+    bool? isPlayer,
+    double? hpPercent,
+  }) {
+    final entry = _targetRegistry.putIfAbsent(id, () => _TargetValue(id: id));
+    if (entityLevel != null) entry.level = entityLevel;
+    if (isOccupied != null) entry.isOccupied = isOccupied;
+    if (isPlayer != null) entry.isPlayer = isPlayer;
+    if (hpPercent != null) entry.hpPercent = hpPercent;
+  }
+
+  /// Gets all registered targets sorted by strategic "attractiveness" (Weakest-First).
+  List<String> getBestTargets() {
+    final list = _targetRegistry.values.toList();
+    // WEAKEST-FIRST STRATEGY:
+    // 1. MUST be occupied (No point in attacking an empty room).
+    // 2. LOWER Level first (Easy prey / Faster kills).
+    // 3. LOWER HP Percent (Finish what was started).
+    list.sort((a, b) {
+      if (a.isOccupied != b.isOccupied) return a.isOccupied ? -1 : 1;
+      if (a.level != b.level) return a.level.compareTo(b.level); // Lower level = better target
+      return a.hpPercent.compareTo(b.hpPercent); // Lower HP = better target
+    });
+    return list.map((e) => e.id).toList();
+  }
 
   /// Resets match state for a fresh start.
   void resetMatch() {
@@ -61,6 +99,8 @@ class MatchManager extends ChangeNotifier {
     _energyTickAccumulator = 0.0;
     _incomePerTick = 1;
     _energyIncomePerTick = 0;
+    _attackTimers.clear();
+    _targetRegistry.clear();
 
     _hunterAliveStatus.clear();
     _hunterAliveStatus.add(true); // Player
@@ -88,6 +128,16 @@ class MatchManager extends ChangeNotifier {
   void killHunter(int index) {
     if (index >= 0 && index < _hunterAliveStatus.length) {
       _hunterAliveStatus[index] = false;
+      _attackTimers.remove(index);
+      _safeNotify(notifyListeners);
+    }
+  }
+
+  /// Marks a hunter as under attack for a duration.
+  void setHunterUnderAttack(int index, {double duration = 1.0}) {
+    if (index >= 0 && index < _hunterAliveStatus.length) {
+      if (!_hunterAliveStatus[index]) return;
+      _attackTimers[index] = duration;
       _safeNotify(notifyListeners);
     }
   }
@@ -101,6 +151,26 @@ class MatchManager extends ChangeNotifier {
     _energyTickAccumulator += dt;
 
     bool shouldNotify = false;
+
+    // Update attack timers
+    if (_attackTimers.isNotEmpty) {
+      final keysToRemove = <int>[];
+      for (final key in _attackTimers.keys) {
+        final newVal = _attackTimers[key]! - dt;
+        if (newVal <= 0) {
+          keysToRemove.add(key);
+        } else {
+          _attackTimers[key] = newVal;
+        }
+      }
+
+      if (keysToRemove.isNotEmpty) {
+        for (final key in keysToRemove) {
+          _attackTimers.remove(key);
+        }
+        shouldNotify = true;
+      }
+    }
 
     // Trigger Coin Logic Tick every 1.0s
     if (_coinTickAccumulator >= 1.0) {
@@ -253,4 +323,14 @@ class MatchManager extends ChangeNotifier {
     _isPaused = !_isPaused;
     _safeNotify(notifyListeners);
   }
+}
+
+class _TargetValue {
+  final String id;
+  int level = 0;
+  bool isOccupied = false;
+  bool isPlayer = false;
+  double hpPercent = 1.0;
+
+  _TargetValue({required this.id});
 }

@@ -13,11 +13,12 @@ class FloatingFeedback extends PositionComponent {
   // Animation state
   double _timer = 0;
   double _alpha = 1.0;
-  final double _duration = 1.5;
-  final double _upSpeed = 30.0; // Slightly faster
+  final double duration;
+  final double upSpeed;
   final double _driftAmplitude = 6.0; // More drift
   final double _driftFrequency = 3.0;
   final double _randomOffset = math.Random().nextDouble() * 100;
+  final double baseScale;
 
   FloatingFeedback({
     required this.label,
@@ -25,6 +26,9 @@ class FloatingFeedback extends PositionComponent {
     required this.color,
     required super.position,
     this.isCoin = false,
+    this.duration = 1.5,
+    this.upSpeed = 30.0,
+    this.baseScale = 1.0,
   }) : super(anchor: Anchor.center, priority: 9999);
 
   @override
@@ -109,7 +113,7 @@ class FloatingFeedback extends PositionComponent {
     _timer += dt;
 
     // Movement: Upward + Sine drift
-    position.y -= _speedCurve(_timer) * _upSpeed * dt;
+    position.y -= _speedCurve(_timer) * upSpeed * dt;
     position.x +=
         math.sin(_timer * _driftFrequency + _randomOffset) *
         _driftAmplitude *
@@ -119,29 +123,29 @@ class FloatingFeedback extends PositionComponent {
     if (_timer < 0.2) {
       // Fast pop-in
       final t = _timer / 0.2;
-      scale = Vector2.all(0.4 + 0.8 * t); // 0.4 -> 1.2
+      scale = Vector2.all((0.4 + 0.8 * t) * baseScale); // scaled base
     } else if (_timer < 0.4) {
       // Settle
       final t = (_timer - 0.2) / 0.2;
-      scale = Vector2.all(1.2 - 0.2 * t); // 1.2 -> 1.0
+      scale = Vector2.all((1.2 - 0.2 * t) * baseScale);
     } else {
       // Fade out
-      final fadeStart = 0.7;
+      final fadeStart = duration * 0.5; // Start fading halfway through
       if (_timer > fadeStart) {
-        _alpha = (1.0 - (_timer - fadeStart) / (_duration - fadeStart)).clamp(
+        _alpha = (1.0 - (_timer - fadeStart) / (duration - fadeStart)).clamp(
           0.0,
           1.0,
         );
-        scale = Vector2.all(_alpha);
+        scale = Vector2.all(_alpha * baseScale);
       }
     }
 
-    if (_timer >= _duration) {
+    if (_timer >= duration) {
       removeFromParent();
     }
   }
 
   double _speedCurve(double t) {
-    return (1.0 - (t / _duration) * 0.5).clamp(0.1, 1.0);
+    return (1.0 - (t / duration) * 0.5).clamp(0.1, 1.0);
   }
 }

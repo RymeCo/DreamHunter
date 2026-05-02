@@ -36,6 +36,8 @@ class DreamHunterGame extends FlameGame
   final List<MapObstacle> _obstacles = [];
   final List<BaseEntity> _buildings = [];
   final List<BaseEntity> buildingSlots = [];
+  final List<BaseEntity> turrets = []; // For O(1) stun/targeting
+  final Map<String, BedEntity> roomBeds = {}; // For O(1) occupancy checks
 
   /// Global grid for AI pathfinding
   late final List<List<bool>> wallGrid;
@@ -48,9 +50,8 @@ class DreamHunterGame extends FlameGame
   /// Monster Spawn Points (from Tiled)
   final List<Vector2> monsterSpawnPoints = [];
 
-  /// Global TextPaint for building slots to prevent GC lag.
-  /// Re-instantiated once per frame with new opacity.
-  late TextPaint buildingSlotPaint;
+  /// Current opacity for building slot indicators (0.0 to 0.5)
+  double slotOpacity = 0.0;
   double _pulseTimer = 0;
 
   // Track the current drag position manually for maximum fluidity and compatibility
@@ -61,15 +62,6 @@ class DreamHunterGame extends FlameGame
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-
-    // Initialize global paint
-    buildingSlotPaint = TextPaint(
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 14,
-        fontWeight: FontWeight.bold,
-      ),
-    );
 
     // 1. Load Map
     final map = await TiledComponent.load('dorm-01.tmx', Vector2.all(32));
@@ -99,6 +91,7 @@ class DreamHunterGame extends FlameGame
         if (obj.type == 'Bed') {
           final bed = BedEntity(position: pos, roomID: roomID);
           parsedBeds.add(bed);
+          if (roomID.isNotEmpty) roomBeds[roomID] = bed;
           world.add(bed);
         } else if (obj.type == 'Door') {
           final door = DoorEntity(position: pos, roomID: roomID);
@@ -265,10 +258,8 @@ class DreamHunterGame extends FlameGame
     final aiSkins = MatchManager.instance.aiSkins;
     parsedBeds.shuffle(math.Random());
 
-    // PRE-CALCULATE FLOW FIELDS: Every bed gets a gravity map
-    for (final bed in parsedBeds) {
-      bedFlowFields[bed.roomID] = _generateFlowField(bed);
-    }
+    // STARTUP OPTIMIZATION: Removed pre-calculation of all flow fields.
+    // They are now generated lazily when an AI needs them.
 
     // THE START: All AI hunters spawn at the player's tile center.
     final spawnX = (player.position.x / 32).floor().clamp(0, gridW - 1);
@@ -296,6 +287,23 @@ class DreamHunterGame extends FlameGame
     }
   }
 
+  /// Lazy-loads and caches a flow field for a specific room/bed.
+  List<List<int>>? getFlowField(String roomID) {
+    if (roomID.isEmpty) return null;
+    if (bedFlowFields.containsKey(roomID)) {
+      return bedFlowFields[roomID];
+    }
+
+    // Generate on demand
+    final bed = roomBeds[roomID];
+    if (bed == null) return null;
+
+    final field = _generateFlowField(bed);
+    bedFlowFields[roomID] = field;
+    return field;
+  }
+
+
   /// Checks if a given hitbox (at a potential position) would collide with any walls.
   /// Note: Hunters (Player and AI) do not block each other's movement; they pass through.
   bool isPositionBlocked(Rect hitbox, {List<BaseEntity>? ignoredEntities}) {
@@ -304,7 +312,6 @@ class DreamHunterGame extends FlameGame
       if (ignoredEntities != null && ignoredEntities.contains(building)) {
         continue;
       }
-      // Optimized Rect.overlaps (direct double comparison is faster than Rect object methods)
       final bRect = building.toRect();
       if (hitbox.left < bRect.right &&
           hitbox.right > bRect.left &&
@@ -314,15 +321,16 @@ class DreamHunterGame extends FlameGame
       }
     }
 
-    // 2. Check Tiled Map Obstacles (Stone walls) - Static
-    // Only check obstacles in the immediate vicinity to prevent O(N) lag
-    for (final obstacle in _obstacles) {
-      final oRect = obstacle.toRect();
-      if (hitbox.left < oRect.right &&
-          hitbox.right > oRect.left &&
-          hitbox.top < oRect.bottom &&
-          hitbox.bottom > oRect.top) {
-        return true;
+    // 2. PERFORMANCE OPTIMIZATION: Check wallGrid (Static Walls) - O(1)
+    // Instead of iterating through ALL _obstacles, we check the grid tiles this hitbox touches.
+    final startX = (hitbox.left / 32.0).floor().clamp(0, gridW - 1);
+    final endX = (hitbox.right / 32.0).floor().clamp(0, gridW - 1);
+    final startY = (hitbox.top / 32.0).floor().clamp(0, gridH - 1);
+    final endY = (hitbox.bottom / 32.0).floor().clamp(0, gridH - 1);
+
+    for (int x = startX; x <= endX; x++) {
+      for (int y = startY; y <= endY; y++) {
+        if (wallGrid[x][y]) return true;
       }
     }
 
@@ -356,6 +364,9 @@ class DreamHunterGame extends FlameGame
     }
   }
 
+  /// Returns all registered buildings (for optimized lookups)
+  List<BaseEntity> getBuildings() => _buildings;
+
   /// Unregisters a building from collision tracking.
   void unregisterBuilding(BaseEntity building) {
     _buildings.remove(building);
@@ -368,26 +379,38 @@ class DreamHunterGame extends FlameGame
     }
   }
 
-  /// Unregisters a building slot.
+  /// Registers a building slot.
   void unregisterBuildingSlot(BaseEntity slot) {
     buildingSlots.remove(slot);
+  }
+
+  /// Optimized lookup for buildings in a specific room
+  Iterable<BaseEntity> getBuildingsInRoom(String roomID) {
+    if (roomID.isEmpty) return const [];
+    return _buildings.where((b) => b.roomID == roomID);
+  }
+
+  /// Registers a turret for monster stun logic.
+
+  void registerTurret(BaseEntity turret) {
+    if (!turrets.contains(turret)) {
+      turrets.add(turret);
+    }
+  }
+
+  /// Unregisters a turret.
+  void unregisterTurret(BaseEntity turret) {
+    turrets.remove(turret);
   }
 
   @override
   void update(double dt) {
     super.update(dt);
 
-    // Update global building slot pulse
+    // Update global building slot pulse (More subtle: slower speed and lower peak opacity)
     _pulseTimer += dt;
-    final double opacity =
-        ((math.sin(_pulseTimer * (math.pi / 1.5)) + 1) / 4); // Range [0.0, 0.5]
-    buildingSlotPaint = TextPaint(
-      style: TextStyle(
-        color: Colors.white.withValues(alpha: opacity),
-        fontSize: 14,
-        fontWeight: FontWeight.bold,
-      ),
-    );
+    // Speed reduced, Peak further reduced (0.15 instead of 0.2)
+    slotOpacity = ((math.sin(_pulseTimer * (math.pi / 3.0)) + 1) / 13.0); // Range [0.0, 0.15]
 
     // Drive the frame-independent match logic (coins, energy, ticks)
     MatchManager.instance.update(dt);

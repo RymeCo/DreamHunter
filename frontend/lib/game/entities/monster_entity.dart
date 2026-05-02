@@ -113,7 +113,7 @@ class MonsterEntity extends BaseEntity {
       ),
     );
 
-    add(
+    _spriteComponent.add(
       ColorEffect(
         Colors.redAccent,
         EffectController(duration: 0.2, reverseDuration: 0.2),

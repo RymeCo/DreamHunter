@@ -36,7 +36,6 @@ class FogOfWar extends PositionComponent
     debugPrint('[FOG] Initializing fogs for rooms: $roomIDs');
 
     for (final roomID in roomIDs) {
-      // Let's create a fog overlay for each room
       final fog = _RoomFog(roomID: roomID);
       _fogs[roomID] = fog;
       add(fog);
@@ -54,15 +53,12 @@ class FogOfWar extends PositionComponent
     super.update(dt);
     final playerRoom = MatchManager.instance.currentRoomID;
 
+    // Use cached roomBeds for O(1) room occupancy check
     for (final fog in _fogs.values) {
-      final bed = game.world.children
-          .whereType<BedEntity>()
-          .where((b) => b.roomID == fog.roomID)
-          .firstOrNull;
-
       bool shouldReveal = false;
 
-      // Reveal if occupied
+      // Reveal if occupied (O(1) lookup)
+      final bed = game.roomBeds[fog.roomID];
       if (bed != null && bed.isOccupied) {
         shouldReveal = true;
       }
@@ -83,79 +79,78 @@ class _RoomFog extends PositionComponent
   bool revealed = false;
   bool isBloody = false;
   double opacity = 1.0;
-  double _pulseTimer = 0;
-  final List<Rect> _elementRects = [];
+  
+  /// The cohesive path representing the room's actual shape (L-shapes, etc.)
+  Path _roomPath = Path();
+  bool _pathInitialized = false;
 
   _RoomFog({required this.roomID}) : super(priority: 1000);
 
   @override
   void onMount() {
     super.onMount();
-    _calculateElementRects();
+    _calculateRoomPath();
   }
 
-  void _calculateElementRects() {
-    _elementRects.clear();
-    // Find all beds and slots for this room
+  void _calculateRoomPath() {
     final elements = game.world.children.where((e) {
       if (e is BedEntity && e.roomID == roomID) return true;
       if (e is BuildingSlotEntity && e.roomID == roomID) return true;
       return false;
     });
 
+    if (elements.isEmpty) return;
+
+    final newPath = Path();
     for (final e in elements) {
       final pos = (e as PositionComponent).position;
       final size = e.size;
-      // Store the rect for each individual element (Bed or Slot)
-      _elementRects.add(Rect.fromLTWH(pos.x, pos.y, size.x, size.y));
+      // Add each 32x32 tile to the unified path
+      newPath.addRect(Rect.fromLTWH(pos.x, pos.y, size.x, size.y));
     }
+    
+    _roomPath = newPath;
+    _pathInitialized = true;
   }
 
   @override
   void render(Canvas canvas) {
-    if (opacity <= 0 || _elementRects.isEmpty) return;
+    if (opacity <= 0 || !_pathInitialized) return;
 
-    // Use a hazy/blurry paint (Darker as requested)
     final Color baseColor = isBloody ? Colors.red : Colors.black;
 
-    // Subtle Pulse Logic: Grows/shrinks slightly at the edges
-    final double pulseScale = 1.0 + (math.sin(_pulseTimer * 2.0) * 0.05);
+    // ARTISTIC FIX: Use a single drawPath call for the entire room shape.
+    // This prevents the "grid" artifact (overlapping alpha) and follows 
+    // the room's non-square geometry (L-shapes, etc.) exactly.
 
-    for (final rect in _elementRects) {
-      // Draw a hazy "blur" rect over each individual element
-      final paint = Paint()
-        ..color = baseColor
-            .withValues(alpha: opacity * 0.8) // Increased opacity for darkness
-        ..maskFilter = const MaskFilter.blur(
-          BlurStyle.normal,
-          10.0,
-        ); // Slightly more blur for depth
+    // 1. Outer "Haze" (Smooth edge)
+    // We use a thick stroke with a round join to create a "glow/haze" effect 
+    // at the room boundaries where they touch the walls.
+    final hazePaint = Paint()
+      ..color = baseColor.withValues(alpha: opacity * 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12.0
+      ..strokeJoin = StrokeJoin.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0);
 
-      // Slightly pulsed rect
-      final pulsedRect = Rect.fromCenter(
-        center: rect.center,
-        width: rect.width * pulseScale,
-        height: rect.height * pulseScale,
-      );
+    canvas.drawPath(_roomPath, hazePaint);
 
-      canvas.drawRect(pulsedRect, paint);
+    // 2. Inner Core (Solid fog)
+    // This fills the middle of the room with a flat color as requested.
+    final fillPaint = Paint()
+      ..color = baseColor.withValues(alpha: opacity * 0.7)
+      ..style = PaintingStyle.fill;
 
-      // Add a darker core so it's not just a flat blur
-      canvas.drawRect(
-        rect,
-        Paint()..color = baseColor.withValues(alpha: opacity * 0.5),
-      );
-    }
+    canvas.drawPath(_roomPath, fillPaint);
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    _pulseTimer += dt;
 
-    // Retry calculation if we missed some elements during mount
-    if (_elementRects.isEmpty) {
-      _calculateElementRects();
+    // Dynamic path update if elements were missed during mount
+    if (!_pathInitialized) {
+      _calculateRoomPath();
     }
 
     if (revealed) {
