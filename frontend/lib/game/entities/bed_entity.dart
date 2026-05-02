@@ -49,6 +49,13 @@ class BedEntity extends BaseEntity with TapCallbacks {
   Future<void> onLoad() async {
     await super.onLoad();
 
+    // Pre-register room in Target Registry so monster knows it exists
+    MatchManager.instance.updateTargetValue(
+      id: roomID,
+      entityLevel: level,
+      isOccupied: false,
+    );
+
     // Load visual sprite
     final sprite = await Sprite.load('game/economy/bed-32x32.png');
     add(SpriteComponent(sprite: sprite, size: size));

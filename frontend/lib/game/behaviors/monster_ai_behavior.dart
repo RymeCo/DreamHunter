@@ -28,7 +28,6 @@ class MonsterAIBehavior extends Component
   double _scanThrottleTimer = 0;
 
   double _frustrationTimer = 0;
-  BaseEntity? _lastFrustratedTarget;
   
   double _lastTargetHp = 0;
   double _surpriseTimer = 0;
@@ -194,6 +193,7 @@ class MonsterAIBehavior extends Component
         (target is DoorEntity &&
             !_isRoomOccupied((target as DoorEntity).roomID)) ||
         (target is BedEntity && !(target as BedEntity).isOccupied)) {
+      debugPrint('[MONSTER] Target invalid or destroyed. Picking new target.');
       _pickNewTarget();
       return;
     }
@@ -205,6 +205,7 @@ class MonsterAIBehavior extends Component
     // Door range increased to 48 to allow attacking from hallway centers
     double attackDist = (target is DoorEntity) ? 48 : 52;
     if (dist < attackDist) {
+      debugPrint('[MONSTER] Within attack range ($dist < $attackDist). Switching to attacking.');
       state = MonsterState.attacking;
       currentPath = [];
       return;
@@ -230,7 +231,8 @@ class MonsterAIBehavior extends Component
     final waypoint = currentPath[pathIndex];
     final moveDist = parent.position.distanceTo(waypoint);
 
-    if (moveDist < 4) {
+    if (moveDist < 8) {
+      debugPrint('[MONSTER] Waypoint reached: $pathIndex / ${currentPath.length}');
       pathIndex++;
     } else {
       final direction = (waypoint - parent.position).normalized();
@@ -252,6 +254,7 @@ class MonsterAIBehavior extends Component
         ignoredEntities: [target!],
       );
       if (blockingEntity != null && target is BedEntity) {
+        debugPrint('[MONSTER] Path blocked by ${blockingEntity.runtimeType}. Smashing it!');
         // Switch to attacking the obstacle immediately
         target = blockingEntity;
         state = MonsterState.attacking;
@@ -261,6 +264,7 @@ class MonsterAIBehavior extends Component
 
       // 2. Check for Unbreakables (Static Walls)
       if (game.isPositionBlocked(nextRect, ignoredEntities: [target!])) {
+        debugPrint('[MONSTER] Path blocked by wall at $nextPosition. Recalculating...');
         // Stop and attack if target is within reach (precise center check)
         if (target != null && parent.center.distanceTo(target!.center) < 48) {
           state = MonsterState.attacking;
@@ -405,6 +409,7 @@ class MonsterAIBehavior extends Component
     if (bestTargetIDs.isEmpty) {
       state = MonsterState.idle;
       target = null;
+      debugPrint('[MONSTER] No targets in registry.');
       return;
     }
 
@@ -419,6 +424,7 @@ class MonsterAIBehavior extends Component
           target = door;
           state = MonsterState.hunting;
           _calculatePathToTarget();
+          debugPrint('[MONSTER] Target picked: Door in room $id');
           return;
         }
 
@@ -427,6 +433,7 @@ class MonsterAIBehavior extends Component
           target = bed;
           state = MonsterState.hunting;
           _calculatePathToTarget();
+          debugPrint('[MONSTER] Target picked: Bed in room $id');
           return;
         }
       }
@@ -434,12 +441,14 @@ class MonsterAIBehavior extends Component
 
     state = MonsterState.idle;
     target = null;
+    debugPrint('[MONSTER] Failed to find physical entity for registry targets.');
   }
 
   void _calculatePathToTarget() {
     if (target == null) return;
     currentPath = game.getShortestPath(parent.position, target!.position);
     pathIndex = 0;
+    debugPrint('[MONSTER] Path calculated to ${target!.position}. Length: ${currentPath.length}');
   }
 
   void _calculatePathToSpawn() {

@@ -74,15 +74,18 @@ class MatchManager extends ChangeNotifier {
   /// Gets all registered targets sorted by strategic "attractiveness" (Weakest-First).
   List<String> getBestTargets() {
     final list = _targetRegistry.values.toList();
+    if (list.isEmpty) return [];
+
     // WEAKEST-FIRST STRATEGY:
-    // 1. MUST be occupied (No point in attacking an empty room).
+    // 1. Prefer occupied rooms (high value).
     // 2. LOWER Level first (Easy prey / Faster kills).
     // 3. LOWER HP Percent (Finish what was started).
     list.sort((a, b) {
       if (a.isOccupied != b.isOccupied) return a.isOccupied ? -1 : 1;
-      if (a.level != b.level) return a.level.compareTo(b.level); // Lower level = better target
-      return a.hpPercent.compareTo(b.hpPercent); // Lower HP = better target
+      if (a.level != b.level) return a.level.compareTo(b.level);
+      return a.hpPercent.compareTo(b.hpPercent);
     });
+
     return list.map((e) => e.id).toList();
   }
 

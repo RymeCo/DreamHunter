@@ -535,3 +535,4 @@ All major task completions and architectural shifts are logged here for traceabi
 - 2026-05-02: Improved Fog of War visibility and implemented strategic Target Registry for Monster AI.
 - 2026-05-02: Fixed Fog of War grid artifact by unifying room fog into a single bounding box.
 - 2026-05-02: Implemented Monster 2.0 with Juggernaut logic, reactive proximity, and area stun. Bed destruction now kills sleepers.
+- 2026-05-02: Added extensive Monster AI pathfinding and state transition logging to debug movement issues.
