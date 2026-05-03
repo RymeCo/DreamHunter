@@ -337,3 +337,9 @@
   - Stability: Implemented a `_rewardDialogShown` guard in `GameScreen` to prevent multiple overlapping instances of the `RewardDialog`. This ensures that the "RETURN TO DASHBOARD" button (which pops twice) correctly reaches the `GameScreen` level instead of getting stuck in a stack of identical dialogs.
   - Logic: Refined `_onMatchStateChanged` to handle both Victory and Defeat states more cleanly via the singleton `MatchManager` state.
 - [2026-05-03] BACKEND-PLANNING: Created BACKEND_TODO.md with initial architecture and feature planning for the backend (Auth, Leaderboards, Chat, Admin).
+- [2026-05-03] BACKEND-IMPLEMENTATION: Implemented the FastAPI backend for Auth and Profile management.
+  - Architecture: Modular FastAPI structure with Pydantic validation and Firebase Admin SDK.
+  - Security: Implemented Firebase ID token verification middleware.
+  - Deployment: Created `render.yaml` for one-click deployment to Render.com.
+  - Frontend: Updated `ApiGateway` and `ProfileManager` to support live backend synchronization and profile backups.
+

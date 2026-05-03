@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dreamhunter/models/player_model.dart';
 import 'package:dreamhunter/services/core/storage_engine.dart';
@@ -53,11 +54,23 @@ class ProfileManager {
       stones: WalletManager.instance.hellStones,
     );
 
-    await _backend.performFullSync();
+    await _backend.performFullSync(updatedPlayer.toMap());
     await StorageEngine.instance.saveMetadata(
       'player_profile',
       updatedPlayer.toMap(),
     );
+  }
+
+  /// Ensures the player document exists in Firestore (called after login/register).
+  Future<void> syncWithBackend() async {
+    if (_auth.currentUser == null) return;
+    
+    final response = await _backend.post('/auth/sync');
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      await StorageEngine.instance.saveMetadata('player_profile', data);
+      await reloadAllServices();
+    }
   }
 
   /// Forces all core services to reload their data from the local cache.
