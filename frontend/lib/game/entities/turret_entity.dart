@@ -60,15 +60,15 @@ class TurretEntity extends BaseEntity with TapCallbacks {
 
   void _applyStats() {
     // NEW SCALE PROTOCOL:
-    // Range: Minimum 3 tiles (96px) + 0.5 tiles (16px) per level increase.
-    // Lv 1: 96px (3 tiles)
-    // Lv 9: 96 + (8 * 16) = 224px (7 tiles)
-    range = 96.0 + (level - 1) * 16.0;
+    // Range: Minimum 4 tiles (128px) + 0.5 tiles (16px) per level increase.
+    // Lv 1: 128px (4 tiles)
+    // Lv 9: 128 + (8 * 16) = 256px (8 tiles)
+    range = 128.0 + (level - 1) * 16.0;
 
-    // SWEET SPOT DAMAGE:
+    // SWEET SPOT DAMAGE (20% NERF APPLIED):
     // Starts higher but scales slightly less aggressively than before.
-    // Base 12 + 8 per level. Lv 9 = 76 (Standard ghost HP is ~100-200)
-    damage = 12.0 + (level - 1) * 8.0;
+    // Base (12 + 8 per level) * 0.8. Lv 1 = 9.6, Lv 9 = 60.8
+    damage = (12.0 + (level - 1) * 8.0) * 0.8;
 
     // Fire rate increases slightly (gets faster)
     fireRate = (1.0 - (level - 1) * 0.05).clamp(0.4, 1.0);
@@ -123,8 +123,8 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     }
 
     final int cost = level * 150;
-    final double nextDamage = 12.0 + level * 8.0;
-    final double nextRange = 96.0 + level * 16.0;
+    final double nextDamage = (12.0 + level * 8.0) * 0.8;
+    final double nextRange = 128.0 + level * 16.0;
 
     UpgradeDialog.show(
       game.buildContext!,
@@ -165,11 +165,9 @@ class TurretEntity extends BaseEntity with TapCallbacks {
       await _updateSprites();
       HapticManager.instance.medium();
       AudioManager.instance.playReward(); // Use reward sound for upgrade
-      debugPrint('[UPGRADE] Turret in $roomID successfully upgraded to Lv$level');
       return true;
     }
 
-    debugPrint('[UPGRADE] Turret in $roomID failed upgrade: Insufficient resources');
     return false;
   }
 
@@ -217,7 +215,8 @@ class TurretEntity extends BaseEntity with TapCallbacks {
 
     if (_currentTarget != null) {
       // LINE OF SIGHT CHECK: Don't shoot through walls
-      if (!game.hasLineOfSight(center, _currentTarget!.center)) {
+      // We pass roomID so the turret can "see through" its own door to defend it.
+      if (!game.hasLineOfSight(center, _currentTarget!.center, ignoredRoomID: roomID)) {
         _currentTarget = null;
         return;
       }
@@ -258,8 +257,9 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     // Play sound and rumble
     AudioManager.instance.playClick();
     
-    debugPrint('[TURRET] Firing at ${_currentTarget.runtimeType} (Dmg: $damage)');
-
+    // Determine ownership
+    final isPlayerOwned = roomID == MatchManager.instance.currentRoomID;
+    
     // VELOCITY UPGRADE: 1000px/s makes it virtually a 100% hit (tracer speed)
     final velocity = Vector2(cos(head.angle), sin(head.angle)) * 1000;
 
@@ -269,6 +269,7 @@ class TurretEntity extends BaseEntity with TapCallbacks {
         position: center.clone(),
         velocity: velocity,
         damage: damage,
+        isPlayerOwned: isPlayerOwned,
       ),
     );
   }
@@ -282,3 +283,4 @@ class TurretHeadComponent extends SpriteComponent {
         position: Vector2(16, 16), // Center in parent
       );
 }
+

@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
 import 'package:dreamhunter/game/dream_hunter_game.dart';
@@ -21,9 +21,6 @@ class HunterMovementBehavior extends Component
     // 1. Check if target bed was stolen
     if (parent.targetBed.isOccupied && parent.targetBed.owner != parent) {
       if (parent.repathCount < 5) {
-        debugPrint(
-          '[AI_NAV] ${parent.skinPath}: My bed in room ${parent.targetBed.roomID} was stolen! Finding a new one.',
-        );
         _findNewBed();
         return;
       }
@@ -32,9 +29,6 @@ class HunterMovementBehavior extends Component
     // 2. Are we at the bed?
     final distToBed = parent.position.distanceTo(parent.targetBed.position);
     if (distToBed < 40.0) {
-      debugPrint(
-        '[AI_NAV] ${parent.skinPath}: Reached bed in room ${parent.targetBed.roomID}. Time to sleep!',
-      );
       parent.targetBed.occupy(parent);
       parent.sleep(parent.targetBed.position);
       return;
@@ -121,13 +115,8 @@ class HunterMovementBehavior extends Component
       parent.repathCount++;
       parent.targetBed = otherBeds[0];
       parent.targetBed.reservedBy = parent;
-      debugPrint(
-        '[AI_NAV] ${parent.skinPath}: New target assigned: Room ${parent.targetBed.roomID} (Attempt ${parent.repathCount})',
-      );
     } else {
-      debugPrint(
-        '[AI_NAV] ${parent.skinPath}: ERROR: No empty beds found! I am homeless.',
-      );
+      debugPrint('[ERROR] ${parent.skinPath}: No empty beds found! I am homeless.');
     }
   }
 }

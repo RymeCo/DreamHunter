@@ -188,7 +188,6 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
       }
       final bool isMet = nextUpgrade.checkRequirement!(maxTurretLv);
       if (!isMet) {
-        debugPrint('[UPGRADE] Generator in $roomID failed upgrade: Requirement not met (${nextUpgrade.requirementLabel})');
         return false;
       }
     }
@@ -216,11 +215,9 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
       _updateSprite();
       HapticManager.instance.medium();
       AudioManager.instance.playClick();
-      debugPrint('[UPGRADE] Generator in $roomID successfully upgraded to Lv$level');
       return true;
     }
 
-    debugPrint('[UPGRADE] Generator in $roomID failed upgrade: Insufficient resources');
     return false;
   }
 }

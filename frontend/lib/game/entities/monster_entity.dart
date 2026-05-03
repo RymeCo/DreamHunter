@@ -10,7 +10,7 @@ import 'package:flame/collisions.dart';
 
 class MonsterEntity extends BaseEntity {
   double speed = 96.0; // Increased by 20% from 80.0
-  double attackDamage = 6.0; // Reduced from 10.0 (-40%) for early game balance
+  double attackDamage = 4.0; // Base damage set to 4.0
   int monsterLevel = 1;
   int experience = 0;
 
@@ -50,7 +50,12 @@ class MonsterEntity extends BaseEntity {
       'game/monsters/ghost_right_back-32x48.png',
     );
 
-    _spriteComponent = SpriteComponent(sprite: _idleSprite, size: size);
+    _spriteComponent = SpriteComponent(
+      sprite: _idleSprite,
+      size: size,
+      anchor: Anchor.bottomCenter,
+      position: Vector2(size.x / 2, size.y),
+    );
     add(_spriteComponent);
 
     // Add health bar
@@ -109,10 +114,9 @@ class MonsterEntity extends BaseEntity {
   void _levelUp() {
     monsterLevel++;
     maxHp *= 1.2;
-    hp = maxHp; // Full heal on level up
-    attackDamage = 6.0 * math.pow(1.20, monsterLevel - 1);
+    // Removed: hp = maxHp; // Full heal on level up
+    attackDamage = 5.0 * math.pow(1.20, monsterLevel - 1);
 
-    debugPrint('[MONSTER] LEVEL UP! Now Level $monsterLevel. HP: $maxHp, Damage: ${attackDamage.toStringAsFixed(1)}');
 
     // Visual feedback for level up: Grow and flash
     pulse(1.8);
@@ -131,6 +135,11 @@ class MonsterEntity extends BaseEntity {
 
   /// Flashes the monster a certain color.
   void flashColor(Color color) {
+    // Clean up existing color effects
+    _spriteComponent.children
+        .whereType<ColorEffect>()
+        .forEach((e) => e.removeFromParent());
+
     _spriteComponent.add(
       ColorEffect(
         color,
@@ -141,10 +150,15 @@ class MonsterEntity extends BaseEntity {
   }
 
   /// Pulses the monster's scale.
-  void pulse(double scale) {
-    add(
+  void pulse(double scaleAmount) {
+    // Clean up existing scale effects to prevent distortion
+    _spriteComponent.children
+        .whereType<ScaleEffect>()
+        .forEach((e) => e.removeFromParent());
+
+    _spriteComponent.add(
       ScaleEffect.to(
-        Vector2.all(scale),
+        Vector2.all(scaleAmount),
         EffectController(
           duration: 0.1,
           reverseDuration: 0.3,
@@ -155,19 +169,37 @@ class MonsterEntity extends BaseEntity {
   }
 
   @override
-  void takeDamage(double amount) {
-    super.takeDamage(amount);
+  void takeDamage(double amount, {bool isPlayerOwned = false}) {
+    final oldHp = hp;
+    super.takeDamage(amount, isPlayerOwned: isPlayerOwned);
+    
+    if (isPlayerOwned) {
+      // Record damage
+      MatchManager.instance.addPlayerDamage(amount);
+      
+      // If this blow killed the monster, mark as player kill
+      if (oldHp > 0 && hp <= 0) {
+        _isPlayerKill = true;
+      }
+    }
+    
     _healthBar.updateVisuals();
   }
+
+  bool _isPlayerKill = false;
 
   @override
   void destroy() {
     if (isDestroyed) return;
     super.destroy();
     
-    // Notify MatchManager that the monster is dead (Victory!)
+    // Notify MatchManager that the monster is dead
+    if (_isPlayerKill) {
+      MatchManager.instance.setPlayerKilledMonster();
+    }
+    
+    // Win match also handles pausing/victory UI
     MatchManager.instance.winMatch();
-    debugPrint('[MONSTER] Monster defeated! Game over (Win).');
   }
 }
 

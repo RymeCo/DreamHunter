@@ -51,8 +51,8 @@ class DreamHunterGame extends FlameGame
   static const int gridW = 40; // 1280 / 32
   static const int gridH = 40;
 
-  /// Pre-calculated distance maps for every bed (Key: roomID)
-  final Map<String, List<List<int>>> bedFlowFields = {};
+  /// Cache for flow fields (Dijkstra maps) to avoid redundant per-frame calculations.
+  final Map<String, List<List<int>>> _flowFieldCache = {};
 
   /// Map of tile coordinates to room IDs for fast lookup (Fog of War)
   final Map<math.Point<int>, String> tileRoomMap = {};
@@ -351,8 +351,8 @@ class DreamHunterGame extends FlameGame
         skinPath: aiSkins[i],
         targetBed: assignedBed,
         position: Vector2(
-          spawnTile.x * 32.0 + 16.0 + (i * 2),
-          spawnTile.y * 32.0 + 16.0 + (i * 2),
+          spawnTile.x * 32.0 + 16.0 + (i * 8),
+          spawnTile.y * 32.0 + 16.0 + (i * 8),
         ),
       );
       ai.hunterIndex = i + 1;
@@ -363,25 +363,9 @@ class DreamHunterGame extends FlameGame
     }
   }
 
-  /// Lazy-loads and caches a flow field for a specific room/bed.
-  List<List<int>>? getFlowField(String roomID) {
-    if (roomID.isEmpty) return null;
-    if (bedFlowFields.containsKey(roomID)) {
-      return bedFlowFields[roomID];
-    }
-
-    // Generate on demand
-    final bed = roomBeds[roomID];
-    if (bed == null) return null;
-
-    final field = _generateFlowField(bed);
-    bedFlowFields[roomID] = field;
-    return field;
-  }
-
-
   /// Checks if there is a clear line of sight between two positions (no wall tiles).
-  bool hasLineOfSight(Vector2 start, Vector2 end) {
+  /// [ignoredRoomID] allows turrets to see through doors in their own room.
+  bool hasLineOfSight(Vector2 start, Vector2 end, {String? ignoredRoomID}) {
     final startTileX = (start.x / 32.0).floor();
     final startTileY = (start.y / 32.0).floor();
     final endTileX = (end.x / 32.0).floor();
@@ -392,7 +376,7 @@ class DreamHunterGame extends FlameGame
     // Simple ray-stepping logic
     final diff = end - start;
     final distance = diff.length;
-    final steps = (distance / 16.0).ceil(); // Step every half-tile
+    final steps = (distance / 8.0).ceil(); // Step every quarter-tile (8px)
     final stepVec = diff / steps.toDouble();
 
     for (int i = 1; i < steps; i++) {
@@ -410,6 +394,11 @@ class DreamHunterGame extends FlameGame
       // 2. PERFORMANCE OPTIMIZED: Check for Closed Doors using doorMap
       final door = doorMap[math.Point(px, py)];
       if (door != null && !door.isOpen && !door.isDestroyed) {
+        // IGNORE DOOR if it belongs to the turret's room
+        if (ignoredRoomID != null && door.roomID == ignoredRoomID) {
+          continue;
+        }
+
         // Allow if it's the target tile
         if (px == endTileX && py == endTileY) continue;
         return false;
@@ -546,6 +535,59 @@ class DreamHunterGame extends FlameGame
   /// Unregisters a turret.
   void unregisterTurret(BaseEntity turret) {
     turrets.remove(turret);
+  }
+
+  /// Generates a flow field (Dijkstra map) for the given room.
+  /// Used by AI hunters to navigate to their beds.
+  List<List<int>>? getFlowField(String roomID) {
+    if (roomID.isEmpty) return null;
+
+    // 1. Return cached field if available
+    if (_flowFieldCache.containsKey(roomID)) {
+      return _flowFieldCache[roomID];
+    }
+
+    final bed = roomBeds[roomID];
+    if (bed == null) return null;
+
+    final targetX = (bed.position.x / 32).floor();
+    final targetY = (bed.position.y / 32).floor();
+
+    final List<List<int>> field = List.generate(
+      gridW,
+      (_) => List.generate(gridH, (_) => 9999),
+    );
+
+    final queue = <math.Point<int>>[math.Point(targetX, targetY)];
+    field[targetX][targetY] = 0;
+
+    while (queue.isNotEmpty) {
+      final curr = queue.removeAt(0);
+      final dist = field[curr.x][curr.y];
+
+      for (final dir in [
+        const math.Point(0, 1),
+        const math.Point(0, -1),
+        const math.Point(1, 0),
+        const math.Point(-1, 0),
+      ]) {
+        final next = math.Point(curr.x + dir.x, curr.y + dir.y);
+        if (next.x >= 0 && next.x < gridW && next.y >= 0 && next.y < gridH) {
+          if (!wallGrid[next.x][next.y] && field[next.x][next.y] == 9999) {
+            // Also stop at doors of other rooms
+            final door = doorMap[next];
+            if (door != null && door.roomID != roomID) continue;
+
+            field[next.x][next.y] = dist + 1;
+            queue.add(next);
+          }
+        }
+      }
+    }
+
+    // 2. Cache the result for future hunters
+    _flowFieldCache[roomID] = field;
+    return field;
   }
 
   @override
@@ -714,53 +756,6 @@ class DreamHunterGame extends FlameGame
     super.onRemove();
   }
 
-  /// Generates a distance map (Flow Field) for a specific bed.
-  /// Every tile stores its distance to the bed. 9999 = Unreachable.
-  List<List<int>> _generateFlowField(BedEntity bed) {
-    final field = List.generate(
-      gridW,
-      (_) => List.generate(gridH, (_) => 9999),
-    );
-
-    final targetX = (bed.position.x / 32).floor().clamp(0, gridW - 1);
-    final targetY = (bed.position.y / 32).floor().clamp(0, gridH - 1);
-    final targetTile = math.Point(targetX, targetY);
-
-    final List<math.Point<int>> queue = [targetTile];
-    field[targetX][targetY] = 0;
-    int head = 0;
-
-    while (head < queue.length) {
-      final current = queue[head++];
-      final currentDist = field[current.x][current.y];
-
-      for (final dir in [
-        const math.Point(1, 0),
-        const math.Point(-1, 0),
-        const math.Point(0, 1),
-        const math.Point(0, -1),
-      ]) {
-        final next = math.Point(current.x + dir.x, current.y + dir.y);
-        if (next.x >= 0 && next.x < gridW && next.y >= 0 && next.y < gridH) {
-          bool isBlocked = wallGrid[next.x][next.y];
-
-          // Treat the room's own door as walkable so the AI can enter
-          if (bed.roomDoor != null) {
-            final dx = (bed.roomDoor!.position.x / 32).floor();
-            final dy = (bed.roomDoor!.position.y / 32).floor();
-            if (next.x == dx && next.y == dy) isBlocked = false;
-          }
-
-          if (!isBlocked && field[next.x][next.y] == 9999) {
-            field[next.x][next.y] = currentDist + 1;
-            queue.add(next);
-          }
-        }
-      }
-    }
-    return field;
-  }
-
   /// Finds the shortest path between two positions using BFS on the wallGrid.
   /// Ignores dynamic buildings (doors, turrets) so the monster can navigate to them.
   /// Flood-fill to find all walkable tiles connected to a starting point,
@@ -816,67 +811,92 @@ class DreamHunterGame extends FlameGame
 
     if (startX == endX && startY == endY) return [];
 
-    final queue = <math.Point<int>>[math.Point(startX, startY)];
-    final parentMap = <math.Point<int>, math.Point<int>>{};
-    final visited = <math.Point<int>>{math.Point(startX, startY)};
+    final startPoint = math.Point(startX, startY);
+    final endPoint = math.Point(endX, endY);
 
-    bool found = false;
-    while (queue.isNotEmpty) {
-      final current = queue.removeAt(0);
-      if (current.x == endX && current.y == endY) {
-        found = true;
-        break;
+    final openSet = <math.Point<int>>[startPoint];
+    final cameFrom = <math.Point<int>, math.Point<int>>{};
+    final gScore = <math.Point<int>, int>{startPoint: 0};
+    final fScore = <math.Point<int>, int>{
+      startPoint: _heuristic(startPoint, endPoint),
+    };
+
+    while (openSet.isNotEmpty) {
+      // Find node in openSet with lowest fScore
+      var current = openSet[0];
+      var minF = fScore[current] ?? 999999;
+      for (final node in openSet) {
+        final f = fScore[node] ?? 999999;
+        if (f < minF) {
+          minF = f;
+          current = node;
+        }
       }
 
-      for (final dir in [
-        const math.Point(1, 0),
-        const math.Point(-1, 0),
-        const math.Point(0, 1),
-        const math.Point(0, -1),
-      ]) {
-        final next = math.Point(current.x + dir.x, current.y + dir.y);
-        if (next.x >= 0 &&
-            next.x < gridW &&
-            next.y >= 0 &&
-            next.y < gridH &&
-            !visited.contains(next)) {
-          // PATHFINDING FIX: 
-          // 1. Check static walls
-          bool isBlocked = wallGrid[next.x][next.y];
+      if (current == endPoint) {
+        return _reconstructPath(cameFrom, current);
+      }
 
-          // 2. Check dynamic buildings (Closed Doors)
-          // We allow the target tile even if it's a door, so the monster can path TO it.
-          bool isTargetTile = (next.x == endX && next.y == endY);
-          
-          if (!isBlocked && !isTargetTile) {
-            for (final building in _buildings) {
-              if (building is DoorEntity && !building.isOpen && !building.isDestroyed) {
-                final dx = (building.position.x / 32).floor();
-                final dy = (building.position.y / 32).floor();
-                if (next.x == dx && next.y == dy) {
-                  isBlocked = true;
-                  break;
-                }
-              }
-            }
-          }
+      openSet.remove(current);
 
-          if (!isBlocked || isTargetTile) {
-            visited.add(next);
-            parentMap[next] = current;
-            queue.add(next);
+      for (final neighbor in _getNeighbors(current)) {
+        // WEIGHTED COST: Hallway = 1, Door = 50, Wall = Blocked
+        final weight = _getTileWeight(neighbor, endPoint);
+        if (weight >= 9999) continue;
+
+        final tentativeGScore = (gScore[current] ?? 999999) + weight;
+        if (tentativeGScore < (gScore[neighbor] ?? 999999)) {
+          cameFrom[neighbor] = current;
+          gScore[neighbor] = tentativeGScore;
+          fScore[neighbor] = tentativeGScore + _heuristic(neighbor, endPoint);
+          if (!openSet.contains(neighbor)) {
+            openSet.add(neighbor);
           }
         }
       }
     }
 
-    if (!found) return [];
+    return [];
+  }
 
-    final path = <Vector2>[];
-    math.Point<int>? curr = math.Point(endX, endY);
-    while (curr != null) {
+  int _heuristic(math.Point<int> a, math.Point<int> b) {
+    return (a.x - b.x).abs() + (a.y - b.y).abs();
+  }
+
+  int _getTileWeight(math.Point<int> p, math.Point<int> target) {
+    if (wallGrid[p.x][p.y]) return 9999; // Wall is impassable
+
+    // Check for Door
+    final door = doorMap[p];
+    if (door != null && !door.isOpen && !door.isDestroyed) {
+      // If the door IS the target tile, we allow it with cost 1 so we can stand on it to attack
+      if (p == target) return 1;
+      return 50; // High cost to break through a door
+    }
+
+    return 1; // Standard floor tile
+  }
+
+  List<math.Point<int>> _getNeighbors(math.Point<int> p) {
+    final neighbors = <math.Point<int>>[];
+    if (p.x > 0) neighbors.add(math.Point(p.x - 1, p.y));
+    if (p.x < gridW - 1) neighbors.add(math.Point(p.x + 1, p.y));
+    if (p.y > 0) neighbors.add(math.Point(p.x, p.y - 1));
+    if (p.y < gridH - 1) neighbors.add(math.Point(p.x, p.y + 1));
+    return neighbors;
+  }
+
+  List<Vector2> _reconstructPath(
+    Map<math.Point<int>, math.Point<int>> cameFrom,
+    math.Point<int> current,
+  ) {
+    final path = <Vector2>[
+      Vector2(current.x * 32.0 + 16, current.y * 32.0 + 16),
+    ];
+    var curr = current;
+    while (cameFrom.containsKey(curr)) {
+      curr = cameFrom[curr]!;
       path.add(Vector2(curr.x * 32.0 + 16, curr.y * 32.0 + 16));
-      curr = parentMap[curr];
     }
     return path.reversed.toList();
   }

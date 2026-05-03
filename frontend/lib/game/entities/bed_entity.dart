@@ -52,6 +52,7 @@ class BedEntity extends BaseEntity with TapCallbacks {
     // Pre-register room in Target Registry so monster knows it exists
     MatchManager.instance.updateTargetValue(
       id: roomID,
+      position: position,
       entityLevel: level,
       isOccupied: false,
     );
@@ -88,6 +89,7 @@ class BedEntity extends BaseEntity with TapCallbacks {
     // Update Target Registry
     MatchManager.instance.updateTargetValue(
       id: roomID,
+      position: position,
       isOccupied: true,
       entityLevel: level,
     );
@@ -116,7 +118,6 @@ class BedEntity extends BaseEntity with TapCallbacks {
     if (nextUpgrade.requirementLabel != null) {
       final bool isMet = nextUpgrade.checkRequirement!(roomDoor);
       if (!isMet) {
-        debugPrint('[UPGRADE] Bed in $roomID failed upgrade: Requirement not met (${nextUpgrade.requirementLabel})');
         return false;
       }
     }
@@ -146,6 +147,7 @@ class BedEntity extends BaseEntity with TapCallbacks {
       // Update Target Registry
       MatchManager.instance.updateTargetValue(
         id: roomID,
+        position: position,
         entityLevel: level,
       );
 
@@ -159,11 +161,9 @@ class BedEntity extends BaseEntity with TapCallbacks {
 
       HapticManager.instance.medium();
       AudioManager.instance.playClick();
-      debugPrint('[UPGRADE] Bed in $roomID successfully upgraded to Lv$level');
       return true;
     }
 
-    debugPrint('[UPGRADE] Bed in $roomID failed upgrade: Insufficient resources');
     return false;
   }
 

@@ -137,16 +137,16 @@ class RepairButton extends PositionComponent
 
     // Update Timers
     if (_isToggled) {
-      _activeTimer = (_activeTimer - dt).clamp(0, 10);
+      _activeTimer = (_activeTimer - dt).clamp(0, 20);
       if (_activeTimer <= 0) {
-        // AUTO-TIMEOUT: Repair ends after 10s
+        // AUTO-TIMEOUT: Repair ends after 20s
         _isToggled = false;
         game.player.repairCooldown = GameConfig.repairCooldown;
         _updateVisualState();
         _updateRoomRepairs();
       }
       // Show active duration progress (draining)
-      _cooldownOverlay.progress = _activeTimer / 10.0;
+      _cooldownOverlay.progress = _activeTimer / 20.0;
       _cooldownOverlay.isActiveIndicator = true;
     } else {
       // Show cooldown progress (filling)

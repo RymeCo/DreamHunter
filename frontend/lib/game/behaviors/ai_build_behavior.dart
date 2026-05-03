@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart';
 import 'package:flame/components.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
 import 'package:dreamhunter/game/dream_hunter_game.dart';
@@ -52,7 +51,6 @@ class AIBuildBehavior extends Component
 
     // Dumb Personality Check: 50% chance to just "forget" to check for upgrades this tick
     if (parent.personality == AIPersonality.dumb && _random.nextBool()) {
-      debugPrint('[AI_BUILD] ${parent.skinPath} (Dumb) forgot to build this tick.');
       return;
     }
 
@@ -80,9 +78,6 @@ class AIBuildBehavior extends Component
       // Then they upgrade it to instantly heal it, making the monster waste the most time.
       if (door.hp / door.maxHp < 0.15 && door.hp > 1.0) {
         if (door.tryUpgrade(parent)) {
-          debugPrint(
-            '[AI_BUILD] ${parent.skinPath} (Baiter) CLUTCH DOOR UPGRADE!',
-          );
           _resetTimer();
           return;
         }
@@ -97,9 +92,6 @@ class AIBuildBehavior extends Component
         // We are blocked by a door requirement! Try to upgrade the door instead.
         if (door != null && door.totalUpgrades < 15) {
           if (door.tryUpgrade(parent)) {
-            debugPrint(
-              '[AI_BUILD] ${parent.skinPath} Upgrading Door to meet Bed requirements.',
-            );
             _resetTimer();
             return;
           }
@@ -145,18 +137,15 @@ class AIBuildBehavior extends Component
   }
 
   void _handlePanic(DoorEntity? door, BedEntity bed) {
-    debugPrint('[AI_BUILD] ${parent.skinPath} PANICKING in room ${parent.roomID}!');
     // PANIC UPGRADE: Try to save the door or bed to get that instant heal!
     if (door != null && !door.isDestroyed && door.hp < door.maxHp) {
       if (door.tryUpgrade(parent)) {
-        debugPrint('[AI_BUILD]   -> Panic Upgraded Door');
         _resetTimer();
         return;
       }
     }
     if (bed.hp < bed.maxHp) {
       if (bed.tryUpgrade(parent)) {
-        debugPrint('[AI_BUILD]   -> Panic Upgraded Bed');
         _resetTimer();
         return;
       }
@@ -171,7 +160,6 @@ class AIBuildBehavior extends Component
     for (final turret in myTurrets) {
       if (turret.level < 9) {
         turret.tryUpgrade(parent);
-        debugPrint('[AI_BUILD]   -> Panic Upgraded Turret');
       }
     }
 
@@ -187,7 +175,6 @@ class AIBuildBehavior extends Component
         // matchCoins deduction is handled inside tryBuild if needed, 
         // but for AI it's often deducted here for consistency.
         parent.matchCoins -= GameConfig.turretBuildCost;
-        debugPrint('[AI_BUILD]   -> Panic Built Turret');
       }
     }
 
@@ -202,7 +189,6 @@ class AIBuildBehavior extends Component
     // Defense AI: Always keeps Door level >= Bed level
     if (door != null && door.totalUpgrades < bed.level) {
       if (door.tryUpgrade(parent)) {
-        debugPrint('[AI_BUILD] ${parent.skinPath} Defense: Upgraded Door');
         _resetTimer();
         return true;
       }
@@ -219,7 +205,6 @@ class AIBuildBehavior extends Component
         if (parent.matchCoins >= (turret.level * 150)) {
            // We check cost here to avoid spamming tryUpgrade and wasting cycles
            turret.tryUpgrade(parent);
-           debugPrint('[AI_BUILD] ${parent.skinPath} Defense: Upgraded Turret');
            _resetTimer();
            return true;
         }
@@ -228,7 +213,6 @@ class AIBuildBehavior extends Component
 
     // Finally, upgrade Bed
     if (bed.tryUpgrade(parent)) {
-      debugPrint('[AI_BUILD] ${parent.skinPath} Defense: Upgraded Bed');
       _resetTimer();
       return true;
     }
@@ -242,7 +226,6 @@ class AIBuildBehavior extends Component
 
     // Offense AI: Upgrades Bed first and foremost
     if (bed.tryUpgrade(parent)) {
-      debugPrint('[AI_BUILD] ${parent.skinPath} Offense: Upgraded Bed');
       _resetTimer();
       return true;
     }
@@ -272,7 +255,6 @@ class AIBuildBehavior extends Component
               // Upgrade the lowest turret to help meet requirement
               myTurrets.sort((a, b) => a.level.compareTo(b.level));
               myTurrets[0].tryUpgrade(parent);
-              debugPrint('[AI_BUILD] ${parent.skinPath} Offense: Upgraded Turret for Gen requirement');
               _resetTimer();
               return true;
             }
@@ -280,7 +262,6 @@ class AIBuildBehavior extends Component
         }
 
         if (generator.tryUpgrade(parent)) {
-          debugPrint('[AI_BUILD] ${parent.skinPath} Offense: Upgraded Generator');
           _resetTimer();
           return true;
         }
@@ -299,7 +280,6 @@ class AIBuildBehavior extends Component
       final slot = mySlots[_random.nextInt(mySlots.length)];
       if (slot.tryBuild('turret')) {
         parent.matchCoins -= GameConfig.turretBuildCost;
-        debugPrint('[AI_BUILD] ${parent.skinPath} built Turret to meet requirements.');
         _resetTimer();
       }
     }
@@ -412,7 +392,6 @@ class AIBuildBehavior extends Component
 
     // 1. Core Economy: Keep Bed as high as possible
     if (bed.tryUpgrade(parent)) {
-      debugPrint('[AI_BUILD] ${parent.skinPath} Smart: Upgraded Bed');
       _resetTimer();
       return true;
     }
@@ -420,7 +399,6 @@ class AIBuildBehavior extends Component
     // 2. Proactive Defense: Door should be at least 1.5x Bed level (e.g. Bed Lv4 -> Door Wood V)
     if (door != null && door.totalUpgrades < bed.level * 1.5) {
       if (door.tryUpgrade(parent)) {
-        debugPrint('[AI_BUILD] ${parent.skinPath} Smart: Proactive Door Upgrade');
         _resetTimer();
         return true;
       }
@@ -446,7 +424,6 @@ class AIBuildBehavior extends Component
         // We don't check return value because it's a Future<bool>
         // and we are in a synchronous tick.
         turret.tryUpgrade(parent);
-        debugPrint('[AI_BUILD] ${parent.skinPath} Smart: Upgraded Turret');
         _resetTimer();
         return true;
       }
@@ -460,7 +437,6 @@ class AIBuildBehavior extends Component
     final bed = parent.targetBed;
     // Baiters RUSH bed level above all else to hoard coins.
     if (bed.tryUpgrade(parent)) {
-      debugPrint('[AI_BUILD] ${parent.skinPath} Baiter: Rushing Bed');
       _resetTimer();
       return true;
     }

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
@@ -63,6 +64,14 @@ class DoorEntity extends BaseEntity with TapCallbacks {
 
     // 1. Load initial sprites based on material
     await _updateSprites();
+
+    // Register in Target Registry
+    MatchManager.instance.updateTargetValue(
+      id: roomID,
+      position: position,
+      entityLevel: totalUpgrades,
+      hpPercent: 1.0,
+    );
 
     _spriteComponent = SpriteComponent(
       sprite: isOpen ? _openSprite : _closedSprite,
@@ -151,22 +160,24 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     super.update(dt);
     if (isDestroyed) return;
 
-    // Passive Healing: +1 HP every 10 seconds if closed and not at max HP
-    if (!isOpen && hp < maxHp && !isBeingRepaired) {
+    // Passive Healing: 0.5% HP every 2 seconds if closed, not at max HP and NOT stunned
+    if (!isOpen && hp < maxHp && !isStunned) {
       _passiveHealTimer += dt;
-      if (_passiveHealTimer >= 10.0) {
+      if (_passiveHealTimer >= 2.0) {
         _passiveHealTimer = 0;
-        hp = (hp + 1).clamp(0, maxHp);
-        debugPrint('[DOOR] Passive Heal: +1 HP in room $roomID (HP: $hp/$maxHp)');
+        final double passiveHeal = math.max(1.0, maxHp * 0.005); // Min 1hp heal
+        hp = (hp + passiveHeal).clamp(0, maxHp);
+        
         _updateHealthBar();
 
-        // Show +1hp feedback
+        // Show subtle feedback for passive healing
         game.world.add(
           FloatingFeedback(
-            label: '+1hp',
-            color: Colors.greenAccent,
+            label: '+${passiveHeal.toInt()}hp',
+            color: Colors.greenAccent.withValues(alpha: 0.7),
             position: position + Vector2(size.x / 2, 0),
             icon: Icons.add_circle_outline_rounded,
+            baseScale: 0.8, // Smaller than manual repair
           ),
         );
       }
@@ -194,21 +205,19 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       }
     }
 
-    // Manual Repair Logic: 2% every 1s (ONLY when isBeingRepaired is true)
-    if (isBeingRepaired && (hp < maxHp || shieldHp < maxShieldHp)) {
+    // Manual Repair Logic: 2% every 1s (ONLY when isBeingRepaired is true and NOT stunned)
+    if (isBeingRepaired && !isStunned && (hp < maxHp || shieldHp < maxShieldHp)) {
       _regenTimer += dt;
       if (_regenTimer >= 1.0) {
         _regenTimer = 0;
 
-        final double hpHeal = maxHp * 0.02;
-        final double shieldHeal = maxShieldHp * 0.02;
+        final double hpHeal = math.max(1.0, maxHp * 0.02); // Min 1hp heal
+        final double shieldHeal = math.max(1.0, maxShieldHp * 0.02);
 
         // Heal HP
         if (hp < maxHp) {
           hp = (hp + hpHeal).clamp(0, maxHp);
-          debugPrint(
-            '[DOOR] Repair Heal: +${hpHeal.toInt()} HP in room $roomID (HP: $hp/$maxHp)',
-          );
+          
           // Bigger feedback for active repair
           game.world.add(
             FloatingFeedback(
@@ -225,11 +234,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
 
         // Heal Shield
         if (shieldHp < maxShieldHp) {
-          final oldShield = shieldHp;
           shieldHp = (shieldHp + shieldHeal).clamp(0, maxShieldHp);
-          debugPrint(
-            '[DOOR] Repair Shield: +${(shieldHp - oldShield).toInt()} in room $roomID (Shield: $shieldHp/$maxShieldHp)',
-          );
         }
 
         _updateHealthBar();
@@ -262,9 +267,8 @@ class DoorEntity extends BaseEntity with TapCallbacks {
   }
 
   @override
-  void takeDamage(double amount) {
-    if (isDestroyed) return;
-
+  void takeDamage(double amount, {bool isPlayerOwned = false}) {
+   if (isDestroyed) return;
     // Apply Shield Logic
     if (shieldHp > 0) {
       if (shieldHp >= amount) {
@@ -283,6 +287,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     // Update Target Registry
     MatchManager.instance.updateTargetValue(
       id: roomID,
+      position: position,
       hpPercent: hp / maxHp,
     );
 
@@ -347,7 +352,6 @@ class DoorEntity extends BaseEntity with TapCallbacks {
   @override
   void destroy() {
     if (isDestroyed) return;
-    debugPrint('[DOOR] Door in room $roomID has been DESTROYED!');
     _spriteComponent.removeFromParent();
     _hbBackground.removeFromParent();
     categories.remove('building');
@@ -407,6 +411,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       // Update Target Registry
       MatchManager.instance.updateTargetValue(
         id: roomID,
+        position: position,
         entityLevel: totalUpgrades,
         hpPercent: hp / maxHp,
       );
@@ -416,11 +421,9 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       _updateHealthBar();
 
       HapticManager.instance.medium();
-      debugPrint('[UPGRADE] Door in $roomID successfully upgraded to ${currentUpgrade.name} (${currentUpgrade.suffix})');
       return true;
     }
 
-    debugPrint('[UPGRADE] Door in $roomID failed upgrade: Insufficient resources');
     return false;
   }
 

@@ -273,23 +273,6 @@ abstract class BaseEntity extends PositionComponent
     super.onRemove();
   }
 
-  @override
-  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
-    super.onCollision(intersectionPoints, other);
-
-    // Monster attacking Hunter/Player
-    if (hasCategory('monster') &&
-        (other is BaseEntity &&
-            (other.hasCategory('player') || other.hasCategory('ai_hunter')))) {
-      if (!other.isDestroyed) {
-        // LINE OF SIGHT SAFETY: Prevent kills through walls or closed doors
-        if (game.hasLineOfSight(center, other.center)) {
-          other.takeDamage(100.0); // Lethal touch
-        }
-      }
-    }
-  }
-
   /// Stuns this entity for a specific duration.
   void stun(double duration) {
     if (isDestroyed) return;
@@ -318,7 +301,7 @@ abstract class BaseEntity extends PositionComponent
   }
 
   /// Reduces health and handles destruction if health reaches zero.
-  void takeDamage(double amount) {
+  void takeDamage(double amount, {bool isPlayerOwned = false}) {
     if (isDestroyed) return;
     hp = (hp - amount).clamp(0, maxHp);
     if (hp <= 0) {

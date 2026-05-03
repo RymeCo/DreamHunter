@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
@@ -126,11 +125,9 @@ class OreEntity extends BaseEntity with TapCallbacks {
       _updateVisuals();
       HapticManager.instance.medium();
       AudioManager.instance.playReward();
-      debugPrint('[UPGRADE] Ore Mine in $roomID successfully upgraded to Lv$level');
       return true;
     }
 
-    debugPrint('[UPGRADE] Ore Mine in $roomID failed upgrade: Insufficient resources');
     return false;
   }
 }

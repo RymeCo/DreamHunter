@@ -8,12 +8,14 @@ class ProjectileEntity extends SpriteComponent
     with HasGameReference<DreamHunterGame>, CollisionCallbacks {
   final Vector2 velocity;
   final double damage;
+  final bool isPlayerOwned;
 
   ProjectileEntity({
     required super.sprite,
     required super.position,
     required this.velocity,
     this.damage = 10,
+    this.isPlayerOwned = false,
   }) : super(
          size: Vector2(16, 4), // Stretched for a tracer look
          anchor: Anchor.center,

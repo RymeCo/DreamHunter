@@ -1,5 +1,7 @@
+import 'package:flame/extensions.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:dreamhunter/services/economy/wallet_manager.dart';
 
 /// A Singleton state manager for the current match.
 /// Acting as the "Single Source of Truth" for game state like paused status and in-match economy.
@@ -51,6 +53,20 @@ class MatchManager extends ChangeNotifier {
   final Map<int, double> _attackTimers = {};
   Map<int, double> get attackTimers => _attackTimers;
 
+  // Reward Tracking
+  double _survivalTime = 0.0;
+  double _damageDealt = 0.0;
+  bool _playerKilledMonster = false;
+  bool _matchEnded = false;
+  bool _rewardsPersisted = false;
+  bool _isForfeited = false;
+
+  double get survivalTime => _survivalTime;
+  double get damageDealt => _damageDealt;
+  bool get playerKilledMonster => _playerKilledMonster;
+  bool get matchEnded => _matchEnded;
+  bool get isForfeited => _isForfeited;
+
   // Life Status (Index 0 = Player, 1+ = AI)
   final List<bool> _hunterAliveStatus = [true];
   List<bool> get hunterAliveStatus => List.unmodifiable(_hunterAliveStatus);
@@ -62,34 +78,61 @@ class MatchManager extends ChangeNotifier {
   /// Registers or updates a target's strategic value.
   void updateTargetValue({
     required String id,
+    Vector2? position,
     int? entityLevel,
     bool? isOccupied,
     bool? isPlayer,
     double? hpPercent,
   }) {
     final entry = _targetRegistry.putIfAbsent(id, () => _TargetValue(id: id));
+    if (position != null) entry.position = position;
     if (entityLevel != null) entry.level = entityLevel;
     if (isOccupied != null) entry.isOccupied = isOccupied;
     if (isPlayer != null) entry.isPlayer = isPlayer;
     if (hpPercent != null) entry.hpPercent = hpPercent;
   }
 
-  /// Gets all registered targets sorted by strategic "attractiveness" (Weakest-First).
-  List<String> getBestTargets() {
+  /// Gets all registered targets sorted by strategic "attractiveness" (High-Score First).
+  /// [monsterPos] allows factoring in distance to avoid kiting and prioritize proximity.
+  List<String> getBestTargets(Vector2 monsterPos) {
     final list = _targetRegistry.values.toList();
     if (list.isEmpty) return [];
 
-    // WEAKEST-FIRST STRATEGY:
-    // 1. Prefer occupied rooms (high value).
-    // 2. LOWER Level first (Easy prey / Faster kills).
-    // 3. LOWER HP Percent (Finish what was started).
+    // UNIFIED SCORING STRATEGY:
+    // BaseScore = (Occupied ? 100 : 0) + (isPlayer ? 50 : 0)
+    // DistancePenalty = Distance / 20
+    // LevelPenalty = Level * 5
+    // FinalScore = BaseScore - DistancePenalty - LevelPenalty
+    
     list.sort((a, b) {
-      if (a.isOccupied != b.isOccupied) return a.isOccupied ? -1 : 1;
-      if (a.level != b.level) return a.level.compareTo(b.level);
-      return a.hpPercent.compareTo(b.hpPercent);
+      final aScore = _calculateTargetScore(a, monsterPos);
+      final bScore = _calculateTargetScore(b, monsterPos);
+      return bScore.compareTo(aScore); // High score first
     });
 
     return list.map((e) => e.id).toList();
+  }
+
+  double _calculateTargetScore(_TargetValue target, Vector2 monsterPos) {
+    double score = 0;
+    
+    // 1. Occupancy is the highest priority
+    if (target.isOccupied) score += 100;
+    if (target.isPlayer) score += 50;
+
+    // 2. Distance Penalty (Closer is better)
+    if (target.position != null) {
+      final dist = monsterPos.distanceTo(target.position!);
+      score -= (dist / 16.0); // 1 point per half-tile distance
+    }
+
+    // 3. Level Penalty (Lower level is easier to break)
+    score -= (target.level * 5.0);
+
+    // 4. HP Bonus (Finishing off targets)
+    score += (1.0 - target.hpPercent) * 20.0;
+
+    return score;
   }
 
   /// Resets match state for a fresh start.
@@ -109,6 +152,14 @@ class MatchManager extends ChangeNotifier {
     _attackTimers.clear();
     _targetRegistry.clear();
 
+    // Reset reward tracking
+    _survivalTime = 0.0;
+    _damageDealt = 0.0;
+    _playerKilledMonster = false;
+    _matchEnded = false;
+    _rewardsPersisted = false;
+    _isForfeited = false;
+
     _hunterAliveStatus.clear();
     _hunterAliveStatus.add(true); // Player
     for (int i = 0; i < _aiSkins.length; i++) {
@@ -123,7 +174,20 @@ class MatchManager extends ChangeNotifier {
     if (_isGameWon) return;
     _isGameWon = true;
     _isPaused = true;
+    _matchEnded = true;
+    persistRewards();
     _safeNotify(notifyListeners);
+  }
+
+  /// Persists the earned rewards to the global wallet.
+  Future<void> persistRewards() async {
+    if (_rewardsPersisted) return;
+    _rewardsPersisted = true;
+
+    final total = calculateRewards();
+    if (total > 0) {
+      await WalletManager.instance.updateBalance(coinsDelta: total);
+    }
   }
 
   /// Sets the list of AI skins joining the match
@@ -145,7 +209,44 @@ class MatchManager extends ChangeNotifier {
       _hunterAliveStatus[index] = false;
       _attackTimers.remove(index);
       _safeNotify(notifyListeners);
+
+      // If player died, mark match as ended
+      if (index == 0) {
+        _matchEnded = true;
+        persistRewards();
+      }
     }
+  }
+
+  /// Adds damage dealt by the player to the reward counter.
+  void addPlayerDamage(double damage) {
+    if (_matchEnded) return;
+    _damageDealt += damage;
+  }
+
+  /// Records that the player dealt the final blow.
+  void setPlayerKilledMonster() {
+    if (_matchEnded) return;
+    _playerKilledMonster = true;
+    _matchEnded = true;
+  }
+
+  /// Calculates the reward based on performance.
+  /// Hard cap at 50 coins.
+  int calculateRewards() {
+    if (_isForfeited) return 0;
+
+    // ⏱️ Survival: 1 Coin per 15 seconds survived (Max 20 Coins / 5 Minutes)
+    final survivalReward = (_survivalTime / 15.0).floor().clamp(0, 20);
+
+    // ⚔️ Damage: 1 Coin per 50 damage (Max 20 Coins / 1000 Damage)
+    final damageReward = (_damageDealt / 50.0).floor().clamp(0, 20);
+
+    // 🎯 Kill Bonus: 10 Coins
+    final killBonus = _playerKilledMonster ? 10 : 0;
+
+    final total = (survivalReward + damageReward + killBonus).clamp(0, 50);
+    return total;
   }
 
   /// Checks if a hunter is currently alive.
@@ -167,6 +268,9 @@ class MatchManager extends ChangeNotifier {
   /// Called by the Flame game loop.
   void update(double dt) {
     if (_isPaused) return;
+
+    // Track survival time
+    _survivalTime += dt;
 
     _coinTickAccumulator += dt;
     _energyTickAccumulator += dt;
@@ -259,75 +363,44 @@ class MatchManager extends ChangeNotifier {
     _safeNotify(notifyListeners);
   }
 
-  // Legacy timer methods removed for logic integrity
-  void stopTickSystem() {}
-
   void updateMatchCoins(int delta) {
-    final oldBalance = _matchCoins;
     _matchCoins = (_matchCoins + delta).clamp(0, 999999);
-    debugPrint('[ECONOMY] COINS: $oldBalance -> $_matchCoins (Change: $delta)');
     notifyListeners();
   }
 
   /// Attempts to spend match coins. Returns true if successful.
   bool spendMatchCoins(int amount) {
     if (_matchCoins >= amount) {
-      final oldBalance = _matchCoins;
       _matchCoins -= amount;
-      debugPrint(
-        '[ECONOMY] SPEND COINS: $oldBalance -> $_matchCoins (Amount: $amount)',
-      );
       _safeNotify(notifyListeners);
       return true;
     }
-    debugPrint(
-      '[ECONOMY] FAILED SPEND COINS: Balance $_matchCoins < Need $amount',
-    );
     return false;
   }
 
   /// Attempts to spend match energy. Returns true if successful.
   bool spendMatchEnergy(int amount) {
     if (_matchEnergy >= amount) {
-      final oldBalance = _matchEnergy;
       _matchEnergy -= amount;
-      debugPrint(
-        '[ECONOMY] SPEND ENERGY: $oldBalance -> $_matchEnergy (Amount: $amount)',
-      );
       _safeNotify(notifyListeners);
       return true;
     }
-    debugPrint(
-      '[ECONOMY] FAILED SPEND ENERGY: Balance $_matchEnergy < Need $amount',
-    );
     return false;
   }
 
   /// Attempts to spend both coins and energy. Returns true if successful.
   bool spendResources({int coins = 0, int energy = 0}) {
     if (_matchCoins >= coins && _matchEnergy >= energy) {
-      final oldCoins = _matchCoins;
-      final oldEnergy = _matchEnergy;
       _matchCoins -= coins;
       _matchEnergy -= energy;
-      debugPrint(
-        '[ECONOMY] SPEND MULTI: Coins $oldCoins->$_matchCoins, Energy $oldEnergy->$_matchEnergy',
-      );
       _safeNotify(notifyListeners);
       return true;
     }
-    debugPrint(
-      '[ECONOMY] FAILED MULTI SPEND: Need ($coins C, $energy E) | Have ($_matchCoins C, $_matchEnergy E)',
-    );
     return false;
   }
 
   void updateMatchEnergy(int delta) {
-    final oldBalance = _matchEnergy;
     _matchEnergy = (_matchEnergy + delta).clamp(0, 100000);
-    debugPrint(
-      '[ECONOMY] ENERGY: $oldBalance -> $_matchEnergy (Change: $delta)',
-    );
     notifyListeners();
   }
 
@@ -350,10 +423,18 @@ class MatchManager extends ChangeNotifier {
     _isPaused = !_isPaused;
     _safeNotify(notifyListeners);
   }
+
+  void setForfeited() {
+    _isForfeited = true;
+    _matchEnded = true;
+    _isPaused = true;
+    _safeNotify(notifyListeners);
+  }
 }
 
 class _TargetValue {
   final String id;
+  Vector2? position;
   int level = 0;
   bool isOccupied = false;
   bool isPlayer = false;

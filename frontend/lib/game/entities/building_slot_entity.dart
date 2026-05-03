@@ -126,7 +126,6 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
       );
       game.world.add(generator);
       removeFromParent();
-      debugPrint('[BUILD] Successfully built $baseId Lv$level in room $roomID');
       return true;
     } else if (baseId == 'turret') {
       final turret = TurretEntity(
@@ -135,7 +134,6 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
       );
       game.world.add(turret);
       removeFromParent();
-      debugPrint('[BUILD] Successfully built $baseId in room $roomID');
       return true;
     } else if (baseId == 'fridge') {
       // Restriction: Only one Fridge per room
@@ -145,7 +143,6 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
 
       if (alreadyHasFridge) {
         // Show a brief message or just reject
-        debugPrint('[BUILD] Failed to build $baseId in room $roomID: Already exists.');
         return false;
       }
 
@@ -155,7 +152,6 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
       );
       game.world.add(fridge);
       removeFromParent();
-      debugPrint('[BUILD] Successfully built $baseId in room $roomID');
       return true;
     } else if (baseId == 'ore') {
       final ore = OreEntity(
@@ -165,11 +161,9 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
       );
       game.world.add(ore);
       removeFromParent();
-      debugPrint('[BUILD] Successfully built $baseId Lv$level in room $roomID');
       return true;
     }
     
-    debugPrint('[BUILD] Failed to build $baseId: Unknown building ID.');
     return false;
   }
 }

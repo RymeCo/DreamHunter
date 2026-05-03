@@ -296,8 +296,44 @@
   - Logic: Implemented "Mercy Logic" for the human hunter. If the monster is attacking the human player's door and it is Level 4 (Wood Door IV) or below, there is now a 15% periodic chance (checked every 0.25s) for the monster to lose interest and retreat.
   - Feedback: Added a visual "BORING..." floating text effect when the monster decides to retreat from a low-level player door, signaling the pity mechanic to the user.
   - Impact: This significantly improves the early-game survival of human players while maintaining the full difficulty for AI hunters and late-game progression.
+- [2026-05-02] MONSTER-VISUAL-STABILITY:
+  - Fix: Resolved a bug where the monster's sprite would become distorted or "un-flip" permanently after attacking or using skills.
+  - Architecture: Isolated all visual effects (Scale and Color) to the internal `_spriteComponent` instead of the root entity. This prevents effects from conflicting with the root's movement-based flipping logic.
+  - Logic: Implemented a cleanup step in `pulse()` and `flashColor()` to remove existing effects before adding new ones, preventing multiple animations from "fighting" over the sprite's properties.
+  - Visuals: Re-anchored the sprite component to `bottomCenter` for consistent scaling from the ground up.
 - [2026-05-02] EARLY-GAME-BALANCE-&-TURRET-FIX:
   - Balance: Reduced the monster's base damage by 40% (from 10.0 to 6.0). This applies to Level 1 and scales proportionally, making the early game much more manageable for players.
   - Turrets: Fixed a bug where closed doors were blocking turret line-of-sight to monsters attacking those same doors. Turrets can now "see through" the target door to defend it.
   - Logic: Ensured that the "Max 2 Active Turrets" rule correctly allows two units to fire simultaneously when both have a clear line of sight to the ghost.
   - Impact: Improved tactical consistency—turrets will no longer stand idle while a ghost is smashing the front door.
+- [2026-05-03] COMBAT-BALANCE-REFINEMENT:
+  - Monster: Increased base attack damage from 6.0 to 8.0, maintaining the 20% level-up scaling.
+  - Turrets: Nerfed all turret damage by 20% across all levels to increase the challenge and reliance on door defenses.
+  - Doors: Overhauled passive healing logic. Doors now recover 0.5% HP every 2 seconds. This healing is continuous and stacks with the manual repair button (+2%/s), significantly boosting defensive synergy.
+  - Feedback: Added a subtle "+Xhp" floating effect for passive healing to distinguish it from manual repairs.
+- [2026-05-03] MONSTER-NERF-&-MECHANIC-REFINEMENT:
+  - Damage: Reduced monster base attack damage from 8.0 to 5.0.
+  - Lifecycle: Removed the full-heal mechanic upon monster level-up, making damage dealt by turrets and traps more permanent and meaningful.
+  - Scaling: Updated the level-up damage formula to scale from the new 5.0 base.
+  - Repair: Extended manual repair duration from 10 seconds to 20 seconds, allowing for longer defensive holdouts.
+- [2026-05-03] TURRET-TARGETING-FIX:
+  - Range: Increased base turret range from 96px (3 tiles) to 128px (4 tiles). This ensures turrets can reach monsters attacking doors from common defensive positions.
+  - LoS: Modified `hasLineOfSight` to accept an `ignoredRoomID`. Turrets now "see through" the door of their own room to defend it.
+  - Targeting: Verified that turrets will now correctly fire at ghosts sieging the entrance even if the door is closed and the ghost is standing slightly back in the hallway.
+- [2026-05-03] REWARD-SYSTEM-IMPLEMENTATION:
+  - Architecture: Implemented a robust performance-based reward system with persistence.
+  - Tracking: Updated `MatchManager` to track survival time, damage dealt by the player, and final-blow status.
+  - Logic: Modified `MonsterEntity`, `TurretEntity`, and `ProjectileEntity` to support player-damage attribution via a new `isPlayerOwned` flag.
+  - Economy: Integrated with `WalletManager` to automatically persist earned coins (up to 50 per match) to the global player wallet.
+  - UI: Enhanced `RewardDialog` with a stylized breakdown showing minutes survived, damage dealt, and kill bonuses.
+  - Stability: Resolved several unrelated lint errors and missing methods (`getFlowField` in `DreamHunterGame` and `DoorEntity` signature mismatch) to ensure 100% project health.
+- [2026-05-03] MONSTER-STUCK-RECOVERY-PATCH:
+  - Logic: Enhanced `MonsterAIBehavior` with a multi-stage stuck recovery system.
+  - Recovery: If the monster is stuck in the same tile for 2 seconds, it now automatically snaps to the tile center and teleports to the next waypoint (Panic Nudge).
+  - Fallback: If still stuck, it forces a retreat to the spawn point to clear the area.
+  - Safety: Added collision checks and sprite flipping to the `retreating` state for consistent physics.
+  - Logging: Improved debug logs to include state and target information for easier troubleshooting.
+- [2026-05-03] REWARD-SCREEN-EXIT-FIX:
+  - Stability: Implemented a `_rewardDialogShown` guard in `GameScreen` to prevent multiple overlapping instances of the `RewardDialog`. This ensures that the "RETURN TO DASHBOARD" button (which pops twice) correctly reaches the `GameScreen` level instead of getting stuck in a stack of identical dialogs.
+  - Logic: Refined `_onMatchStateChanged` to handle both Victory and Defeat states more cleanly via the singleton `MatchManager` state.
+- [2026-05-03] BACKEND-PLANNING: Created BACKEND_TODO.md with initial architecture and feature planning for the backend (Auth, Leaderboards, Chat, Admin).

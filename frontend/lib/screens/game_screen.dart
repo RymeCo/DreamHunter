@@ -22,6 +22,7 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   late final DreamHunterGame _game;
   final MatchManager _matchManager = MatchManager.instance;
+  bool _rewardDialogShown = false;
 
   @override
   void initState() {
@@ -47,7 +48,6 @@ class _GameScreenState extends State<GameScreen> {
   void dispose() {
     _matchManager.removeListener(_onMatchStateChanged);
     // Ensure game state is clean for next run
-    _matchManager.stopTickSystem();
     _matchManager.resumeGame();
     // Memory Management: Clear Flame image cache
     GameLoader.unloadGameAssets();
@@ -59,12 +59,18 @@ class _GameScreenState extends State<GameScreen> {
   void _onMatchStateChanged() {
     if (mounted) {
       // 1. Victory Check
-      if (_matchManager.isGameWon) {
+      if (_matchManager.isGameWon && !_rewardDialogShown) {
         _showRewardDialog();
         return;
       }
 
-      // 2. Pause Check
+      // 2. Match Ended Check (Loss or Forfeit)
+      if (_matchManager.matchEnded && !_rewardDialogShown && !_matchManager.isForfeited) {
+        _showRewardDialog();
+        return;
+      }
+
+      // 3. Pause Check
       if (_game.paused != _matchManager.isPaused) {
         setState(() {
           _game.paused = _matchManager.isPaused;
@@ -91,7 +97,11 @@ class _GameScreenState extends State<GameScreen> {
     );
 
     if (result == 'quit') {
-      _showRewardDialog();
+      _matchManager.setForfeited();
+      // Bypassing Reward Screen as per user request
+      if (mounted) {
+        Navigator.pop(context);
+      }
     } else {
       // Resume when dialog is dismissed normally
       _matchManager.resumeGame();
@@ -99,6 +109,9 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _showRewardDialog() async {
+    if (_rewardDialogShown) return;
+    _rewardDialogShown = true;
+    
     _matchManager.pauseGame();
 
     if (!mounted) return;

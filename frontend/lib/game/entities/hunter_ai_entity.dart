@@ -172,7 +172,6 @@ class HunterAIEntity extends BaseEntity {
     isSleeping = true;
     scale.x = 1.0;
 
-    debugPrint('[AI_STATE] $skinPath is now SLEEPING in room $roomID');
 
     // Change visuals to just the head
     _spriteComponent.sprite = _sleepingSprite;
