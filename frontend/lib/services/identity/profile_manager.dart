@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dreamhunter/models/player_model.dart';
 import 'package:dreamhunter/services/core/storage_engine.dart';
@@ -15,25 +16,53 @@ class ProfileManager {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ApiGateway _backend = ApiGateway();
 
-  /// Fetches the active player model, prioritizing Local Cache for speed.
-  Future<PlayerModel?> getPlayer() async {
+  /// Fetches the active player model, prioritizing Local Cache for speed and cost-saving.
+  /// Only goes to the backend if the cache is older than 24 hours or missing.
+  Future<PlayerModel?> getPlayer({bool forceRefresh = false}) async {
     final user = _auth.currentUser;
-    if (user == null) {
-      // Return a guest model from cache if no one is logged in
-      final cached = await StorageEngine.instance.getMetadata('player_profile');
-      return PlayerModel.fromMap(cached ?? {}, 'guest');
-    }
+    final String uid = user?.uid ?? 'guest';
 
-    // 1. Try Cache First
+    // 1. Check Local Cache
     final cached = await StorageEngine.instance.getMetadata('player_profile');
-    if (cached != null) {
-      return PlayerModel.fromMap(cached, user.uid);
+    if (cached != null && !forceRefresh) {
+      final lastSyncStr = cached['last_sync_timestamp'];
+      if (lastSyncStr != null) {
+        final lastSync = DateTime.parse(lastSyncStr);
+        final difference = DateTime.now().difference(lastSync);
+
+        // If cache is less than 24 hours old, return it instantly (0 backend cost)
+        if (difference.inHours < 24) {
+          return PlayerModel.fromMap(cached, uid);
+        }
+      } else if (uid == 'guest') {
+        // Guests always use local cache
+        return PlayerModel.fromMap(cached, uid);
+      }
     }
 
-    // 2. Default if nothing in cache
+    // 2. Fetch from Backend only if necessary or forced
+    if (user != null) {
+      try {
+        final response = await _backend.get('/profile');
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
+          // Add local timestamp for expiration tracking
+          data['last_sync_timestamp'] = DateTime.now().toIso8601String();
+          
+          await StorageEngine.instance.saveMetadata('player_profile', data);
+          return PlayerModel.fromMap(data, uid);
+        }
+      } catch (e) {
+        debugPrint('Failed to fetch from backend, falling back to cache: $e');
+      }
+    }
+
+    // 3. Absolute Fallback
+    if (cached != null) return PlayerModel.fromMap(cached, uid);
+    
     return PlayerModel(
-      uid: user.uid,
-      name: user.displayName ?? 'Dreamer',
+      uid: uid,
+      name: user?.displayName ?? 'Dreamer',
       createdAt: DateTime.now().toIso8601String(),
     );
   }
@@ -43,44 +72,36 @@ class ProfileManager {
     final player = await getPlayer();
     if (player == null || _auth.currentUser == null) return;
 
-    // Merge current dashboard/shop state into the model before backing up
-    final updatedPlayer = PlayerModel(
-      uid: player.uid,
-      name: player.name,
-      createdAt: player.createdAt,
-      level: player.level,
-      xp: player.xp,
-      coins: WalletManager.instance.dreamCoins,
-      stones: WalletManager.instance.hellStones,
-    );
+    final updatedData = {
+      ...player.toMap(),
+      'coins': WalletManager.instance.dreamCoins,
+      'stones': WalletManager.instance.hellStones,
+      'last_sync_timestamp': DateTime.now().toIso8601String(),
+    };
 
-    await _backend.performFullSync(updatedPlayer.toMap());
-    await StorageEngine.instance.saveMetadata(
-      'player_profile',
-      updatedPlayer.toMap(),
-    );
+    final success = await _backend.performFullSync(updatedData);
+    if (success) {
+      await StorageEngine.instance.saveMetadata('player_profile', updatedData);
+    }
   }
 
-  /// Ensures the player document exists in Firestore (called after login/register).
+  /// Ensures the player document exists and is cached (called after login/register).
   Future<void> syncWithBackend() async {
     final user = _auth.currentUser;
     if (user == null) return;
     
-    // 1. Ensure document exists on backend
     final response = await _backend.post('/auth/sync');
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
+      final Map<String, dynamic> data = json.decode(response.body);
       
-      // 2. Check if the backend document is "New" (or has default values)
-      // and if we have local guest data to promote.
-      final isNewUser = data['level'] == 1 && data['coins'] == 100;
+      final isNewUser = (data['level'] ?? 1) == 1 && (data['coins'] ?? 100) == 100;
       if (isNewUser && StorageEngine.instance.hasGuestData()) {
-         // Automatically promote guest data to this new UID locally
          await StorageEngine.instance.promoteGuestToUser(user.uid);
-         // Then backup that promoted data to the cloud
          await backupPlayer();
+         return; // backupPlayer already saves metadata
       }
 
+      data['last_sync_timestamp'] = DateTime.now().toIso8601String();
       await StorageEngine.instance.saveMetadata('player_profile', data);
       await reloadAllServices();
     }
