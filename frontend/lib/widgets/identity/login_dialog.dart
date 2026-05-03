@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dreamhunter/services/identity/auth_manager.dart';
 import 'package:dreamhunter/services/identity/profile_manager.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';

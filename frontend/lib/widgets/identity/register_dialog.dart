@@ -1,10 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dreamhunter/services/identity/auth_manager.dart';
 import 'package:dreamhunter/services/identity/profile_manager.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
-import 'package:dreamhunter/widgets/identity/save_resolution_dialog.dart';
-import 'package:dreamhunter/services/core/storage_engine.dart';
 import 'package:flutter/material.dart';
 
 class RegisterDialog extends StatefulWidget {
@@ -42,7 +41,7 @@ class _RegisterDialogState extends State<RegisterDialog> {
       );
 
       try {
-        final cred = await _authService.register(
+        await _authService.register(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
           displayName: _displayNameController.text.trim(),

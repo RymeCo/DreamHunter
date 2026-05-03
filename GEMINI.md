@@ -31,11 +31,11 @@ These mandates apply to the entire project ecosystem:
 - **Change Tracking:** Instead of external scrum files, all major task completions are logged in the [CHANGELOG.md](./CHANGELOG.md) file.
 
 ## 5. Strict Validation & Git Workflow
-- **Pre-Commit Mandate:** Every commit MUST pass `analyze_files` (static analysis) for the relevant component.
+- **Frontend Mandate:** ALWAYS run `analyze_files` (static analysis) before making significant changes and before every commit in `frontend/`.
+- **Backend Mandate:** ALWAYS verify backend code (linting/running) before pushing to prevent build failures on Render.com.
 - **Auto-Fix:** Run `dart_fix` and `dart_format` before committing Flutter code.
-- **Feature Branches:** Use feature branches for all development (e.g., `git checkout -b feature/SCRUM-123`).
-- **PR Workflow:** Merge changes into the `development` branch via Pull Requests or simulated reviews. Never commit directly to `development`.
-- **Sync:** Always `git pull origin development` to stay updated with the main integration branch.
+- **Git Flow:** Commit directly to the active integration branch (`development` or `main`) unless a feature branch is specifically requested.
+- **Sync:** Always `git pull origin <branch>` to stay updated with the main integration branch.
 
 ## 6. Mandatory Documentation (Append-Only)
 Every non-trivial edit MUST be documented by **appending** a new entry to the `CHANGELOG.md` file in the project root. 
