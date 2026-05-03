@@ -92,10 +92,19 @@ class ProfileManager {
     final player = await getPlayer();
     if (player == null) return;
 
+    // Merge current dashboard/shop/wallet state into the model before backing up
+    final Map<String, int> activeInventory = {};
+    for (var item in ShopManager.instance.items) {
+      final count = ShopManager.instance.getOwnedCount(item.id);
+      if (count > 0) activeInventory[item.id] = count;
+    }
+
     final updatedData = {
       ...player.toMap(),
       'coins': WalletManager.instance.dreamCoins,
       'stones': WalletManager.instance.hellStones,
+      'inventory': activeInventory,
+      'selectedCharacterId': ShopManager.instance.selectedCharacterId,
       'last_sync_timestamp': DateTime.now().toIso8601String(),
     };
 
@@ -130,6 +139,22 @@ class ProfileManager {
 
       data['last_sync_timestamp'] = DateTime.now().toIso8601String();
       await StorageEngine.instance.saveMetadata('player_profile', data);
+
+      // 3. Update specialized local caches so other managers can see the cloud data
+      if (data['inventory'] != null || data['selectedCharacterId'] != null) {
+        await StorageEngine.instance.saveMetadata('local_inventory', {
+          'inventory': data['inventory'] ?? {},
+          'selectedCharacterId': data['selectedCharacterId'] ?? 'char_max',
+        });
+      }
+      
+      if (data['coins'] != null || data['stones'] != null) {
+        await StorageEngine.instance.saveCurrency(
+          data['coins'] ?? 100,
+          data['stones'] ?? 0,
+        );
+      }
+
       await reloadAllServices();
     }
   }

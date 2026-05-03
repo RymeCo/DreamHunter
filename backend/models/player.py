@@ -23,6 +23,7 @@ class PlayerModel(BaseModel):
     # Economy
     coins: int = 100
     stones: int = 0
+    selectedCharacterId: str = "char_max"
     
     # Inventory: Map of Item ID -> Amount
     inventory: dict = {}

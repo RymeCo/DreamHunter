@@ -23,6 +23,7 @@ class PlayerModel {
   // Economy
   final int coins;
   final int stones;
+  final String selectedCharacterId;
 
   /// Inventory is a clean Map of Item ID -> Amount.
   final Map<String, int> inventory;
@@ -42,6 +43,7 @@ class PlayerModel {
     this.totalGameTime = 0,
     this.coins = 100,
     this.stones = 0,
+    this.selectedCharacterId = 'char_max',
     this.inventory = const {},
   });
 
@@ -61,6 +63,7 @@ class PlayerModel {
       totalGameTime: data['totalGameTime'] ?? 0,
       coins: data['coins'] ?? 100,
       stones: data['stones'] ?? 0,
+      selectedCharacterId: data['selectedCharacterId'] ?? 'char_max',
       inventory: Map<String, int>.from(data['inventory'] ?? {}),
     );
   }
@@ -80,6 +83,7 @@ class PlayerModel {
       'totalGameTime': totalGameTime,
       'coins': coins,
       'stones': stones,
+      'selectedCharacterId': selectedCharacterId,
       'inventory': inventory,
     };
   }
