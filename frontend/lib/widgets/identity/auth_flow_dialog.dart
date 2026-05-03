@@ -62,10 +62,14 @@ class _AuthFlowDialogState extends State<AuthFlowDialog> {
           onLoginRequested: () =>
               setState(() => _currentType = AuthDialogType.login),
           onRegisterSuccess: () {
-            setState(() => _currentType = AuthDialogType.login);
+            setState(() {
+              _isLoggedIn = true;
+              _currentType = AuthDialogType.profile;
+            });
+            widget.onAuthStateChanged(true);
             showCustomSnackBar(
               context,
-              'Account created! Please log in.',
+              'Account created! Welcome to DreamHunter.',
               type: SnackBarType.success,
             );
           },
