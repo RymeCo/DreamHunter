@@ -138,13 +138,15 @@ class _LoginDialogState extends State<LoginDialog> {
         ),
         Positioned(
           top: -180,
-          child: Container(
-            width: 360,
-            height: 360,
-            decoration: const BoxDecoration(shape: BoxShape.circle),
-            child: Image.asset(
-              'assets/images/dashboard/auth/login_logo.png',
-              fit: BoxFit.contain,
+          child: IgnorePointer(
+            child: Container(
+              width: 360,
+              height: 360,
+              decoration: const BoxDecoration(shape: BoxShape.circle),
+              child: Image.asset(
+                'assets/images/dashboard/auth/login_logo.png',
+                fit: BoxFit.contain,
+              ),
             ),
           ),
         ),

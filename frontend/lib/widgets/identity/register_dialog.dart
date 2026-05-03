@@ -159,13 +159,15 @@ class _RegisterDialogState extends State<RegisterDialog> {
         ),
         Positioned(
           top: -180,
-          child: Container(
-            width: 360,
-            height: 360,
-            decoration: const BoxDecoration(shape: BoxShape.circle),
-            child: Image.asset(
-              'assets/images/dashboard/auth/register_logo.png',
-              fit: BoxFit.contain,
+          child: IgnorePointer(
+            child: Container(
+              width: 360,
+              height: 360,
+              decoration: const BoxDecoration(shape: BoxShape.circle),
+              child: Image.asset(
+                'assets/images/dashboard/auth/register_logo.png',
+                fit: BoxFit.contain,
+              ),
             ),
           ),
         ),
