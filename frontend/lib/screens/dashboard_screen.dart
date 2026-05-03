@@ -10,6 +10,7 @@ import 'package:dreamhunter/services/economy/wallet_manager.dart';
 import 'package:dreamhunter/services/progression/daily_roulette.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/storage_engine.dart';
+import 'package:dreamhunter/services/identity/profile_manager.dart';
 
 // Widgets
 import 'package:dreamhunter/widgets/dashboard/currency_display.dart';
@@ -59,6 +60,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await NetworkMonitor.instance.initialize();
     await _controller.initialize();
     await DailyRoulette.instance.initialize();
+
+    // Sync with live backend if logged in
+    if (FirebaseAuth.instance.currentUser != null) {
+      unawaited(ProfileManager.instance.syncWithBackend());
+    }
 
     if (mounted && StorageEngine.instance.isConflictPending()) {
       final user = FirebaseAuth.instance.currentUser;

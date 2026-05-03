@@ -1,4 +1,5 @@
 import 'package:dreamhunter/services/identity/auth_manager.dart';
+import 'package:dreamhunter/services/identity/profile_manager.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
@@ -55,6 +56,9 @@ class _RegisterDialogState extends State<RegisterDialog> {
           if (mounted) {
             await SaveResolutionDialog.showIfNeeded(context, cred.user!.uid);
           }
+
+          // Sync with live backend to create initial Firestore profile
+          await ProfileManager.instance.syncWithBackend();
 
           setState(() => _isLoading = false);
           widget.onRegisterSuccess();
