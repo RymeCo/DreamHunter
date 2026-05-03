@@ -59,9 +59,29 @@ class _LoginDialogState extends State<LoginDialog> {
           setState(() => _isLoading = false);
           widget.onLoginSuccess();
         }
+      } on FirebaseAuthException catch (e) {
+        String message = 'Authentication failed.';
+        if (e.code == 'user-not-found') {
+          message = 'No user found for that email.';
+        } else if (e.code == 'wrong-password') {
+          message = 'Wrong password provided.';
+        } else if (e.code == 'invalid-email') {
+          message = 'The email address is badly formatted.';
+        } else if (e.code == 'user-disabled') {
+          message = 'This user account has been disabled.';
+        }
+
+        if (mounted) {
+          showCustomSnackBar(context, message, type: SnackBarType.error);
+          setState(() => _isLoading = false);
+        }
       } catch (e) {
         debugPrint('Auth error: $e');
-        if (mounted) setState(() => _isLoading = false);
+        if (mounted) {
+          showCustomSnackBar(context, 'An unexpected error occurred.',
+              type: SnackBarType.error);
+          setState(() => _isLoading = false);
+        }
       }
     }
   }

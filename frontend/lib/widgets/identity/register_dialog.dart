@@ -55,9 +55,27 @@ class _RegisterDialogState extends State<RegisterDialog> {
           setState(() => _isLoading = false);
           widget.onRegisterSuccess();
         }
+      } on FirebaseAuthException catch (e) {
+        String message = 'Registration failed.';
+        if (e.code == 'weak-password') {
+          message = 'The password provided is too weak.';
+        } else if (e.code == 'email-already-in-use') {
+          message = 'An account already exists for that email.';
+        } else if (e.code == 'invalid-email') {
+          message = 'The email address is badly formatted.';
+        }
+
+        if (mounted) {
+          showCustomSnackBar(context, message, type: SnackBarType.error);
+          setState(() => _isLoading = false);
+        }
       } catch (e) {
         debugPrint('Registration error: $e');
-        if (mounted) setState(() => _isLoading = false);
+        if (mounted) {
+          showCustomSnackBar(context, 'An unexpected error occurred.',
+              type: SnackBarType.error);
+          setState(() => _isLoading = false);
+        }
       }
     }
   }
