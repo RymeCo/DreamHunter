@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:dreamhunter/services/core/storage_engine.dart';
 
 /// Minimalist Singleton service for Firebase Authentication.
 class AuthManager {
@@ -28,9 +27,8 @@ class AuthManager {
     return cred;
   }
 
-  /// Sign out and clear local cache.
+  /// Sign out.
   Future<void> signOut() async {
-    await StorageEngine.instance.clearAllUserData();
     await _auth.signOut();
   }
 

@@ -42,5 +42,6 @@ class PlayerService:
         if "uid" in data:
             del data["uid"]
         
-        doc_ref.update(data)
+        # Use set with merge=True so it works even if doc doesn't exist
+        doc_ref.set(data, merge=True)
         return PlayerService.get_player(uid)

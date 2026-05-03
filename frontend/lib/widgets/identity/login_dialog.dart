@@ -46,16 +46,15 @@ class _LoginDialogState extends State<LoginDialog> {
         );
 
         if (mounted) {
-          // Resolve save conflict before finishing
-          if (StorageEngine.instance.hasGuestData()) {
-            await StorageEngine.instance.setPendingConflict(true);
-          }
-          if (mounted) {
-            await SaveResolutionDialog.showIfNeeded(context, cred.user!.uid);
-          }
-
-          // Sync with live backend to ensure Firestore document exists
+          // Sync with live backend first to get current cloud state
           await ProfileManager.instance.syncWithBackend();
+
+          // After sync, if guest data exists, check if we need conflict resolution
+          if (StorageEngine.instance.hasGuestData()) {
+            if (mounted) {
+              await SaveResolutionDialog.showIfNeeded(context, cred.user!.uid);
+            }
+          }
 
           setState(() => _isLoading = false);
           widget.onLoginSuccess();

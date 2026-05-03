@@ -63,11 +63,24 @@ class ProfileManager {
 
   /// Ensures the player document exists in Firestore (called after login/register).
   Future<void> syncWithBackend() async {
-    if (_auth.currentUser == null) return;
+    final user = _auth.currentUser;
+    if (user == null) return;
     
+    // 1. Ensure document exists on backend
     final response = await _backend.post('/auth/sync');
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      
+      // 2. Check if the backend document is "New" (or has default values)
+      // and if we have local guest data to promote.
+      final isNewUser = data['level'] == 1 && data['coins'] == 100;
+      if (isNewUser && StorageEngine.instance.hasGuestData()) {
+         // Automatically promote guest data to this new UID locally
+         await StorageEngine.instance.promoteGuestToUser(user.uid);
+         // Then backup that promoted data to the cloud
+         await backupPlayer();
+      }
+
       await StorageEngine.instance.saveMetadata('player_profile', data);
       await reloadAllServices();
     }
