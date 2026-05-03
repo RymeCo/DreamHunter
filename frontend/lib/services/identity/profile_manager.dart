@@ -25,6 +25,13 @@ class ProfileManager {
     // 1. Check Local Cache
     final cached = await StorageEngine.instance.getMetadata('player_profile');
     if (cached != null && !forceRefresh) {
+      final player = PlayerModel.fromMap(cached, uid);
+
+      // SECURITY & COST: If locally marked as permanently banned, never hit the backend again.
+      if (player.isBannedPermanent) {
+        return player;
+      }
+
       final lastSyncStr = cached['last_sync_timestamp'];
       if (lastSyncStr != null) {
         final lastSync = DateTime.parse(lastSyncStr);
@@ -32,11 +39,11 @@ class ProfileManager {
 
         // If cache is less than 24 hours old, return it instantly (0 backend cost)
         if (difference.inHours < 24) {
-          return PlayerModel.fromMap(cached, uid);
+          return player;
         }
       } else if (uid == 'guest') {
         // Guests always use local cache
-        return PlayerModel.fromMap(cached, uid);
+        return player;
       }
     }
 
@@ -69,14 +76,21 @@ class ProfileManager {
 
   /// Packages all local data into a PlayerModel and pushes to the backend.
   Future<void> backupPlayer() async {
-    final player = await getPlayer();
-    if (player == null || _auth.currentUser == null) return;
+    final user = _auth.currentUser;
+    if (user == null) return;
 
-    // Security Check: Permanently banned players cannot sync to cloud
-    if (player.isBannedPermanent) {
-      debugPrint('Backup blocked: Account is permanently banned.');
-      return;
+    // Check cache first to avoid getPlayer()'s internal logic
+    final cached = await StorageEngine.instance.getMetadata('player_profile');
+    if (cached != null) {
+      final localPlayer = PlayerModel.fromMap(cached, user.uid);
+      if (localPlayer.isBannedPermanent) {
+        debugPrint('Backup aborted: Account is permanently banned.');
+        return;
+      }
     }
+
+    final player = await getPlayer();
+    if (player == null) return;
 
     final updatedData = {
       ...player.toMap(),
@@ -95,6 +109,13 @@ class ProfileManager {
   Future<void> syncWithBackend() async {
     final user = _auth.currentUser;
     if (user == null) return;
+
+    // SECURITY: If we already know they are banned, don't even try to sync
+    final cached = await StorageEngine.instance.getMetadata('player_profile');
+    if (cached != null && (cached['isBannedPermanent'] ?? false)) {
+      debugPrint('Sync aborted: User is permanently banned.');
+      return;
+    }
     
     final response = await _backend.post('/auth/sync');
     if (response.statusCode == 200) {
@@ -104,7 +125,7 @@ class ProfileManager {
       if (isNewUser && StorageEngine.instance.hasGuestData()) {
          await StorageEngine.instance.promoteGuestToUser(user.uid);
          await backupPlayer();
-         return; // backupPlayer already saves metadata
+         return; 
       }
 
       data['last_sync_timestamp'] = DateTime.now().toIso8601String();
