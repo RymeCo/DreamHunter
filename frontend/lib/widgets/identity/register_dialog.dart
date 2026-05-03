@@ -49,14 +49,6 @@ class _RegisterDialogState extends State<RegisterDialog> {
         );
 
         if (mounted) {
-          // Resolve save conflict before finishing
-          if (StorageEngine.instance.hasGuestData()) {
-            await StorageEngine.instance.setPendingConflict(true);
-          }
-          if (mounted) {
-            await SaveResolutionDialog.showIfNeeded(context, cred.user!.uid);
-          }
-
           // Sync with live backend to create initial Firestore profile
           await ProfileManager.instance.syncWithBackend();
 
