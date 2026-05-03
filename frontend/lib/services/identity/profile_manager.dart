@@ -72,6 +72,12 @@ class ProfileManager {
     final player = await getPlayer();
     if (player == null || _auth.currentUser == null) return;
 
+    // Security Check: Permanently banned players cannot sync to cloud
+    if (player.isBannedPermanent) {
+      debugPrint('Backup blocked: Account is permanently banned.');
+      return;
+    }
+
     final updatedData = {
       ...player.toMap(),
       'coins': WalletManager.instance.dreamCoins,

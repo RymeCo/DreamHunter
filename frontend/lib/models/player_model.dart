@@ -6,6 +6,13 @@ class PlayerModel {
   final String createdAt;
   final List<String> banned;
 
+  // State Flags
+  final bool isBannedPermanent;
+  final bool isBannedFromLeaderboard;
+  final bool isBannedFromChat;
+  final String? muteUntil; // ISO timestamp
+  final String role; // 'admin', 'mod', 'player'
+
   // Progression
   final int level;
   final int xp;
@@ -25,6 +32,11 @@ class PlayerModel {
     required this.name,
     required this.createdAt,
     this.banned = const [],
+    this.isBannedPermanent = false,
+    this.isBannedFromLeaderboard = false,
+    this.isBannedFromChat = false,
+    this.muteUntil,
+    this.role = 'player',
     this.level = 1,
     this.xp = 0,
     this.totalGameTime = 0,
@@ -39,6 +51,11 @@ class PlayerModel {
       name: data['name'] ?? 'Dreamer',
       createdAt: data['createdAt'] ?? DateTime.now().toIso8601String(),
       banned: List<String>.from(data['banned'] ?? []),
+      isBannedPermanent: data['isBannedPermanent'] ?? false,
+      isBannedFromLeaderboard: data['isBannedFromLeaderboard'] ?? false,
+      isBannedFromChat: data['isBannedFromChat'] ?? false,
+      muteUntil: data['muteUntil'],
+      role: data['role'] ?? 'player',
       level: data['level'] ?? 1,
       xp: data['xp'] ?? 0,
       totalGameTime: data['totalGameTime'] ?? 0,
@@ -53,6 +70,11 @@ class PlayerModel {
       'name': name,
       'createdAt': createdAt,
       'banned': banned,
+      'isBannedPermanent': isBannedPermanent,
+      'isBannedFromLeaderboard': isBannedFromLeaderboard,
+      'isBannedFromChat': isBannedFromChat,
+      'muteUntil': muteUntil,
+      'role': role,
       'level': level,
       'xp': xp,
       'totalGameTime': totalGameTime,
@@ -60,5 +82,13 @@ class PlayerModel {
       'stones': stones,
       'inventory': inventory,
     };
+  }
+
+  /// Helper to check if user is currently muted.
+  bool get isMuted {
+    if (muteUntil == null) return false;
+    final until = DateTime.tryParse(muteUntil!);
+    if (until == null) return false;
+    return DateTime.now().isBefore(until);
   }
 }

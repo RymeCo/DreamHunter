@@ -9,5 +9,16 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def sync_user(uid: str = Depends(get_current_user)):
     """
     Called after login to ensure the player document exists in Firestore.
+    Checks for permanent bans.
     """
-    return PlayerService.sync_player(uid)
+    player = PlayerService.sync_player(uid)
+    
+    # Enforce Permanent Ban
+    if player.isBannedPermanent:
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="ACCOUNT_BANNED_PERMANENT"
+        )
+        
+    return player

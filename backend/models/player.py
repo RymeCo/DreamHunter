@@ -8,6 +8,13 @@ class PlayerModel(BaseModel):
     createdAt: str
     banned: List[str] = []
     
+    # State Flags
+    isBannedPermanent: bool = False
+    isBannedFromLeaderboard: bool = False
+    isBannedFromChat: bool = False
+    muteUntil: Optional[str] = None
+    role: str = "player"
+
     # Progression
     level: int = 1
     xp: int = 0
