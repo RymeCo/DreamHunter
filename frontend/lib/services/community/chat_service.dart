@@ -27,24 +27,34 @@ class ChatService {
   DateTime? _lastMessageTime;
 
   Stream<List<ChatMessage>> getMessages({String region = 'english'}) {
-    if (_currentRegion != region) {
+    // FIX: Reconnect if switching regions OR if the channel was closed/disconnected
+    if (_currentRegion != region || _channel == null) {
+      if (_currentRegion != region) {
+        _messageBuffer.clear();
+      }
       _currentRegion = region;
-      _messageBuffer.clear();
       _connect(region);
     }
     return _messageController.stream;
   }
 
-  void _connect(String region) {
+  void _connect(String region) async {
     if (_isConnecting) return;
     _isConnecting = true;
 
-    // Convert https://.../api to wss://.../api/ws/chat/region
+    // Get the ID token for security
+    final token = await ApiGateway().getIdToken();
+    if (token == null) {
+      _isConnecting = false;
+      return;
+    }
+
+    // Convert https://.../api to wss://.../api/ws/chat/region?token=...
     final wsUrl = ApiGateway.baseUrl
         .replaceFirst('https://', 'wss://')
         .replaceFirst('http://', 'ws://');
     
-    final uri = Uri.parse('$wsUrl/ws/chat/$region');
+    final uri = Uri.parse('$wsUrl/ws/chat/$region?token=$token');
 
     try {
       _channel = WebSocketChannel.connect(uri);
