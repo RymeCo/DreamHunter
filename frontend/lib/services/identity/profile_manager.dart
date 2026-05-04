@@ -6,6 +6,9 @@ import 'package:dreamhunter/services/core/storage_engine.dart';
 import 'package:dreamhunter/services/core/api_gateway.dart';
 import 'package:dreamhunter/services/economy/wallet_manager.dart';
 import 'package:dreamhunter/services/economy/shop_manager.dart';
+import 'package:dreamhunter/services/progression/daily_roulette.dart';
+import 'package:dreamhunter/services/progression/progression_manager.dart';
+import 'package:dreamhunter/services/progression/task_service.dart';
 
 /// Minimalist Singleton bridge between local cache and Backend (FastAPI).
 class ProfileManager {
@@ -105,12 +108,16 @@ class ProfileManager {
       'stones': WalletManager.instance.hellStones,
       'inventory': activeInventory,
       'selectedCharacterId': ShopManager.instance.selectedCharacterId,
+      'roulette': DailyRoulette.instance.state.toJson(),
+      'level': ProgressionManager.instance.level,
+      'xp': ProgressionManager.instance.xp,
       'last_sync_timestamp': DateTime.now().toIso8601String(),
     };
 
     final success = await _backend.performFullSync(updatedData);
     if (success) {
       await StorageEngine.instance.saveMetadata('player_profile', updatedData);
+      await StorageEngine.instance.incrementDailyCount('cloud_backup');
     }
   }
 
@@ -155,6 +162,24 @@ class ProfileManager {
         );
       }
 
+      if (data['level'] != null || data['xp'] != null) {
+        final cached = await StorageEngine.instance.getMetadata('player_profile');
+        if (cached != null) {
+          await StorageEngine.instance.saveMetadata('player_profile', {
+            ...cached,
+            'level': data['level'] ?? 1,
+            'xp': data['xp'] ?? 0,
+          });
+        }
+      }
+
+      if (data['roulette'] != null) {
+        await StorageEngine.instance.saveMetadata(
+          'roulette_state_v1',
+          data['roulette'] as Map<String, dynamic>,
+        );
+      }
+
       await reloadAllServices();
     }
   }
@@ -163,9 +188,86 @@ class ProfileManager {
   Future<void> reloadAllServices() async {
     await WalletManager.instance.reloadFromCache();
     await ShopManager.instance.reloadFromCache();
+    await DailyRoulette.instance.reloadFromCache();
+    await ProgressionManager.instance.reloadFromCache();
+    await TaskService.instance.reloadFromCache();
   }
 
   Future<void> clearLocalSession() async {
     await StorageEngine.instance.clearAllUserData();
+  }
+
+  /// Coordinates a clean logout: Signs out of Firebase and restores guest data in services.
+  Future<void> logout() async {
+    await _auth.signOut();
+    await reloadAllServices();
+  }
+
+  /// Fetches the global leaderboard, prioritizing the local daily cache.
+  Future<Map<String, dynamic>> getLeaderboard({bool forceRefresh = false}) async {
+    // 1. Check Local Global Cache
+    final cached = await StorageEngine.instance.getGlobalMetadata('leaderboard_cache');
+    if (cached != null && !forceRefresh) {
+      final lastUpdatedStr = cached['lastUpdated'] as String?;
+      if (lastUpdatedStr != null) {
+        try {
+          final lastUpdated = DateTime.parse(lastUpdatedStr).toUtc().add(const Duration(hours: 8)); // PHT is UTC+8
+          final nowPHT = DateTime.now().toUtc().add(const Duration(hours: 8));
+          
+          // If the cache was updated today (PHT), return it
+          if (lastUpdated.year == nowPHT.year && 
+              lastUpdated.month == nowPHT.month && 
+              lastUpdated.day == nowPHT.day) {
+            return cached;
+          }
+        } catch (e) {
+          debugPrint('Cache Date Parse Error: $e');
+        }
+      }
+    }
+
+    // 2. Fetch from Backend
+    try {
+      final response = await _backend.get('/leaderboard');
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        await StorageEngine.instance.saveGlobalMetadata('leaderboard_cache', data);
+        return data;
+      }
+    } catch (e) {
+      debugPrint('Leaderboard API Error: $e');
+    }
+
+    return cached ?? {"lastUpdated": "", "topLevels": [], "topCoins": []};
+  }
+
+  /// Fetches the current leaderboard rank for the logged-in user.
+  /// Returns a map with 'levelRank' and 'coinsRank' (e.g., "#5" or "??").
+  Future<Map<String, String>> getLeaderboardRank() async {
+    final user = _auth.currentUser;
+    if (user == null) return {'levelRank': '??', 'coinsRank': '??'};
+
+    final data = await getLeaderboard();
+    final List<dynamic> topLevels = data['topLevels'] ?? [];
+    final List<dynamic> topCoins = data['topCoins'] ?? [];
+
+    String levelRank = '??';
+    String coinsRank = '??';
+
+    for (int i = 0; i < topLevels.length; i++) {
+      if (topLevels[i]['uid'] == user.uid) {
+        levelRank = '#${i + 1}';
+        break;
+      }
+    }
+
+    for (int i = 0; i < topCoins.length; i++) {
+      if (topCoins[i]['uid'] == user.uid) {
+        coinsRank = '#${i + 1}';
+        break;
+      }
+    }
+
+    return {'levelRank': levelRank, 'coinsRank': coinsRank};
   }
 }

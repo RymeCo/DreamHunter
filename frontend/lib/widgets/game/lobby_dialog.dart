@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/widgets/glass_button.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
@@ -342,248 +341,236 @@ class _LobbyDialogState extends State<LobbyDialog> {
         final character = ItemRegistry.get(characterId);
         final joinedCount = _joinedPlayers.where((p) => p != null).length;
 
-        return Center(
-          child: LiquidGlassDialog(
-            width: 520,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GameDialogHeader(
-                  title: 'LOBBY',
-                  showCloseButton: !_isReady,
-                  isCentered: true,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '$joinedCount/6 HUNTERS JOINED',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.cyanAccent.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                    fontSize: 10,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: GestureDetector(
-                        onTap: _openCharacterSelection,
-                        child: Container(
-                          height: 200,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.1),
-                            ),
+        return StandardGlassPage(
+          title: 'LOBBY',
+          showCloseButton: !_isReady,
+          isCentered: true,
+          isCompact: true,
+          width: 440,
+          footer: [
+            GlassButton(
+              label: _isInstantStarting
+                  ? 'STARTING...'
+                  : (_isReady ? 'CANCEL ($_countdown...)' : 'READY'),
+              width: double.infinity,
+              height: 44,
+              borderRadius: 12,
+              glowColor: _isReady ? Colors.redAccent : Colors.tealAccent,
+              onTap: _onActionButtonPressed,
+            ),
+          ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '$joinedCount/6 HUNTERS JOINED',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.cyanAccent.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                      fontSize: 8,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: GestureDetector(
+                      onTap: _openCharacterSelection,
+                      child: Container(
+                        height: 130, // Even shorter
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
                           ),
-                          child: Stack(
-                            children: [
-                              Center(
-                                child: Image.asset(
-                                  character?.image ?? _charPool[0],
-                                  height: 160,
-                                  fit: BoxFit.contain,
-                                  filterQuality: FilterQuality.none,
-                                ),
+                        ),
+                        child: Stack(
+                          children: [
+                            Center(
+                              child: Image.asset(
+                                character?.image ?? _charPool[0],
+                                height: 100, // Smaller image
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.none,
                               ),
-                              Positioned(
-                                bottom: 10,
-                                left: 0,
-                                right: 0,
-                                child: Center(
-                                  child: Text(
-                                    _isReady ? 'STARTING...' : 'TAP TO SWITCH',
-                                    style: TextStyle(
-                                      color: Colors.cyanAccent.withValues(
-                                        alpha: 0.5,
-                                      ),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1,
+                            ),
+                            Positioned(
+                              bottom: 6,
+                              left: 0,
+                              right: 0,
+                              child: Center(
+                                child: Text(
+                                  _isReady ? 'READY!' : 'SWITCH',
+                                  style: TextStyle(
+                                    color: Colors.cyanAccent.withValues(
+                                      alpha: 0.5,
                                     ),
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.8,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(width: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 6,
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 4,
+                        crossAxisSpacing: 4,
+                        childAspectRatio: 2.8,
+                      ),
+                      itemCount: 6,
+                      itemBuilder: (context, index) {
+                        final LobbyPlayer? player = _joinedPlayers[index];
+                        final bool isFilled = player != null;
+                        final bool isConnecting = player?.isConnecting ?? false;
 
-                    Expanded(
-                      flex: 6,
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 8,
-                              crossAxisSpacing: 8,
-                              childAspectRatio: 2.5,
-                            ),
-                        itemCount: 6,
-                        itemBuilder: (context, index) {
-                          final LobbyPlayer? player = _joinedPlayers[index];
-                          final bool isFilled = player != null;
-                          final bool isConnecting =
-                              player?.isConnecting ?? false;
-
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 400),
-                            curve: Curves.easeInOut,
-                            decoration: BoxDecoration(
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeInOut,
+                          decoration: BoxDecoration(
+                            color: isFilled
+                                ? (player.isReady
+                                    ? Colors.greenAccent.withValues(
+                                        alpha: 0.15,
+                                      )
+                                    : Colors.white.withValues(alpha: 0.1))
+                                : Colors.black.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
                               color: isFilled
                                   ? (player.isReady
-                                        ? Colors.greenAccent.withValues(
-                                            alpha: 0.15,
-                                          )
-                                        : Colors.white.withValues(alpha: 0.1))
-                                  : Colors.black.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isFilled
-                                    ? (player.isReady
-                                              ? Colors.greenAccent
-                                              : Colors.cyanAccent)
-                                          .withValues(alpha: 0.4)
-                                    : Colors.white.withValues(alpha: 0.05),
-                                width: isFilled && player.isReady ? 1.5 : 1.0,
-                              ),
+                                          ? Colors.greenAccent
+                                          : Colors.cyanAccent)
+                                      .withValues(alpha: 0.4)
+                                  : Colors.white.withValues(alpha: 0.05),
+                              width: isFilled && player.isReady ? 1.5 : 1.0,
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                              ),
-                              child: Row(
-                                children: [
-                                  if (isFilled && !isConnecting)
-                                    CharacterPortrait(
-                                      imagePath: player.characterImage,
-                                      size: 32,
-                                    )
-                                  else if (isConnecting)
-                                    const SizedBox(
-                                      width: 32,
-                                      height: 32,
-                                      child: Center(
-                                        child: SizedBox(
-                                          width: 12,
-                                          height: 12,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.cyanAccent,
-                                          ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                            ),
+                            child: Row(
+                              children: [
+                                if (isFilled && !isConnecting)
+                                  CharacterPortrait(
+                                    imagePath: player.characterImage,
+                                    size: 32,
+                                  )
+                                else if (isConnecting)
+                                  const SizedBox(
+                                    width: 32,
+                                    height: 32,
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 12,
+                                        height: 12,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.cyanAccent,
                                         ),
                                       ),
-                                    )
-                                  else
-                                    const Icon(
-                                      Icons.person_outline,
-                                      size: 24,
-                                      color: Colors.white12,
                                     ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
+                                  )
+                                else
+                                  const Icon(
+                                    Icons.person_outline,
+                                    size: 24,
+                                    color: Colors.white12,
+                                  ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      AnimatedSwitcher(
+                                        duration: const Duration(
+                                          milliseconds: 300,
+                                        ),
+                                        child: Text(
+                                          isConnecting
+                                              ? 'LOADING...'
+                                              : (player?.name ?? 'SEARCHING...'),
+                                          key: ValueKey(
+                                            isConnecting
+                                                ? 'loading'
+                                                : (player?.name ?? 'searching'),
+                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: isFilled
+                                                    ? Colors.white
+                                                    : Colors.white24,
+                                                fontWeight: isFilled
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                                letterSpacing: 0.5,
+                                                fontSize: 10,
+                                              ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (isFilled)
                                         AnimatedSwitcher(
                                           duration: const Duration(
                                             milliseconds: 300,
                                           ),
                                           child: Text(
                                             isConnecting
-                                                ? 'LOADING...'
-                                                : (player?.name ??
-                                                      'SEARCHING...'),
+                                                ? 'CONNECTING'
+                                                : (player.isReady
+                                                    ? 'READY'
+                                                    : 'WAITING...'),
                                             key: ValueKey(
                                               isConnecting
-                                                  ? 'loading'
-                                                  : (player?.name ??
-                                                        'searching'),
+                                                  ? 'conn'
+                                                  : (player.isReady
+                                                      ? 'ready'
+                                                      : 'wait'),
                                             ),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color: isFilled
-                                                      ? Colors.white
-                                                      : Colors.white24,
-                                                  fontWeight: isFilled
-                                                      ? FontWeight.bold
-                                                      : FontWeight.normal,
-                                                  letterSpacing: 0.5,
-                                                  fontSize: 10,
-                                                ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: player.isReady
+                                                  ? Colors.greenAccent
+                                                  : Colors.white38,
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
-                                        if (isFilled)
-                                          AnimatedSwitcher(
-                                            duration: const Duration(
-                                              milliseconds: 300,
-                                            ),
-                                            child: Text(
-                                              isConnecting
-                                                  ? 'CONNECTING'
-                                                  : (player.isReady
-                                                        ? 'READY'
-                                                        : 'WAITING...'),
-                                              key: ValueKey(
-                                                isConnecting
-                                                    ? 'conn'
-                                                    : (player.isReady
-                                                          ? 'ready'
-                                                          : 'wait'),
-                                              ),
-                                              style: TextStyle(
-                                                color: player.isReady
-                                                    ? Colors.greenAccent
-                                                    : Colors.white38,
-                                                fontSize: 8,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
-                  ],
-                ),
-
-                const SizedBox(height: 32),
-
-                GlassButton(
-                  label: _isInstantStarting
-                      ? 'STARTING...'
-                      : (_isReady ? 'CANCEL ($_countdown...)' : 'READY'),
-                  width: double.infinity,
-                  height: 50,
-                  borderRadius: 15,
-                  glowColor: _isReady ? Colors.redAccent : Colors.tealAccent,
-                  onTap: _onActionButtonPressed,
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
         );
       },

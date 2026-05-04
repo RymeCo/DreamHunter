@@ -54,13 +54,16 @@ class ShopManager extends ChangeNotifier {
   Map<String, List<Item>> getItemsByCategory() {
     final List<String> order = [
       'Hunters',
-      'Essential Gear',
-      'Ethereal Boosts',
-      'Arcane Relics',
+      'Gear',
+      'Boost',
     ];
     final Map<String, List<Item>> grouped = {};
     for (var cat in order) {
-      grouped[cat] = ItemRegistry.getByCategory(cat);
+      // Map display name to registry category if needed
+      String registryCategory = cat;
+      if (cat == 'Hunters') registryCategory = 'Hunters';
+      
+      grouped[cat] = ItemRegistry.getByCategory(registryCategory);
     }
     return grouped;
   }

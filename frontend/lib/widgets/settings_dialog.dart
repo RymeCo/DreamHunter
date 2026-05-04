@@ -6,7 +6,6 @@ import 'package:dreamhunter/core/theme/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dreamhunter/services/core/storage_engine.dart';
 import 'package:dreamhunter/services/identity/profile_manager.dart';
-import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/widgets/common_ui.dart';
 
@@ -56,53 +55,51 @@ class _SettingsDialogState extends State<SettingsDialog> {
       barrierColor: Colors.black87,
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Center(
-          child: LiquidGlassDialog(
-            width: 320,
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const GameDialogHeader(title: 'ABOUT', showCloseButton: true),
-                const SizedBox(height: 20),
-                const AppLogo(size: 80),
-                const SizedBox(height: 16),
-                Text(
-                  'DREAMHUNTER',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    letterSpacing: 4,
-                    fontSize: 18,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'VERSION 0.1.7',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.cyanAccent,
-                    fontSize: 10,
-                    letterSpacing: 2,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'A technical co-founder project built with Flutter & Flame.\n\nExperience the thrill of the hunt in a dark fantasy world.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  '© 2026 RYME STUDIOS',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
+        return StandardGlassPage(
+          title: 'ABOUT',
+          width: 320,
+          height: 480,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 20),
+              const AppLogo(size: 80),
+              const SizedBox(height: 16),
+              Text(
+                'DREAMHUNTER',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      letterSpacing: 4,
+                      fontSize: 18,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'VERSION 0.1.7',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.cyanAccent,
+                      fontSize: 10,
+                      letterSpacing: 2,
+                    ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'A technical co-founder project built with Flutter & Flame.\n\nExperience the thrill of the hunt in a dark fantasy world.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      height: 1.5,
+                    ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                '© 2026 RYME STUDIOS',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      fontSize: 10,
+                    ),
+              ),
+            ],
           ),
         );
       },
@@ -149,139 +146,126 @@ class _SettingsDialogState extends State<SettingsDialog> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Center(
-      child: LiquidGlassDialog(
-        width: 400,
-        padding: EdgeInsets.zero,
+    return StandardGlassPage(
+      title: 'SETTINGS',
+      isFullScreen: true,
+      child: SingleChildScrollView(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(28, 28, 28, 12),
-              child: GameDialogHeader(title: 'SETTINGS'),
+            const SizedBox(height: 8),
+            _buildSectionLabel(context, 'SENSORY CONTROLS'),
+            _buildGlassBlock(
+              context,
+              accentColor: Colors.cyanAccent,
+              children: [
+                _GlassSettingItem(
+                  title: 'Atmospheric Music',
+                  icon: Icons.music_note_rounded,
+                  value: !_audioService.isMusicMuted,
+                  accentColor: Colors.cyanAccent,
+                  onChanged: (val) async {
+                    await _audioService.toggleMusicMute();
+                    await _updateSettings();
+                    if (mounted) setState(() {});
+                  },
+                  sliderValue: _audioService.musicVolume,
+                  onSliderChanged: (val) {
+                    _audioService.setMusicVolume(val);
+                    if (mounted) setState(() {});
+                  },
+                  onSliderChangeEnd: () => _updateSettings(),
+                ),
+                _buildDivider(),
+                _GlassSettingItem(
+                  title: 'Sound Feedback',
+                  icon: Icons.volume_up_rounded,
+                  value: !_audioService.isSoundMuted,
+                  accentColor: Colors.cyanAccent,
+                  onChanged: (val) async {
+                    await _audioService.toggleSoundMute();
+                    await _updateSettings();
+                    if (mounted) setState(() {});
+                  },
+                  sliderValue: _audioService.soundVolume,
+                  onSliderChanged: (val) {
+                    _audioService.setSoundVolume(val);
+                    if (mounted) setState(() {});
+                  },
+                  onSliderChangeEnd: () async {
+                    await _updateSettings();
+                    _audioService.playClick();
+                  },
+                ),
+                _buildDivider(),
+                _GlassSettingItem(
+                  title: 'Haptic Feedback',
+                  subtitle: 'Tactile response on interaction',
+                  icon: Icons.vibration_rounded,
+                  value: HapticManager().isHapticEnabled,
+                  accentColor: Colors.cyanAccent,
+                  onChanged: (val) async {
+                    await HapticManager().toggleHaptics();
+                    await _updateSettings();
+                    if (mounted) setState(() {});
+                  },
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
-              child: Column(
-                children: [
-                  _buildSectionLabel(context, 'SENSORY CONTROLS'),
-                  _buildGlassBlock(
-                    context,
-                    accentColor: Colors.cyanAccent,
-                    children: [
-                      _GlassSettingItem(
-                        title: 'Atmospheric Music',
-                        icon: Icons.music_note_rounded,
-                        value: !_audioService.isMusicMuted,
-                        accentColor: Colors.cyanAccent,
-                        onChanged: (val) async {
-                          await _audioService.toggleMusicMute();
-                          await _updateSettings();
-                          if (mounted) setState(() {});
-                        },
-                        sliderValue: _audioService.musicVolume,
-                        onSliderChanged: (val) {
-                          _audioService.setMusicVolume(val);
-                          if (mounted) setState(() {});
-                        },
-                        onSliderChangeEnd: () => _updateSettings(),
-                      ),
-                      _buildDivider(),
-                      _GlassSettingItem(
-                        title: 'Sound Feedback',
-                        icon: Icons.volume_up_rounded,
-                        value: !_audioService.isSoundMuted,
-                        accentColor: Colors.cyanAccent,
-                        onChanged: (val) async {
-                          await _audioService.toggleSoundMute();
-                          await _updateSettings();
-                          if (mounted) setState(() {});
-                        },
-                        sliderValue: _audioService.soundVolume,
-                        onSliderChanged: (val) {
-                          _audioService.setSoundVolume(val);
-                          if (mounted) setState(() {});
-                        },
-                        onSliderChangeEnd: () async {
-                          await _updateSettings();
-                          _audioService.playClick();
-                        },
-                      ),
-                      _buildDivider(),
-                      _GlassSettingItem(
-                        title: 'Haptic Feedback',
-                        subtitle: 'Tactile response on interaction',
-                        icon: Icons.vibration_rounded,
-                        value: HapticManager().isHapticEnabled,
-                        accentColor: Colors.cyanAccent,
-                        onChanged: (val) async {
-                          await HapticManager().toggleHaptics();
-                          await _updateSettings();
-                          if (mounted) setState(() {});
-                        },
-                      ),
-                    ],
+            const SizedBox(height: 24),
+            _buildSectionLabel(context, 'CORE SYSTEM'),
+            _buildGlassBlock(
+              context,
+              accentColor: Colors.deepPurpleAccent,
+              children: [
+                _GlassActionItem(
+                  title: 'Cloud Storage Sync',
+                  subtitle: _isSyncing ? 'Syncing...' : 'Backup your progress',
+                  icon: Icons.cloud_done_rounded,
+                  accentColor: Colors.cyanAccent,
+                  onTap: _isSyncing ? () {} : _performManualSync,
+                  trailing: _isSyncing
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.cyanAccent,
+                          ),
+                        )
+                      : null,
+                ),
+                _buildDivider(),
+                _GlassActionItem(
+                  title: 'Support the Dev',
+                  subtitle: 'Keep the servers alive',
+                  icon: Icons.volunteer_activism_rounded,
+                  accentColor: Colors.pinkAccent,
+                  onTap: () {
+                    showCustomSnackBar(
+                      context,
+                      'Donation links coming soon!',
+                      type: SnackBarType.success,
+                    );
+                  },
+                ),
+                _buildDivider(),
+                _GlassActionItem(
+                  title: 'About DreamHunter',
+                  subtitle: 'Credits & Project Info',
+                  icon: Icons.info_outline_rounded,
+                  accentColor: Colors.deepPurpleAccent,
+                  onTap: _showAboutDialog,
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            Text(
+              'DREAMHUNTER V 0.1.7',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    fontSize: 10,
+                    letterSpacing: 4,
                   ),
-                  const SizedBox(height: 24),
-                  _buildSectionLabel(context, 'CORE SYSTEM'),
-                  _buildGlassBlock(
-                    context,
-                    accentColor: Colors.deepPurpleAccent,
-                    children: [
-                      _GlassActionItem(
-                        title: 'Cloud Storage Sync',
-                        subtitle: _isSyncing
-                            ? 'Syncing...'
-                            : 'Backup your progress',
-                        icon: Icons.cloud_done_rounded,
-                        accentColor: Colors.cyanAccent,
-                        onTap: _isSyncing ? () {} : _performManualSync,
-                        trailing: _isSyncing
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.cyanAccent,
-                                ),
-                              )
-                            : null,
-                      ),
-                      _buildDivider(),
-                      _GlassActionItem(
-                        title: 'Support the Dev',
-                        subtitle: 'Keep the servers alive',
-                        icon: Icons.volunteer_activism_rounded,
-                        accentColor: Colors.pinkAccent,
-                        onTap: () {
-                          showCustomSnackBar(
-                            context,
-                            'Donation links coming soon!',
-                            type: SnackBarType.success,
-                          );
-                        },
-                      ),
-                      _buildDivider(),
-                      _GlassActionItem(
-                        title: 'About DreamHunter',
-                        subtitle: 'Credits & Project Info',
-                        icon: Icons.info_outline_rounded,
-                        accentColor: Colors.deepPurpleAccent,
-                        onTap: _showAboutDialog,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-                  Text(
-                    'DREAMHUNTER V 0.1.7',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      fontSize: 10,
-                      letterSpacing: 4,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),

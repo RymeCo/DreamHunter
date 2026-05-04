@@ -354,8 +354,6 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     if (isDestroyed) return;
     _spriteComponent.removeFromParent();
     _hbBackground.removeFromParent();
-    categories.remove('building');
-    categories.remove('door'); // Fully clear categories to avoid being targeted
     HapticManager.instance.heavy();
     super.destroy();
   }
@@ -380,14 +378,16 @@ class DoorEntity extends BaseEntity with TapCallbacks {
 
   /// Attempts to upgrade the door using the resources of the provided entity.
   /// Returns true if the upgrade was successful.
-  bool tryUpgrade(BaseEntity entity) {
+  bool tryUpgrade(BaseEntity entity, {bool skipCost = false}) {
     if (totalUpgrades >= GameConfig.doorUpgrades.length - 1) return false;
 
     final nextUpgrade = GameConfig.doorUpgrades[totalUpgrades + 1];
 
     // 2. Resource Check & Deduction
     bool success = false;
-    if (entity.hasCategory('player')) {
+    if (skipCost) {
+      success = true;
+    } else if (entity.hasCategory('player')) {
       // Player uses MatchManager
       success = MatchManager.instance.spendResources(
         coins: nextUpgrade.cost.coins,
@@ -404,6 +404,9 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     }
 
     if (success) {
+      if (skipCost && entity.hasCategory('player')) {
+        MatchManager.instance.incrementAdUpgrades();
+      }
       totalUpgrades++;
       maxHp = currentUpgrade.hp;
       hp = maxHp;
@@ -461,10 +464,10 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       upgradeBenefit:
           "Lv. ${totalUpgrades + 1} ➔ Lv. ${totalUpgrades + 2}\n${maxHp.toInt()} ➔ ${nextUpgrade.hp.toInt()} HP",
       onUpgrade: () {
-        tryUpgrade(
-          MatchManager.instance.isHunterSleeping ? game.player : game.player,
-        );
-        // Note: simplified target selection for player, assuming game.player is always relevant
+        tryUpgrade(game.player);
+      },
+      onFreeUpgrade: () {
+        tryUpgrade(game.player, skipCost: true);
       },
     );
   }

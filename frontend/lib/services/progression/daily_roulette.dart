@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:dreamhunter/models/task_model.dart';
 import 'package:dreamhunter/services/core/storage_engine.dart';
+import 'package:dreamhunter/services/progression/task_service.dart';
 
 class RouletteState {
   final int freeSpins;
@@ -64,8 +66,8 @@ class DailyRoulette extends ChangeNotifier {
     {'name': '500 DC', 'amount': 500, 'weight': 2, 'color': '0xCCFF5252'},
   ];
 
-  Future<void> initialize() async {
-    if (_isInitialized) return;
+  Future<void> initialize({bool force = false}) async {
+    if (_isInitialized && !force) return;
 
     final now = DateTime.now();
     final todayStr =
@@ -89,11 +91,18 @@ class DailyRoulette extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Reloads state from cache (e.g. after logout/login).
+  Future<void> reloadFromCache() async => await initialize(force: true);
+
   Future<void> setSpinning(
     bool isSpinning, {
     bool isPaid = false,
     double? targetRotation,
   }) async {
+    if (isSpinning) {
+      TaskService.instance.trackAction(TaskType.spin);
+    }
+
     _state = RouletteState(
       freeSpins: state.freeSpins,
       lastRefillDate: state.lastRefillDate,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/models/task_model.dart';
 import 'package:dreamhunter/services/economy/wallet_manager.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
+import 'package:dreamhunter/services/progression/task_service.dart';
 import 'package:dreamhunter/core/theme/app_theme.dart';
 
 class DailyTasksDialog extends StatefulWidget {
@@ -15,70 +15,22 @@ class DailyTasksDialog extends StatefulWidget {
 }
 
 class _DailyTasksDialogState extends State<DailyTasksDialog> {
-  // Logic Gap Fix: Using a structured model for type safety and progress logic.
-  late final List<DailyTask> _tasks;
-
   @override
   void initState() {
     super.initState();
-    _initializeTasks();
-  }
-
-  void _initializeTasks() {
-    // In a full implementation, this would be fetched from a TaskService.
-    _tasks = [
-      DailyTask(
-        id: 'daily_login',
-        title: 'Daily Login',
-        description: 'Welcome back! Log in to the game.',
-        target: 1,
-        progress: 1,
-        reward: 50,
-        type: TaskType.login,
-      ),
-      DailyTask(
-        id: 'send_messages',
-        title: 'Chatterbox',
-        description: 'Send 5 messages in global chat.',
-        target: 5,
-        progress: 2,
-        reward: 100,
-        type: TaskType.chat,
-      ),
-      DailyTask(
-        id: 'spin_roulette',
-        title: 'Lucky Spinner',
-        description: 'Spin the Lucky Roulette twice.',
-        target: 2,
-        progress: 0,
-        reward: 150,
-        type: TaskType.spin,
-      ),
-      DailyTask(
-        id: 'playtime_task',
-        title: 'Time Traveler',
-        description: 'Spend 10 minutes in matches.',
-        target: 10,
-        progress: 4,
-        reward: 200,
-        type: TaskType.playtime,
-      ),
-    ];
+    TaskService.instance.initialize();
   }
 
   Future<void> _claimTask(DailyTask task) async {
     if (!task.canClaim) return;
 
-    // Logic Gap Fix: Actually update the global economy state.
     final success = await WalletManager.instance.updateBalance(
       coinsDelta: task.reward,
     );
 
     if (success) {
       HapticManager.instance.light();
-      setState(() {
-        task.claimed = true;
-      });
+      await TaskService.instance.claimTask(task.id);
 
       if (mounted) {
         showCustomSnackBar(
@@ -92,43 +44,25 @@ class _DailyTasksDialogState extends State<DailyTasksDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return LiquidGlassDialog(
-      width: 450,
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 16),
-          Flexible(
-            child: ListView.separated(
-              shrinkWrap: true,
-              itemCount: _tasks.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) => _buildTaskItem(_tasks[index]),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    return ListenableBuilder(
+      listenable: TaskService.instance,
+      builder: (context, _) {
+        final tasks = TaskService.instance.tasks;
 
-  Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'DAILY TASKS',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            shadows: [const Shadow(color: Colors.blueAccent, blurRadius: 10)],
-          ),
-        ),
-        IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.close, color: Colors.white38),
-        ),
-      ],
+        return StandardGlassPage(
+          title: 'DAILY TASKS',
+          isFullScreen: true,
+          child: tasks.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.separated(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  itemCount: tasks.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
+                  itemBuilder: (context, index) => _buildTaskItem(tasks[index]),
+                ),
+        );
+      },
     );
   }
 

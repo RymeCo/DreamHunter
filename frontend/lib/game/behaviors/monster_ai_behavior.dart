@@ -60,11 +60,22 @@ class MonsterAIBehavior extends Component
         (parent.position.y / 32).floor(),
       );
 
-      if (currentTile == _lastTile) {
+      // FIX: Don't trigger stuck detection if we are retreating and already at a spawn point
+      bool isAtSpawn = false;
+      if (state == MonsterState.retreating) {
+        for (final spawn in game.monsterSpawnPoints) {
+          if (parent.position.distanceTo(spawn) < 20) {
+            isAtSpawn = true;
+            break;
+          }
+        }
+      }
+
+      if (currentTile == _lastTile && !isAtSpawn) {
         _stuckTimer += dt;
         if (_stuckTimer > 2.0 && shouldScan) {
           debugPrint('[ERROR] Monster Stuck in tile $currentTile. State: $state. Target: $target. Forcing recovery.');
-          
+
           // RECOVERY 1: Snap to current tile center to "un-snag" from corners
           parent.position = Vector2(
             currentTile.x * 32.0 + 16.0,
@@ -72,18 +83,19 @@ class MonsterAIBehavior extends Component
           );
 
           _stuckTimer = 0;
-          _pickNewTarget();
 
           // RECOVERY 2: If we have a path, nudge forward to the next waypoint
           if (currentPath.isNotEmpty && pathIndex < currentPath.length) {
-            parent.position = currentPath[pathIndex].clone();
+            final nextWaypoint = currentPath[pathIndex].clone();
+            debugPrint('[AI] Panic Nudge: Moving monster from ${parent.position} to next waypoint $nextWaypoint');
+            parent.position = nextWaypoint;
             pathIndex++;
-            debugPrint('[AI] Panic Nudge: Teleported monster to $currentTile -> ${parent.position}');
           } else {
             // RECOVERY 3: If no path or stuck even after pick, force a retreat to clear the area
+            debugPrint('[AI] Stuck Recovery: No path found, forcing retreat to spawn.');
             state = MonsterState.retreating;
+            target = null; // Clear target when retreating
             _calculatePathToSpawn();
-            debugPrint('[AI] Stuck Recovery: Forcing retreat to spawn.');
           }
         }
       } else {
@@ -91,6 +103,7 @@ class MonsterAIBehavior extends Component
         _lastTile = currentTile;
       }
     } else {
+
       _stuckTimer = 0;
       _lastTile = null;
     }
@@ -172,9 +185,14 @@ class MonsterAIBehavior extends Component
 
       if (canSwitch) {
         target = bestProxTarget;
-        state = MonsterState.hunting;
+
+        // HARD LOCK: If we just aggroed a sleeping hunter, redirect to their door instead
+        if (!_enforceDoorLock()) {
+          state = MonsterState.hunting;
+          _calculatePathToTarget();
+        }
+
         _chaseTimer = maxChaseTime; // Start leashing
-        _calculatePathToTarget();
       }
     }
   }
@@ -243,10 +261,12 @@ class MonsterAIBehavior extends Component
   BaseEntity? _lastTarget;
 
   void _handleHunting(double dt) {
-    if (target == null || target!.isDestroyed) {
+    if (target == null || target!.isDestroyed || !target!.isMounted) {
       _pickNewTarget();
       return;
     }
+
+    if (_enforceDoorLock()) return;
 
     double dist = parent.center.distanceTo(target!.center);
     double attackDist = (target is DoorEntity) ? 48 : 64; 
@@ -288,6 +308,7 @@ class MonsterAIBehavior extends Component
 
     if (parent.hp / parent.maxHp < 0.2) {
       state = MonsterState.retreating;
+      target = null; // Clear target when retreating
       _calculatePathToSpawn();
       return;
     }
@@ -369,10 +390,12 @@ class MonsterAIBehavior extends Component
   }
 
   void _handleAttacking(double dt, {bool shouldScan = false}) {
-    if (target == null || target!.isDestroyed) {
+    if (target == null || target!.isDestroyed || !target!.isMounted) {
       _pickNewTarget();
       return;
     }
+
+    if (_enforceDoorLock()) return;
 
     if (target is PlayerEntity) {
       _playerTargetingTimer += dt;
@@ -389,6 +412,7 @@ class MonsterAIBehavior extends Component
 
     if (parent.hp / parent.maxHp < 0.2) {
       state = MonsterState.retreating;
+      target = null; // Clear target when retreating
       _calculatePathToSpawn();
       return;
     }
@@ -422,7 +446,7 @@ class MonsterAIBehavior extends Component
   void _handleRetreating(double dt) {
     bool atSpawn = false;
     for (final spawn in game.monsterSpawnPoints) {
-      if (parent.position.distanceTo(spawn) < 16) {
+      if (parent.position.distanceTo(spawn) < 20) {
         atSpawn = true;
         break;
       }
@@ -450,7 +474,7 @@ class MonsterAIBehavior extends Component
       } else {
         final direction = (waypoint - parent.position).normalized();
         final nextPosition = parent.position + direction * parent.speed * dt;
-        
+
         // Retreating has a slightly more "forgiving" hitbox to ensure it can get out
         final nextRect = Rect.fromLTWH(
           nextPosition.x - parent.size.x * 0.15,
@@ -459,8 +483,24 @@ class MonsterAIBehavior extends Component
           parent.size.y * 0.1,
         );
 
-        final currentTileX = (parent.position.x / 32).floor().clamp(0, DreamHunterGame.gridW - 1);
-        final currentTileY = (parent.position.y / 32).floor().clamp(0, DreamHunterGame.gridH - 1);
+        // ATTACK BLOCKS: If a door is closed in our path while retreating, attack it!
+        final blockingEntity = game.getBlockingEntity(
+          nextRect,
+          ignoredEntities: [],
+        );
+        if (blockingEntity != null && !blockingEntity.isDestroyed) {
+          if (!(blockingEntity is DoorEntity && blockingEntity.isOpen)) {
+            target = blockingEntity;
+            state = MonsterState.attacking;
+            currentPath = [];
+            return;
+          }
+        }
+
+        final currentTileX =
+            (parent.position.x / 32).floor().clamp(0, DreamHunterGame.gridW - 1);
+        final currentTileY =
+            (parent.position.y / 32).floor().clamp(0, DreamHunterGame.gridH - 1);
         bool isCurrentlyInWall = game.wallGrid[currentTileX][currentTileY];
 
         // Collision check (only if not already in a wall)
@@ -501,11 +541,14 @@ class MonsterAIBehavior extends Component
       final buildings = game.getBuildingsInRoom(id);
       if (buildings.isNotEmpty) {
         final door = buildings.whereType<DoorEntity>().firstOrNull;
-        if (door != null && !door.isDestroyed && door != _lastTarget) {
+        if (door != null && !door.isDestroyed) {
+          // If door exists and is intact, it MUST be the target for this room
           target = door;
           state = MonsterState.hunting;
           if (_calculatePathToTarget()) return;
+          continue; // If pathing failed, try next room instead of targeting bed
         }
+
         final bed = buildings.whereType<BedEntity>().firstOrNull;
         if (bed != null && !bed.isDestroyed && bed != _lastTarget) {
           target = bed;
@@ -550,10 +593,12 @@ class MonsterAIBehavior extends Component
   }
 
   void _performAttack() {
-    if (target == null || target!.isDestroyed) {
+    if (target == null || target!.isDestroyed || !target!.isMounted) {
       _pickNewTarget();
       return;
     }
+
+    if (_enforceDoorLock()) return;
 
     final dist = parent.center.distanceTo(target!.center);
     final maxDist = (target is DoorEntity) ? 64.0 : 68.0; 
@@ -642,5 +687,41 @@ class MonsterAIBehavior extends Component
     } else {
       _pickNewTarget();
     }
+  }
+
+  /// Finds the DoorEntity associated with a roomID.
+  DoorEntity? _getRoomDoor(String roomID) {
+    if (roomID.isEmpty) return null;
+    return game
+        .getBuildingsInRoom(roomID)
+        .whereType<DoorEntity>()
+        .where((d) => !d.isDestroyed)
+        .firstOrNull;
+  }
+
+  /// HARD LOCK: Prevents attacking a bed or sleeping hunter if the door is intact.
+  /// Returns true if the target was redirected to the door.
+  bool _enforceDoorLock() {
+    if (target == null) return false;
+
+    // A target is "protected" if it's a bed or a sleeping hunter
+    bool isProtected = (target is BedEntity) || (target!.isSleeping);
+    if (!isProtected) return false;
+
+    final roomID = target!.roomID;
+    final door = _getRoomDoor(roomID);
+
+    if (door != null) {
+      // Door exists and is not destroyed! Force redirection to door.
+      if (target != door) {
+        debugPrint(
+            '[AI] Hard Lock: Redirecting monster from ${target.runtimeType} to Door of room $roomID');
+        target = door;
+        state = MonsterState.hunting;
+        _calculatePathToTarget();
+        return true;
+      }
+    }
+    return false;
   }
 }

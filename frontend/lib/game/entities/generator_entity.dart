@@ -32,6 +32,28 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
     return level.toString();
   }
 
+  /// Gets the current level of this entity (for AI targeting decisions).
+  @override
+  int get entityLevel => level;
+
+  @override
+  int get sellValueCoins {
+    int total = 0;
+    for (int i = 0; i < level; i++) {
+      total += GameConfig.generatorUpgrades[i].cost.coins;
+    }
+    return total;
+  }
+
+  @override
+  int get sellValueEnergy {
+    int total = 0;
+    for (int i = 0; i < level; i++) {
+      total += GameConfig.generatorUpgrades[i].cost.energy;
+    }
+    return total;
+  }
+
   GeneratorEntity({
     required super.position,
     required this.roomID,
@@ -130,6 +152,9 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
         upgradeBenefit: "MAXED OUT",
         isMaxLevel: true,
         onUpgrade: () {},
+        onSell: () => sell(owner: game.player),
+        sellRefundCoins: (sellValueCoins * 0.2).floor(),
+        sellRefundEnergy: (sellValueEnergy * 0.2).floor(),
       );
       return;
     }
@@ -167,6 +192,9 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
       onUpgrade: () {
         tryUpgrade(game.player);
       },
+      onSell: () => sell(owner: game.player),
+      sellRefundCoins: (sellValueCoins * 0.2).floor(),
+      sellRefundEnergy: (sellValueEnergy * 0.2).floor(),
     );
   }
 

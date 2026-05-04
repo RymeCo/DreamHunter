@@ -4,6 +4,7 @@ import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
 import 'package:dreamhunter/services/core/layout_baseline.dart';
 import 'package:dreamhunter/services/core/storage_engine.dart';
+import 'package:dreamhunter/services/progression/task_service.dart';
 import 'package:dreamhunter/widgets/pillarbox_wrapper.dart';
 import 'package:flame/flame.dart';
 import 'package:flutter/material.dart';
@@ -13,14 +14,15 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // 1. Initialize Firebase (Local session restoration)
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   // Initialize Core Services (Non-blocking as much as possible)
   await StorageEngine().initialize();
   await LayoutBaseline().initialize();
   await HapticManager().initialize();
   await AudioManager().initialize();
-
-  // 1. Initialize Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await TaskService().initialize();
 
   if (!ThemeData().platform.toString().contains('web')) {
     await Flame.device.fullScreen();

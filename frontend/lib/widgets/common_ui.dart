@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
 import 'package:dreamhunter/core/theme/app_theme.dart';
+import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 
 /// A simple row for displaying stats (e.g., Level, XP, Coins) with an icon.
 class StatRow extends StatelessWidget {
@@ -98,6 +99,7 @@ class GameDialogHeader extends StatelessWidget {
   final Color? titleColor;
   final bool showCloseButton;
   final bool isCentered;
+  final double? height;
 
   const GameDialogHeader({
     super.key,
@@ -105,35 +107,40 @@ class GameDialogHeader extends StatelessWidget {
     this.titleColor,
     this.showCloseButton = true,
     this.isCentered = false,
+    this.height,
   });
 
   @override
   Widget build(BuildContext context) {
     final accent = titleColor ?? Colors.amberAccent;
+    final h = height ?? 56.0;
 
     return Container(
-      height: 56, // Fixed height to prevent dialog jumping
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      height: h,
+      padding: EdgeInsets.symmetric(vertical: h > 40 ? 8.0 : 4.0),
       child: Row(
         mainAxisAlignment: isCentered
             ? MainAxisAlignment.center
             : MainAxisAlignment.spaceBetween,
         children: [
           // Fixed width spacer to balance the close button if centered
-          if (isCentered && showCloseButton) const SizedBox(width: 48),
+          if (isCentered && showCloseButton) SizedBox(width: h > 40 ? 48 : 40),
 
           Expanded(
             child: Text(
               title.toUpperCase(),
               textAlign: isCentered ? TextAlign.center : TextAlign.left,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: accent,
-                fontSize: 20,
-                letterSpacing: 2,
-                shadows: [
-                  Shadow(color: accent.withValues(alpha: 0.4), blurRadius: 12),
-                ],
-              ),
+                    color: accent,
+                    fontSize: h > 40 ? 20 : 16,
+                    letterSpacing: 2,
+                    shadows: [
+                      Shadow(
+                        color: accent.withValues(alpha: 0.4),
+                        blurRadius: 12,
+                      ),
+                    ],
+                  ),
               overflow: TextOverflow.ellipsis, // Prevent overlap
               maxLines: 1,
             ),
@@ -147,11 +154,82 @@ class GameDialogHeader extends StatelessWidget {
                 AudioManager.instance.playClick();
                 Navigator.pop(context);
               },
-              splashRadius: 24,
+              splashRadius: h > 40 ? 24 : 20,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
             )
           else if (isCentered)
-            const SizedBox(width: 48), // Spacer to maintain center alignment
+            SizedBox(width: h > 40 ? 48 : 40), // Spacer
         ],
+      ),
+    );
+  }
+}
+
+/// Standardized full-page (or large dialog) wrapper for game screens.
+/// This ensures Profile, Leaderboard, Settings, and Tasks all feel uniform.
+class StandardGlassPage extends StatelessWidget {
+  final String title;
+  final Widget child;
+  final bool showCloseButton;
+  final bool isCentered;
+  final double? width;
+  final double? height;
+  final List<Widget>? footer;
+  final EdgeInsets? padding;
+  final bool isCompact;
+  final bool isFullScreen;
+
+  const StandardGlassPage({
+    super.key,
+    required this.title,
+    required this.child,
+    this.showCloseButton = true,
+    this.isCentered = false,
+    this.width,
+    this.height,
+    this.footer,
+    this.padding,
+    this.isCompact = false,
+    this.isFullScreen = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Responsive sizing: Defaults to 90% of screen width (max 500) and 85% of screen height
+    final responsiveWidth = isFullScreen ? screenWidth : (width ?? (screenWidth * 0.9).clamp(320.0, 500.0));
+    final responsiveHeight = isFullScreen ? screenHeight : (height ?? (isCompact ? null : screenHeight * 0.85));
+
+    return Center(
+      child: LiquidGlassDialog(
+        width: responsiveWidth,
+        height: responsiveHeight,
+        borderRadius: isFullScreen ? 0 : 20.0,
+        padding: padding ??
+            EdgeInsets.symmetric(
+              horizontal: (isCompact || isFullScreen) ? 16 : 24,
+              vertical: (isCompact || isFullScreen) ? 12 : 20,
+            ),
+        child: Column(
+          mainAxisSize: isCompact ? MainAxisSize.min : MainAxisSize.max,
+          children: [
+            GameDialogHeader(
+              title: title,
+              showCloseButton: showCloseButton,
+              isCentered: isCentered,
+              height: (isCompact || isFullScreen) ? 40 : 56,
+            ),
+            SizedBox(height: (isCompact || isFullScreen) ? 8 : 12),
+            if (isCompact) child else Expanded(child: child),
+            if (footer != null) ...[
+              SizedBox(height: (isCompact || isFullScreen) ? 12 : 16),
+              ...footer!,
+            ],
+          ],
+        ),
       ),
     );
   }

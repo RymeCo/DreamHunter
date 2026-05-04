@@ -365,7 +365,8 @@ class DreamHunterGame extends FlameGame
 
   /// Checks if there is a clear line of sight between two positions (no wall tiles).
   /// [ignoredRoomID] allows turrets to see through doors in their own room.
-  bool hasLineOfSight(Vector2 start, Vector2 end, {String? ignoredRoomID}) {
+  /// [shaveCorners] allows the ray to slightly clip wall corners for better turret reliability.
+  bool hasLineOfSight(Vector2 start, Vector2 end, {String? ignoredRoomID, bool shaveCorners = true}) {
     final startTileX = (start.x / 32.0).floor();
     final startTileY = (start.y / 32.0).floor();
     final endTileX = (end.x / 32.0).floor();
@@ -379,8 +380,24 @@ class DreamHunterGame extends FlameGame
     final steps = (distance / 8.0).ceil(); // Step every quarter-tile (8px)
     final stepVec = diff / steps.toDouble();
 
+    // Tighter tolerance for corner shaving: 
+    // We check points slightly indented from the wall edges.
+    const double tolerance = 4.0; 
+
     for (int i = 1; i < steps; i++) {
       final point = start + stepVec * i.toDouble();
+      
+      // OPTIMIZATION: If we are shaving corners, check if the point is 
+      // very close to a tile boundary. If so, it's likely a "false positive" clip.
+      if (shaveCorners) {
+        final relX = point.x % 32.0;
+        final relY = point.y % 32.0;
+        if ((relX < tolerance || relX > 32.0 - tolerance) && 
+            (relY < tolerance || relY > 32.0 - tolerance)) {
+          continue; // Skip boundary checks that often hit corners
+        }
+      }
+
       final px = (point.x / 32.0).floor().clamp(0, gridW - 1);
       final py = (point.y / 32.0).floor().clamp(0, gridH - 1);
       
@@ -503,6 +520,19 @@ class DreamHunterGame extends FlameGame
   /// Unregisters a building from collision tracking.
   void unregisterBuilding(BaseEntity building) {
     _buildings.remove(building);
+  }
+
+  /// Unregisters a door from LoS tracking.
+  void unregisterDoor(DoorEntity door) {
+    final tx = (door.position.x / 32.0).floor();
+    final ty = (door.position.y / 32.0).floor();
+    doorMap.remove(math.Point(tx, ty));
+  }
+
+  /// Unregisters a bed from room tracking.
+  void unregisterBed(BedEntity bed) {
+    roomBeds.remove(bed.roomID);
+    roomFog.remove(bed.roomID);
   }
 
   /// Registers a building slot for AI lookup.
@@ -725,6 +755,11 @@ class DreamHunterGame extends FlameGame
     }
   }
 
+  /// Spawns a building slot at the given position.
+  BuildingSlotEntity spawnBuildingSlot(Vector2 pos, String roomID) {
+    return BuildingSlotEntity(position: pos, roomID: roomID);
+  }
+
   /// Spawns the Dream Monster at a random spawn point.
   void _spawnMonster() {
     if (monsterSpawnPoints.isEmpty) return;
@@ -866,12 +901,27 @@ class DreamHunterGame extends FlameGame
   int _getTileWeight(math.Point<int> p, math.Point<int> target) {
     if (wallGrid[p.x][p.y]) return 9999; // Wall is impassable
 
-    // Check for Door
+    // 1. Check for Doors (Boundary/Barrier)
     final door = doorMap[p];
     if (door != null && !door.isOpen && !door.isDestroyed) {
       // If the door IS the target tile, we allow it with cost 1 so we can stand on it to attack
       if (p == target) return 1;
       return 50; // High cost to break through a door
+    }
+
+    // 2. PERFORMANCE OPTIMIZATION: Check for other buildings (Turrets, Generators, etc.)
+    // We only penalize them slightly so the monster prefers walking around, 
+    // but isn't strictly blocked if there's no other path.
+    for (final b in _buildings) {
+      if (b.isDestroyed) continue;
+      if (b is DoorEntity) continue; // Already handled above
+
+      final tx = (b.position.x / 32).floor();
+      final ty = (b.position.y / 32).floor();
+      if (tx == p.x && ty == p.y) {
+        if (p == target) return 1;
+        return 10; // Medium penalty for non-core buildings
+      }
     }
 
     return 1; // Standard floor tile

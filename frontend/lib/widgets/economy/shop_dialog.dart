@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/widgets/confirmation_dialog.dart';
 import 'package:dreamhunter/widgets/economy/insufficient_funds_dialog.dart';
@@ -90,47 +89,74 @@ class _ShopDialogState extends State<ShopDialog>
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: LiquidGlassDialog(
-        width: MediaQuery.of(context).size.width * 0.85,
-        height: MediaQuery.of(context).size.height * 0.75,
-        padding: EdgeInsets.zero,
-        child: Column(
-          children: [
-            const GameDialogHeader(title: 'DREAM SHOP', isCentered: true),
-
-            TabBar(
+    return StandardGlassPage(
+      title: 'DREAM SHOP',
+      isCentered: true,
+      isFullScreen: true,
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          TabBar(
+            controller: _tabController,
+            indicatorColor: Colors.amberAccent,
+            isScrollable: false,
+            labelColor: Colors.amberAccent,
+            unselectedLabelColor: Colors.white.withValues(alpha: 0.38),
+            labelStyle: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(fontSize: 14, fontWeight: FontWeight.bold),
+            unselectedLabelStyle: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(fontSize: 14),
+            tabs: _shopService
+                .getItemsByCategory()
+                .keys
+                .map((cat) => Tab(text: cat.toUpperCase()))
+                .toList(),
+          ),
+          Expanded(
+            child: TabBarView(
               controller: _tabController,
-              indicatorColor: Colors.amberAccent,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              labelColor: Colors.amberAccent,
-              unselectedLabelColor: Colors.white.withValues(alpha: 0.38),
-              labelStyle: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(fontSize: 14),
-              unselectedLabelStyle: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontSize: 14),
-              tabs: _shopService
-                  .getItemsByCategory()
-                  .keys
-                  .map((cat) => Tab(text: cat))
-                  .toList(),
+              children: _shopService.getItemsByCategory().entries.map((entry) {
+                if (entry.value.isEmpty) {
+                  return _buildEmptyState(entry.key);
+                }
+                return _buildItemGrid(entry.value);
+              }).toList(),
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: _shopService
-                    .getItemsByCategory()
-                    .values
-                    .map((items) => _buildItemGrid(items))
-                    .toList(),
-              ),
-            ),
-          ],
-        ),
+  Widget _buildEmptyState(String category) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            category == 'Gear' ? Icons.handyman_rounded : Icons.bolt_rounded,
+            size: 64,
+            color: Colors.white.withValues(alpha: 0.05),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'NO ${category.toUpperCase()} AVAILABLE',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white24,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Check back after the next update!',
+            style: TextStyle(color: Colors.white12, fontSize: 11),
+          ),
+        ],
       ),
     );
   }

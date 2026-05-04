@@ -8,6 +8,7 @@ import 'package:dreamhunter/game/entities/generator_entity.dart';
 import 'package:dreamhunter/game/entities/turret_entity.dart';
 import 'package:dreamhunter/game/entities/fridge_entity.dart';
 import 'package:dreamhunter/game/entities/ore_entity.dart';
+import 'package:dreamhunter/game/game_config.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
 
@@ -101,15 +102,16 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
       game.buildContext!,
       hasFridge: hasFridge,
       onBuildSelected: (buildingId) {
-        tryBuild(buildingId);
+        tryBuild(buildingId, owner: game.player);
       },
     );
   }
 
   /// Attempts to build a specific structure on this slot.
+  /// If [owner] is provided, it checks and deducts resources from their wallet.
   /// Returns true if the build was successful.
-  bool tryBuild(String buildingId) {
-    // Parse level if present (e.g., "ore:2")
+  bool tryBuild(String buildingId, {BaseEntity? owner}) {
+    // 1. Parse level and type
     int level = 1;
     String baseId = buildingId;
     if (buildingId.contains(':')) {
@@ -118,48 +120,76 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
       level = int.tryParse(parts[1]) ?? 1;
     }
 
+    // 2. Determine Cost
+    int coinCost = 0;
+    int energyCost = 0;
+
     if (baseId == 'generator') {
-      final generator = GeneratorEntity(
+      coinCost = GameConfig.generatorUpgrades[level - 1].cost.coins;
+      energyCost = GameConfig.generatorUpgrades[level - 1].cost.energy;
+    } else if (baseId == 'turret') {
+      coinCost = GameConfig.turretBuildCost;
+    } else if (baseId == 'fridge') {
+      energyCost = GameConfig.fridgeBuildCost;
+    } else if (baseId == 'ore') {
+      coinCost = GameConfig.oreUpgrades[level - 1].cost.coins;
+      energyCost = GameConfig.oreUpgrades[level - 1].cost.energy;
+    }
+
+    // 3. Resource Check & Deduction (Fair Play Enforcement)
+    if (owner != null) {
+      if (owner.hasCategory('player')) {
+        final success = MatchManager.instance.spendResources(
+          coins: coinCost,
+          energy: energyCost,
+        );
+        if (!success) return false;
+      } else {
+        if (owner.matchCoins >= coinCost && owner.matchEnergy >= energyCost) {
+          owner.matchCoins -= coinCost;
+          owner.matchEnergy -= energyCost;
+        } else {
+          return false;
+        }
+      }
+    }
+
+    // 4. Construction Logic
+    BaseEntity? newBuilding;
+
+    if (baseId == 'generator') {
+      newBuilding = GeneratorEntity(
         position: position.clone(),
         roomID: roomID,
         level: level,
       );
-      game.world.add(generator);
-      removeFromParent();
-      return true;
     } else if (baseId == 'turret') {
-      final turret = TurretEntity(
+      newBuilding = TurretEntity(
         position: position + (size / 2),
         roomID: roomID,
       );
-      game.world.add(turret);
-      removeFromParent();
-      return true;
     } else if (baseId == 'fridge') {
       // Restriction: Only one Fridge per room
       final bool alreadyHasFridge = game.buildings
           .whereType<FridgeEntity>()
           .any((f) => f.roomID == roomID);
 
-      if (alreadyHasFridge) {
-        // Show a brief message or just reject
-        return false;
-      }
+      if (alreadyHasFridge) return false;
 
-      final fridge = FridgeEntity(
+      newBuilding = FridgeEntity(
         position: position + (size / 2),
         roomID: roomID,
       );
-      game.world.add(fridge);
-      removeFromParent();
-      return true;
     } else if (baseId == 'ore') {
-      final ore = OreEntity(
+      newBuilding = OreEntity(
         position: position.clone(),
         roomID: roomID,
         level: level,
       );
-      game.world.add(ore);
+    }
+
+    if (newBuilding != null) {
+      game.world.add(newBuilding);
       removeFromParent();
       return true;
     }

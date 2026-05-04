@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/widgets/glass_button.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
@@ -16,78 +15,71 @@ class _PauseDialogState extends State<PauseDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: LiquidGlassDialog(
-        width: 320,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const GameDialogHeader(
-              title: 'PAUSED',
-              showCloseButton: true,
-              isCentered: true,
-            ),
-            const SizedBox(height: 16),
-
-            // Audio Controls Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildAudioToggle(
-                  icon: _audioManager.isMusicMuted
-                      ? Icons.music_off_rounded
-                      : Icons.music_note_rounded,
-                  label: 'MUSIC',
-                  isMuted: _audioManager.isMusicMuted,
-                  onTap: () async {
-                    await _audioManager.toggleMusicMute();
-                    setState(() {});
-                  },
-                ),
-                _buildAudioToggle(
-                  icon: _audioManager.isSoundMuted
-                      ? Icons.volume_off_rounded
-                      : Icons.volume_up_rounded,
-                  label: 'SOUND',
-                  isMuted: _audioManager.isSoundMuted,
-                  onTap: () async {
-                    await _audioManager.toggleSoundMute();
-                    setState(() {});
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Quit Button
-            GlassButton(
-              label: 'QUIT GAME',
-              width: double.infinity,
-              height: 45,
-              borderRadius: 12,
-              glowColor: Colors.redAccent,
-              hoverColor: Colors.redAccent.withValues(alpha: 0.15),
-              hoverBorderColor: Colors.redAccent,
-              hoverTextColor: Colors.redAccent,
-              onTap: () {
-                // Return 'quit' to the caller (GameScreen) to trigger the Reward Screen
-                Navigator.pop(context, 'quit');
-              },
-            ),
-
-            const SizedBox(height: 16),
-            Text(
-              'THE DREAM IS FROZEN.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white24,
-                letterSpacing: 2,
-                fontSize: 10,
-              ),
-            ),
-          ],
+    return StandardGlassPage(
+      title: 'PAUSED',
+      isCentered: true,
+      width: 320,
+      height: 400,
+      footer: [
+        GlassButton(
+          label: 'QUIT GAME',
+          width: double.infinity,
+          height: 45,
+          borderRadius: 12,
+          glowColor: Colors.redAccent,
+          hoverColor: Colors.redAccent.withValues(alpha: 0.15),
+          hoverBorderColor: Colors.redAccent,
+          hoverTextColor: Colors.redAccent,
+          onTap: () {
+            // Return 'quit' to the caller (GameScreen) to trigger the Reward Screen
+            Navigator.pop(context, 'quit');
+          },
         ),
+        const SizedBox(height: 16),
+        Center(
+          child: Text(
+            'THE DREAM IS FROZEN.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.white24,
+              letterSpacing: 2,
+              fontSize: 10,
+            ),
+          ),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 16),
+          // Audio Controls Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildAudioToggle(
+                icon: _audioManager.isMusicMuted
+                    ? Icons.music_off_rounded
+                    : Icons.music_note_rounded,
+                label: 'MUSIC',
+                isMuted: _audioManager.isMusicMuted,
+                onTap: () async {
+                  await _audioManager.toggleMusicMute();
+                  setState(() {});
+                },
+              ),
+              _buildAudioToggle(
+                icon: _audioManager.isSoundMuted
+                    ? Icons.volume_off_rounded
+                    : Icons.volume_up_rounded,
+                label: 'SOUND',
+                isMuted: _audioManager.isSoundMuted,
+                onTap: () async {
+                  await _audioManager.toggleSoundMute();
+                  setState(() {});
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

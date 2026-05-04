@@ -89,7 +89,59 @@ abstract class BaseEntity extends PositionComponent
   /// Gets the current level of this entity (for AI targeting decisions).
   int get entityLevel => 0;
 
+  /// Gets the total coin value of this building (for selling).
+  int get sellValueCoins => 0;
+
+  /// Gets the total energy value of this building (for selling).
+  int get sellValueEnergy => 0;
+
   BaseEntity({super.position, super.size, super.anchor});
+
+  /// Refunds 20% of the building's value and replaces it with a slot.
+  /// If [owner] is provided, the refund goes to their wallet.
+  void sell({BaseEntity? owner}) {
+    if (isDestroyed) return;
+
+    // MANDATE: Doors and Beds CANNOT be sold.
+    if (hasCategory('door') || hasCategory('bed')) {
+      debugPrint('[SAFETY] Blocked attempt to sell core infrastructure: $runtimeType');
+      return;
+    }
+
+    // 1. Calculate Refund (20%)
+    final refundCoins = (sellValueCoins * 0.2).floor();
+    final refundEnergy = (sellValueEnergy * 0.2).floor();
+
+    // 2. Add Resources to Owner (Fair Play Enforcement)
+    if (owner != null) {
+      if (owner.hasCategory('player')) {
+        if (refundCoins > 0) MatchManager.instance.updateMatchCoins(refundCoins);
+        if (refundEnergy > 0) MatchManager.instance.updateMatchEnergy(refundEnergy);
+      } else {
+        owner.matchCoins += refundCoins;
+        owner.matchEnergy += refundEnergy;
+      }
+    }
+
+    // 3. Spawn Floating Feedback
+    if (refundCoins > 0 || refundEnergy > 0) {
+      game.world.add(
+        FloatingFeedback(
+          label:
+              "${refundCoins > 0 ? '+$refundCoins ' : ''}${refundEnergy > 0 ? '+$refundEnergy' : ''}",
+          color: refundCoins > 0 ? Colors.amberAccent : Colors.cyanAccent,
+          position: position.clone(),
+        ),
+      );
+    }
+
+    // 4. Replace with Slot
+    final slot = game.spawnBuildingSlot(position.clone(), roomID);
+    game.world.add(slot);
+
+    // 5. Remove Self
+    destroy();
+  }
 
   @override
   Future<void> onLoad() async {
@@ -270,6 +322,15 @@ abstract class BaseEntity extends PositionComponent
     if (categories.contains('building_slot')) {
       game.unregisterBuildingSlot(this);
     }
+    
+    // Core Infrastructure Unregistration
+    if (categories.contains('door')) {
+      game.unregisterDoor(this as dynamic);
+    }
+    if (categories.contains('bed')) {
+      game.unregisterBed(this as dynamic);
+    }
+
     super.onRemove();
   }
 

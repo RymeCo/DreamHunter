@@ -13,6 +13,13 @@ class TurretEntity extends BaseEntity with TapCallbacks {
   @override
   final String roomID;
   int level = 1;
+
+  @override
+  int get entityLevel => level;
+
+  @override
+  int get sellValueCoins => 100 + (75 * level * (level - 1));
+
   double fireRate = 1.0; // Seconds between shots
   double range = 150.0;
   double damage = 10.0;
@@ -118,6 +125,8 @@ class TurretEntity extends BaseEntity with TapCallbacks {
         upgradeBenefit: "MAXED OUT",
         isMaxLevel: true,
         onUpgrade: () {},
+        onSell: () => sell(owner: game.player),
+        sellRefundCoins: (sellValueCoins * 0.2).floor(),
       );
       return;
     }
@@ -137,6 +146,8 @@ class TurretEntity extends BaseEntity with TapCallbacks {
       onUpgrade: () async {
         tryUpgrade(game.player);
       },
+      onSell: () => sell(owner: game.player),
+      sellRefundCoins: (sellValueCoins * 0.2).floor(),
     );
   }
 
@@ -192,13 +203,34 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     _fireTimer += dt;
     _scanTimer += dt;
 
-    // Throttle scanning to once every 200ms
-    if (_scanTimer >= 0.2) {
+    // TARGET VALIDATION: Check if current target is still viable EVERY frame
+    if (_currentTarget != null) {
+      bool stillViable = true;
+
+      // 1. Is it destroyed?
+      if (_currentTarget!.isDestroyed) stillViable = false;
+
+      // 2. Is it out of range?
+      if (stillViable && center.distanceTo(_currentTarget!.center) > range + 16) {
+        stillViable = false;
+      }
+
+      // 3. Is Line of Sight lost?
+      if (stillViable && !game.hasLineOfSight(center, _currentTarget!.center, ignoredRoomID: roomID)) {
+        stillViable = false;
+      }
+
+      if (!stillViable) {
+        _currentTarget = null;
+      }
+    }
+
+    // TARGET SCANNING: If no target, look for a new one (Throttled)
+    if (_currentTarget == null && _scanTimer >= 0.2) {
       _scanTimer = 0;
 
       // EXCLUSIVE TARGETING PROTOCOL: 
-      // Only TWO turrets per room can be "active" at a time to reduce visual clutter 
-      // and prevent multiple turrets from wasting ammo on the same target.
+      // Max 2 active turrets per room can fire simultaneously.
       final activeTurretsCount = game.turrets.whereType<TurretEntity>().where((t) => 
         t != this && 
         t.roomID == roomID && 
@@ -206,27 +238,21 @@ class TurretEntity extends BaseEntity with TapCallbacks {
         !t.isStunned
       ).length;
 
-      if (activeTurretsCount >= 2) {
-        _currentTarget = null;
-      } else {
-        _currentTarget = _findNearestMonster();
+      if (activeTurretsCount < 2) {
+        _currentTarget = _findBestVisibleMonster();
       }
     }
 
+    // ENGAGEMENT: Rotate and Fire
     if (_currentTarget != null) {
-      // LINE OF SIGHT CHECK: Don't shoot through walls
-      // We pass roomID so the turret can "see through" its own door to defend it.
-      if (!game.hasLineOfSight(center, _currentTarget!.center, ignoredRoomID: roomID)) {
-        _currentTarget = null;
-        return;
-      }
-
-      // Rotate head to target center
-      final angle = atan2(
+      // Rotate head to target center smoothly
+      final targetAngle = atan2(
         _currentTarget!.center.y - center.y,
         _currentTarget!.center.x - center.x,
       );
-      head.angle = angle;
+      
+      // We use simple assignment for now, but targetAngle is correct
+      head.angle = targetAngle;
 
       // Fire if ready
       if (_fireTimer >= fireRate) {
@@ -236,19 +262,27 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     }
   }
 
-  BaseEntity? _findNearestMonster() {
-    BaseEntity? nearest;
-    double minDistance = range;
+  /// Finds the nearest monster that is within range AND in Line-of-Sight.
+  BaseEntity? _findBestVisibleMonster() {
+    BaseEntity? best;
 
-    for (final monster in game.monsters) {
-      if (monster.isDestroyed) continue;
+    // Sort monsters by distance to ensure we pick the closest VISIBLE one
+    final sortedMonsters = game.monsters.where((m) => !m.isDestroyed).toList();
+    sortedMonsters.sort((a, b) => 
+      center.distanceTo(a.center).compareTo(center.distanceTo(b.center))
+    );
+
+    for (final monster in sortedMonsters) {
       final dist = center.distanceTo(monster.center);
-      if (dist < minDistance) {
-        minDistance = dist;
-        nearest = monster;
+      if (dist > range) break; // Since sorted, all subsequent monsters are also out of range
+
+      // LoS check for this specific monster
+      if (game.hasLineOfSight(center, monster.center, ignoredRoomID: roomID)) {
+        best = monster;
+        break; // Found the nearest visible monster
       }
     }
-    return nearest;
+    return best;
   }
 
   void _fire() {

@@ -28,5 +28,20 @@ class PlayerModel(BaseModel):
     # Inventory: Map of Item ID -> Amount
     inventory: dict = {}
 
+    # Progression State
+    roulette: dict = {}
+
     class Config:
         populate_by_name = True
+
+class LeaderboardEntry(BaseModel):
+    uid: str
+    name: str
+    value: int
+    level: int
+    createdAt: str
+
+class LeaderboardCache(BaseModel):
+    lastUpdated: str
+    topLevels: List[LeaderboardEntry]
+    topCoins: List[LeaderboardEntry]

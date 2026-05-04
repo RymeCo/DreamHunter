@@ -33,50 +33,68 @@ class _AuthFlowDialogState extends State<AuthFlowDialog> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    Widget content;
-    const double width = 350;
-    const double height = 600;
+    Widget build(BuildContext context) {
+      const double dialogWidth = 350;
 
-    switch (_currentType) {
-      case AuthDialogType.login:
-        content = LoginDialog(
-          onRegisterRequested: () =>
-              setState(() => _currentType = AuthDialogType.register),
-          onLoginSuccess: () {
-            setState(() {
-              _isLoggedIn = true;
-              _currentType = AuthDialogType.profile;
-            });
-            widget.onAuthStateChanged(true);
-            showCustomSnackBar(
-              context,
-              'Welcome back!',
-              type: SnackBarType.success,
-            );
-          },
+      switch (_currentType) {
+        case AuthDialogType.login:
+          return Center(
+            child: Transform.translate(
+              offset: const Offset(0, 50),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: dialogWidth,
+                  maxHeight: MediaQuery.of(context).size.height * 0.8,
+                ),
+              child: LoginDialog(
+                onRegisterRequested: () =>
+                    setState(() => _currentType = AuthDialogType.register),
+                onLoginSuccess: () {
+                  setState(() {
+                    _isLoggedIn = true;
+                    _currentType = AuthDialogType.profile;
+                  });
+                  widget.onAuthStateChanged(true);
+                  showCustomSnackBar(
+                    context,
+                    'Welcome back!',
+                    type: SnackBarType.success,
+                  );
+                },
+              ),
+            ),
+          ),
         );
-        break;
       case AuthDialogType.register:
-        content = RegisterDialog(
-          onLoginRequested: () =>
-              setState(() => _currentType = AuthDialogType.login),
-          onRegisterSuccess: () {
-            setState(() {
-              _isLoggedIn = true;
-              _currentType = AuthDialogType.profile;
-            });
-            widget.onAuthStateChanged(true);
-            showCustomSnackBar(
-              context,
-              'Account created! Welcome to DreamHunter.',
-              type: SnackBarType.success,
-            );
-          },
+        return Center(
+          child: Transform.translate(
+            offset: const Offset(0, 50),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: dialogWidth,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: RegisterDialog(
+                onLoginRequested: () =>
+                    setState(() => _currentType = AuthDialogType.login),
+                onRegisterSuccess: () {
+                  setState(() {
+                    _isLoggedIn = true;
+                    _currentType = AuthDialogType.profile;
+                  });
+                  widget.onAuthStateChanged(true);
+                  showCustomSnackBar(
+                    context,
+                    'Account created! Welcome to DreamHunter.',
+                    type: SnackBarType.success,
+                  );
+                },
+              ),
+            ),
+          ),
         );
-        break;
       case AuthDialogType.profile:
-        content = ProfileDialog(
+        return ProfileDialog(
           onLogoutRequested: () {
             setState(() {
               _isLoggedIn = false;
@@ -85,14 +103,6 @@ class _AuthFlowDialogState extends State<AuthFlowDialog> {
             widget.onAuthStateChanged(false);
           },
         );
-        break;
     }
-
-    return Center(
-      child: Transform.translate(
-        offset: const Offset(0, 100), // Original UI offset
-        child: SizedBox(width: width, height: height, child: content),
-      ),
-    );
   }
 }

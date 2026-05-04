@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
+import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
@@ -67,48 +68,38 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
   Widget build(BuildContext context) {
     return Center(
       child: LiquidGlassDialog(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: 480,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        width: 360,
+        height: 580,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
           children: [
-            const Text(
-              "Architecture",
-              style: TextStyle(
-                color: Colors.orangeAccent,
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.2,
-                shadows: [Shadow(color: Colors.black, blurRadius: 4)],
-              ),
-            ),
-            const SizedBox(height: 12),
+            // Header (Standardized with X button)
+            const GameDialogHeader(title: "Architecture"),
+            const SizedBox(height: 8),
 
-            // Tabs (Smaller, Scrollable)
-            SizedBox(
-              height: 32,
-              child: TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                indicatorColor: Colors.amberAccent,
-                indicatorWeight: 2,
-                indicatorSize: TabBarIndicatorSize.label,
-                labelColor: Colors.amberAccent,
-                unselectedLabelColor: Colors.white24,
-                dividerColor: Colors.transparent,
-                labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-                tabs: const [
-                  Tab(text: "Basics"),
-                  Tab(text: "Economy"),
-                  Tab(text: "Defense"),
-                  Tab(text: "Super"),
-                ],
+            // Tabs (Modern, Underlined)
+            TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              indicatorColor: Colors.amberAccent,
+              indicatorWeight: 3,
+              indicatorSize: TabBarIndicatorSize.label,
+              labelColor: Colors.amberAccent,
+              unselectedLabelColor: Colors.white24,
+              dividerColor: Colors.white.withValues(alpha: 0.05),
+              labelPadding: const EdgeInsets.symmetric(horizontal: 16),
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+                letterSpacing: 1.2,
               ),
+              tabs: const [
+                Tab(text: "BASICS"),
+                Tab(text: "ECONOMY"),
+                Tab(text: "DEFENSE"),
+                Tab(text: "SUPER"),
+              ],
             ),
             const SizedBox(height: 16),
 
@@ -133,14 +124,15 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
 
   Widget _buildBasicsTab() {
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(bottom: 16),
       children: [
         _buildConstructionItem(
           id: 'turret',
-          name: 'Turret',
+          name: 'Sentry Turret',
+          description: 'Automated defense system. Fires rapid shots at nearby nightmares.',
           imagePath: 'assets/images/game/defenses/turret_sheet-32x32.png',
           coinCost: GameConfig.turretBuildCost,
-          benefit: '10-90 DMG/s (Max 2 Active/Room)',
+          benefit: '10-90 DMG/s (Max 2 per Room)',
           productionIcon: Icons.security_rounded,
           glowColor: Colors.orangeAccent,
           isSpriteSheet: true,
@@ -151,11 +143,12 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
 
   Widget _buildDefenseTab() {
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(bottom: 16),
       children: [
         _buildConstructionItem(
           id: 'fridge',
-          name: 'Fridge',
+          name: 'Sub-Zero Fridge',
+          description: 'A heavy appliance that freezes the door, making it nearly unbreakable for a time.',
           imagePath: 'assets/images/game/defenses/fridge-64x64.png',
           energyCost: GameConfig.fridgeBuildCost,
           benefit: 'Status: Freezes Door',
@@ -171,12 +164,12 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
 
   Widget _buildGenTab() {
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(bottom: 16),
       children: [
-        // Generator (Level 1 only as requested)
         _buildConstructionItem(
           id: 'generator:1',
-          name: 'Generator Lv.1',
+          name: 'Plasma Generator',
+          description: 'Extracts energy from the dreamscape. Essential for high-tier upgrades.',
           imagePath: 'assets/images/game/economy/generator_lv1-32x32.png',
           coinCost: GameConfig.generatorUpgrades[0].cost.coins,
           energyCost: GameConfig.generatorUpgrades[0].cost.energy,
@@ -186,14 +179,28 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
           isSpriteSheet: false,
         ),
 
-        const SizedBox(height: 16),
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8.0),
-          child: Divider(color: Colors.white10),
+          padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+          child: Row(
+            children: [
+              Expanded(child: Divider(color: Colors.white10)),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12.0),
+                child: Text(
+                  "ORE MINES",
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ),
+              Expanded(child: Divider(color: Colors.white10)),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
 
-        // Ore Mines
         ...GameConfig.oreUpgrades.map((upg) {
           final String multiplierInfo = upg.globalMultiplier > 1.0
               ? ' (+${((upg.globalMultiplier - 1) * 100).toInt()}% ALL Income)'
@@ -202,6 +209,7 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
           return _buildConstructionItem(
             id: 'ore:${upg.level}',
             name: '${upg.material} Mine',
+            description: 'Extracts precious minerals from the void. Multiplies coin generation.',
             imagePath: 'assets/images/game/economy/lv${upg.level}Ore-64x64.png',
             coinCost: upg.cost.coins,
             energyCost: upg.cost.energy,
@@ -218,6 +226,7 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
   Widget _buildConstructionItem({
     required String id,
     required String name,
+    required String description,
     required String imagePath,
     int coinCost = 0,
     int energyCost = 0,
@@ -238,260 +247,292 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
         final bool canAfford = canAffordCoins && canAffordEnergy && !isLocked;
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          height: 100, // Increased height for better spacing
+          margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: Colors.black45, // Slightly darker
-            borderRadius: BorderRadius.circular(16), // Rounder
+            color: Colors.black26,
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: canAfford
                   ? glowColor.withValues(alpha: 0.3)
-                  : Colors.white10,
+                  : Colors.white.withValues(alpha: 0.05),
               width: 1.5,
             ),
-            boxShadow: canAfford
-                ? [
-                    BoxShadow(
-                      color: glowColor.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      spreadRadius: -2,
-                    ),
-                  ]
-                : null,
           ),
-          child: Row(
-            children: [
-              // Icon Section (Large)
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  padding: const EdgeInsets.all(6),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Top Section: Image & Basic Info
+                Container(
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.black38,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white10),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        glowColor.withValues(alpha: 0.05),
+                        Colors.transparent,
+                      ],
+                    ),
                   ),
-                  child: isSpriteSheet
-                      ? Stack(
+                  child: Row(
+                    children: [
+                      // Item Image
+                      Container(
+                        width: 72,
+                        height: 72,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black38,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: _buildItemImage(imagePath, isSpriteSheet, canAfford && !isLocked),
+                      ),
+                      const SizedBox(width: 16),
+                      // Name & Benefit
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Base Layer (Col 0)
-                            ClipRect(
-                              child: OverflowBox(
-                                alignment: Alignment.topLeft,
-                                maxWidth: 80 * 3,
-                                maxHeight: 80 * 9,
-                                child: Image.asset(
-                                  imagePath,
-                                  width: 80 * 3,
-                                  height: 80 * 9,
-                                  filterQuality: FilterQuality.none,
-                                  fit: BoxFit.fill,
-                                  color: canAfford && !isLocked
-                                      ? null
-                                      : Colors.black.withValues(alpha: 0.5),
-                                  colorBlendMode: canAfford && !isLocked
-                                      ? null
-                                      : BlendMode.dstIn,
-                                ),
+                            Text(
+                              name,
+                              style: TextStyle(
+                                color: canAfford && !isLocked
+                                    ? Colors.white
+                                    : Colors.white38,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
                               ),
                             ),
-                            // Head Layer (Col 1)
-                            ClipRect(
-                              child: OverflowBox(
-                                alignment: Alignment.topLeft,
-                                maxWidth: 80 * 3,
-                                maxHeight: 80 * 9,
-                                child: Transform.translate(
-                                  offset: const Offset(-80 * 1, -80 * 0),
-                                  child: Image.asset(
-                                    imagePath,
-                                    width: 80 * 3,
-                                    height: 80 * 9,
-                                    filterQuality: FilterQuality.none,
-                                    fit: BoxFit.fill,
-                                    color: canAfford && !isLocked
-                                        ? null
-                                        : Colors.black.withValues(alpha: 0.5),
-                                    colorBlendMode: canAfford && !isLocked
-                                        ? null
-                                        : BlendMode.dstIn,
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  productionIcon,
+                                  size: 14,
+                                  color: canAfford && !isLocked
+                                      ? glowColor
+                                      : Colors.white24,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    isLocked ? (lockedLabel ?? benefit) : benefit,
+                                    style: TextStyle(
+                                      color: isLocked
+                                          ? Colors.redAccent
+                                          : (canAfford
+                                                ? Colors.white70
+                                                : Colors.white24),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
                           ],
-                        )
-                      : Image.asset(
-                          imagePath,
-                          filterQuality: FilterQuality.none,
-                          fit: BoxFit.contain,
-                          color: canAfford && !isLocked
-                              ? null
-                              : Colors.black.withValues(alpha: 0.5),
-                          colorBlendMode: canAfford && !isLocked
-                              ? null
-                              : BlendMode.dstIn,
                         ),
-                ),
-              ),
-
-              // Details Section
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: TextStyle(
-                          color: canAfford && !isLocked
-                              ? Colors.white
-                              : Colors.white38,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          shadows: canAfford
-                              ? [
-                                  Shadow(
-                                    color: glowColor.withValues(alpha: 0.5),
-                                    blurRadius: 8,
-                                  ),
-                                ]
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            productionIcon,
-                            size: 14,
-                            color: canAfford && !isLocked
-                                ? glowColor
-                                : Colors.white24,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              isLocked ? (lockedLabel ?? benefit) : benefit,
-                              style: TextStyle(
-                                color: isLocked
-                                    ? Colors.redAccent
-                                    : (canAfford
-                                          ? Colors.white70
-                                          : Colors.white24),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
                 ),
-              ),
 
-              // Cost / Buy Button Section
-              GestureDetector(
-                onTap: () {
-                  if (!canAfford) {
-                    HapticManager.instance.heavy();
-                    return;
-                  }
-
-                  final success = MatchManager.instance.spendResources(
-                    coins: coinCost,
-                    energy: energyCost,
-                  );
-                  if (success) {
-                    AudioManager.instance.playClick();
-                    HapticManager.instance.medium();
-                    widget.onBuildSelected(id);
-                    Navigator.pop(context);
-                  }
-                },
-                child: Container(
-                  width: 90,
-                  margin: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: canAfford
-                        ? LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Colors.grey[800]!, Colors.grey[900]!],
-                          )
-                        : null,
-                    color: canAfford ? null : Colors.black45,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: canAfford
-                        ? [
-                            BoxShadow(
-                              color: Colors.black45,
-                              offset: const Offset(0, 4),
-                              blurRadius: 4,
-                            ),
-                          ]
-                        : null,
-                    border: Border.all(
-                      color: canAfford ? Colors.white10 : Colors.transparent,
+                // Middle Section: Description
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                  child: Text(
+                    description,
+                    style: const TextStyle(
+                      color: Colors.white38,
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                      height: 1.4,
                     ),
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                ),
+
+                // Bottom Section: Build Action
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
                     children: [
-                      if (coinCost > 0) ...[
-                        const Icon(
-                          Icons.monetization_on_rounded,
-                          color: Colors.amberAccent,
-                          size: 20,
+                      // Costs
+                      Expanded(
+                        child: Wrap(
+                          spacing: 12,
+                          runSpacing: 4,
+                          children: [
+                            if (coinCost > 0)
+                              _buildCostChip(
+                                icon: Icons.monetization_on_rounded,
+                                amount: coinCost,
+                                color: Colors.amberAccent,
+                                isAffordable: canAffordCoins,
+                              ),
+                            if (energyCost > 0)
+                              _buildCostChip(
+                                icon: Icons.bolt_rounded,
+                                amount: energyCost,
+                                color: Colors.cyanAccent,
+                                isAffordable: canAffordEnergy,
+                              ),
+                            if (coinCost == 0 && energyCost == 0)
+                              const Text(
+                                "FREE CONSTRUCTION",
+                                style: TextStyle(
+                                  color: Colors.greenAccent,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                          ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '$coinCost',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                      if (energyCost > 0) ...[
-                        if (coinCost > 0) const SizedBox(height: 4),
-                        const Icon(
-                          Icons.bolt_rounded,
-                          color: Colors.cyanAccent,
-                          size: 20,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '$energyCost',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                      if (coinCost == 0 && energyCost == 0)
-                        const Text(
-                          "FREE",
-                          style: TextStyle(
-                            color: Colors.greenAccent,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
+                      ),
+
+                      // Buy Button
+                      _buildBuyButton(
+                        canAfford: canAfford,
+                        glowColor: glowColor,
+                        onTap: () {
+                          if (!canAfford) {
+                            HapticManager.instance.heavy();
+                            return;
+                          }
+
+                          // Logic Gap Fix: Resource deduction is now handled internally by tryBuild(owner: game.player)
+                          // We still play the sound and haptics here for UI feedback.
+                          AudioManager.instance.playClick();
+                          HapticManager.instance.medium();
+                          widget.onBuildSelected(id);
+                          Navigator.pop(context);
+                        },
+                      ),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildItemImage(String path, bool isSpriteSheet, bool active) {
+    if (!isSpriteSheet) {
+      return Image.asset(
+        path,
+        filterQuality: FilterQuality.none,
+        fit: BoxFit.contain,
+        color: active ? null : Colors.black.withValues(alpha: 0.5),
+        colorBlendMode: active ? null : BlendMode.dstIn,
+      );
+    }
+
+    // Sprite Sheet Logic for Turret (Sheet is 3x9, 32x32 tiles)
+    return ClipRect(
+      child: OverflowBox(
+        alignment: Alignment.topLeft,
+        maxWidth: 56 * 3, // Scaled for the 72x72 container (8px padding)
+        maxHeight: 56 * 9,
+        child: Stack(
+          children: [
+             // Base (Col 0)
+             Image.asset(
+                path,
+                width: 56 * 3,
+                height: 56 * 9,
+                filterQuality: FilterQuality.none,
+                fit: BoxFit.fill,
+                color: active ? null : Colors.black.withValues(alpha: 0.5),
+                colorBlendMode: active ? null : BlendMode.dstIn,
+              ),
+              // Head (Col 1) - Transposed
+              Transform.translate(
+                offset: const Offset(-56 * 1, 0),
+                child: Image.asset(
+                  path,
+                  width: 56 * 3,
+                  height: 56 * 9,
+                  filterQuality: FilterQuality.none,
+                  fit: BoxFit.fill,
+                  color: active ? null : Colors.black.withValues(alpha: 0.5),
+                  colorBlendMode: active ? null : BlendMode.dstIn,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCostChip({
+    required IconData icon,
+    required int amount,
+    required Color color,
+    required bool isAffordable,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          color: isAffordable ? color : Colors.white24,
+          size: 16,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          "$amount",
+          style: TextStyle(
+            color: isAffordable ? Colors.white : Colors.white24,
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBuyButton({
+    required bool canAfford,
+    required Color glowColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: canAfford ? glowColor : Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: canAfford
+              ? [
+                  BoxShadow(
+                    color: glowColor.withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    spreadRadius: -2,
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          "BUILD",
+          style: TextStyle(
+            color: canAfford ? Colors.black : Colors.white24,
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 1.5,
+          ),
+        ),
+      ),
     );
   }
 

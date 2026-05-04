@@ -43,13 +43,8 @@
   - Tie-breaker: Older account wins.
 
 ## 4. Regional Chat System
-- [ ] **Chat Rooms**: Implement 5 distinct region channels:
-  1. English
-  2. Español
-  3. Russian
-  4. Chinese
-  5. Tagalog
-- [ ] **Chat Endpoints / Realtime**: (Can use Firestore real-time listeners for chat collections to save backend complexity, or simple REST polling / WebSockets).
+- [x] **Chat Rooms**: Implement 5 distinct region channels using WebSockets for 0-cost real-time delivery.
+  - Channels: English, Español, Russian, Chinese, Tagalog.
 - [ ] **Report System**:
   - `POST /api/chat/report` (Users can click a message to report it).
 - [ ] **Moderation**:

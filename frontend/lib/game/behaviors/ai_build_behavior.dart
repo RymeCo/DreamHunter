@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
 import 'package:dreamhunter/game/dream_hunter_game.dart';
@@ -69,6 +70,9 @@ class AIBuildBehavior extends Component
       _handlePanic(door, bed);
       return;
     }
+
+    // --- STRATEGIC DISMANTLE: Deny XP or recover coins ---
+    _checkStrategicDismantle();
 
     // --- BAITER SPECIAL LOGIC: Proactive "Clutch" Repair ---
     if (parent.personality == AIPersonality.baiter &&
@@ -171,14 +175,53 @@ class AIBuildBehavior extends Component
 
     if (mySlots.isNotEmpty && parent.matchCoins >= GameConfig.turretBuildCost) {
       final slot = mySlots[_random.nextInt(mySlots.length)];
-      if (slot.tryBuild('turret')) {
-        // matchCoins deduction is handled inside tryBuild if needed, 
-        // but for AI it's often deducted here for consistency.
-        parent.matchCoins -= GameConfig.turretBuildCost;
-      }
+      slot.tryBuild('turret', owner: parent);
     }
 
     _timer.limit = 0.5;
+  }
+
+  void _checkStrategicDismantle() {
+    // Only check for dismantling occasionally to save cycles
+    if (_random.nextDouble() > 0.3) return;
+
+    final myBuildings = game.getBuildingsInRoom(parent.targetBed.roomID);
+    if (myBuildings.isEmpty) return;
+
+    for (final building in myBuildings) {
+      if (building is DoorEntity || building is BedEntity) continue; // Never sell core infrastructure
+
+      bool shouldDismantle = false;
+
+      // 1. HP DENIAL: If a building is about to die and being attacked, sell it to deny XP and get coins back
+      if (building.hp / building.maxHp < 0.15) {
+        final monstersNearby = game.monsters.any((m) => m.center.distanceTo(building.center) < 80);
+        if (monstersNearby) {
+          // Deny destruction XP!
+          if (parent.personality == AIPersonality.smart || 
+              parent.personality == AIPersonality.baiter || 
+              _random.nextBool()) {
+            shouldDismantle = true;
+          }
+        }
+      }
+
+      // 2. OPTIMIZATION: If we are low on coins but have energy (or vice-versa) and need a critical upgrade
+      if (!shouldDismantle && parent.personality == AIPersonality.smart) {
+         // If we need coins for a Bed upgrade and have many generators
+         if (parent.matchCoins < 50 && building is GeneratorEntity) {
+            final genCount = myBuildings.whereType<GeneratorEntity>().length;
+            if (genCount > 2) shouldDismantle = true;
+         }
+      }
+
+      if (shouldDismantle) {
+        debugPrint('[AI] Strategic Dismantle: AI ${parent.hunterIndex} selling ${building.runtimeType} in room ${parent.targetBed.roomID}');
+        building.sell(owner: parent);
+        _resetTimer();
+        return;
+      }
+    }
   }
 
   /// Defense-focused logic: Prioritize Door and Turrets.
@@ -278,8 +321,7 @@ class AIBuildBehavior extends Component
         .toList();
     if (mySlots.isNotEmpty && parent.matchCoins >= GameConfig.turretBuildCost) {
       final slot = mySlots[_random.nextInt(mySlots.length)];
-      if (slot.tryBuild('turret')) {
-        parent.matchCoins -= GameConfig.turretBuildCost;
+      if (slot.tryBuild('turret', owner: parent)) {
         _resetTimer();
       }
     }
@@ -310,10 +352,10 @@ class AIBuildBehavior extends Component
 
       if (shouldBuildFridge) {
         final slot = mySlots[_random.nextInt(mySlots.length)];
-        parent.matchEnergy -= GameConfig.fridgeBuildCost;
-        slot.tryBuild('fridge');
-        _resetTimer();
-        return;
+        if (slot.tryBuild('fridge', owner: parent)) {
+          _resetTimer();
+          return;
+        }
       }
     }
 
@@ -322,7 +364,6 @@ class AIBuildBehavior extends Component
     final slot = mySlots[_random.nextInt(mySlots.length)];
 
     String buildingToBuild;
-    int cost = 0;
 
     switch (parent.personality) {
       case AIPersonality.smart:
@@ -337,50 +378,31 @@ class AIBuildBehavior extends Component
             .length;
         if (turretCount <= genCount) {
           buildingToBuild = 'turret';
-          cost = GameConfig.turretBuildCost;
         } else {
           buildingToBuild = 'generator';
-          cost = GameConfig.generatorUpgrades[0].cost.coins;
         }
         break;
       case AIPersonality.baiter:
         // Baiters rush economy
         buildingToBuild = 'generator';
-        cost = GameConfig.generatorUpgrades[0].cost.coins;
         break;
       case AIPersonality.defense:
         buildingToBuild = 'turret';
-        cost = GameConfig.turretBuildCost;
         break;
       case AIPersonality.offense:
         buildingToBuild = 'generator';
-        cost = GameConfig.generatorUpgrades[0].cost.coins;
         break;
       case AIPersonality.randos:
-        if (_random.nextBool()) {
-          buildingToBuild = 'turret';
-          cost = GameConfig.turretBuildCost;
-        } else {
-          buildingToBuild = 'generator';
-          cost = GameConfig.generatorUpgrades[0].cost.coins;
-        }
+        buildingToBuild = _random.nextBool() ? 'turret' : 'generator';
         break;
       case AIPersonality.dumb:
         // 20% chance to build something
         if (_random.nextDouble() > 0.2) return;
-        if (_random.nextBool()) {
-          buildingToBuild = 'turret';
-          cost = GameConfig.turretBuildCost;
-        } else {
-          buildingToBuild = 'generator';
-          cost = GameConfig.generatorUpgrades[0].cost.coins;
-        }
+        buildingToBuild = _random.nextBool() ? 'turret' : 'generator';
         break;
     }
 
-    if (parent.matchCoins >= cost) {
-      parent.matchCoins -= cost;
-      slot.tryBuild(buildingToBuild);
+    if (slot.tryBuild(buildingToBuild, owner: parent)) {
       _resetTimer();
     }
   }
@@ -460,9 +482,7 @@ class AIBuildBehavior extends Component
         .toList();
     if (mySlots.isNotEmpty) {
       final slot = mySlots[_random.nextInt(mySlots.length)];
-      if (slot.tryBuild(type)) {
-        if (type == 'turret') parent.matchCoins -= GameConfig.turretBuildCost;
-        if (type == 'generator') parent.matchCoins -= 200;
+      if (slot.tryBuild(type, owner: parent)) {
         _resetTimer();
       }
     }

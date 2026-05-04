@@ -18,25 +18,31 @@ class HunterMovementBehavior extends Component
 
     if (parent.isSleeping) return;
 
-    // 1. Check if target bed was stolen
+    // 1. RE-PATHING LOGIC: Check if target bed was stolen or if we are homeless
     if (parent.targetBed.isOccupied && parent.targetBed.owner != parent) {
-      if (parent.repathCount < 5) {
-        _findNewBed();
-        return;
-      }
+      _findNewBed();
     }
 
     // 2. Are we at the bed?
     final distToBed = parent.position.distanceTo(parent.targetBed.position);
     if (distToBed < 40.0) {
-      parent.targetBed.occupy(parent);
-      parent.sleep(parent.targetBed.position);
+      if (!parent.targetBed.isOccupied) {
+        parent.targetBed.occupy(parent);
+        parent.sleep(parent.targetBed.position);
+      } else {
+        // Bed was taken just as we arrived!
+        _findNewBed();
+      }
       return;
     }
 
     // 3. Find target tile using Flow Field (Lazy Loaded)
     final flowField = game.getFlowField(parent.targetBed.roomID);
-    if (flowField == null) return;
+    if (flowField == null) {
+      // If we can't find a flow field, maybe the room is invalid or map changed.
+      _findNewBed();
+      return;
+    }
 
     final curX = (parent.position.x / 32)
         .floor()
@@ -101,22 +107,45 @@ class HunterMovementBehavior extends Component
     }
   }
 
+  /// Clears current reservation and looks for the next best available room.
   void _findNewBed() {
+    // 1. Cleanup old reservation immediately
+    if (parent.targetBed.reservedBy == parent) {
+      parent.targetBed.reservedBy = null;
+    }
+
+    // 2. Find ALL currently empty and unreserved beds
     final otherBeds = game.world.children
         .whereType<BedEntity>()
         .where((b) => !b.isOccupied && b.reservedBy == null)
         .toList();
 
     if (otherBeds.isNotEmpty) {
-      // Cleanup old reservation
-      parent.targetBed.reservedBy = null;
-
+      // Shuffle to prevent multiple AIs from instantly picking the same "nearest" one
+      otherBeds.shuffle();
+      
       // Assign new bed
       parent.repathCount++;
       parent.targetBed = otherBeds[0];
       parent.targetBed.reservedBy = parent;
+      
+      debugPrint('[AI] ${parent.skinPath} re-pathing to room ${parent.targetBed.roomID} (Attempt ${parent.repathCount})');
     } else {
-      debugPrint('[ERROR] ${parent.skinPath}: No empty beds found! I am homeless.');
+      // If NO beds are unreserved, check if we can share a room with a reserved but empty bed
+      // (This is a fallback for crowded matches)
+      final unoccupiedBeds = game.world.children
+          .whereType<BedEntity>()
+          .where((b) => !b.isOccupied)
+          .toList();
+          
+      if (unoccupiedBeds.isNotEmpty) {
+        unoccupiedBeds.shuffle();
+        parent.targetBed = unoccupiedBeds[0];
+        // Note: we don't set reservedBy here to avoid stealing it from another AI,
+        // we just race for it.
+      } else {
+        debugPrint('[ERROR] ${parent.skinPath}: No empty beds found! I am homeless.');
+      }
     }
   }
 }

@@ -1,13 +1,13 @@
 import 'dart:math' as math;
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
 import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/widgets/branding/app_logo.dart';
 import 'package:dreamhunter/widgets/glass_button.dart';
 import 'package:dreamhunter/widgets/progression/roulette_painter.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/widgets/economy/insufficient_funds_dialog.dart';
+import 'package:dreamhunter/services/core/ad_manager.dart';
 import 'package:dreamhunter/services/progression/daily_roulette.dart';
 import 'package:dreamhunter/services/economy/wallet_manager.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
@@ -182,157 +182,161 @@ class _RouletteDialogState extends State<RouletteDialog>
       listenable: _rouletteService,
       builder: (context, _) {
         final state = _rouletteService.state;
-        return Center(
-          child: LiquidGlassDialog(
-            width: 400,
-            height: MediaQuery.of(context).size.height * 0.85,
-            padding: const EdgeInsets.all(28),
-            child: Column(
+        return StandardGlassPage(
+          title: 'LUCKY ROULETTE',
+          width: 400,
+          footer: [
+            Row(
               children: [
-                const GameDialogHeader(title: 'LUCKY ROULETTE'),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.amberAccent.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.amberAccent.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Text(
-                    '${state.freeSpins} / ${DailyRoulette.maxFreeSpins} SPINS',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Colors.amberAccent,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 30),
                 Expanded(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      AnimatedBuilder(
-                        animation: _controller,
-                        builder: (context, child) {
-                          double rotation = _isSpinning
-                              ? (_animation?.value ?? _currentRotation)
-                              : _currentRotation;
-                          return CustomPaint(
-                            size: const Size(300, 300),
-                            painter: RouletteWheelPainter(
-                              rewards: DailyRoulette.rewards,
-                              rotation: rotation,
-                            ),
-                          );
-                        },
-                      ),
-                      Positioned(
-                        top: -20,
-                        child: const Icon(
-                          Icons.arrow_drop_down_rounded,
-                          color: Colors.white,
-                          size: 60,
+                  child: GlassButton(
+                    onTap: state.freeSpins > 0 ? () => _spin(isPaid: false) : null,
+                    isClickable: !_isSpinning && state.freeSpins > 0,
+                    glowColor: Colors.amberAccent,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'FREE SPIN',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge
+                              ?.copyWith(fontSize: 16),
                         ),
-                      ),
-                      const AppLogo(size: 60),
-                    ],
+                        Text(
+                          'DAILY REFILL',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(fontSize: 9),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 40),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GlassButton(
-                        onTap: state.freeSpins > 0
-                            ? () => _spin(isPaid: false)
-                            : null,
-                        isClickable: !_isSpinning && state.freeSpins > 0,
-                        glowColor: Colors.amberAccent,
-                        child: Column(
+                const SizedBox(width: 16),
+                Expanded(
+                  child: GlassButton(
+                    onTap: () => _spin(isPaid: true),
+                    isClickable: !_isSpinning,
+                    glowColor: Colors.cyanAccent,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'PAID SPIN',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge
+                              ?.copyWith(fontSize: 16),
+                        ),
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              'FREE SPIN',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelLarge?.copyWith(fontSize: 16),
+                            const Icon(
+                              Icons.toll_rounded,
+                              color: Colors.amberAccent,
+                              size: 12,
                             ),
+                            const SizedBox(width: 4),
                             Text(
-                              'DAILY REFILL',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodySmall?.copyWith(fontSize: 9),
+                              '${DailyRoulette.paidSpinCost} COINS',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontSize: 10,
+                                    color: Colors.amberAccent,
+                                  ),
                             ),
                           ],
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: GlassButton(
-                        onTap: () => _spin(isPaid: true),
-                        isClickable: !_isSpinning,
-                        glowColor: Colors.cyanAccent,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'PAID SPIN',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelLarge?.copyWith(fontSize: 16),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.toll_rounded,
-                                  color: Colors.amberAccent,
-                                  size: 12,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${DailyRoulette.paidSpinCost} COINS',
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        fontSize: 10,
-                                        color: Colors.amberAccent,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                GlassButton(
-                  onTap: () async {
-                    setState(() => _isRefilling = true);
-                    showCustomSnackBar(
-                      context,
-                      'BONUS GRANTED: +1 Free Spin!',
-                      type: SnackBarType.success,
-                    );
-                    await Future.delayed(const Duration(seconds: 1));
-                    await _rouletteService.addFreeSpins(1);
-                    if (mounted) setState(() => _isRefilling = false);
-                  },
-                  isClickable: !_isSpinning && !_isRefilling,
-                  glowColor: Colors.blueAccent,
-                  width: double.infinity,
-                  height: 50,
-                  label: 'GET MORE SPINS (+1)',
+                  ),
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            GlassButton(
+              onTap: () {
+                AdManager.instance.showRewardAd(
+                  context: context,
+                  onRewardEarned: () async {
+                    setState(() => _isRefilling = true);
+                    await _rouletteService.addFreeSpins(1);
+                    if (mounted) setState(() => _isRefilling = false);
+                    if (context.mounted) {
+                      showCustomSnackBar(
+                        context,
+                        '1 Free Spin awarded!',
+                        type: SnackBarType.success,
+                      );
+                    }
+                  },
+                );
+              },
+              isClickable: !_isSpinning && !_isRefilling,
+              glowColor: Colors.orangeAccent,
+              width: double.infinity,
+              height: 50,
+              label: 'WATCH AD FOR SPINS (+1)',
+            ),
+          ],
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.amberAccent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.amberAccent.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Text(
+                  '${state.freeSpins} / ${DailyRoulette.maxFreeSpins} SPINS',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Colors.amberAccent,
+                        fontSize: 16,
+                      ),
+                ),
+              ),
+              const SizedBox(height: 30),
+              Expanded(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, child) {
+                        double rotation = _isSpinning
+                            ? (_animation?.value ?? _currentRotation)
+                            : _currentRotation;
+                        return CustomPaint(
+                          size: const Size(300, 300),
+                          painter: RouletteWheelPainter(
+                            rewards: DailyRoulette.rewards,
+                            rotation: rotation,
+                          ),
+                        );
+                      },
+                    ),
+                    Positioned(
+                      top: -20,
+                      child: const Icon(
+                        Icons.arrow_drop_down_rounded,
+                        color: Colors.white,
+                        size: 60,
+                      ),
+                    ),
+                    const AppLogo(size: 60),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
           ),
         );
       },

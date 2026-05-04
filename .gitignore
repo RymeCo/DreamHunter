@@ -2,11 +2,12 @@
 .DS_Store
 .idea/
 .gemini/
-docs/
+docs
 AGENTS.md
 GEMINI.MD2
 node_modules/
 build/
+.github
 *.log
 # VS Code related
 .vscode/

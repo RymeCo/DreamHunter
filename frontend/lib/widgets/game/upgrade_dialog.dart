@@ -7,6 +7,8 @@ import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
 
+import 'package:dreamhunter/services/core/ad_manager.dart';
+
 /// Represents a specific condition that must be met for an upgrade.
 class UpgradeRequirement {
   final String label;
@@ -25,6 +27,10 @@ class UpgradeDialog extends StatefulWidget {
   final String? upgradeBenefit;
   final bool isMaxLevel;
   final VoidCallback onUpgrade;
+  final VoidCallback? onFreeUpgrade;
+  final VoidCallback? onSell;
+  final int sellRefundCoins;
+  final int sellRefundEnergy;
 
   const UpgradeDialog({
     super.key,
@@ -37,6 +43,10 @@ class UpgradeDialog extends StatefulWidget {
     this.upgradeBenefit,
     this.isMaxLevel = false,
     required this.onUpgrade,
+    this.onFreeUpgrade,
+    this.onSell,
+    this.sellRefundCoins = 0,
+    this.sellRefundEnergy = 0,
   });
 
   /// Static helper to show the dialog
@@ -51,6 +61,10 @@ class UpgradeDialog extends StatefulWidget {
     String? upgradeBenefit,
     bool isMaxLevel = false,
     required VoidCallback onUpgrade,
+    VoidCallback? onFreeUpgrade,
+    VoidCallback? onSell,
+    int sellRefundCoins = 0,
+    int sellRefundEnergy = 0,
   }) async {
     await showGeneralDialog<void>(
       context: context,
@@ -73,6 +87,10 @@ class UpgradeDialog extends StatefulWidget {
               upgradeBenefit: upgradeBenefit,
               isMaxLevel: isMaxLevel,
               onUpgrade: onUpgrade,
+              onFreeUpgrade: onFreeUpgrade,
+              onSell: onSell,
+              sellRefundCoins: sellRefundCoins,
+              sellRefundEnergy: sellRefundEnergy,
             ),
           ),
         );
@@ -92,7 +110,7 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
   Widget build(BuildContext context) {
     return Center(
       child: LiquidGlassDialog(
-        width: 280,
+        width: 300,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -100,8 +118,40 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
             // Header
             GameDialogHeader(title: widget.title),
 
-            // Level Indicator
-            _buildLevelIndicator(context),
+            // Level Indicator Card
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.black26,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "CURRENT LEVEL",
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  if (widget.levelDisplay != null)
+                    widget.levelDisplay!
+                  else
+                    Text(
+                      "LV. ${widget.currentLevel}",
+                      style: const TextStyle(
+                        color: Colors.amberAccent,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                ],
+              ),
+            ),
 
             if (widget.upgradeBenefit != null) ...[
               const SizedBox(height: 16),
@@ -121,7 +171,7 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                     const Text(
                       "FULL HEAL",
                       style: TextStyle(
-                        color: Colors.amberAccent,
+                        color: Colors.greenAccent,
                         fontSize: 9,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.0,
@@ -130,34 +180,24 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.greenAccent.withValues(alpha: 0.1),
+                      Colors.tealAccent.withValues(alpha: 0.05),
                       Colors.black26,
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.greenAccent.withValues(alpha: 0.2),
+                    color: Colors.tealAccent.withValues(alpha: 0.2),
                     width: 1.5,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.greenAccent.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      spreadRadius: -2,
-                    ),
-                  ],
                 ),
                 child: _buildUpgradeBenefitText(
                   context,
@@ -177,7 +217,7 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: Colors.white38,
                     letterSpacing: 1.5,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
@@ -193,11 +233,12 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
             if (widget.isMaxLevel)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
+                  borderRadius: BorderRadius.circular(16),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.05)),
                 ),
                 child: Text(
                   "MAXIMUM LEVEL",
@@ -227,35 +268,31 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                   // Determine button label
                   String? buttonLabel;
                   if (_showNotEnough) {
-                    buttonLabel = "NOT ENOUGH!";
+                    buttonLabel = "INSUFFICIENT FUNDS";
                   } else if (_showReqNotMet) {
                     buttonLabel = "REQ NOT MET";
                   }
 
                   return GlassButton(
                     width: double.infinity,
-                    height: 50,
-                    pulseEffect:
-                        canUpgrade, // Only pulse when ready to upgrade!
-                    glowColor: (_showNotEnough || _showReqNotMet)
-                        ? Colors.redAccent
-                        : (canUpgrade ? Colors.tealAccent : Colors.white10),
-                    color: canUpgrade
-                        ? null
-                        : Colors.black54, // Darker when locked/not affordable
+                    height: 56,
+                    isClickable: true,
+                    pulseEffect: canUpgrade,
+                    color: canUpgrade ? Colors.tealAccent : Colors.black45,
+                    glowColor: canUpgrade ? Colors.tealAccent : Colors.white10,
+                    borderColor: canUpgrade ? Colors.tealAccent : Colors.white10,
+                    borderRadius: 16,
                     onTap: () {
                       if (!allRequirementsMet) {
                         if (!_showReqNotMet) {
                           HapticManager.instance.heavy();
                           setState(() => _showReqNotMet = true);
-                          Future.delayed(
-                            const Duration(milliseconds: 1200),
-                            () {
-                              if (mounted) {
-                                setState(() => _showReqNotMet = false);
-                              }
-                            },
-                          );
+                          Future.delayed(const Duration(milliseconds: 1200),
+                              () {
+                            if (mounted) {
+                              setState(() => _showReqNotMet = false);
+                            }
+                          });
                         }
                         return;
                       }
@@ -263,14 +300,12 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                         if (!_showNotEnough) {
                           HapticManager.instance.heavy();
                           setState(() => _showNotEnough = true);
-                          Future.delayed(
-                            const Duration(milliseconds: 1200),
-                            () {
-                              if (mounted) {
-                                setState(() => _showNotEnough = false);
-                              }
-                            },
-                          );
+                          Future.delayed(const Duration(milliseconds: 1200),
+                              () {
+                            if (mounted) {
+                              setState(() => _showNotEnough = false);
+                            }
+                          });
                         }
                         return;
                       }
@@ -286,60 +321,66 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         if (buttonLabel != null)
-                          Flexible(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                buttonLabel,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 2,
-                                ),
-                              ),
+                          Text(
+                            buttonLabel,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                              fontSize: 13,
                             ),
                           )
                         else ...[
-                          // Coin Cost Indicator
+                          Text(
+                            "UPGRADE",
+                            style: TextStyle(
+                              color: canUpgrade ? Colors.white : Colors.white24,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                              width: 1, height: 20, color: canUpgrade ? Colors.tealAccent.withValues(alpha: 0.3) : Colors.white10),
+                          const SizedBox(width: 12),
                           if (widget.coinCost > 0) ...[
                             Icon(
                               Icons.monetization_on_rounded,
-                              color: canAffordCoins
-                                  ? Colors.amberAccent
-                                  : Colors.white10,
-                              size: 18,
+                              color: canUpgrade 
+                                  ? Colors.white
+                                  : (canAffordCoins ? Colors.white70 : Colors.redAccent.withValues(alpha: 0.5)),
+                              size: 16,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               "${widget.coinCost}",
                               style: TextStyle(
-                                color: canAffordCoins
-                                    ? Colors.amberAccent
-                                    : Colors.white10,
-                                fontSize: 16,
+                                color: canUpgrade 
+                                    ? Colors.white
+                                    : (canAffordCoins ? Colors.white70 : Colors.redAccent.withValues(alpha: 0.5)),
+                                fontSize: 15,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
                           ],
-
                           if (widget.energyCost > 0) ...[
-                            if (widget.coinCost > 0) const SizedBox(width: 12),
-                            // Energy Cost Indicator
+                            if (widget.coinCost > 0) const SizedBox(width: 8),
                             Icon(
                               Icons.bolt_rounded,
-                              color: canAffordEnergy
-                                  ? Colors.cyanAccent
-                                  : Colors.white10,
-                              size: 18,
+                              color: canUpgrade 
+                                  ? Colors.white
+                                  : (canAffordEnergy ? Colors.white70 : Colors.redAccent.withValues(alpha: 0.5)),
+                              size: 16,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               "${widget.energyCost}",
                               style: TextStyle(
-                                color: canAffordEnergy
-                                    ? Colors.cyanAccent
-                                    : Colors.white10,
-                                fontSize: 16,
+                                color: canUpgrade 
+                                    ? Colors.white
+                                    : (canAffordEnergy ? Colors.white70 : Colors.redAccent.withValues(alpha: 0.5)),
+                                fontSize: 15,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
@@ -350,100 +391,187 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                   );
                 },
               ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildLevelIndicator(BuildContext context) {
-    if (widget.levelDisplay != null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              "Current Level",
-              style: TextStyle(color: Colors.white54, fontSize: 13),
-            ),
-            widget.levelDisplay!,
-          ],
-        ),
-      );
-    }
+            // Free Upgrade via Ad
+            if (!widget.isMaxLevel && widget.onFreeUpgrade != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Expanded(child: Divider(color: Colors.white10)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      "OR",
+                      style: GoogleFonts.quicksand(
+                        color: Colors.white24,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  const Expanded(child: Divider(color: Colors.white10)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ListenableBuilder(
+                listenable: MatchManager.instance,
+                builder: (context, child) {
+                  final bool canUseAd = MatchManager.instance.canUseAdUpgrade;
+                  final int remaining = MatchManager.maxAdUpgradesPerMatch -
+                      MatchManager.instance.adUpgradesUsed;
 
-    return _buildInfoRow(
-      context,
-      "Current Level",
-      "Lv. ${widget.currentLevel}",
-      Colors.white70,
-    );
-  }
+                  return GlassButton(
+                    width: double.infinity,
+                    height: 48,
+                    isClickable: canUseAd,
+                    glowColor: canUseAd ? Colors.amberAccent : Colors.white10,
+                    color: canUseAd ? null : Colors.black54,
+                    onTap: () {
+                      AdManager.instance.showRewardAd(
+                        context: context,
+                        onRewardEarned: () {
+                          widget.onFreeUpgrade!();
+                          if (mounted) {
+                            Navigator.pop(context);
+                          }
+                        },
+                      );
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          canUseAd ? Icons.play_circle_fill : Icons.lock_clock,
+                          color: canUseAd ? Colors.amberAccent : Colors.white24,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          canUseAd
+                              ? "FREE UPGRADE ($remaining LEFT)"
+                              : "LIMIT REACHED",
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: canUseAd
+                                        ? Colors.amberAccent
+                                        : Colors.white24,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1.2,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
 
-  Widget _buildInfoRow(
-    BuildContext context,
-    String label,
-    String value,
-    Color valueColor,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white54, fontSize: 13),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                value,
-                style: TextStyle(
-                  color: valueColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+            // Sell Button (More integrated, clean look)
+            if (widget.onSell != null) ...[
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: () {
+                  AudioManager.instance.playClick();
+                  HapticManager.instance.heavy();
+                  widget.onSell!();
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.delete_forever_rounded,
+                        color: Colors.redAccent,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "DISMANTLE",
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.2,
+                            ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        "(REFUND:",
+                        style: TextStyle(color: Colors.white24, fontSize: 10),
+                      ),
+                      const SizedBox(width: 4),
+                      if (widget.sellRefundCoins > 0) ...[
+                        const Icon(Icons.monetization_on_rounded, color: Colors.amberAccent, size: 12),
+                        const SizedBox(width: 2),
+                        Text("${widget.sellRefundCoins}", style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                      if (widget.sellRefundEnergy > 0) ...[
+                        if (widget.sellRefundCoins > 0) const SizedBox(width: 4),
+                        const Icon(Icons.bolt_rounded, color: Colors.cyanAccent, size: 12),
+                        const SizedBox(width: 2),
+                        Text("${widget.sellRefundEnergy}", style: const TextStyle(color: Colors.cyanAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                      const Text(
+                        ")",
+                        style: TextStyle(color: Colors.white24, fontSize: 10),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildRequirementRow(BuildContext context, String text, bool isMet) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
-      child: Row(
-        children: [
-          Icon(
-            isMet
-                ? Icons.check_circle_outline_rounded
-                : Icons.radio_button_unchecked_rounded,
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isMet
+              ? Colors.greenAccent.withValues(alpha: 0.05)
+              : Colors.redAccent.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
             color: isMet
-                ? Colors.greenAccent
-                : Colors.redAccent.withValues(alpha: 0.5),
-            size: 14,
+                ? Colors.greenAccent.withValues(alpha: 0.1)
+                : Colors.redAccent.withValues(alpha: 0.2),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                color: isMet ? Colors.white : Colors.white24,
-                fontSize: 13,
-              ),
-              overflow: TextOverflow.ellipsis,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isMet ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+              color: isMet ? Colors.greenAccent : Colors.redAccent,
+              size: 16,
             ),
-          ),
-        ],
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: isMet ? Colors.white : Colors.redAccent.withValues(alpha: 0.9),
+                  fontSize: 12,
+                  fontWeight: isMet ? FontWeight.bold : FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -459,14 +587,14 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
         spans.add(
           TextSpan(
             text: parts[0],
-            style: const TextStyle(color: Colors.white70),
+            style: const TextStyle(color: Colors.white38),
           ),
         );
         spans.add(
           const TextSpan(
             text: ' ➔ ',
             style: TextStyle(
-              color: Colors.greenAccent,
+              color: Colors.tealAccent,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -475,7 +603,7 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
           TextSpan(
             text: parts[1],
             style: const TextStyle(
-              color: Colors.greenAccent,
+              color: Colors.tealAccent,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -485,7 +613,7 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
           TextSpan(
             text: line,
             style: const TextStyle(
-              color: Colors.greenAccent,
+              color: Colors.white70,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -499,7 +627,7 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
 
     return RichText(
       text: TextSpan(
-        style: GoogleFonts.quicksand(fontSize: 16, height: 1.5),
+        style: GoogleFonts.quicksand(fontSize: 14, height: 1.5),
         children: spans,
       ),
     );

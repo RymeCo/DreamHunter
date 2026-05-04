@@ -1,7 +1,10 @@
 import 'package:flame/extensions.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:dreamhunter/models/task_model.dart';
 import 'package:dreamhunter/services/economy/wallet_manager.dart';
+import 'package:dreamhunter/services/progression/progression_manager.dart';
+import 'package:dreamhunter/services/progression/task_service.dart';
 
 /// A Singleton state manager for the current match.
 /// Acting as the "Single Source of Truth" for game state like paused status and in-match economy.
@@ -60,12 +63,20 @@ class MatchManager extends ChangeNotifier {
   bool _matchEnded = false;
   bool _rewardsPersisted = false;
   bool _isForfeited = false;
+  bool _isRewardsDoubled = false;
+  int _adUpgradesUsed = 0;
+  static const int maxAdUpgradesPerMatch = 2;
+
+  double _playtimeAccumulator = 0.0;
 
   double get survivalTime => _survivalTime;
   double get damageDealt => _damageDealt;
   bool get playerKilledMonster => _playerKilledMonster;
   bool get matchEnded => _matchEnded;
   bool get isForfeited => _isForfeited;
+  bool get isRewardsDoubled => _isRewardsDoubled;
+  int get adUpgradesUsed => _adUpgradesUsed;
+  bool get canUseAdUpgrade => _adUpgradesUsed < maxAdUpgradesPerMatch;
 
   // Life Status (Index 0 = Player, 1+ = AI)
   final List<bool> _hunterAliveStatus = [true];
@@ -159,6 +170,8 @@ class MatchManager extends ChangeNotifier {
     _matchEnded = false;
     _rewardsPersisted = false;
     _isForfeited = false;
+    _isRewardsDoubled = false;
+    _adUpgradesUsed = 0;
 
     _hunterAliveStatus.clear();
     _hunterAliveStatus.add(true); // Player
@@ -179,15 +192,41 @@ class MatchManager extends ChangeNotifier {
     _safeNotify(notifyListeners);
   }
 
-  /// Persists the earned rewards to the global wallet.
+  /// Persists the earned rewards to the global wallet and progression.
   Future<void> persistRewards() async {
     if (_rewardsPersisted) return;
     _rewardsPersisted = true;
 
-    final total = calculateRewards();
-    if (total > 0) {
-      await WalletManager.instance.updateBalance(coinsDelta: total);
+    final coins = calculateRewards();
+    if (coins > 0) {
+      await WalletManager.instance.updateBalance(coinsDelta: coins);
     }
+
+    final xp = calculateXP();
+    if (xp > 0) {
+      await ProgressionManager.instance.addXp(xp, resetLevelUpFlag: true);
+    }
+  }
+
+  /// Doubles the already persisted rewards by applying them a second time.
+  /// Typically called after watching an ad.
+  Future<void> doubleRewards() async {
+    if (_isRewardsDoubled || !_rewardsPersisted || _isForfeited) return;
+
+    // Use the base (un-doubled) reward to calculate the "extra" amount
+    final extraCoins = _calculateBaseRewards();
+    final extraXp = _calculateBaseXP();
+
+    if (extraCoins > 0) {
+      await WalletManager.instance.updateBalance(coinsDelta: extraCoins);
+    }
+
+    if (extraXp > 0) {
+      await ProgressionManager.instance.addXp(extraXp, resetLevelUpFlag: false);
+    }
+
+    _isRewardsDoubled = true;
+    notifyListeners();
   }
 
   /// Sets the list of AI skins joining the match
@@ -232,8 +271,13 @@ class MatchManager extends ChangeNotifier {
   }
 
   /// Calculates the reward based on performance.
-  /// Hard cap at 50 coins.
+  /// Hard cap at 50 coins (Base).
   int calculateRewards() {
+    final base = _calculateBaseRewards();
+    return _isRewardsDoubled ? base * 2 : base;
+  }
+
+  int _calculateBaseRewards() {
     if (_isForfeited) return 0;
 
     // ⏱️ Survival: 1 Coin per 15 seconds survived (Max 20 Coins / 5 Minutes)
@@ -247,6 +291,17 @@ class MatchManager extends ChangeNotifier {
 
     final total = (survivalReward + damageReward + killBonus).clamp(0, 50);
     return total;
+  }
+
+  /// Calculates XP based on match performance.
+  /// 1 Coin = 4 XP (Max 200 XP).
+  int calculateXP() {
+    final base = _calculateBaseXP();
+    return _isRewardsDoubled ? base * 2 : base;
+  }
+
+  int _calculateBaseXP() {
+    return _calculateBaseRewards() * 4;
   }
 
   /// Checks if a hunter is currently alive.
@@ -271,6 +326,13 @@ class MatchManager extends ChangeNotifier {
 
     // Track survival time
     _survivalTime += dt;
+    _playtimeAccumulator += dt;
+
+    // Report playtime to TaskService every 60 seconds
+    if (_playtimeAccumulator >= 60.0) {
+      _playtimeAccumulator -= 60.0;
+      TaskService.instance.trackAction(TaskType.playtime, amount: 1);
+    }
 
     _coinTickAccumulator += dt;
     _energyTickAccumulator += dt;
@@ -428,6 +490,11 @@ class MatchManager extends ChangeNotifier {
     _isForfeited = true;
     _matchEnded = true;
     _isPaused = true;
+    _safeNotify(notifyListeners);
+  }
+
+  void incrementAdUpgrades() {
+    _adUpgradesUsed++;
     _safeNotify(notifyListeners);
   }
 }

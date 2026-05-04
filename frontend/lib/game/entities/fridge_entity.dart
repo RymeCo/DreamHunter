@@ -7,6 +7,9 @@ import 'package:dreamhunter/game/entities/door_entity.dart';
 import 'package:dreamhunter/game/components/wrench_component.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
+import 'package:dreamhunter/services/game/match_manager.dart';
+import 'package:dreamhunter/widgets/game/upgrade_dialog.dart';
+import 'package:dreamhunter/game/game_config.dart';
 
 /// A defensive building that protects the room's door.
 /// It "freezes" the door by adding a shield equal to the door's max HP.
@@ -16,6 +19,9 @@ class FridgeEntity extends BaseEntity with TapCallbacks {
   late final SpriteComponent _spriteComponent;
   DoorEntity? _targetDoor;
   double _regenTimer = 0;
+
+  @override
+  int get sellValueEnergy => GameConfig.fridgeBuildCost;
 
   FridgeEntity({required super.position, required this.roomID})
     : super(size: Vector2.all(32), anchor: Anchor.center) {
@@ -120,8 +126,20 @@ class FridgeEntity extends BaseEntity with TapCallbacks {
     AudioManager.instance.playClick();
     HapticManager.instance.light();
 
-    // Maybe show a simple status message in the future.
-    // For now, let's just re-apply the shield if it was broken.
-    _applyEffect();
+    final manager = MatchManager.instance;
+    if (manager.currentRoomID != roomID) return;
+
+    UpgradeDialog.show(
+      game.buildContext!,
+      title: "Fridge",
+      currentLevel: 1,
+      requirements: [],
+      coinCost: 0,
+      upgradeBenefit: "Freezes Room Door\nAdds a protective shield.",
+      isMaxLevel: true,
+      onUpgrade: () {},
+      onSell: () => sell(owner: game.player),
+      sellRefundEnergy: (sellValueEnergy * 0.2).floor(),
+    );
   }
 }

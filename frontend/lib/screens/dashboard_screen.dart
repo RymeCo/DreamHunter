@@ -11,6 +11,7 @@ import 'package:dreamhunter/services/progression/daily_roulette.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/storage_engine.dart';
 import 'package:dreamhunter/services/identity/profile_manager.dart';
+import 'package:dreamhunter/services/progression/progression_manager.dart';
 
 // Widgets
 import 'package:dreamhunter/widgets/dashboard/currency_display.dart';
@@ -59,6 +60,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     AudioManager.instance.playDashboardMusic();
     await NetworkMonitor.instance.initialize();
     await _controller.initialize();
+    await ProgressionManager.instance.initialize();
     await DailyRoulette.instance.initialize();
 
     // Sync with live backend if logged in

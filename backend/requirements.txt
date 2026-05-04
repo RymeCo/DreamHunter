@@ -4,3 +4,5 @@ firebase-admin
 pydantic
 python-dotenv
 ujson
+apscheduler
+pytz

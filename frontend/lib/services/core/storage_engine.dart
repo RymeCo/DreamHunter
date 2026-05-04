@@ -28,7 +28,12 @@ class StorageEngine {
   }
 
   String _getScopedKey(String baseKey) {
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+    String uid = 'guest';
+    try {
+      uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+    } catch (e) {
+      // Firebase not initialized yet, fallback to guest
+    }
     return '${uid}_$baseKey';
   }
 
@@ -95,6 +100,44 @@ class StorageEngine {
     return null;
   }
 
+  // --- Global (Unscoped) Data ---
+
+  Future<void> saveGlobalMetadata(String key, Map<String, dynamic> data) async {
+    await _p.setString('global_$key', json.encode(data));
+  }
+
+  Future<Map<String, dynamic>?> getGlobalMetadata(String key) async {
+    final cached = _p.getString('global_$key');
+    if (cached != null) {
+      try {
+        return json.decode(cached) as Map<String, dynamic>;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  // --- Daily Quota Tracking ---
+
+  Future<int> getDailyCount(String key) async {
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    final stored = await getMetadata('daily_count_$key');
+    if (stored != null && stored['date'] == today) {
+      return stored['count'] as int;
+    }
+    return 0;
+  }
+
+  Future<void> incrementDailyCount(String key) async {
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    final current = await getDailyCount(key);
+    await saveMetadata('daily_count_$key', {
+      'date': today,
+      'count': current + 1,
+    });
+  }
+
   // --- Save Management & Conflict Resolution ---
 
   /// Checks if there is any local progression for the 'guest' profile.
@@ -138,7 +181,11 @@ class StorageEngine {
   }
 
   Future<void> clearAllUserData() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    String? uid;
+    try {
+      uid = FirebaseAuth.instance.currentUser?.uid;
+    } catch (_) {}
+    
     if (uid == null) return;
     final keys = _p.getKeys();
     for (final key in keys) {

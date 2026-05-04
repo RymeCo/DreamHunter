@@ -17,6 +17,28 @@ class OreEntity extends BaseEntity with TapCallbacks {
   late final SpriteComponent _spriteComponent;
   final List<Sprite> _levelSprites = [];
 
+  /// Gets the current level of this entity (for AI targeting decisions).
+  @override
+  int get entityLevel => level;
+
+  @override
+  int get sellValueCoins {
+    int total = 0;
+    for (int i = 0; i < level; i++) {
+      total += GameConfig.oreUpgrades[i].cost.coins;
+    }
+    return total;
+  }
+
+  @override
+  int get sellValueEnergy {
+    int total = 0;
+    for (int i = 0; i < level; i++) {
+      total += GameConfig.oreUpgrades[i].cost.energy;
+    }
+    return total;
+  }
+
   OreEntity({required super.position, required this.roomID, this.level = 1})
     : super(size: Vector2.all(32), anchor: Anchor.topLeft) {
     addCategory('building');
@@ -73,6 +95,9 @@ class OreEntity extends BaseEntity with TapCallbacks {
         upgradeBenefit: "MAXED OUT",
         isMaxLevel: true,
         onUpgrade: () {},
+        onSell: () => sell(owner: game.player),
+        sellRefundCoins: (sellValueCoins * 0.2).floor(),
+        sellRefundEnergy: (sellValueEnergy * 0.2).floor(),
       );
       return;
     }
@@ -93,6 +118,9 @@ class OreEntity extends BaseEntity with TapCallbacks {
       onUpgrade: () {
         tryUpgrade(game.player);
       },
+      onSell: () => sell(owner: game.player),
+      sellRefundCoins: (sellValueCoins * 0.2).floor(),
+      sellRefundEnergy: (sellValueEnergy * 0.2).floor(),
     );
   }
 
