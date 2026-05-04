@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
@@ -21,6 +22,10 @@ class _ChatDialogState extends State<ChatDialog> {
   String _selectedRegion = 'english';
   Map<String, dynamic>? _announcement;
 
+  // Power Saver Logic
+  Timer? _inactivityTimer;
+  bool _isSleeping = false;
+
   final Map<String, String> _regions = {
     'english': '🇺🇸 English',
     'spanish': '🇪🇸 Español',
@@ -33,14 +38,29 @@ class _ChatDialogState extends State<ChatDialog> {
   void initState() {
     super.initState();
     _checkAnnouncement();
+    _resetInactivityTimer();
   }
 
   @override
   void dispose() {
+    _inactivityTimer?.cancel();
     ChatService.instance.disconnect();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _resetInactivityTimer() {
+    _inactivityTimer?.cancel();
+    if (_isSleeping) {
+      setState(() => _isSleeping = false);
+    }
+    _inactivityTimer = Timer(const Duration(minutes: 5), () {
+      if (mounted) {
+        setState(() => _isSleeping = true);
+        ChatService.instance.disconnect();
+      }
+    });
   }
 
   Future<void> _checkAnnouncement() async {
@@ -54,9 +74,15 @@ class _ChatDialogState extends State<ChatDialog> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
+    // Wake up if sleeping
+    if (_isSleeping) {
+      _resetInactivityTimer();
+    }
+
     try {
       _textController.clear();
       await ChatService.instance.sendMessage(text, region: _selectedRegion);
+      _resetInactivityTimer(); // Reset after sending
       if (widget.onMessageSent != null) widget.onMessageSent!();
     } catch (e) {
       if (mounted) {
@@ -85,14 +111,24 @@ class _ChatDialogState extends State<ChatDialog> {
                   hintStyle: TextStyle(color: Colors.white54),
                   border: InputBorder.none,
                 ),
-                onSubmitted: (_) => _sendMessage(),
+                onSubmitted: (_) {
+                  _resetInactivityTimer();
+                  _sendMessage();
+                },
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.send, color: Colors.cyanAccent),
+              icon: Icon(
+                _isSleeping ? Icons.power_settings_new : Icons.send,
+                color: _isSleeping ? Colors.amber : Colors.cyanAccent,
+              ),
               onPressed: () {
                 AudioManager().playClick();
-                _sendMessage();
+                if (_isSleeping) {
+                  _resetInactivityTimer();
+                } else {
+                  _sendMessage();
+                }
               },
             ),
           ],
@@ -108,34 +144,42 @@ class _ChatDialogState extends State<ChatDialog> {
                 color: Colors.black26,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: StreamBuilder<List<ChatMessage>>(
-                stream: ChatService.instance.getMessages(region: _selectedRegion),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
-                  }
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final messages = snapshot.data!;
-                  
-                  return ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(8),
-                    itemCount: messages.length + (_announcement != null ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (_announcement != null && index == 0) {
-                        return _buildAnnouncementCard();
+              child: _isSleeping 
+                ? _buildSleepOverlay()
+                : StreamBuilder<List<ChatMessage>>(
+                    stream: ChatService.instance.getMessages(region: _selectedRegion),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
                       }
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      // Reset timer when new messages arrive
+                      if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                        // Using post-frame callback to avoid build-phase setState if needed
+                        // but since _resetInactivityTimer cancels a timer, it's generally safe.
+                      }
+
+                      final messages = snapshot.data!;
                       
-                      final messageIndex = _announcement != null ? index - 1 : index;
-                      final message = messages[messageIndex];
-                      return _MessageBubble(message: message);
+                      return ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(8),
+                        itemCount: messages.length + (_announcement != null ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (_announcement != null && index == 0) {
+                            return _buildAnnouncementCard();
+                          }
+                          
+                          final messageIndex = _announcement != null ? index - 1 : index;
+                          final message = messages[messageIndex];
+                          return _MessageBubble(message: message);
+                        },
+                      );
                     },
-                  );
-                },
-              ),
+                  ),
             ),
           ),
         ],
@@ -145,33 +189,44 @@ class _ChatDialogState extends State<ChatDialog> {
 
   Widget _buildRegionSelector() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
-          'REGION:',
-          style: TextStyle(
-            color: Colors.white38,
-            fontSize: 10,
-            letterSpacing: 1,
-          ),
-        ),
-        const SizedBox(width: 12),
-        DropdownButton<String>(
-          value: _selectedRegion,
-          dropdownColor: Colors.black87,
-          underline: const SizedBox(),
-          items: _regions.entries
-              .map(
-                (e) => DropdownMenuItem(
-                  value: e.key,
-                  child: Text(
-                    e.value,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (v) => setState(() => _selectedRegion = v!),
+        if (_isSleeping)
+          const Text(
+            '💤 POWER SAVER ACTIVE',
+            style: TextStyle(color: Colors.amber, fontSize: 8, fontWeight: FontWeight.bold),
+          )
+        else
+          const SizedBox(),
+        Row(
+          children: [
+            const Text(
+              'REGION:',
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 10,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(width: 12),
+            DropdownButton<String>(
+              value: _selectedRegion,
+              dropdownColor: Colors.black87,
+              underline: const SizedBox(),
+              items: _regions.entries
+                  .map(
+                    (e) => DropdownMenuItem(
+                      value: e.key,
+                      child: Text(
+                        e.value,
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) => setState(() => _selectedRegion = v!),
+            ),
+          ],
         ),
       ],
     );
@@ -234,6 +289,38 @@ class _ChatDialogState extends State<ChatDialog> {
               onPressed: () => setState(() => _announcement = null),
               child: const Text('DISMISS', style: TextStyle(color: Colors.cyanAccent, fontSize: 10)),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSleepOverlay() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.bedtime, color: Colors.amber.withValues(alpha: 0.5), size: 48),
+          const SizedBox(height: 16),
+          const Text(
+            'CHAT IS SLEEPING',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Tapped out to save your battery.\nSend a message or tap the power icon to wake up.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white54, fontSize: 11),
+          ),
+          const SizedBox(height: 24),
+          TextButton.icon(
+            onPressed: _resetInactivityTimer,
+            icon: const Icon(Icons.bolt, color: Colors.amber),
+            label: const Text('WAKE UP', style: TextStyle(color: Colors.amber)),
           ),
         ],
       ),
