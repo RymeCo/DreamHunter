@@ -79,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Icon(Icons.admin_panel_settings, size: 80, color: Colors.deepPurpleAccent),
                 const SizedBox(height: 16),
                 const Text(
-                  'DD-Admin',
+                  'DH Admin',
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 const SizedBox(height: 40),

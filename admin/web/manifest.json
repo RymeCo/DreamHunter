@@ -1,6 +1,6 @@
 {
-    "name": "dd_admin",
-    "short_name": "dd_admin",
+    "name": "DH Admin",
+    "short_name": "DH Admin",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
