@@ -1,6 +1,7 @@
 import 'package:dreamhunter/widgets/branding/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
+import 'package:dreamhunter/services/core/ad_manager.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
 import 'package:dreamhunter/core/theme/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -20,12 +21,19 @@ class SettingsDialog extends StatefulWidget {
 class _SettingsDialogState extends State<SettingsDialog> {
   bool _isLoading = true;
   bool _isSyncing = false;
+  int _syncCount = 0;
   final AudioManager _audioService = AudioManager();
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    _loadSyncCount();
+  }
+
+  Future<void> _loadSyncCount() async {
+    final count = await StorageEngine.instance.getDailyCount('cloud_sync');
+    if (mounted) setState(() => _syncCount = count);
   }
 
   Future<void> _loadSettings() async {
@@ -63,7 +71,20 @@ class _SettingsDialogState extends State<SettingsDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 20),
-              const AppLogo(size: 80),
+              // Logo Ryme Section
+              Container(
+                width: 80,
+                height: 80,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Image.asset(
+                  'assets/images/branding/ryme_logo.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
               const SizedBox(height: 16),
               Text(
                 'DREAMHUNTER',
@@ -74,7 +95,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
               ),
               const SizedBox(height: 4),
               Text(
-                'VERSION 0.1.7',
+                'VERSION 1.0.0',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.cyanAccent,
                       fontSize: 10,
@@ -107,7 +128,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
   Future<void> _performManualSync() async {
-    if (FirebaseAuth.instance.currentUser == null) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
       showCustomSnackBar(
         context,
         'Log in to backup your data!',
@@ -116,10 +138,24 @@ class _SettingsDialogState extends State<SettingsDialog> {
       return;
     }
 
-    setState(() => _isSyncing = true);
+    if (_syncCount >= 1) {
+      AdManager.instance.showRewardAd(
+        context: context,
+        onRewardEarned: () async {
+          await _executeSync();
+        },
+      );
+    } else {
+      await _executeSync();
+    }
+  }
 
+  Future<void> _executeSync() async {
+    setState(() => _isSyncing = true);
     try {
       await ProfileManager.instance.backupPlayer();
+      await StorageEngine.instance.incrementDailyCount('cloud_sync');
+      await _loadSyncCount();
       if (mounted) {
         showCustomSnackBar(
           context,
@@ -159,7 +195,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
               accentColor: Colors.cyanAccent,
               children: [
                 _GlassSettingItem(
-                  title: 'Atmospheric Music',
+                  title: 'Music',
+                  subtitle: 'Ambient background themes',
                   icon: Icons.music_note_rounded,
                   value: !_audioService.isMusicMuted,
                   accentColor: Colors.cyanAccent,
@@ -177,7 +214,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 ),
                 _buildDivider(),
                 _GlassSettingItem(
-                  title: 'Sound Feedback',
+                  title: 'Sound',
+                  subtitle: 'Interaction & combat effects',
                   icon: Icons.volume_up_rounded,
                   value: !_audioService.isSoundMuted,
                   accentColor: Colors.cyanAccent,
@@ -219,7 +257,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
               children: [
                 _GlassActionItem(
                   title: 'Cloud Storage Sync',
-                  subtitle: _isSyncing ? 'Syncing...' : 'Backup your progress',
+                  subtitle: _isSyncing 
+                      ? 'Syncing...' 
+                      : (_syncCount >= 1 ? 'Watch Ad to Sync again' : 'Backup your progress ($_syncCount/1)'),
                   icon: Icons.cloud_done_rounded,
                   accentColor: Colors.cyanAccent,
                   onTap: _isSyncing ? () {} : _performManualSync,
@@ -251,7 +291,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 _buildDivider(),
                 _GlassActionItem(
                   title: 'About DreamHunter',
-                  subtitle: 'Credits & Project Info',
+                  subtitle: 'V1.0.0 • Project Credits',
                   icon: Icons.info_outline_rounded,
                   accentColor: Colors.deepPurpleAccent,
                   onTap: _showAboutDialog,
@@ -260,7 +300,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
             ),
             const SizedBox(height: 32),
             Text(
-              'DREAMHUNTER V 0.1.7',
+              'DREAMHUNTER V 1.0.0',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.white.withValues(alpha: 0.15),
                     fontSize: 10,

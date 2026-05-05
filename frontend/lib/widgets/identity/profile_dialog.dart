@@ -49,11 +49,6 @@ class _ProfileDialogState extends State<ProfileDialog> {
     final String displayName = user?.displayName ?? 'Dreamer';
     final String? email = user?.email;
 
-    final selectedCharId = ShopManager.instance.selectedCharacterId;
-    final charItem = ItemRegistry.get(selectedCharId);
-    final String charImagePath = charItem?.image ??
-        'assets/images/game/characters/max_front-32x48.png';
-
     return ListenableBuilder(
       listenable: ProgressionManager.instance,
       builder: (context, child) {
@@ -62,41 +57,73 @@ class _ProfileDialogState extends State<ProfileDialog> {
         return StandardGlassPage(
           title: 'PLAYER PROFILE',
           isFullScreen: true,
+          footer: [
+            // Backup Section
+            _buildBackupSection(context),
+            const SizedBox(height: 12),
+            // Logout Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  AudioManager().playClick();
+                  Navigator.pop(context);
+                  await ProfileManager.instance.logout();
+                  widget.onLogoutRequested();
+                },
+                icon: const Icon(Icons.logout, size: 16),
+                label: Text(
+                  'LOGOUT SESSION',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        letterSpacing: 2,
+                        fontSize: 13,
+                      ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
+                  foregroundColor: Colors.redAccent,
+                  side: BorderSide(
+                    color: Colors.redAccent.withValues(alpha: 0.3),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Character Avatar with Status Indicators
+                const SizedBox(height: 8),
+                // Professional Profile Avatar (Synced with HUD)
                 Stack(
                   alignment: Alignment.center,
                   children: [
                     Container(
-                      width: 100,
-                      height: 100,
+                      width: 120,
+                      height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.black45,
                         border: Border.all(
-                          color: _getStatusColor().withValues(alpha: 0.5),
+                          color: Colors.blueAccent.withValues(alpha: 0.5),
                           width: 3,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: _getStatusColor().withValues(alpha: 0.2),
-                            blurRadius: 20,
-                            spreadRadius: 5,
+                            color: Colors.blueAccent.withValues(alpha: 0.2),
+                            blurRadius: 25,
+                            spreadRadius: 8,
                           ),
                         ],
                       ),
-                      child: ClipOval(
-                        child: Transform.scale(
-                          scale: 1.8,
-                          alignment: const Alignment(0, -0.6),
-                          child: Image.asset(
-                            charImagePath,
-                            fit: BoxFit.contain,
-                            filterQuality: FilterQuality.none,
-                          ),
+                      child: const ClipOval(
+                        child: Image(
+                          image: AssetImage('assets/images/dashboard/profile.png'),
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
@@ -130,17 +157,18 @@ class _ProfileDialogState extends State<ProfileDialog> {
                   ),
                 ],
                 if (_player != null) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
-                    'Created: ${_formatDate(_player!.createdAt)}',
+                    'MEMBERSHIP SINCE ${_formatDate(_player!.createdAt)}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white24,
+                          color: Colors.white10,
                           fontSize: 8,
+                          letterSpacing: 1.5,
                         ),
                   ),
                 ],
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Stats & Ranking Module
                 Container(
@@ -195,45 +223,6 @@ class _ProfileDialogState extends State<ProfileDialog> {
                         ),
                       ),
                     ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Backup Section
-                _buildBackupSection(context),
-
-                const SizedBox(height: 12),
-
-                // Logout Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      AudioManager().playClick();
-                      Navigator.pop(context);
-                      await ProfileManager.instance.logout();
-                      widget.onLogoutRequested();
-                    },
-                    icon: const Icon(Icons.logout, size: 16),
-                    label: Text(
-                      'LOGOUT SESSION',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            letterSpacing: 2,
-                            fontSize: 13,
-                          ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
-                      foregroundColor: Colors.redAccent,
-                      side: BorderSide(
-                        color: Colors.redAccent.withValues(alpha: 0.3),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -319,7 +308,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
   Color _getStatusColor() {
     if (_player?.isBannedPermanent ?? false) return Colors.red;
     if (_player?.isMuted ?? false) return Colors.orange;
-    return Colors.purpleAccent;
+    return Colors.blueAccent;
   }
 
   Widget _buildBackupSection(BuildContext context) {

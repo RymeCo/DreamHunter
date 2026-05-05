@@ -133,14 +133,10 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
                   children: [
                     Text(
                       entry['name'] ?? 'Unknown',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    Text(
-                      'Account age: ${_formatDate(entry['createdAt'])}',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.4),
-                            fontSize: 10,
-                          ),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ],
                 ),
