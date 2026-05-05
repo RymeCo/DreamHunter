@@ -82,6 +82,11 @@ class MatchManager extends ChangeNotifier {
   final List<bool> _hunterAliveStatus = [true];
   List<bool> get hunterAliveStatus => List.unmodifiable(_hunterAliveStatus);
 
+  /// Cached list of beds that are neither occupied nor reserved.
+  /// Optimized for O(1) AI lookup.
+  final List<String> _availableBeds = [];
+  List<String> get availableBeds => _availableBeds;
+
   /// Centralized Target Registry for Monster AI (Key: Target ID/Room ID)
   /// Tracks the "value" of a target to help the monster make strategic decisions.
   final Map<String, _TargetValue> _targetRegistry = {};
@@ -172,6 +177,7 @@ class MatchManager extends ChangeNotifier {
     _isForfeited = false;
     _isRewardsDoubled = false;
     _adUpgradesUsed = 0;
+    _availableBeds.clear();
 
     _hunterAliveStatus.clear();
     _hunterAliveStatus.add(true); // Player
@@ -268,6 +274,20 @@ class MatchManager extends ChangeNotifier {
     if (_matchEnded) return;
     _playerKilledMonster = true;
     _matchEnded = true;
+  }
+
+  /// Registers or updates a bed's status in the available cache.
+  void updateBedAvailability(String roomID, bool isAvailable) {
+    if (isAvailable) {
+      if (!_availableBeds.contains(roomID)) {
+        _availableBeds.add(roomID);
+        _safeNotify(notifyListeners);
+      }
+    } else {
+      if (_availableBeds.remove(roomID)) {
+        _safeNotify(notifyListeners);
+      }
+    }
   }
 
   /// Calculates the reward based on performance.

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
 import 'package:dreamhunter/game/dream_hunter_game.dart';
+import 'package:dreamhunter/game/entities/bed_entity.dart';
+import 'package:dreamhunter/services/game/match_manager.dart';
 
 /// The simplest possible movement behavior.
 /// AI follows its target bed's Flow Field (Gravity Map) using a smooth gradient.
@@ -126,29 +128,41 @@ class HunterMovementBehavior extends Component
     // 1. Cleanup old reservation immediately
     if (parent.targetBed.reservedBy == parent) {
       parent.targetBed.reservedBy = null;
+      MatchManager.instance.updateBedAvailability(parent.targetBed.roomID, true);
     }
 
-    // 2. Find ANY currently empty and unreserved beds (SIMPLIFIED)
-    final otherBeds = game.roomBeds.values
-        .where((b) => b != parent.targetBed && !b.isOccupied && b.reservedBy == null)
-        .toList();
+    // 2. O(1) Lookup: Use pre-cached available beds from MatchManager
+    final availableIDs = MatchManager.instance.availableBeds;
 
-    if (otherBeds.isNotEmpty) {
-      // Find nearest
-      otherBeds.sort((a, b) => 
-        parent.position.distanceToSquared(a.position).compareTo(
-        parent.position.distanceToSquared(b.position))
-      );
-      
-      parent.repathCount++;
-      parent.targetBed = otherBeds[0];
-      parent.targetBed.reservedBy = parent;
-      
-      debugPrint('[AI] ${parent.skinPath} switched bed to room: ${parent.targetBed.roomID}');
-    } else {
-      // 3. Last Resort: Wander
-      _wanderToHallway();
+    if (availableIDs.isNotEmpty) {
+      // Find nearest by iterating only over available IDs (Fast O(N) where N is small)
+      BedEntity? bestBed;
+      double minDist = double.infinity;
+
+      for (final id in availableIDs) {
+        final bed = game.roomBeds[id];
+        if (bed == null) continue;
+        
+        final dist = parent.position.distanceToSquared(bed.position);
+        if (dist < minDist) {
+          minDist = dist;
+          bestBed = bed;
+        }
+      }
+
+      if (bestBed != null) {
+        parent.repathCount++;
+        parent.targetBed = bestBed;
+        parent.targetBed.reservedBy = parent;
+        MatchManager.instance.updateBedAvailability(bestBed.roomID, false);
+        
+        debugPrint('[AI] ${parent.skinPath} targeted: ${parent.targetBed.roomID}');
+        return;
+      }
     }
+    
+    // 3. Last Resort: Wander
+    _wanderToHallway();
   }
 
   void _wanderToHallway() {

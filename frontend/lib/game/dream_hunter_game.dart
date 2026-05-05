@@ -592,6 +592,8 @@ class DreamHunterGame extends FlameGame
     field[targetX][targetY] = 0;
 
     while (queue.isNotEmpty) {
+      // Find node with lowest distance (Dijkstra)
+      queue.sort((a, b) => field[a.x][a.y].compareTo(field[b.x][b.y]));
       final curr = queue.removeAt(0);
       final dist = field[curr.x][curr.y];
 
@@ -603,13 +605,24 @@ class DreamHunterGame extends FlameGame
       ]) {
         final next = math.Point(curr.x + dir.x, curr.y + dir.y);
         if (next.x >= 0 && next.x < gridW && next.y >= 0 && next.y < gridH) {
-          if (!wallGrid[next.x][next.y] && field[next.x][next.y] == 9999) {
-            // Also stop at doors of other rooms
+          if (!wallGrid[next.x][next.y]) {
+            // WEIGHTED PENALTY:
+            // 1. Same room = 1
+            // 2. Hallway (empty roomID) = 2 (AI prefers staying in rooms/target path)
+            // 3. Foreign Room Door = 100 (Can exit, but won't enter as shortcut)
+            int weight = 1;
             final door = doorMap[next];
-            if (door != null && door.roomID != roomID) continue;
+            if (door != null && door.roomID != roomID) {
+              weight = 100;
+            } else if (getRoomIDAt(Vector2(next.x * 32.0, next.y * 32.0)).isEmpty) {
+              weight = 2;
+            }
 
-            field[next.x][next.y] = dist + 1;
-            queue.add(next);
+            final newDist = dist + weight;
+            if (newDist < field[next.x][next.y]) {
+              field[next.x][next.y] = newDist;
+              if (!queue.contains(next)) queue.add(next);
+            }
           }
         }
       }

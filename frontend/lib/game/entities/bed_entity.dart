@@ -61,6 +61,9 @@ class BedEntity extends BaseEntity with TapCallbacks {
     final sprite = await Sprite.load('game/economy/bed-32x32.png');
     add(SpriteComponent(sprite: sprite, size: size));
 
+    // Register availability
+    MatchManager.instance.updateBedAvailability(roomID, true);
+
     // Initialize popup text (Smaller font size: 8)
     _popupText = TextComponent(
       text: 'Sleep',
@@ -99,6 +102,9 @@ class BedEntity extends BaseEntity with TapCallbacks {
 
     // Remove popup text
     _popupText.removeFromParent();
+
+    // Update availability cache
+    MatchManager.instance.updateBedAvailability(roomID, false);
 
     // If the owner is the player, handle player-specific logic
     if (hunter.hasCategory('player')) {
@@ -268,6 +274,7 @@ class BedEntity extends BaseEntity with TapCallbacks {
       // we reserve this bed for them to prevent AI from stealing it.
       if (reservedBy == null || reservedBy!.hasCategory('ai_hunter')) {
         reservedBy = game.player;
+        MatchManager.instance.updateBedAvailability(roomID, false);
       }
     } else {
       _popupAlpha = (_popupAlpha - dt * _fadeSpeed).clamp(0.0, 1.0);
@@ -275,6 +282,7 @@ class BedEntity extends BaseEntity with TapCallbacks {
       // If player moves away, release the reservation so AI can use it
       if (reservedBy == game.player) {
         reservedBy = null;
+        MatchManager.instance.updateBedAvailability(roomID, true);
       }
     }
 
