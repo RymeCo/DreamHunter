@@ -78,24 +78,31 @@ async def get_player_details(
         raise HTTPException(status_code=404, detail="Player not found")
     return doc.to_dict()
 
-@router.patch("/players/{player_uid}")
-async def update_player(
-    player_uid: str,
-    uid: str = Depends(get_admin_user),
-    data: dict = Body(...)
-):
-    """
-    Updates player stats or moderation status.
-    Irreversible changes; frontend must confirm first.
-    """
-    allowed_keys = [
-        "coins", "stones", "level", "role",
-        "isBannedPermanent", "isBannedFromChat", "isBannedFromLeaderboard"
-    ]
-    
-    update_data = {k: v for k, v in data.items() if k in allowed_keys}
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No valid update fields provided")
+from routes.chat import manager
 
-    db.collection("players").document(player_uid).set(update_data, merge=True)
-    return {"status": "success", "updated": list(update_data.keys())}
+@router.get("/system/health")
+async def get_system_health(uid: str = Depends(get_admin_user)):
+    """
+    Fetches basic system metrics.
+    0-cost mindset: Only triggered manually by admins.
+    """
+    # 1. Registration Count (Rough estimate via Firestore metadata or collection stats)
+    # Note: For absolute 0-cost, we could use a counter, but for small-medium scale, 
+    # aggregation queries are efficient.
+    try:
+        # This is a metadata-only operation in many cases or a low-cost aggregation
+        player_count = db.collection("players").count().get()[0][0].value
+    except Exception:
+        player_count = "Unknown"
+
+    # 2. Live Connections (From memory manager - 0 cost)
+    active_chats = sum(len(conns) for conns in manager.active_connections.values())
+    regions_active = len([r for r, c in manager.active_connections.items() if len(c) > 0])
+
+    return {
+        "status": "online",
+        "totalPlayers": player_count,
+        "activeChatConnections": active_chats,
+        "activeRegions": regions_active,
+        "timestamp": datetime.now().isoformat()
+    }
