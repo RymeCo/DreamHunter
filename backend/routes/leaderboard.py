@@ -38,3 +38,20 @@ async def manual_refresh(uid: str = Depends(get_admin_user)):
         return PlayerService.refresh_leaderboards()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/clear", include_in_schema=False)
+async def clear_leaderboard(
+    metric: str, # "level" or "coins"
+    uid: str = Depends(get_admin_user)
+):
+    """
+    Clears the specified leaderboard metric in the cache.
+    Only accessible to admins.
+    """
+    if metric not in ["level", "coins"]:
+        raise HTTPException(status_code=400, detail="Invalid metric. Use 'level' or 'coins'.")
+    
+    try:
+        return PlayerService.clear_leaderboard(metric)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

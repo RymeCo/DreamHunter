@@ -116,6 +116,61 @@ class _SettingsViewState extends State<SettingsView> {
     }
   }
 
+  Future<void> _clearLeaderboard(String metric) async {
+    setState(() => _isRefreshing = true);
+    try {
+      final response = await _api.post('/leaderboard/clear?metric=$metric');
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Leaderboard for $metric cleared!')),
+          );
+        }
+      } else {
+        throw Exception('Server returned ${response.statusCode}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to clear leaderboard: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isRefreshing = false);
+    }
+  }
+
+  void _showClearLeaderboardDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Leaderboard'),
+        content: const Text(
+            'Which metric do you want to clear? This will reset the rankings for all players in that category.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _clearLeaderboard('level');
+            },
+            child: const Text('Reset Levels', style: TextStyle(color: Colors.orange)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _clearLeaderboard('coins');
+            },
+            child: const Text('Reset Coins', style: TextStyle(color: Colors.orange)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -219,6 +274,24 @@ class _SettingsViewState extends State<SettingsView> {
                       )
                     : const Icon(Icons.refresh),
                 label: Text(_isRefreshing ? 'Refreshing...' : 'Force Leaderboard Refresh'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              width: 280,
+              child: OutlinedButton.icon(
+                onPressed: _isRefreshing || _leaderboardPaused ? null : _showClearLeaderboardDialog,
+                icon: const Icon(Icons.delete_sweep, color: Colors.orange),
+                label: const Text('Clear Leaderboard Cache'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(

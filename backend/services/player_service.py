@@ -55,6 +55,29 @@ class PlayerService:
         return {"lastUpdated": "", "topLevels": [], "topCoins": []}
 
     @staticmethod
+    def clear_leaderboard(metric: str) -> dict:
+        """
+        Resets the specified leaderboard list in the cache document.
+        """
+        doc_ref = db.collection("system").document("leaderboard")
+        doc = doc_ref.get()
+        
+        data = doc.to_dict() if doc.exists else {
+            "lastUpdated": "",
+            "topLevels": [],
+            "topCoins": []
+        }
+        
+        if metric == "level":
+            data["topLevels"] = []
+        elif metric == "coins":
+            data["topCoins"] = []
+            
+        data["lastUpdated"] = datetime.now().isoformat()
+        doc_ref.set(data)
+        return data
+
+    @staticmethod
     def refresh_leaderboards():
         """
         Scans all players and updates the cached leaderboard document.
