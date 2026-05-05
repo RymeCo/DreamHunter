@@ -18,14 +18,24 @@ class _PauseDialogState extends State<PauseDialog> {
     return StandardGlassPage(
       title: 'PAUSED',
       isCentered: true,
-      width: 320,
-      height: 400,
+      isCompact: true,
+      width: 240,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       footer: [
+        GlassButton(
+          label: 'RESUME',
+          width: double.infinity,
+          height: 40,
+          borderRadius: 10,
+          glowColor: Colors.cyanAccent,
+          onTap: () => Navigator.pop(context),
+        ),
+        const SizedBox(height: 10),
         GlassButton(
           label: 'QUIT GAME',
           width: double.infinity,
-          height: 45,
-          borderRadius: 12,
+          height: 36,
+          borderRadius: 10,
           glowColor: Colors.redAccent,
           hoverColor: Colors.redAccent.withValues(alpha: 0.15),
           hoverBorderColor: Colors.redAccent,
@@ -35,14 +45,14 @@ class _PauseDialogState extends State<PauseDialog> {
             Navigator.pop(context, 'quit');
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Center(
           child: Text(
             'THE DREAM IS FROZEN.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.white24,
               letterSpacing: 2,
-              fontSize: 10,
+              fontSize: 8,
             ),
           ),
         ),
@@ -50,7 +60,6 @@ class _PauseDialogState extends State<PauseDialog> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 16),
           // Audio Controls Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -66,6 +75,7 @@ class _PauseDialogState extends State<PauseDialog> {
                   setState(() {});
                 },
               ),
+              const SizedBox(width: 12),
               _buildAudioToggle(
                 icon: _audioManager.isSoundMuted
                     ? Icons.volume_off_rounded
@@ -79,6 +89,7 @@ class _PauseDialogState extends State<PauseDialog> {
               ),
             ],
           ),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -91,22 +102,22 @@ class _PauseDialogState extends State<PauseDialog> {
     required VoidCallback onTap,
   }) {
     return GlassButton(
-      width: 120,
-      height: 80,
-      borderRadius: 16,
+      width: 90,
+      height: 60,
+      borderRadius: 12,
       onTap: onTap,
-      glowColor: isMuted ? Colors.white24 : Colors.cyanAccent,
+      glowColor: isMuted ? Colors.white10 : Colors.white30,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: isMuted ? Colors.white24 : Colors.white, size: 24),
-          const SizedBox(height: 8),
+          Icon(icon, color: isMuted ? Colors.white24 : Colors.white70, size: 20),
+          const SizedBox(height: 4),
           Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: isMuted ? Colors.white24 : Colors.white70,
-              fontSize: 10,
-              letterSpacing: 1.5,
+              color: isMuted ? Colors.white12 : Colors.white54,
+              fontSize: 8,
+              letterSpacing: 1.0,
             ),
           ),
         ],

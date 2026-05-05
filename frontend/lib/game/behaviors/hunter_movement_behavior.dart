@@ -11,11 +11,14 @@ class HunterMovementBehavior extends Component
   /// AI Speed is 80.0 (Slower than the player's 150.0 base speed)
   final double speed = 80.0;
 
+  double _repathCooldown = 0;
+
   @override
   void update(double dt) {
     super.update(dt);
 
     if (parent.isSleeping) return;
+    if (_repathCooldown > 0) _repathCooldown -= dt;
 
     // 1. RE-PATHING LOGIC: Check if target bed was stolen or if we are homeless
     if (parent.targetBed.isOccupied && parent.targetBed.owner != parent) {
@@ -64,12 +67,6 @@ class HunterMovementBehavior extends Component
       return;
     }
 
-    if (bestDist >= 9999) {
-      debugPrint('[AI] ${parent.skinPath} stuck in unreachable tile. Re-pathing...');
-      _findNewBed();
-      return;
-    }
-
     Vector2? targetCenter;
     for (final dir in [
       const math.Point(1, 0),
@@ -113,6 +110,13 @@ class HunterMovementBehavior extends Component
         parent.scale.x = -1;
       } else if (direction.x > 0.1) {
         parent.scale.x = 1;
+      }
+    } else if (bestDist >= 9999) {
+      // ONLY re-path if we are stuck AND have no valid neighbors (targetCenter == null)
+      if (_repathCooldown <= 0) {
+        debugPrint('[AI] ${parent.skinPath} truly stuck. Re-pathing...');
+        _findNewBed();
+        _repathCooldown = 1.0; // Prevent spam
       }
     }
   }
