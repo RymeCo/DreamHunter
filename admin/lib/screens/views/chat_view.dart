@@ -49,14 +49,18 @@ class _ChatViewState extends State<ChatView> {
   void _disconnect() {
     _channel?.sink.close();
     _channel = null;
-    if (mounted) setState(() => _isConnected = false);
+    // CRITICAL FIX: Ensure widget is still in the tree before updating state during disposal
+    if (mounted) {
+      setState(() => _isConnected = false);
+    }
   }
 
   Future<void> _connect() async {
     _disconnect();
     
     final token = await _api.getIdToken();
-    if (token == null) return;
+    // Check if still mounted after async gap
+    if (token == null || !mounted) return;
 
     final wsUrl = ApiGateway.baseUrl
         .replaceFirst('https://', 'wss://')
@@ -66,13 +70,16 @@ class _ChatViewState extends State<ChatView> {
     
     try {
       _channel = WebSocketChannel.connect(uri);
-      setState(() {
-        _isConnected = true;
-        _messages = [];
-      });
+      if (mounted) {
+        setState(() {
+          _isConnected = true;
+          _messages = [];
+        });
+      }
 
       _channel!.stream.listen(
         (data) {
+          if (!mounted) return;
           final json = jsonDecode(data);
           final message = ChatMessage.fromJson(json);
           setState(() {
