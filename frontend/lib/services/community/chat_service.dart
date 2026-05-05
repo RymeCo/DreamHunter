@@ -109,6 +109,15 @@ class ChatService {
         (data) {
           try {
             final json = jsonDecode(data);
+            
+            // Handle global message deletion (Censorship)
+            if (json['type'] == 'delete') {
+              final targetId = json['targetId'];
+              _messageBuffer.removeWhere((m) => m.id == targetId);
+              _messageController.add(List.from(_messageBuffer));
+              return;
+            }
+
             final message = ChatMessage.fromJson(json);
 
             // Deduplication

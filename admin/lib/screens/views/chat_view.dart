@@ -84,6 +84,15 @@ class _ChatViewState extends State<ChatView> {
         (data) {
           if (!mounted || _isDisposed) return;
           final json = jsonDecode(data);
+          
+          if (json['type'] == 'delete') {
+            final targetId = json['targetId'];
+            setState(() {
+              _messages.removeWhere((m) => m.id == targetId);
+            });
+            return;
+          }
+
           final message = ChatMessage.fromJson(json);
           setState(() {
             _messages.add(message);
@@ -105,6 +114,17 @@ class _ChatViewState extends State<ChatView> {
     }
   }
 
+  Future<void> _censorMessageGlobal(String messageId) async {
+    if (_channel == null) return;
+    
+    final payload = {
+      'type': 'delete',
+      'targetId': messageId,
+    };
+    
+    _channel!.sink.add(jsonEncode(payload));
+  }
+
   void _showModerationMenu(ChatMessage message) {
     showModalBottomSheet(
       context: context,
@@ -114,13 +134,22 @@ class _ChatViewState extends State<ChatView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
+                leading: const Icon(Icons.delete_forever, color: Colors.red),
+                title: const Text('Censor Globally', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                subtitle: const Text('Remove message for ALL players'),
+                onTap: () {
+                  _censorMessageGlobal(message.id);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.visibility_off),
                 title: Text(
                   _censoredMessages.contains(message.id)
-                      ? 'Uncensor Message'
-                      : 'Censor Message',
+                      ? 'Unhide Locally'
+                      : 'Hide Locally',
                 ),
-                subtitle: const Text('Hide this message for your view'),
+                subtitle: const Text('Hide only for your admin view'),
                 onTap: () {
                   setState(() {
                     if (_censoredMessages.contains(message.id)) {
@@ -142,76 +171,11 @@ class _ChatViewState extends State<ChatView> {
                   _showEditPlayer(message.senderId);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.block, color: Colors.orange),
-                title: const Text(
-                  'Quick Mute',
-                  style: TextStyle(color: Colors.orange),
-                ),
-                subtitle: const Text('Restrict chat permissions'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _quickAction(message.senderId, {'isBannedFromChat': true});
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.gavel, color: Colors.red),
-                title: const Text(
-                  'Permanent Ban',
-                  style: TextStyle(color: Colors.red),
-                ),
-                subtitle: const Text('Restrict all account access'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _quickAction(message.senderId, {'isBannedPermanent': true});
-                },
-              ),
             ],
           ),
         );
       },
     );
-  }
-
-  Future<void> _quickAction(String uid, Map<String, dynamic> data) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Action'),
-        content: Text(
-          'Are you sure you want to apply this restriction to user $uid?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Confirm', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    try {
-      final response = await _api.patch('/admin/players/$uid', body: data);
-      if (mounted && response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Moderation action applied successfully.'),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to apply action: $e')));
-      }
-    }
   }
 
   Future<void> _showEditPlayer(String uid) async {

@@ -20,6 +20,7 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
   late int _level;
   late bool _isBannedPermanent;
   late bool _isBannedFromChat;
+  late bool _isBannedFromLeaderboard;
   late String? _muteUntil;
   late String? _banUntil;
   late String _role;
@@ -32,6 +33,7 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
     _level = widget.player['level'] ?? 1;
     _isBannedPermanent = widget.player['isBannedPermanent'] ?? false;
     _isBannedFromChat = widget.player['isBannedFromChat'] ?? false;
+    _isBannedFromLeaderboard = widget.player['isBannedFromLeaderboard'] ?? false;
     _muteUntil = widget.player['muteUntil'];
     _banUntil = widget.player['banUntil'];
     _role = widget.player['role'] ?? 'player';
@@ -220,6 +222,16 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
                 child: const Text('Mute'),
               ),
             ),
+
+            const Divider(),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Hide from Leaderboard'),
+              subtitle: const Text('Remove from rankings (Level/Coins).'),
+              value: _isBannedFromLeaderboard,
+              onChanged: (v) => setState(() => _isBannedFromLeaderboard = v),
+              activeThumbColor: Colors.orange,
+            ),
           ],
         ),
       ),
@@ -237,6 +249,7 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
               'role': _role,
               'isBannedPermanent': _isBannedPermanent,
               'isBannedFromChat': _isBannedFromChat,
+              'isBannedFromLeaderboard': _isBannedFromLeaderboard,
               'muteUntil': _muteUntil,
               'banUntil': _banUntil,
             });

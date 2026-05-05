@@ -39,12 +39,18 @@ class ConnectionManager:
                 pass
 
     async def broadcast(self, message: dict, region: str):
-        if region not in self.history:
-            self.history[region] = []
-        
-        self.history[region].append(message)
-        if len(self.history[region]) > 50:
-            self.history[region].pop(0)
+        # Handle message deletion/censorship
+        if message.get("type") == "delete":
+            target_id = message.get("targetId")
+            if region in self.history:
+                self.history[region] = [m for m in self.history[region] if m.get("id") != target_id]
+        else:
+            if region not in self.history:
+                self.history[region] = []
+            
+            self.history[region].append(message)
+            if len(self.history[region]) > 50:
+                self.history[region].pop(0)
 
         if region in self.active_connections:
             stale_connections = []
@@ -69,6 +75,12 @@ async def websocket_endpoint(websocket: WebSocket, region: str, token: str = Que
     try:
         decoded_token = auth_client.verify_id_token(token)
         uid = decoded_token['uid']
+        
+        # Check if user is admin (optional: cache this)
+        from core.firebase import db
+        user_doc = db.collection("players").document(uid).get()
+        is_admin = user_doc.exists and user_doc.to_dict().get("role") == "admin"
+        
     except Exception as e:
         print(f"Auth error: {e}")
         await websocket.close(code=1008) # Policy Violation
@@ -80,10 +92,15 @@ async def websocket_endpoint(websocket: WebSocket, region: str, token: str = Que
             data = await websocket.receive_text()
             message_data = ujson.loads(data)
             
+            # Security: Only admins can delete/censor
+            if message_data.get("type") == "delete" and not is_admin:
+                continue
+
             message_data["senderId"] = uid
             
             message_data["timestamp"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
-            message_data["id"] = f"msg_{int(datetime.datetime.now().timestamp() * 1000)}"
+            if "id" not in message_data:
+                message_data["id"] = f"msg_{int(datetime.datetime.now().timestamp() * 1000)}"
             message_data["region"] = region
             
             await manager.broadcast(message_data, region)
