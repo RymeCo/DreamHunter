@@ -20,10 +20,19 @@ class _ChatViewState extends State<ChatView> {
   
   WebSocketChannel? _channel;
   List<ChatMessage> _messages = [];
-  String _selectedRegion = 'english';
+  String _selectedRegion = 'global';
   bool _isConnected = false;
 
-  final List<String> _regions = ['english', 'global', 'lobby', 'trade'];
+  final List<String> _regions = [
+    'global',
+    'english',
+    'tagalog',
+    'chinese',
+    'russian',
+    'spanish',
+    'lobby',
+    'trade'
+  ];
 
   @override
   void initState() {

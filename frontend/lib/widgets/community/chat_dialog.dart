@@ -28,9 +28,11 @@ class _ChatDialogState extends State<ChatDialog> {
 
   final Map<String, String> _regions = {
     'global': '🌐 Global',
-    'lobby': '🏠 Lobby',
-    'trade': '💰 Trade',
     'english': '🇺🇸 English',
+    'tagalog': '🇵🇭 Tagalog',
+    'chinese': '🇨🇳 中文',
+    'russian': '🇷🇺 Русский',
+    'spanish': '🇪🇸 Español',
   };
 
   @override
