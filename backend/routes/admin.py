@@ -2,8 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Body, status
 from typing import List, Optional
 from core.security import get_admin_user
 from core.firebase import db, auth_client
+from datetime import datetime
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+def _format_player_summary(p: dict):
+    """Helper to ensure consistent search result structure."""
+    return {
+        "uid": p.get("uid"),
+        "name": p.get("name"),
+        "email": p.get("email"),
+        "level": p.get("level", 1),
+        "role": p.get("role", "player")
+    }
 
 @router.get("/players/search")
 async def search_players(
@@ -14,56 +25,41 @@ async def search_players(
     Searches for players by name, UID, or Email.
     Uses Firebase Auth for O(0-cost) email lookup when possible.
     """
-    results = []
+    results = {} # Use dict to deduplicate by UID automatically
     
-    # 1. Search by exact UID
+    # 1. Search by exact UID (O(1) read)
     uid_doc = db.collection("players").document(q).get()
     if uid_doc.exists:
         p = uid_doc.to_dict()
-        results.append({
-            "uid": p.get("uid"),
-            "name": p.get("name"),
-            "email": p.get("email"),
-            "level": p.get("level", 1),
-            "role": p.get("role", "player")
-        })
+        results[p["uid"]] = _format_player_summary(p)
 
-    # 2. Search by exact Email (O(1) with Auth API - 0 cost)
-    if "@" in q:
+    # 2. Search by exact Email (O(1) with Auth API - 0 Firestore read for Auth)
+    if "@" in q and len(results) < 20:
         try:
             user = auth_client.get_user_by_email(q)
-            if not any(r["uid"] == user.uid for r in results):
+            if user.uid not in results:
                 p_doc = db.collection("players").document(user.uid).get()
                 if p_doc.exists:
-                    p = p_doc.to_dict()
-                    results.append({
-                        "uid": p.get("uid"),
-                        "name": p.get("name"),
-                        "email": p.get("email"),
-                        "level": p.get("level", 1),
-                        "role": p.get("role", "player")
-                    })
+                    results[user.uid] = _format_player_summary(p_doc.to_dict())
         except Exception:
             pass # Email not found in Auth
 
-    # 3. Search by Name (Prefix Search)
-    name_query = db.collection("players") \
-        .where("name", ">=", q) \
-        .where("name", "<=", q + "\uf8ff") \
-        .limit(20).stream()
-    
-    for doc in name_query:
-        p = doc.to_dict()
-        if not any(r["uid"] == p.get("uid") for r in results):
-            results.append({
-                "uid": p.get("uid"),
-                "name": p.get("name"),
-                "email": p.get("email"),
-                "level": p.get("level", 1),
-                "role": p.get("role", "player")
-            })
+    # 3. Search by Name (Prefix Search - Lazy)
+    if len(results) < 20:
+        name_query = db.collection("players") \
+            .where("name", ">=", q) \
+            .where("name", "<=", q + "\uf8ff") \
+            .limit(20).stream()
+        
+        for doc in name_query:
+            p = doc.to_dict()
+            if p["uid"] not in results:
+                results[p["uid"]] = _format_player_summary(p)
+                if len(results) >= 20: break
 
-    return results
+    # Convert to list and sort by name
+    sorted_results = sorted(results.values(), key=lambda x: x["name"].lower())
+    return sorted_results
 
 @router.get("/players/{player_uid}", response_model=PlayerModel)
 async def get_player_details(
