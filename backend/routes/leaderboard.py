@@ -12,10 +12,17 @@ async def get_leaderboard():
     """
     return PlayerService.get_leaderboard_cache()
 
+@router.get("/health")
+async def health_check():
+    return {"status": "ok", "message": "Leaderboard router is active"}
+
 @router.post("/refresh", include_in_schema=False)
 async def manual_refresh():
     """
     Internal endpoint to force a refresh.
     Temporarily unprotected for manual trigger.
     """
-    return PlayerService.refresh_leaderboards()
+    try:
+        return PlayerService.refresh_leaderboards()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
