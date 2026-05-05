@@ -60,67 +60,109 @@ class _SettingsDialogState extends State<SettingsDialog> {
       context: context,
       barrierLabel: "AboutDialog",
       barrierDismissible: true,
-      barrierColor: Colors.black87,
-      transitionDuration: const Duration(milliseconds: 300),
+      barrierColor: Colors.black92,
+      transitionDuration: const Duration(milliseconds: 400),
       pageBuilder: (context, animation, secondaryAnimation) {
         return StandardGlassPage(
-          title: 'ABOUT',
-          width: 320,
-          height: 480,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 20),
-              // Logo Ryme Section
-              Container(
-                width: 80,
-                height: 80,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white10,
-                  borderRadius: BorderRadius.circular(20),
+          title: 'CREDITS',
+          width: 340,
+          height: 520,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 32),
+                // Hero Branding Section
+                Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.03),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.cyanAccent.withValues(alpha: 0.1),
+                        blurRadius: 40,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: const AppLogo(size: 110),
                 ),
-                child: Image.asset(
+                const SizedBox(height: 24),
+                Text(
+                  'DREAMHUNTER',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        letterSpacing: 8,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                ),
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.cyanAccent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.2)),
+                  ),
+                  child: Text(
+                    'VERSION 1.0.0',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.cyanAccent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                
+                // Mission / Blurb Section
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'Experience the ultimate dark fantasy hunt. A fusion of smooth retro aesthetics and modern survival mechanics.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          height: 1.6,
+                          fontStyle: FontStyle.italic,
+                        ),
+                  ),
+                ),
+                
+                const SizedBox(height: 48),
+                
+                // Studio Branding Section
+                Text(
+                  'PUBLISHED BY',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colors.white24,
+                        letterSpacing: 3,
+                        fontSize: 8,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                Image.asset(
                   'assets/images/branding/ryme_logo.png',
+                  height: 32,
+                  color: Colors.white.withValues(alpha: 0.8),
                   fit: BoxFit.contain,
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'DREAMHUNTER',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      letterSpacing: 4,
-                      fontSize: 18,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'VERSION 1.0.0',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.cyanAccent,
-                      fontSize: 10,
-                      letterSpacing: 2,
-                    ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'A technical co-founder project built with Flutter & Flame.\n\nExperience the thrill of the hunt in a dark fantasy world.',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      height: 1.5,
-                    ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                '© 2026 RYME STUDIOS',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      fontSize: 10,
-                    ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                Text(
+                  '© 2026 RYME STUDIOS',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        fontSize: 9,
+                        letterSpacing: 1,
+                      ),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         );
       },
