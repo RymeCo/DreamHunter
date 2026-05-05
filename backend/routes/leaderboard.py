@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from core.security import get_current_user
 from services.player_service import PlayerService
 from models.player import LeaderboardCache
+from services.settings_service import settings_service
 
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 
@@ -10,6 +11,8 @@ async def get_leaderboard():
     """
     Fetches the daily cached leaderboard.
     """
+    if settings_service.get_settings().get("leaderboard_paused", False):
+        raise HTTPException(status_code=503, detail="LEADERBOARD_PAUSED")
     return PlayerService.get_leaderboard_cache()
 
 @router.get("/health")
