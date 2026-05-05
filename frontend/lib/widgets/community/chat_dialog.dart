@@ -19,7 +19,7 @@ class ChatDialog extends StatefulWidget {
 class _ChatDialogState extends State<ChatDialog> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  String _selectedRegion = 'english';
+  String _selectedRegion = 'global';
   Map<String, dynamic>? _announcement;
 
   // Power Saver Logic
@@ -27,11 +27,10 @@ class _ChatDialogState extends State<ChatDialog> {
   bool _isSleeping = false;
 
   final Map<String, String> _regions = {
+    'global': '🌐 Global',
+    'lobby': '🏠 Lobby',
+    'trade': '💰 Trade',
     'english': '🇺🇸 English',
-    'spanish': '🇪🇸 Español',
-    'chinese': '🇨🇳 中文',
-    'russian': '🇷🇺 Русский',
-    'tagalog': '🇵🇭 Tagalog',
   };
 
   @override
