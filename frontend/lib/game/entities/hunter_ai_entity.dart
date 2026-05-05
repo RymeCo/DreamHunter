@@ -18,6 +18,7 @@ enum AISpeed { fast, slow, glacier }
 class HunterAIEntity extends BaseEntity {
   final String skinPath;
   BedEntity targetBed;
+  final List<BedEntity> preferredBeds = [];
   late final SpriteComponent _spriteComponent;
   late final Sprite _sleepingSprite;
   late final TextComponent _walletLabel;
@@ -50,7 +51,19 @@ class HunterAIEntity extends BaseEntity {
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Load the sprite
+    // 1. Initialize Preferred Beds (The "Backup Map")
+    // Since the map is static, we calculate the nearest beds once at spawn.
+    // We store the 5 closest beds as our backup plan for O(1) recovery.
+    final allBeds = game.roomBeds.values.toList();
+    allBeds.sort((a, b) => 
+      position.distanceToSquared(a.position).compareTo(
+      position.distanceToSquared(b.position))
+    );
+    
+    // The closest bed is our primary target, so skip it and take the next 5
+    preferredBeds.addAll(allBeds.where((b) => b != targetBed).take(5));
+
+    // 2. Load the visual representation
     final imagePath = skinPath.replaceFirst('assets/images/', '');
     final sprite = await Sprite.load(imagePath);
 

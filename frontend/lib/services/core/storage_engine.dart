@@ -187,11 +187,30 @@ class StorageEngine {
     } catch (_) {}
     
     if (uid == null) return;
+    
+    // Clear the token cache specifically
+    await clearCachedToken();
+
     final keys = _p.getKeys();
     for (final key in keys) {
       if (key.startsWith('${uid}_')) {
         await _p.remove(key);
       }
     }
+  }
+
+  // --- Token Caching (Speed Optimization) ---
+  static const String _tokenCacheKey = 'cached_id_token';
+
+  Future<void> saveCachedToken(String token) async {
+    await _p.setString(_getScopedKey(_tokenCacheKey), token);
+  }
+
+  String? getCachedToken() {
+    return _p.getString(_getScopedKey(_tokenCacheKey));
+  }
+
+  Future<void> clearCachedToken() async {
+    await _p.remove(_getScopedKey(_tokenCacheKey));
   }
 }

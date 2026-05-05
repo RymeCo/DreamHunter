@@ -114,35 +114,49 @@ class HunterMovementBehavior extends Component
       parent.targetBed.reservedBy = null;
     }
 
-    // 2. Find ALL currently empty and unreserved beds
-    final otherBeds = game.world.children
-        .whereType<BedEntity>()
+    // 2. CHECK PREFERRED BACKUPS FIRST (The "Backup Map")
+    // This allows the AI to have a 'memory' of nearby rooms
+    for (final backup in parent.preferredBeds) {
+      if (!backup.isOccupied && backup.reservedBy == null) {
+        parent.repathCount++;
+        parent.targetBed = backup;
+        parent.targetBed.reservedBy = parent;
+        debugPrint('[AI] ${parent.skinPath} using BACKUP bed: ${parent.targetBed.roomID}');
+        return;
+      }
+    }
+
+    // 3. Fallback: Find ALL currently empty and unreserved beds if backups are full
+    final otherBeds = game.roomBeds.values
         .where((b) => !b.isOccupied && b.reservedBy == null)
         .toList();
 
     if (otherBeds.isNotEmpty) {
-      // Shuffle to prevent multiple AIs from instantly picking the same "nearest" one
-      otherBeds.shuffle();
+      // Sort by distance to find the NEAREST one
+      otherBeds.sort((a, b) => 
+        parent.position.distanceToSquared(a.position).compareTo(
+        parent.position.distanceToSquared(b.position))
+      );
       
       // Assign new bed
       parent.repathCount++;
       parent.targetBed = otherBeds[0];
       parent.targetBed.reservedBy = parent;
       
-      debugPrint('[AI] ${parent.skinPath} re-pathing to room ${parent.targetBed.roomID} (Attempt ${parent.repathCount})');
+      debugPrint('[AI] ${parent.skinPath} re-pathing to GLOBAL room ${parent.targetBed.roomID}');
     } else {
-      // If NO beds are unreserved, check if we can share a room with a reserved but empty bed
-      // (This is a fallback for crowded matches)
+      // 4. Last Resort: Race for any unoccupied bed even if reserved
       final unoccupiedBeds = game.world.children
           .whereType<BedEntity>()
           .where((b) => !b.isOccupied)
           .toList();
           
       if (unoccupiedBeds.isNotEmpty) {
-        unoccupiedBeds.shuffle();
+        unoccupiedBeds.sort((a, b) => 
+          parent.position.distanceToSquared(a.position).compareTo(
+          parent.position.distanceToSquared(b.position))
+        );
         parent.targetBed = unoccupiedBeds[0];
-        // Note: we don't set reservedBy here to avoid stealing it from another AI,
-        // we just race for it.
       } else {
         debugPrint('[ERROR] ${parent.skinPath}: No empty beds found! I am homeless.');
       }

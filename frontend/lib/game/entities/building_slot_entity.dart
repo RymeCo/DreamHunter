@@ -11,6 +11,7 @@ import 'package:dreamhunter/game/entities/ore_entity.dart';
 import 'package:dreamhunter/game/game_config.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/haptic_manager.dart';
+import 'package:dreamhunter/widgets/custom_snackbar.dart';
 
 /// A slot in a dorm room where building can be placed.
 /// Only visible and interactive if the player has claimed the room.
@@ -88,6 +89,20 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
   @override
   void onTapUp(TapUpEvent event) {
     if (!_isVisible) return;
+
+    // RESTRICTION: Only allow building if the player is sleeping (in bed)
+    if (!game.player.isSleeping) {
+      AudioManager.instance.playClick();
+      HapticManager.instance.light();
+      
+      // Feedback: Briefly inform the user they need to sleep first
+      showCustomSnackBar(
+        game.buildContext!,
+        'You must get to bed before building!',
+        type: SnackBarType.warning,
+      );
+      return;
+    }
 
     AudioManager.instance.playClick();
     HapticManager.instance.light();
