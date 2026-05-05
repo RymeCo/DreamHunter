@@ -54,57 +54,66 @@ class ChatService {
     _isConnecting = true;
 
     try {
-      // Get the ID token for security
-      developer.log('Fetching token for chat...', name: 'ChatService');
-      final token = await ApiGateway().getIdToken();
+      // 1. Get the ID token with a timeout to prevent hanging
+      developer.log('Step 1: Fetching token...', name: 'ChatService');
+      final token = await ApiGateway().getIdToken()
+          .timeout(const Duration(seconds: 5), onTimeout: () {
+            developer.log('Token fetch timed out!', name: 'ChatService');
+            return null;
+          });
       
       if (token == null) {
-        developer.log('No token found, chat cannot connect.', name: 'ChatService');
+        developer.log('Step 1 Failed: No token available.', name: 'ChatService');
         _isConnecting = false;
         return;
       }
 
-      // Convert https://.../api to wss://.../api/ws/chat/region?token=...
+      // 2. Prepare WebSocket URL
       final wsUrl = ApiGateway.baseUrl
           .replaceFirst('https://', 'wss://')
           .replaceFirst('http://', 'ws://');
       
       final uri = Uri.parse('$wsUrl/ws/chat/$region?token=$token');
+      developer.log('Step 2: Connecting to $uri', name: 'ChatService');
 
-      developer.log('Connecting to WebSocket: $uri', name: 'ChatService');
+      // 3. Connect to WebSocket
       _channel = WebSocketChannel.connect(uri);
+      
+      // We must wait for the connection to be established to know if it succeeded
+      // But WebSocketChannel.connect is lazy. The handshake happens on the first listen.
       
       _channel!.stream.listen(
         (data) {
-          final json = jsonDecode(data);
-          final message = ChatMessage.fromJson(json);
-          
-          // Deduplication: Only add if message ID isn't already in buffer
-          if (!_messageBuffer.any((m) => m.id == message.id)) {
-            _messageBuffer.add(message);
+          try {
+            final json = jsonDecode(data);
+            final message = ChatMessage.fromJson(json);
             
-            // Sort by timestamp to ensure history and live messages are in order
-            _messageBuffer.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-            
-            if (_messageBuffer.length > 50) {
-              _messageBuffer.removeAt(0);
+            // Deduplication
+            if (!_messageBuffer.any((m) => m.id == message.id)) {
+              _messageBuffer.add(message);
+              _messageBuffer.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+              if (_messageBuffer.length > 50) _messageBuffer.removeAt(0);
+              
+              _messageController.add(List.from(_messageBuffer));
             }
-            
-            _messageController.add(List.from(_messageBuffer));
+          } catch (e) {
+            developer.log('Step 3: Error decoding message: $data', error: e, name: 'ChatService');
           }
         },
         onError: (error) {
-          developer.log('WebSocket Error', error: error, name: 'ChatService');
+          developer.log('Step 3: WebSocket Stream Error', error: error, name: 'ChatService');
           _reconnect(region);
         },
         onDone: () {
-          developer.log('WebSocket Closed', name: 'ChatService');
+          developer.log('Step 3: WebSocket Stream Closed (onDone)', name: 'ChatService');
           _reconnect(region);
         },
       );
+      
+      developer.log('Step 4: Connection listener established.', name: 'ChatService');
       _isConnecting = false;
     } catch (e) {
-      developer.log('WebSocket Connection Failed', error: e, name: 'ChatService');
+      developer.log('Step 5: Connection sequence failed catastrophically', error: e, name: 'ChatService');
       _isConnecting = false;
       _reconnect(region);
     }
