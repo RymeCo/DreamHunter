@@ -6,24 +6,20 @@ import 'package:dreamhunter/services/game/match_manager.dart';
 
 /// A highly optimized Fog of War component that renders an entire room
 /// in a single batch using a Flutter Path.
-class RoomFogLayer extends PositionComponent with HasGameReference<DreamHunterGame> {
+class RoomFogLayer extends PositionComponent
+    with HasGameReference<DreamHunterGame> {
   final String roomID;
   final Set<math.Point<int>> tiles;
-  
+
   double _opacity = 0.85;
   bool _isBloody = false;
   double _deathTimer = 0.0;
-  
+
   late final Path _path;
   late final Paint _paint;
 
-  RoomFogLayer({
-    required this.roomID,
-    required this.tiles,
-  }) : super(
-          position: Vector2.zero(),
-          priority: 2200,
-        );
+  RoomFogLayer({required this.roomID, required this.tiles})
+    : super(position: Vector2.zero(), priority: 2200);
 
   @override
   void onLoad() {
@@ -32,7 +28,7 @@ class RoomFogLayer extends PositionComponent with HasGameReference<DreamHunterGa
     for (final tile in tiles) {
       _path.addRect(Rect.fromLTWH(tile.x * 32.0, tile.y * 32.0, 32.0, 32.0));
     }
-    
+
     _paint = Paint()
       ..color = const Color(0xFF1A1A1A).withValues(alpha: _opacity)
       ..style = PaintingStyle.fill;
@@ -96,8 +92,10 @@ class RoomFogLayer extends PositionComponent with HasGameReference<DreamHunterGa
       } else {
         _opacity = (_opacity - step).clamp(0, 0.85);
       }
-      
-      final Color baseColor = _isBloody ? const Color(0xFF220000) : const Color(0xFF1A1A1A);
+
+      final Color baseColor = _isBloody
+          ? const Color(0xFF220000)
+          : const Color(0xFF1A1A1A);
       _paint.color = baseColor.withValues(alpha: _opacity);
     }
   }

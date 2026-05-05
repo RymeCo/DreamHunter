@@ -189,17 +189,20 @@ class AIBuildBehavior extends Component
     if (myBuildings.isEmpty) return;
 
     for (final building in myBuildings) {
-      if (building is DoorEntity || building is BedEntity) continue; // Never sell core infrastructure
+      if (building is DoorEntity || building is BedEntity)
+        continue; // Never sell core infrastructure
 
       bool shouldDismantle = false;
 
       // 1. HP DENIAL: If a building is about to die and being attacked, sell it to deny XP and get coins back
       if (building.hp / building.maxHp < 0.15) {
-        final monstersNearby = game.monsters.any((m) => m.center.distanceTo(building.center) < 80);
+        final monstersNearby = game.monsters.any(
+          (m) => m.center.distanceTo(building.center) < 80,
+        );
         if (monstersNearby) {
           // Deny destruction XP!
-          if (parent.personality == AIPersonality.smart || 
-              parent.personality == AIPersonality.baiter || 
+          if (parent.personality == AIPersonality.smart ||
+              parent.personality == AIPersonality.baiter ||
               _random.nextBool()) {
             shouldDismantle = true;
           }
@@ -208,15 +211,17 @@ class AIBuildBehavior extends Component
 
       // 2. OPTIMIZATION: If we are low on coins but have energy (or vice-versa) and need a critical upgrade
       if (!shouldDismantle && parent.personality == AIPersonality.smart) {
-         // If we need coins for a Bed upgrade and have many generators
-         if (parent.matchCoins < 50 && building is GeneratorEntity) {
-            final genCount = myBuildings.whereType<GeneratorEntity>().length;
-            if (genCount > 2) shouldDismantle = true;
-         }
+        // If we need coins for a Bed upgrade and have many generators
+        if (parent.matchCoins < 50 && building is GeneratorEntity) {
+          final genCount = myBuildings.whereType<GeneratorEntity>().length;
+          if (genCount > 2) shouldDismantle = true;
+        }
       }
 
       if (shouldDismantle) {
-        debugPrint('[AI] Strategic Dismantle: AI ${parent.hunterIndex} selling ${building.runtimeType} in room ${parent.targetBed.roomID}');
+        debugPrint(
+          '[AI] Strategic Dismantle: AI ${parent.hunterIndex} selling ${building.runtimeType} in room ${parent.targetBed.roomID}',
+        );
         building.sell(owner: parent);
         _resetTimer();
         return;
@@ -246,10 +251,10 @@ class AIBuildBehavior extends Component
     for (final turret in myTurrets) {
       if (turret.level < bed.level) {
         if (parent.matchCoins >= (turret.level * 150)) {
-           // We check cost here to avoid spamming tryUpgrade and wasting cycles
-           turret.tryUpgrade(parent);
-           _resetTimer();
-           return true;
+          // We check cost here to avoid spamming tryUpgrade and wasting cycles
+          turret.tryUpgrade(parent);
+          _resetTimer();
+          return true;
         }
       }
     }
@@ -284,9 +289,13 @@ class AIBuildBehavior extends Component
         final nextGenUpgrade = GameConfig.generatorUpgrades[generator.level];
         if (nextGenUpgrade.requirementLabel != null) {
           // Generators usually require a Turret level
-          final myTurrets = game.turrets.whereType<TurretEntity>()
-              .where((t) => t.roomID == bed.roomID).toList();
-          int maxTurretLv = myTurrets.isEmpty ? 0 : myTurrets.map((t) => t.level).reduce(math.max);
+          final myTurrets = game.turrets
+              .whereType<TurretEntity>()
+              .where((t) => t.roomID == bed.roomID)
+              .toList();
+          int maxTurretLv = myTurrets.isEmpty
+              ? 0
+              : myTurrets.map((t) => t.level).reduce(math.max);
 
           final bool isMet = nextGenUpgrade.checkRequirement!(maxTurretLv);
           if (!isMet) {

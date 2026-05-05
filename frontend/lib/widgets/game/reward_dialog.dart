@@ -28,12 +28,15 @@ class RewardDialog extends StatelessWidget {
         final int totalXp = manager.calculateXP();
 
         // Stats Breakdown (These are base values for display)
-        final int survivalCoins =
-            isForfeited ? 0 : (manager.survivalTime / 15.0).floor().clamp(0, 20);
-        final int damageCoins =
-            isForfeited ? 0 : (manager.damageDealt / 50.0).floor().clamp(0, 20);
-        final int killBonus =
-            (isForfeited || !manager.playerKilledMonster) ? 0 : 10;
+        final int survivalCoins = isForfeited
+            ? 0
+            : (manager.survivalTime / 15.0).floor().clamp(0, 20);
+        final int damageCoins = isForfeited
+            ? 0
+            : (manager.damageDealt / 50.0).floor().clamp(0, 20);
+        final int killBonus = (isForfeited || !manager.playerKilledMonster)
+            ? 0
+            : 10;
 
         return StandardGlassPage(
           title: title,
@@ -98,20 +101,16 @@ class RewardDialog extends StatelessWidget {
                           children: [
                             Text(
                               'LEVEL ${prog.level}',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelLarge?.copyWith(
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
                                     color: Colors.cyanAccent,
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),
                             Text(
                               '+$totalXp XP',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelLarge?.copyWith(
-                                    color: Colors.cyanAccent,
-                                  ),
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(color: Colors.cyanAccent),
                             ),
                           ],
                         ),
@@ -132,9 +131,8 @@ class RewardDialog extends StatelessWidget {
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
                               'LEVEL UP!',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.titleMedium?.copyWith(
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
                                     color: Colors.cyanAccent,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 2,
@@ -173,7 +171,8 @@ class RewardDialog extends StatelessWidget {
                           const SizedBox(width: 12),
                           Text(
                             'WATCH AD TO DOUBLE REWARDS',
-                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.2,
@@ -198,11 +197,13 @@ class RewardDialog extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        manager.isRewardsDoubled ? 'DOUBLED REWARD' : 'TOTAL EARNED',
+                        manager.isRewardsDoubled
+                            ? 'DOUBLED REWARD'
+                            : 'TOTAL EARNED',
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: Colors.amberAccent,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          color: Colors.amberAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Row(
                         children: [
@@ -214,9 +215,8 @@ class RewardDialog extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             '$totalCoins',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.titleLarge?.copyWith(
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
                                   color: Colors.amberAccent,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -249,26 +249,26 @@ class RewardDialog extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white54,
-                    letterSpacing: 1.2,
-                  ),
+                color: Colors.white54,
+                letterSpacing: 1.2,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               value,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
         Text(
           coins,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.amberAccent,
-                fontWeight: FontWeight.bold,
-              ),
+            color: Colors.amberAccent,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );

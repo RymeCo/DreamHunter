@@ -82,7 +82,7 @@ class _ShopDialogState extends State<ShopDialog>
           'PURCHASED: ${item.name} is now yours!',
           type: SnackBarType.success,
         );
-        setState(() {}); // Refresh grid
+        setState(() {}); // Refresh list
       }
     }
   }
@@ -102,14 +102,13 @@ class _ShopDialogState extends State<ShopDialog>
             isScrollable: false,
             labelColor: Colors.amberAccent,
             unselectedLabelColor: Colors.white.withValues(alpha: 0.38),
-            labelStyle: Theme.of(context)
-                .textTheme
-                .labelLarge
-                ?.copyWith(fontSize: 14, fontWeight: FontWeight.bold),
-            unselectedLabelStyle: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(fontSize: 14),
+            labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+            unselectedLabelStyle: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontSize: 14),
             tabs: _shopService
                 .getItemsByCategory()
                 .keys
@@ -123,7 +122,7 @@ class _ShopDialogState extends State<ShopDialog>
                 if (entry.value.isEmpty) {
                   return _buildEmptyState(entry.key);
                 }
-                return _buildItemGrid(entry.value);
+                return _buildItemList(entry.value);
               }).toList(),
             ),
           ),
@@ -146,10 +145,10 @@ class _ShopDialogState extends State<ShopDialog>
           Text(
             'NO ${category.toUpperCase()} AVAILABLE',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white24,
-                  letterSpacing: 2,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white24,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -161,15 +160,9 @@ class _ShopDialogState extends State<ShopDialog>
     );
   }
 
-  Widget _buildItemGrid(List<Item> items) {
-    return GridView.builder(
+  Widget _buildItemList(List<Item> items) {
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.7,
-      ),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];

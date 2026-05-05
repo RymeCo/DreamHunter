@@ -185,9 +185,9 @@ class StorageEngine {
     try {
       uid = FirebaseAuth.instance.currentUser?.uid;
     } catch (_) {}
-    
+
     if (uid == null) return;
-    
+
     // Clear the token cache specifically
     await clearCachedToken();
 

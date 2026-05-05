@@ -51,9 +51,9 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
               child: Text(
                 'Daily Update: ${_formatDate(_lastUpdated)} (PHT)',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      fontSize: 10,
-                    ),
+                  color: Colors.white.withValues(alpha: 0.3),
+                  fontSize: 10,
+                ),
               ),
             ),
         ],
@@ -65,7 +65,10 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
               unselectedLabelColor: Colors.white.withValues(alpha: 0.38),
               labelStyle: Theme.of(context).textTheme.labelLarge,
               unselectedLabelStyle: Theme.of(context).textTheme.bodyMedium,
-              tabs: const [Tab(text: 'Level'), Tab(text: 'Coins')],
+              tabs: const [
+                Tab(text: 'Level'),
+                Tab(text: 'Coins'),
+              ],
             ),
             const SizedBox(height: 12),
             Expanded(
@@ -90,8 +93,8 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
         child: Text(
           'No rankings yet (Min ${unit == 'Level' ? 'Lv 50' : '30k Coins'})',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.54),
-              ),
+            color: Colors.white.withValues(alpha: 0.54),
+          ),
         ),
       );
     }
@@ -121,9 +124,9 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
                 child: Text(
                   '#$rank',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -147,16 +150,16 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
                   Text(
                     '${entry['value']}',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(
                     unit.toUpperCase(),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.4),
-                          fontSize: 9,
-                        ),
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 9,
+                    ),
                   ),
                 ],
               ),

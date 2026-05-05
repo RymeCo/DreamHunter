@@ -268,9 +268,9 @@ class BedEntity extends BaseEntity with TapCallbacks {
     // Manual fade logic
     if (distance < 48) {
       _popupAlpha = (_popupAlpha + dt * _fadeSpeed).clamp(0.0, 1.0);
-      
+
       // NEW: Player Reservation
-      // If the player is close enough to see the "Sleep" popup, 
+      // If the player is close enough to see the "Sleep" popup,
       // we reserve this bed for them to prevent AI from stealing it.
       if (reservedBy == null || reservedBy!.hasCategory('ai_hunter')) {
         reservedBy = game.player;
@@ -278,7 +278,7 @@ class BedEntity extends BaseEntity with TapCallbacks {
       }
     } else {
       _popupAlpha = (_popupAlpha - dt * _fadeSpeed).clamp(0.0, 1.0);
-      
+
       // If player moves away, release the reservation so AI can use it
       if (reservedBy == game.player) {
         reservedBy = null;

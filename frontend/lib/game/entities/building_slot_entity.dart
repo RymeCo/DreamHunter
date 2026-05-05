@@ -94,7 +94,7 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
     if (!game.player.isSleeping) {
       AudioManager.instance.playClick();
       HapticManager.instance.light();
-      
+
       // Feedback: Briefly inform the user they need to sleep first
       showCustomSnackBar(
         game.buildContext!,
@@ -208,7 +208,7 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
       removeFromParent();
       return true;
     }
-    
+
     return false;
   }
 }

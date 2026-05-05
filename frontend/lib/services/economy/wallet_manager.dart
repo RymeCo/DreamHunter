@@ -40,12 +40,12 @@ class WalletManager extends ChangeNotifier {
   /// [delta] is the change (positive to add, negative to spend).
   /// Returns false if spending would result in a negative balance.
   Future<bool> updateBalance({int coinsDelta = 0, int stonesDelta = 0}) async {
-    // Gap Fix 1: Prevention of Negative Debt
+    // Prevention of Negative Debt
     if (_dreamCoins + coinsDelta < 0 || _hellStones + stonesDelta < 0) {
       return false;
     }
 
-    // Gap Fix 2: Prevent redundant saving if nothing changed
+    // Prevent redundant saving if nothing changed
     if (coinsDelta == 0 && stonesDelta == 0) return true;
 
     _dreamCoins += coinsDelta;
@@ -53,7 +53,7 @@ class WalletManager extends ChangeNotifier {
 
     notifyListeners();
 
-    // Gap Fix 3: Persistent saving using the Singleton state
+    // Persistent saving using the Singleton state
     await StorageEngine.instance.saveCurrency(_dreamCoins, _hellStones);
     return true;
   }

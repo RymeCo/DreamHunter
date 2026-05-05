@@ -365,11 +365,11 @@ class _LobbyDialogState extends State<LobbyDialog> {
               Text(
                 '$joinedCount/6 HUNTERS JOINED',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.cyanAccent.withValues(alpha: 0.8),
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                      fontSize: 8,
-                    ),
+                  color: Colors.cyanAccent.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  fontSize: 8,
+                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -429,11 +429,11 @@ class _LobbyDialogState extends State<LobbyDialog> {
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 4,
-                        crossAxisSpacing: 4,
-                        childAspectRatio: 2.8,
-                      ),
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 4,
+                            crossAxisSpacing: 4,
+                            childAspectRatio: 2.8,
+                          ),
                       itemCount: 6,
                       itemBuilder: (context, index) {
                         final LobbyPlayer? player = _joinedPlayers[index];
@@ -446,26 +446,24 @@ class _LobbyDialogState extends State<LobbyDialog> {
                           decoration: BoxDecoration(
                             color: isFilled
                                 ? (player.isReady
-                                    ? Colors.greenAccent.withValues(
-                                        alpha: 0.15,
-                                      )
-                                    : Colors.white.withValues(alpha: 0.1))
+                                      ? Colors.greenAccent.withValues(
+                                          alpha: 0.15,
+                                        )
+                                      : Colors.white.withValues(alpha: 0.1))
                                 : Colors.black.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: isFilled
                                   ? (player.isReady
-                                          ? Colors.greenAccent
-                                          : Colors.cyanAccent)
-                                      .withValues(alpha: 0.4)
+                                            ? Colors.greenAccent
+                                            : Colors.cyanAccent)
+                                        .withValues(alpha: 0.4)
                                   : Colors.white.withValues(alpha: 0.05),
                               width: isFilled && player.isReady ? 1.5 : 1.0,
                             ),
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: Row(
                               children: [
                                 if (isFilled && !isConnecting)
@@ -508,7 +506,8 @@ class _LobbyDialogState extends State<LobbyDialog> {
                                         child: Text(
                                           isConnecting
                                               ? 'LOADING...'
-                                              : (player?.name ?? 'SEARCHING...'),
+                                              : (player?.name ??
+                                                    'SEARCHING...'),
                                           key: ValueKey(
                                             isConnecting
                                                 ? 'loading'
@@ -540,14 +539,14 @@ class _LobbyDialogState extends State<LobbyDialog> {
                                             isConnecting
                                                 ? 'CONNECTING'
                                                 : (player.isReady
-                                                    ? 'READY'
-                                                    : 'WAITING...'),
+                                                      ? 'READY'
+                                                      : 'WAITING...'),
                                             key: ValueKey(
                                               isConnecting
                                                   ? 'conn'
                                                   : (player.isReady
-                                                      ? 'ready'
-                                                      : 'wait'),
+                                                        ? 'ready'
+                                                        : 'wait'),
                                             ),
                                             style: TextStyle(
                                               color: player.isReady

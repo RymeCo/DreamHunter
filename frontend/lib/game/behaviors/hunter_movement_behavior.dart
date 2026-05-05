@@ -31,8 +31,8 @@ class HunterMovementBehavior extends Component
     // We check distance to the bed center for more natural "snapping"
     final bedCenter = parent.targetBed.position + (parent.targetBed.size / 2);
     final distToBed = parent.position.distanceTo(bedCenter);
-    
-    if (distToBed < 32.0) { 
+
+    if (distToBed < 32.0) {
       if (!parent.targetBed.isOccupied) {
         parent.targetBed.occupy(parent);
         parent.sleep(parent.targetBed.position);
@@ -60,8 +60,8 @@ class HunterMovementBehavior extends Component
 
     // Find best neighbor
     int bestDist = flowField[curX][curY];
-    
-    // FIX: If we are in the target tile (bestDist == 0) but not yet "sleeping" 
+
+    // FIX: If we are in the target tile (bestDist == 0) but not yet "sleeping"
     // because the distance check failed, we must manually nudge toward the bed center.
     if (bestDist == 0) {
       final diff = bedCenter - parent.position;
@@ -94,7 +94,7 @@ class HunterMovementBehavior extends Component
     if (targetCenter != null) {
       final diff = targetCenter - parent.position;
       final direction = diff.normalized();
-      
+
       parent.position += direction * speed * dt;
 
       // Center-Pulling Logic
@@ -128,7 +128,10 @@ class HunterMovementBehavior extends Component
     // 1. Cleanup old reservation immediately
     if (parent.targetBed.reservedBy == parent) {
       parent.targetBed.reservedBy = null;
-      MatchManager.instance.updateBedAvailability(parent.targetBed.roomID, true);
+      MatchManager.instance.updateBedAvailability(
+        parent.targetBed.roomID,
+        true,
+      );
     }
 
     // 2. O(1) Lookup: Use pre-cached available beds from MatchManager
@@ -142,7 +145,7 @@ class HunterMovementBehavior extends Component
       for (final id in availableIDs) {
         final bed = game.roomBeds[id];
         if (bed == null) continue;
-        
+
         final dist = parent.position.distanceToSquared(bed.position);
         if (dist < minDist) {
           minDist = dist;
@@ -155,12 +158,14 @@ class HunterMovementBehavior extends Component
         parent.targetBed = bestBed;
         parent.targetBed.reservedBy = parent;
         MatchManager.instance.updateBedAvailability(bestBed.roomID, false);
-        
-        debugPrint('[AI] ${parent.skinPath} targeted: ${parent.targetBed.roomID}');
+
+        debugPrint(
+          '[AI] ${parent.skinPath} targeted: ${parent.targetBed.roomID}',
+        );
         return;
       }
     }
-    
+
     // 3. Last Resort: Wander
     _wanderToHallway();
   }
@@ -170,7 +175,7 @@ class HunterMovementBehavior extends Component
     final random = math.Random();
     final angle = random.nextDouble() * 2 * math.pi;
     final wanderDir = Vector2(math.cos(angle), math.sin(angle));
-    
+
     // We don't change targetBed here, but we nudge the position to simulate wandering
     // This prevents the "standing still" look while waiting for a room to potentially open.
     parent.position += wanderDir * (speed * 0.5); // Slower wander speed

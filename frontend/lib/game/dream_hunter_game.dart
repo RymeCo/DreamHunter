@@ -114,7 +114,7 @@ class DreamHunterGame extends FlameGame
     // Fallback if named slightly differently
     objectLayer ??= map.tileMap.getLayer<ObjectGroup>('Objects');
     objectLayer ??= map.tileMap.getLayer<ObjectGroup>('objects');
-    
+
     final List<BedEntity> parsedBeds = [];
     final List<DoorEntity> parsedDoors = [];
     if (objectLayer != null) {
@@ -122,7 +122,7 @@ class DreamHunterGame extends FlameGame
         final pos = Vector2(obj.x, obj.y);
         final roomID = obj.name.trim();
         final type = obj.type.toLowerCase();
-        
+
         if (type == 'bed') {
           final bed = BedEntity(position: pos, roomID: roomID);
           parsedBeds.add(bed);
@@ -130,12 +130,13 @@ class DreamHunterGame extends FlameGame
         } else if (type == 'door') {
           final door = DoorEntity(position: pos, roomID: roomID);
           parsedDoors.add(door);
-          
+
           // Map to grid for O(1) LoS
           final tx = (pos.x / 32.0).floor();
           final ty = (pos.y / 32.0).floor();
           doorMap[math.Point(tx, ty)] = door;
-        } else if (obj.name.toLowerCase() == 'dreammonster' || type == 'dreammonster') {
+        } else if (obj.name.toLowerCase() == 'dreammonster' ||
+            type == 'dreammonster') {
           final centerPos = pos + (Vector2(obj.width, obj.height) / 2);
           // NUDGE: Ensure spawn points aren't inside boundary walls
           if (centerPos.x < 64) centerPos.x = 64;
@@ -192,8 +193,12 @@ class DreamHunterGame extends FlameGame
     // 4. GRID-BASED FOG: Flood-fill from each bed to find all tiles in its room
     // This ensures full coverage for non-rectangular rooms.
     final doorTilesForFog = parsedDoors
-        .map((d) =>
-            math.Point((d.position.x / 32).floor(), (d.position.y / 32).floor()))
+        .map(
+          (d) => math.Point(
+            (d.position.x / 32).floor(),
+            (d.position.y / 32).floor(),
+          ),
+        )
         .toSet();
 
     final Set<math.Point<int>> allRoomTiles = {};
@@ -203,7 +208,11 @@ class DreamHunterGame extends FlameGame
       final startX = (bed.position.x / 32).floor();
       final startY = (bed.position.y / 32).floor();
 
-      final roomTiles = _floodFillRoom(startX, startY, doorTiles: doorTilesForFog);
+      final roomTiles = _floodFillRoom(
+        startX,
+        startY,
+        doorTiles: doorTilesForFog,
+      );
       allRoomTiles.addAll(roomTiles);
 
       // OPTIMIZATION: Register tiles for fast room lookup
@@ -211,11 +220,8 @@ class DreamHunterGame extends FlameGame
         tileRoomMap[tile] = roomID;
       }
 
-      final fogLayer = RoomFogLayer(
-        roomID: roomID,
-        tiles: roomTiles,
-      );
-      
+      final fogLayer = RoomFogLayer(roomID: roomID, tiles: roomTiles);
+
       world.add(fogLayer);
       roomFog[roomID] = fogLayer;
     }
@@ -315,14 +321,15 @@ class DreamHunterGame extends FlameGame
     }
 
     final aiSkins = MatchManager.instance.aiSkins;
-    
+
     // ASSET OPTIMIZATION: Pre-load all skins (Player + AI) in parallel before spawning
     final List<Future> skinLoads = [];
-    
+
     // 1. Player skin
     final characterId = ShopManager.instance.selectedCharacterId;
     final item = ItemRegistry.get(characterId);
-    final playerSkin = item?.image.replaceFirst('assets/images/', '') ??
+    final playerSkin =
+        item?.image.replaceFirst('assets/images/', '') ??
         'game/characters/max_front-32x48.png';
     skinLoads.add(images.load(playerSkin));
 
@@ -366,7 +373,12 @@ class DreamHunterGame extends FlameGame
   /// Checks if there is a clear line of sight between two positions (no wall tiles).
   /// [ignoredRoomID] allows turrets to see through doors in their own room.
   /// [shaveCorners] allows the ray to slightly clip wall corners for better turret reliability.
-  bool hasLineOfSight(Vector2 start, Vector2 end, {String? ignoredRoomID, bool shaveCorners = true}) {
+  bool hasLineOfSight(
+    Vector2 start,
+    Vector2 end, {
+    String? ignoredRoomID,
+    bool shaveCorners = true,
+  }) {
     final startTileX = (start.x / 32.0).floor();
     final startTileY = (start.y / 32.0).floor();
     final endTileX = (end.x / 32.0).floor();
@@ -380,19 +392,19 @@ class DreamHunterGame extends FlameGame
     final steps = (distance / 8.0).ceil(); // Step every quarter-tile (8px)
     final stepVec = diff / steps.toDouble();
 
-    // Tighter tolerance for corner shaving: 
+    // Tighter tolerance for corner shaving:
     // We check points slightly indented from the wall edges.
-    const double tolerance = 4.0; 
+    const double tolerance = 4.0;
 
     for (int i = 1; i < steps; i++) {
       final point = start + stepVec * i.toDouble();
-      
-      // OPTIMIZATION: If we are shaving corners, check if the point is 
+
+      // OPTIMIZATION: If we are shaving corners, check if the point is
       // very close to a tile boundary. If so, it's likely a "false positive" clip.
       if (shaveCorners) {
         final relX = point.x % 32.0;
         final relY = point.y % 32.0;
-        if ((relX < tolerance || relX > 32.0 - tolerance) && 
+        if ((relX < tolerance || relX > 32.0 - tolerance) &&
             (relY < tolerance || relY > 32.0 - tolerance)) {
           continue; // Skip boundary checks that often hit corners
         }
@@ -400,7 +412,7 @@ class DreamHunterGame extends FlameGame
 
       final px = (point.x / 32.0).floor().clamp(0, gridW - 1);
       final py = (point.y / 32.0).floor().clamp(0, gridH - 1);
-      
+
       // 1. Check Static Walls
       if (wallGrid[px][py]) {
         if (px == startTileX && py == startTileY) continue;
@@ -450,7 +462,7 @@ class DreamHunterGame extends FlameGame
       }
     }
 
-    // 2. PERFORMANCE & STABILITY FIX: Check wallGrid (Static Walls) - O(1)
+    // Check wallGrid (Static Walls) - O(1) for high-performance collision detection
     // Check all tiles overlapped by the hitbox for 100% collision integrity
     final startX = (hitbox.left / 32.0).floor().clamp(0, gridW - 1);
     final endX = (hitbox.right / 32.0).floor().clamp(0, gridW - 1);
@@ -463,11 +475,17 @@ class DreamHunterGame extends FlameGame
           // TARGET OVERRIDE: If the monster is trying to reach a BUILDING placed ON a wall,
           // we must allow it to enter that specific wall tile to perform the attack.
           // This does NOT apply to hunters; monsters must stay in halls while chasing them.
-          if (targetPos != null && 
-              ignoredEntities != null && 
+          if (targetPos != null &&
+              ignoredEntities != null &&
               ignoredEntities.any((e) => e is DoorEntity || e is BedEntity)) {
-            final targetTileX = (targetPos.x / 32.0).floor().clamp(0, gridW - 1);
-            final targetTileY = (targetPos.y / 32.0).floor().clamp(0, gridH - 1);
+            final targetTileX = (targetPos.x / 32.0).floor().clamp(
+              0,
+              gridW - 1,
+            );
+            final targetTileY = (targetPos.y / 32.0).floor().clamp(
+              0,
+              gridH - 1,
+            );
             if (tx == targetTileX && ty == targetTileY) {
               continue; // Allow overlapping the target tile
             }
@@ -614,7 +632,9 @@ class DreamHunterGame extends FlameGame
             final door = doorMap[next];
             if (door != null && door.roomID != roomID) {
               weight = 100;
-            } else if (getRoomIDAt(Vector2(next.x * 32.0, next.y * 32.0)).isEmpty) {
+            } else if (getRoomIDAt(
+              Vector2(next.x * 32.0, next.y * 32.0),
+            ).isEmpty) {
               weight = 2;
             }
 
@@ -640,7 +660,9 @@ class DreamHunterGame extends FlameGame
     // Update global building slot pulse (More subtle: slower speed and lower peak opacity)
     _pulseTimer += dt;
     // Speed reduced, Peak further reduced (0.15 instead of 0.2)
-    slotOpacity = ((math.sin(_pulseTimer * (math.pi / 3.0)) + 1) / 13.0); // Range [0.0, 0.15]
+    slotOpacity =
+        ((math.sin(_pulseTimer * (math.pi / 3.0)) + 1) /
+        13.0); // Range [0.0, 0.15]
 
     // 1. Fog of War: Update player's current room in MatchManager
     final currentRoom = getRoomIDAt(player.position);
@@ -691,9 +713,9 @@ class DreamHunterGame extends FlameGame
   Vector2 _findSafeHallwayPosition(Vector2 doorPos) {
     // Candidates: 48px (1.5 tiles) in each cardinal direction
     final List<Vector2> candidates = [
-      doorPos + Vector2(0, 48),  // Down
+      doorPos + Vector2(0, 48), // Down
       doorPos + Vector2(0, -48), // Up
-      doorPos + Vector2(48, 0),  // Right
+      doorPos + Vector2(48, 0), // Right
       doorPos + Vector2(-48, 0), // Left
     ];
 
@@ -708,11 +730,13 @@ class DreamHunterGame extends FlameGame
         width: 16,
         height: 16,
       );
-      
+
       if (isPositionBlocked(checkRect)) continue;
 
       // 3. Is it a building slot? (We don't want to stand on slots)
-      bool isOnSlot = buildingSlots.any((slot) => slot.toRect().overlaps(checkRect));
+      bool isOnSlot = buildingSlots.any(
+        (slot) => slot.toRect().overlaps(checkRect),
+      );
       if (isOnSlot) continue;
 
       // Found a safe spot!
@@ -808,18 +832,26 @@ class DreamHunterGame extends FlameGame
   /// Ignores dynamic buildings (doors, turrets) so the monster can navigate to them.
   /// Flood-fill to find all walkable tiles connected to a starting point,
   /// stopped by walls and doors.
-  Set<math.Point<int>> _floodFillRoom(int startX, int startY,
-      {Set<math.Point<int>>? doorTiles}) {
+  Set<math.Point<int>> _floodFillRoom(
+    int startX,
+    int startY, {
+    Set<math.Point<int>>? doorTiles,
+  }) {
     final Set<math.Point<int>> tiles = {};
     final List<math.Point<int>> queue = [math.Point(startX, startY)];
     final visited = <math.Point<int>>{math.Point(startX, startY)};
 
     // Get all doors to use as boundaries
-    final boundaries = doorTiles ??
+    final boundaries =
+        doorTiles ??
         _buildings
             .whereType<DoorEntity>()
-            .map((d) => math.Point(
-                (d.position.x / 32).floor(), (d.position.y / 32).floor()))
+            .map(
+              (d) => math.Point(
+                (d.position.x / 32).floor(),
+                (d.position.y / 32).floor(),
+              ),
+            )
             .toSet();
 
     while (queue.isNotEmpty) {
@@ -923,7 +955,7 @@ class DreamHunterGame extends FlameGame
     }
 
     // 2. PERFORMANCE OPTIMIZATION: Check for other buildings (Turrets, Generators, etc.)
-    // We only penalize them slightly so the monster prefers walking around, 
+    // We only penalize them slightly so the monster prefers walking around,
     // but isn't strictly blocked if there's no other path.
     for (final b in _buildings) {
       if (b.isDestroyed) continue;

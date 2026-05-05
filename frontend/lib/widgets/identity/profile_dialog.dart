@@ -4,9 +4,7 @@ import 'package:dreamhunter/services/identity/auth_manager.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:dreamhunter/services/core/storage_engine.dart';
 import 'package:dreamhunter/services/identity/profile_manager.dart';
-import 'package:dreamhunter/services/economy/shop_manager.dart';
 import 'package:dreamhunter/services/progression/progression_manager.dart';
-import 'package:dreamhunter/data/item_registry.dart';
 import 'package:dreamhunter/widgets/confirmation_dialog.dart';
 import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/models/player_model.dart';
@@ -34,7 +32,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
   Future<void> _fetchData() async {
     final player = await ProfileManager.instance.getPlayer();
     final ranks = await ProfileManager.instance.getLeaderboardRank();
-    
+
     if (mounted) {
       setState(() {
         _player = player;
@@ -76,9 +74,9 @@ class _ProfileDialogState extends State<ProfileDialog> {
                 label: Text(
                   'LOGOUT SESSION',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        letterSpacing: 2,
-                        fontSize: 13,
-                      ),
+                    letterSpacing: 2,
+                    fontSize: 13,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -123,7 +121,9 @@ class _ProfileDialogState extends State<ProfileDialog> {
                       ),
                       child: const ClipOval(
                         child: Image(
-                          image: AssetImage('assets/images/dashboard/profile.png'),
+                          image: AssetImage(
+                            'assets/images/dashboard/profile.png',
+                          ),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -141,20 +141,20 @@ class _ProfileDialogState extends State<ProfileDialog> {
                 Text(
                   displayName.toUpperCase(),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                      ),
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
                 ),
                 if (email != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     email,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white38,
-                          letterSpacing: 1.1,
-                          fontSize: 11,
-                        ),
+                      color: Colors.white38,
+                      letterSpacing: 1.1,
+                      fontSize: 11,
+                    ),
                   ),
                 ],
                 if (_player != null) ...[
@@ -162,10 +162,10 @@ class _ProfileDialogState extends State<ProfileDialog> {
                   Text(
                     'MEMBERSHIP SINCE ${_formatDate(_player!.createdAt)}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white10,
-                          fontSize: 8,
-                          letterSpacing: 1.5,
-                        ),
+                      color: Colors.white10,
+                      fontSize: 8,
+                      letterSpacing: 1.5,
+                    ),
                   ),
                 ],
 
@@ -177,8 +177,9 @@ class _ProfileDialogState extends State<ProfileDialog> {
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
-                    border:
-                        Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.05),
+                    ),
                   ),
                   child: Column(
                     children: [
@@ -252,17 +253,19 @@ class _ProfileDialogState extends State<ProfileDialog> {
             Text(
               label.toUpperCase(),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white54,
-                    letterSpacing: 1.2,
-                  ),
+                color: Colors.white54,
+                letterSpacing: 1.2,
+              ),
             ),
             if (rank != null)
               Text(
                 'Rank: $rank / 50',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: rank == '??' ? Colors.white24 : color.withValues(alpha: 0.7),
-                      fontSize: 9,
-                    ),
+                  color: rank == '??'
+                      ? Colors.white24
+                      : color.withValues(alpha: 0.7),
+                  fontSize: 9,
+                ),
               ),
           ],
         ),
@@ -270,9 +273,9 @@ class _ProfileDialogState extends State<ProfileDialog> {
         Text(
           value,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
@@ -287,10 +290,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
           color: color,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.5),
-              blurRadius: 10,
-            ),
+            BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 10),
           ],
         ),
         child: Text(
@@ -325,54 +325,80 @@ class _ProfileDialogState extends State<ProfileDialog> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: isGuest ? null : () async {
-                  AudioManager().playClick();
-                  
-                  final confirmed = await ConfirmationDialog.show(
-                    context,
-                    title: isLimitReached ? 'OVERWRITE CLOUD?' : 'SYNC TO CLOUD?',
-                    message: 'Any existing cloud data will be deleted and replaced with your current local progress. This cannot be undone.',
-                    confirmLabel: isLimitReached ? 'OVERWRITE' : 'BACKUP NOW',
-                    isDestructive: isLimitReached,
-                    color: isLimitReached ? null : Colors.cyanAccent,
-                  );
-                  if (!confirmed) return;
+                onPressed: isGuest
+                    ? null
+                    : () async {
+                        AudioManager().playClick();
 
-                  if (isLimitReached) {
-                    AdManager.instance.showRewardAd(
-                      context: context,
-                      onRewardEarned: () async {
-                        await ProfileManager.instance.backupPlayer();
-                        await StorageEngine.instance.incrementDailyCount('cloud_sync');
-                        if (mounted) setState(() {});
+                        final confirmed = await ConfirmationDialog.show(
+                          context,
+                          title: isLimitReached
+                              ? 'OVERWRITE CLOUD?'
+                              : 'SYNC TO CLOUD?',
+                          message:
+                              'Any existing cloud data will be deleted and replaced with your current local progress. This cannot be undone.${isLimitReached ? '\n\nWatch a short ad to proceed.' : ''}',
+                          confirmLabel: isLimitReached
+                              ? 'WATCH AD & OVERWRITE'
+                              : 'BACKUP NOW',
+                          isDestructive: isLimitReached,
+                          color: isLimitReached ? null : Colors.cyanAccent,
+                        );
+                        if (!confirmed) return;
+
+                        if (isLimitReached) {
+                          AdManager.instance.showRewardAd(
+                            context: context,
+                            onRewardEarned: () async {
+                              await ProfileManager.instance.backupPlayer();
+                              await StorageEngine.instance.incrementDailyCount(
+                                'cloud_sync',
+                              );
+                              if (mounted) setState(() {});
+                            },
+                          );
+                        } else {
+                          await ProfileManager.instance.backupPlayer();
+                          await StorageEngine.instance.incrementDailyCount(
+                            'cloud_sync',
+                          );
+                          if (mounted) setState(() {});
+                        }
                       },
-                    );
-                  } else {
-                    await ProfileManager.instance.backupPlayer();
-                    await StorageEngine.instance.incrementDailyCount('cloud_sync');
-                    if (mounted) setState(() {});
-                  }
-                },
-                icon: Icon(isLimitReached ? Icons.play_circle_fill : Icons.cloud_upload),
+                icon: Icon(
+                  isLimitReached ? Icons.play_circle_fill : Icons.cloud_upload,
+                ),
                 label: Text(
-                  isLimitReached ? 'WATCH AD FOR BACKUP' : 'BACKUP TO CLOUD ($count/1)',
+                  isLimitReached
+                      ? 'WATCH AD FOR BACKUP'
+                      : 'BACKUP TO CLOUD ($count/1)',
                   style: const TextStyle(letterSpacing: 2),
                 ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: isLimitReached ? Colors.orangeAccent.withValues(alpha: 0.1) : Colors.cyanAccent.withValues(alpha: 0.1),
-                  foregroundColor: isLimitReached ? Colors.orangeAccent : Colors.cyanAccent,
+                  backgroundColor: isLimitReached
+                      ? Colors.orangeAccent.withValues(alpha: 0.1)
+                      : Colors.cyanAccent.withValues(alpha: 0.1),
+                  foregroundColor: isLimitReached
+                      ? Colors.orangeAccent
+                      : Colors.cyanAccent,
                   side: BorderSide(
-                    color: isLimitReached ? Colors.orangeAccent.withValues(alpha: 0.3) : Colors.cyanAccent.withValues(alpha: 0.3),
+                    color: isLimitReached
+                        ? Colors.orangeAccent.withValues(alpha: 0.3)
+                        : Colors.cyanAccent.withValues(alpha: 0.3),
                   ),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
             if (isGuest)
               const Padding(
                 padding: EdgeInsets.only(top: 8.0),
-                child: Text('LOG IN TO BACKUP PROGRESS', style: TextStyle(color: Colors.white24, fontSize: 9)),
+                child: Text(
+                  'LOG IN TO BACKUP PROGRESS',
+                  style: TextStyle(color: Colors.white24, fontSize: 9),
+                ),
               ),
           ],
         );

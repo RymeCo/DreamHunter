@@ -20,7 +20,7 @@ class ApiGateway {
     // 2. Fallback to Firebase (Network)
     final user = _auth.currentUser;
     if (user == null) return null;
-    
+
     final token = await user.getIdToken();
     if (token != null) {
       // Pre-warm the cache for the next call

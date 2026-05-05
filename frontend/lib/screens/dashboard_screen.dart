@@ -324,28 +324,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Positioned(
       bottom: 10,
       left: 10,
-      child: GlassButton(
-        width: 148,
-        height: 148,
-        padding: const EdgeInsets.all(5),
-        borderRadius: 28,
+      child: _buildDashboardIconButton(
+        assetPath: 'assets/images/dashboard/roulette_man.png',
         glowColor: Colors.pinkAccent,
-        hoverColor: Colors.pinkAccent.withValues(alpha: 0.15),
-        hoverBorderColor: Colors.pinkAccent,
-        pulseMinOpacity: 0.3,
         onTap: () => _showGameDialog(
           RouletteDialog(controller: _controller, parentContext: context),
-        ),
-        child: OverflowBox(
-          alignment: const Alignment(0, -0.07),
-          minWidth: 204,
-          maxWidth: 204,
-          minHeight: 204,
-          maxHeight: 204,
-          child: Image.asset(
-            'assets/images/dashboard/roulette_man.png',
-            fit: BoxFit.contain,
-          ),
         ),
       ),
     );
@@ -355,27 +338,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Positioned(
       bottom: 10,
       right: 10,
-      child: GlassButton(
+      child: _buildDashboardIconButton(
+        assetPath: 'assets/images/dashboard/shop_stall.png',
+        glowColor: Colors.amberAccent,
         width: 157,
         height: 162,
         padding: const EdgeInsets.only(left: 5, top: 5, right: 5, bottom: 10),
-        borderRadius: 28,
-        glowColor: Colors.amberAccent,
-        hoverColor: Colors.amberAccent.withValues(alpha: 0.15),
-        hoverBorderColor: Colors.amberAccent,
-        pulseMinOpacity: 0.3,
         onTap: () => _showGameDialog(ShopDialog(controller: _controller)),
-        child: OverflowBox(
-          alignment: const Alignment(0, -0.07),
-          minWidth: 204,
-          maxWidth: 204,
-          minHeight: 204,
-          maxHeight: 204,
-          child: Image.asset(
-            'assets/images/dashboard/shop_stall.png',
-            fit: BoxFit.contain,
-          ),
-        ),
       ),
     );
   }
@@ -384,27 +353,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Positioned(
       bottom: MediaQuery.of(context).size.height * 0.22,
       left: 15,
-      child: GlassButton(
+      child: _buildDashboardIconButton(
+        assetPath: 'assets/images/dashboard/signage.png',
+        glowColor: Colors.cyanAccent,
         width: 76,
         height: 102,
-        padding: const EdgeInsets.all(5),
+        overflowSize: 102,
         borderRadius: 17,
-        glowColor: Colors.cyanAccent,
-        hoverColor: Colors.cyanAccent.withValues(alpha: 0.15),
-        hoverBorderColor: Colors.cyanAccent,
-        pulseMinOpacity: 0.3,
         onTap: () => _showGameDialog(const Center(child: ChatDialog())),
-        child: OverflowBox(
-          alignment: const Alignment(0, -0.07),
-          minWidth: 102,
-          maxWidth: 102,
-          minHeight: 102,
-          maxHeight: 102,
-          child: Image.asset(
-            'assets/images/dashboard/signage.png',
-            fit: BoxFit.contain,
-          ),
-        ),
+      ),
+    );
+  }
+
+  Widget _buildDashboardIconButton({
+    required String assetPath,
+    required Color glowColor,
+    required VoidCallback onTap,
+    double width = 148,
+    double height = 148,
+    double overflowSize = 204,
+    EdgeInsets? padding,
+    double borderRadius = 28,
+  }) {
+    return GlassButton(
+      width: width,
+      height: height,
+      padding: padding ?? const EdgeInsets.all(5),
+      borderRadius: borderRadius,
+      glowColor: glowColor,
+      hoverColor: glowColor.withValues(alpha: 0.15),
+      hoverBorderColor: glowColor,
+      pulseMinOpacity: 0.3,
+      onTap: onTap,
+      child: OverflowBox(
+        alignment: const Alignment(0, -0.07),
+        minWidth: overflowSize,
+        maxWidth: overflowSize,
+        minHeight: overflowSize,
+        maxHeight: overflowSize,
+        child: Image.asset(assetPath, fit: BoxFit.contain),
       ),
     );
   }

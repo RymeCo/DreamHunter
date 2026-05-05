@@ -133,8 +133,8 @@ class GameEconomyHUD extends StatelessWidget {
                   color: isUnderAttack
                       ? Colors.redAccent
                       : (isLocalPlayer
-                          ? Colors.greenAccent.withValues(alpha: 0.5)
-                          : Colors.white12),
+                            ? Colors.greenAccent.withValues(alpha: 0.5)
+                            : Colors.white12),
                   width: isUnderAttack ? 2.0 : 1.5,
                 ),
                 boxShadow: isUnderAttack
@@ -143,7 +143,7 @@ class GameEconomyHUD extends StatelessWidget {
                           color: Colors.redAccent.withValues(alpha: 0.5),
                           blurRadius: 8,
                           spreadRadius: 2,
-                        )
+                        ),
                       ]
                     : null,
               ),

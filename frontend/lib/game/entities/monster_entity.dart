@@ -117,7 +117,6 @@ class MonsterEntity extends BaseEntity {
     // Removed: hp = maxHp; // Full heal on level up
     attackDamage = 5.0 * math.pow(1.20, monsterLevel - 1);
 
-
     // Visual feedback for level up: Grow and flash
     pulse(1.8);
     flashColor(Colors.redAccent);
@@ -136,9 +135,9 @@ class MonsterEntity extends BaseEntity {
   /// Flashes the monster a certain color.
   void flashColor(Color color) {
     // Clean up existing color effects
-    _spriteComponent.children
-        .whereType<ColorEffect>()
-        .forEach((e) => e.removeFromParent());
+    _spriteComponent.children.whereType<ColorEffect>().forEach(
+      (e) => e.removeFromParent(),
+    );
 
     _spriteComponent.add(
       ColorEffect(
@@ -152,9 +151,9 @@ class MonsterEntity extends BaseEntity {
   /// Pulses the monster's scale.
   void pulse(double scaleAmount) {
     // Clean up existing scale effects to prevent distortion
-    _spriteComponent.children
-        .whereType<ScaleEffect>()
-        .forEach((e) => e.removeFromParent());
+    _spriteComponent.children.whereType<ScaleEffect>().forEach(
+      (e) => e.removeFromParent(),
+    );
 
     _spriteComponent.add(
       ScaleEffect.to(
@@ -172,17 +171,17 @@ class MonsterEntity extends BaseEntity {
   void takeDamage(double amount, {bool isPlayerOwned = false}) {
     final oldHp = hp;
     super.takeDamage(amount, isPlayerOwned: isPlayerOwned);
-    
+
     if (isPlayerOwned) {
       // Record damage
       MatchManager.instance.addPlayerDamage(amount);
-      
+
       // If this blow killed the monster, mark as player kill
       if (oldHp > 0 && hp <= 0) {
         _isPlayerKill = true;
       }
     }
-    
+
     _healthBar.updateVisuals();
   }
 
@@ -192,12 +191,12 @@ class MonsterEntity extends BaseEntity {
   void destroy() {
     if (isDestroyed) return;
     super.destroy();
-    
+
     // Notify MatchManager that the monster is dead
     if (_isPlayerKill) {
       MatchManager.instance.setPlayerKilledMonster();
     }
-    
+
     // Win match also handles pausing/victory UI
     MatchManager.instance.winMatch();
   }

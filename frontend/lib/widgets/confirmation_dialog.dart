@@ -80,7 +80,7 @@ class ConfirmationDialog extends StatelessWidget {
         color ?? (isDestructive ? Colors.redAccent : Colors.amberAccent);
 
     return LiquidGlassDialog(
-      width: 340,
+      width: 360,
       padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -126,12 +126,16 @@ class ConfirmationDialog extends StatelessWidget {
                     AudioManager.instance.playClick();
                     Navigator.pop(context, false);
                   },
-                  child: Text(
-                    cancelLabel,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      cancelLabel,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                      ),
                     ),
                   ),
                 ),
@@ -152,14 +156,21 @@ class ConfirmationDialog extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: accentColor,
                     foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 12,
+                    ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    confirmLabel,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      confirmLabel,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
                     ),
                   ),
                 ),

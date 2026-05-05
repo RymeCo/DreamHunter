@@ -167,7 +167,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
         _passiveHealTimer = 0;
         final double passiveHeal = math.max(1.0, maxHp * 0.005); // Min 1hp heal
         hp = (hp + passiveHeal).clamp(0, maxHp);
-        
+
         _updateHealthBar();
 
         // Show subtle feedback for passive healing
@@ -206,7 +206,9 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     }
 
     // Manual Repair Logic: 2% every 1s (ONLY when isBeingRepaired is true and NOT stunned)
-    if (isBeingRepaired && !isStunned && (hp < maxHp || shieldHp < maxShieldHp)) {
+    if (isBeingRepaired &&
+        !isStunned &&
+        (hp < maxHp || shieldHp < maxShieldHp)) {
       _regenTimer += dt;
       if (_regenTimer >= 1.0) {
         _regenTimer = 0;
@@ -217,7 +219,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
         // Heal HP
         if (hp < maxHp) {
           hp = (hp + hpHeal).clamp(0, maxHp);
-          
+
           // Bigger feedback for active repair
           game.world.add(
             FloatingFeedback(
@@ -268,7 +270,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
 
   @override
   void takeDamage(double amount, {bool isPlayerOwned = false}) {
-   if (isDestroyed) return;
+    if (isDestroyed) return;
     // Apply Shield Logic
     if (shieldHp > 0) {
       if (shieldHp >= amount) {

@@ -43,8 +43,8 @@ class ChatMessage {
       senderId: json['senderId'] ?? '',
       senderName: json['senderName'] ?? 'Dreamer',
       text: json['text'] ?? '',
-      timestamp: json['timestamp'] != null 
-          ? DateTime.parse(json['timestamp']) 
+      timestamp: json['timestamp'] != null
+          ? DateTime.parse(json['timestamp'])
           : DateTime.now(),
       type: MessageType.values.firstWhere(
         (e) => e.name == (json['type'] ?? 'user'),

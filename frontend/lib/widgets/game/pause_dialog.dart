@@ -110,7 +110,11 @@ class _PauseDialogState extends State<PauseDialog> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: isMuted ? Colors.white24 : Colors.white70, size: 20),
+          Icon(
+            icon,
+            color: isMuted ? Colors.white24 : Colors.white70,
+            size: 20,
+          ),
           const SizedBox(height: 4),
           Text(
             label,

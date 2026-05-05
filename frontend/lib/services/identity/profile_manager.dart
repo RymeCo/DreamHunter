@@ -58,7 +58,7 @@ class ProfileManager {
           final Map<String, dynamic> data = json.decode(response.body);
           // Add local timestamp for expiration tracking
           data['last_sync_timestamp'] = DateTime.now().toIso8601String();
-          
+
           await StorageEngine.instance.saveMetadata('player_profile', data);
           return PlayerModel.fromMap(data, uid);
         }
@@ -69,7 +69,7 @@ class ProfileManager {
 
     // 3. Absolute Fallback
     if (cached != null) return PlayerModel.fromMap(cached, uid);
-    
+
     return PlayerModel(
       uid: uid,
       name: user?.displayName ?? 'Dreamer',
@@ -132,7 +132,7 @@ class ProfileManager {
       debugPrint('Sync aborted: User is permanently banned.');
       return;
     }
-    
+
     final response = await _backend.post('/auth/sync');
     if (response.statusCode == 200) {
       // OPTIMIZATION: Cache the token immediately after a successful sync
@@ -145,12 +145,13 @@ class ProfileManager {
       }
 
       final Map<String, dynamic> data = json.decode(response.body);
-      
-      final isNewUser = (data['level'] ?? 1) == 1 && (data['coins'] ?? 100) == 100;
+
+      final isNewUser =
+          (data['level'] ?? 1) == 1 && (data['coins'] ?? 100) == 100;
       if (isNewUser && StorageEngine.instance.hasGuestData()) {
-         await StorageEngine.instance.promoteGuestToUser(user!.uid);
-         await backupPlayer();
-         return; 
+        await StorageEngine.instance.promoteGuestToUser(user!.uid);
+        await backupPlayer();
+        return;
       }
 
       data['last_sync_timestamp'] = DateTime.now().toIso8601String();
@@ -163,7 +164,7 @@ class ProfileManager {
           'selectedCharacterId': data['selectedCharacterId'] ?? 'char_max',
         });
       }
-      
+
       if (data['coins'] != null || data['stones'] != null) {
         await StorageEngine.instance.saveCurrency(
           data['coins'] ?? 100,
@@ -172,7 +173,9 @@ class ProfileManager {
       }
 
       if (data['level'] != null || data['xp'] != null) {
-        final cached = await StorageEngine.instance.getMetadata('player_profile');
+        final cached = await StorageEngine.instance.getMetadata(
+          'player_profile',
+        );
         if (cached != null) {
           await StorageEngine.instance.saveMetadata('player_profile', {
             ...cached,
@@ -214,23 +217,29 @@ class ProfileManager {
   }
 
   /// Fetches the global leaderboard, prioritizing the local daily cache.
-  Future<Map<String, dynamic>> getLeaderboard({bool forceRefresh = false}) async {
+  Future<Map<String, dynamic>> getLeaderboard({
+    bool forceRefresh = false,
+  }) async {
     // 1. Check Local Global Cache
-    final cached = await StorageEngine.instance.getGlobalMetadata('leaderboard_cache');
+    final cached = await StorageEngine.instance.getGlobalMetadata(
+      'leaderboard_cache',
+    );
     if (cached != null && !forceRefresh) {
       final lastUpdatedStr = cached['lastUpdated'] as String?;
       if (lastUpdatedStr != null) {
         try {
-          // FIX: Use tryParse for better compatibility with ISO strings from different sources
+          // Use tryParse for better compatibility with ISO strings from different sources
           final lastUpdated = DateTime.tryParse(lastUpdatedStr);
           if (lastUpdated != null) {
             // Convert to PHT (UTC+8) for daily comparison
-            final updatedPHT = lastUpdated.toUtc().add(const Duration(hours: 8));
+            final updatedPHT = lastUpdated.toUtc().add(
+              const Duration(hours: 8),
+            );
             final nowPHT = DateTime.now().toUtc().add(const Duration(hours: 8));
-            
+
             // If the cache was updated today (PHT), return it
-            if (updatedPHT.year == nowPHT.year && 
-                updatedPHT.month == nowPHT.month && 
+            if (updatedPHT.year == nowPHT.year &&
+                updatedPHT.month == nowPHT.month &&
                 updatedPHT.day == nowPHT.day) {
               return cached;
             }
@@ -246,7 +255,10 @@ class ProfileManager {
       final response = await _backend.get('/leaderboard');
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        await StorageEngine.instance.saveGlobalMetadata('leaderboard_cache', data);
+        await StorageEngine.instance.saveGlobalMetadata(
+          'leaderboard_cache',
+          data,
+        );
         return data;
       }
     } catch (e) {

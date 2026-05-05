@@ -52,7 +52,7 @@ class _RouletteDialogState extends State<RouletteDialog>
     if (mounted) {
       setState(() => _isLoading = false);
 
-      // LOGIC FIX: Refund if crashed during spin
+      // Refund if crashed during spin
       final state = _rouletteService.state;
       if (state.isSpinning) {
         _handleCrashedSessionRefund(state);
@@ -88,7 +88,7 @@ class _RouletteDialogState extends State<RouletteDialog>
   Future<void> _spin({bool isPaid = false}) async {
     if (_isSpinning) return;
 
-    // Logic Fix 2: Use Centralized Cost
+    // Use Centralized Cost
     const int cost = DailyRoulette.paidSpinCost;
     if (isPaid && widget.controller.dreamCoins < cost) {
       _showInsufficientFundsDialog();
@@ -190,7 +190,9 @@ class _RouletteDialogState extends State<RouletteDialog>
               children: [
                 Expanded(
                   child: GlassButton(
-                    onTap: state.freeSpins > 0 ? () => _spin(isPaid: false) : null,
+                    onTap: state.freeSpins > 0
+                        ? () => _spin(isPaid: false)
+                        : null,
                     isClickable: !_isSpinning && state.freeSpins > 0,
                     glowColor: Colors.amberAccent,
                     child: Column(
@@ -198,17 +200,15 @@ class _RouletteDialogState extends State<RouletteDialog>
                       children: [
                         Text(
                           'FREE SPIN',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelLarge
-                              ?.copyWith(fontSize: 16),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelLarge?.copyWith(fontSize: 16),
                         ),
                         Text(
                           'DAILY REFILL',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(fontSize: 9),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(fontSize: 9),
                         ),
                       ],
                     ),
@@ -225,10 +225,9 @@ class _RouletteDialogState extends State<RouletteDialog>
                       children: [
                         Text(
                           'PAID SPIN',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelLarge
-                              ?.copyWith(fontSize: 16),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelLarge?.copyWith(fontSize: 16),
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -241,7 +240,8 @@ class _RouletteDialogState extends State<RouletteDialog>
                             const SizedBox(width: 4),
                             Text(
                               '${DailyRoulette.paidSpinCost} COINS',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
                                     fontSize: 10,
                                     color: Colors.amberAccent,
                                   ),
@@ -298,9 +298,9 @@ class _RouletteDialogState extends State<RouletteDialog>
                 child: Text(
                   '${state.freeSpins} / ${DailyRoulette.maxFreeSpins} SPINS',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Colors.amberAccent,
-                        fontSize: 16,
-                      ),
+                    color: Colors.amberAccent,
+                    fontSize: 16,
+                  ),
                 ),
               ),
               const SizedBox(height: 30),

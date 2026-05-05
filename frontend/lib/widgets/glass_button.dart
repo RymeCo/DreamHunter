@@ -87,7 +87,7 @@ class _GlassButtonState extends State<GlassButton>
   @override
   void didUpdateWidget(GlassButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Logic Gap Fix: Handle dynamic changes to clickability or pulse settings
+    // Handle dynamic changes to clickability or pulse settings
     if (widget.isClickable && widget.pulseEffect) {
       if (!_pulseController.isAnimating) _pulseController.repeat(reverse: true);
     } else {
@@ -107,7 +107,7 @@ class _GlassButtonState extends State<GlassButton>
         CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
       );
     } else {
-      // Logic Gap Fix: Default to min opacity when pulse is disabled, not 1.0
+      // Default to min opacity when pulse is disabled, not 1.0
       _pulseAnimation = AlwaysStoppedAnimation(min);
     }
   }
@@ -121,7 +121,7 @@ class _GlassButtonState extends State<GlassButton>
   void _handleTap() {
     if (!widget.isClickable) return;
 
-    // Logic Gap Fix: Clear states on tap to prevent "Hover Stick" on mobile
+    // Clear states on tap to prevent "Hover Stick" on mobile
     setState(() {
       _isHovering = false;
       _isTapped = false;

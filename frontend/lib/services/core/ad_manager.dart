@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
 
 /// A centralized service to handle advertisements.
-/// 
+///
 /// Currently acts as a "Simulator" but designed to be easily swapped
 /// with a real Ad SDK (like AdMob or Unity Ads) in the future.
 class AdManager {
@@ -10,8 +10,8 @@ class AdManager {
   AdManager._internal();
 
   /// Shows a rewarded ad and executes [onRewardEarned] if the user completes it.
-  /// 
-  /// This abstraction is crucial: when we integrate a real SDK, we only 
+  ///
+  /// This abstraction is crucial: when we integrate a real SDK, we only
   /// change the logic here, and all buttons in the app will work automatically.
   Future<void> showRewardAd({
     required BuildContext context,
@@ -99,20 +99,20 @@ class _AdSimulatorOverlayState extends State<_AdSimulatorOverlay> {
             Text(
               'WATCHING AD...',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
-                    decoration: TextDecoration.none,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+                decoration: TextDecoration.none,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Reward in $_secondsRemaining s',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white54,
-                    decoration: TextDecoration.none,
-                  ),
+                color: Colors.white54,
+                decoration: TextDecoration.none,
+              ),
             ),
             const SizedBox(height: 24),
             const SizedBox(

@@ -237,8 +237,9 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(16),
-                  border:
-                      Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
                 ),
                 child: Text(
                   "MAXIMUM LEVEL",
@@ -280,19 +281,23 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                     pulseEffect: canUpgrade,
                     color: canUpgrade ? Colors.tealAccent : Colors.black45,
                     glowColor: canUpgrade ? Colors.tealAccent : Colors.white10,
-                    borderColor: canUpgrade ? Colors.tealAccent : Colors.white10,
+                    borderColor: canUpgrade
+                        ? Colors.tealAccent
+                        : Colors.white10,
                     borderRadius: 16,
                     onTap: () {
                       if (!allRequirementsMet) {
                         if (!_showReqNotMet) {
                           HapticManager.instance.heavy();
                           setState(() => _showReqNotMet = true);
-                          Future.delayed(const Duration(milliseconds: 1200),
-                              () {
-                            if (mounted) {
-                              setState(() => _showReqNotMet = false);
-                            }
-                          });
+                          Future.delayed(
+                            const Duration(milliseconds: 1200),
+                            () {
+                              if (mounted) {
+                                setState(() => _showReqNotMet = false);
+                              }
+                            },
+                          );
                         }
                         return;
                       }
@@ -300,12 +305,14 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                         if (!_showNotEnough) {
                           HapticManager.instance.heavy();
                           setState(() => _showNotEnough = true);
-                          Future.delayed(const Duration(milliseconds: 1200),
-                              () {
-                            if (mounted) {
-                              setState(() => _showNotEnough = false);
-                            }
-                          });
+                          Future.delayed(
+                            const Duration(milliseconds: 1200),
+                            () {
+                              if (mounted) {
+                                setState(() => _showNotEnough = false);
+                              }
+                            },
+                          );
                         }
                         return;
                       }
@@ -342,23 +349,36 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                           ),
                           const SizedBox(width: 12),
                           Container(
-                              width: 1, height: 20, color: canUpgrade ? Colors.tealAccent.withValues(alpha: 0.3) : Colors.white10),
+                            width: 1,
+                            height: 20,
+                            color: canUpgrade
+                                ? Colors.tealAccent.withValues(alpha: 0.3)
+                                : Colors.white10,
+                          ),
                           const SizedBox(width: 12),
                           if (widget.coinCost > 0) ...[
                             Icon(
                               Icons.monetization_on_rounded,
-                              color: canUpgrade 
+                              color: canUpgrade
                                   ? Colors.white
-                                  : (canAffordCoins ? Colors.white70 : Colors.redAccent.withValues(alpha: 0.5)),
+                                  : (canAffordCoins
+                                        ? Colors.white70
+                                        : Colors.redAccent.withValues(
+                                            alpha: 0.5,
+                                          )),
                               size: 16,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               "${widget.coinCost}",
                               style: TextStyle(
-                                color: canUpgrade 
+                                color: canUpgrade
                                     ? Colors.white
-                                    : (canAffordCoins ? Colors.white70 : Colors.redAccent.withValues(alpha: 0.5)),
+                                    : (canAffordCoins
+                                          ? Colors.white70
+                                          : Colors.redAccent.withValues(
+                                              alpha: 0.5,
+                                            )),
                                 fontSize: 15,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -368,18 +388,26 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                             if (widget.coinCost > 0) const SizedBox(width: 8),
                             Icon(
                               Icons.bolt_rounded,
-                              color: canUpgrade 
+                              color: canUpgrade
                                   ? Colors.white
-                                  : (canAffordEnergy ? Colors.white70 : Colors.redAccent.withValues(alpha: 0.5)),
+                                  : (canAffordEnergy
+                                        ? Colors.white70
+                                        : Colors.redAccent.withValues(
+                                            alpha: 0.5,
+                                          )),
                               size: 16,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               "${widget.energyCost}",
                               style: TextStyle(
-                                color: canUpgrade 
+                                color: canUpgrade
                                     ? Colors.white
-                                    : (canAffordEnergy ? Colors.white70 : Colors.redAccent.withValues(alpha: 0.5)),
+                                    : (canAffordEnergy
+                                          ? Colors.white70
+                                          : Colors.redAccent.withValues(
+                                              alpha: 0.5,
+                                            )),
                                 fontSize: 15,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -417,7 +445,8 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                 listenable: MatchManager.instance,
                 builder: (context, child) {
                   final bool canUseAd = MatchManager.instance.canUseAdUpgrade;
-                  final int remaining = MatchManager.maxAdUpgradesPerMatch -
+                  final int remaining =
+                      MatchManager.maxAdUpgradesPerMatch -
                       MatchManager.instance.adUpgradesUsed;
 
                   return GlassButton(
@@ -450,14 +479,14 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                           canUseAd
                               ? "FREE UPGRADE ($remaining LEFT)"
                               : "LIMIT REACHED",
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: canUseAd
-                                        ? Colors.amberAccent
-                                        : Colors.white24,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 1.2,
-                                  ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: canUseAd
+                                    ? Colors.amberAccent
+                                    : Colors.white24,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.2,
+                              ),
                         ),
                       ],
                     ),
@@ -484,7 +513,9 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                   decoration: BoxDecoration(
                     color: Colors.redAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: Colors.redAccent.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -498,10 +529,10 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                       Text(
                         "DISMANTLE",
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.redAccent,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.2,
-                            ),
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       const Text(
@@ -510,15 +541,38 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                       ),
                       const SizedBox(width: 4),
                       if (widget.sellRefundCoins > 0) ...[
-                        const Icon(Icons.monetization_on_rounded, color: Colors.amberAccent, size: 12),
+                        const Icon(
+                          Icons.monetization_on_rounded,
+                          color: Colors.amberAccent,
+                          size: 12,
+                        ),
                         const SizedBox(width: 2),
-                        Text("${widget.sellRefundCoins}", style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text(
+                          "${widget.sellRefundCoins}",
+                          style: const TextStyle(
+                            color: Colors.amberAccent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                       if (widget.sellRefundEnergy > 0) ...[
-                        if (widget.sellRefundCoins > 0) const SizedBox(width: 4),
-                        const Icon(Icons.bolt_rounded, color: Colors.cyanAccent, size: 12),
+                        if (widget.sellRefundCoins > 0)
+                          const SizedBox(width: 4),
+                        const Icon(
+                          Icons.bolt_rounded,
+                          color: Colors.cyanAccent,
+                          size: 12,
+                        ),
                         const SizedBox(width: 2),
-                        Text("${widget.sellRefundEnergy}", style: const TextStyle(color: Colors.cyanAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text(
+                          "${widget.sellRefundEnergy}",
+                          style: const TextStyle(
+                            color: Colors.cyanAccent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                       const Text(
                         ")",
@@ -563,7 +617,9 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
               child: Text(
                 text,
                 style: TextStyle(
-                  color: isMet ? Colors.white : Colors.redAccent.withValues(alpha: 0.9),
+                  color: isMet
+                      ? Colors.white
+                      : Colors.redAccent.withValues(alpha: 0.9),
                   fontSize: 12,
                   fontWeight: isMet ? FontWeight.bold : FontWeight.w600,
                 ),

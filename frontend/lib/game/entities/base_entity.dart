@@ -104,7 +104,9 @@ abstract class BaseEntity extends PositionComponent
 
     // MANDATE: Doors and Beds CANNOT be sold.
     if (hasCategory('door') || hasCategory('bed')) {
-      debugPrint('[SAFETY] Blocked attempt to sell core infrastructure: $runtimeType');
+      debugPrint(
+        '[SAFETY] Blocked attempt to sell core infrastructure: $runtimeType',
+      );
       return;
     }
 
@@ -115,8 +117,10 @@ abstract class BaseEntity extends PositionComponent
     // 2. Add Resources to Owner (Fair Play Enforcement)
     if (owner != null) {
       if (owner.hasCategory('player')) {
-        if (refundCoins > 0) MatchManager.instance.updateMatchCoins(refundCoins);
-        if (refundEnergy > 0) MatchManager.instance.updateMatchEnergy(refundEnergy);
+        if (refundCoins > 0)
+          MatchManager.instance.updateMatchCoins(refundCoins);
+        if (refundEnergy > 0)
+          MatchManager.instance.updateMatchEnergy(refundEnergy);
       } else {
         owner.matchCoins += refundCoins;
         owner.matchEnergy += refundEnergy;
@@ -171,7 +175,10 @@ abstract class BaseEntity extends PositionComponent
     }
 
     if (repairCooldown > 0) {
-      repairCooldown = (repairCooldown - dt).clamp(0, GameConfig.repairCooldown);
+      repairCooldown = (repairCooldown - dt).clamp(
+        0,
+        GameConfig.repairCooldown,
+      );
     }
 
     final manager = MatchManager.instance;
@@ -283,8 +290,9 @@ abstract class BaseEntity extends PositionComponent
     if (myRoom.isEmpty) return 0;
 
     // PERFORMANCE OPTIMIZATION: Use game's cached buildings list to find generators in this room
-    final generators =
-        game.getBuildingsInRoom(myRoom).whereType<GeneratorEntity>();
+    final generators = game
+        .getBuildingsInRoom(myRoom)
+        .whereType<GeneratorEntity>();
 
     int income = 0;
     for (final gen in generators) {
@@ -322,7 +330,7 @@ abstract class BaseEntity extends PositionComponent
     if (categories.contains('building_slot')) {
       game.unregisterBuildingSlot(this);
     }
-    
+
     // Core Infrastructure Unregistration
     if (categories.contains('door')) {
       game.unregisterDoor(this as dynamic);

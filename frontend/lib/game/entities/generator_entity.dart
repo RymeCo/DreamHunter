@@ -164,9 +164,9 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
     final List<UpgradeRequirement> reqs = [];
 
     if (nextUpgrade.requirementLabel != null) {
-      final turrets = game.world.children
-          .whereType<TurretEntity>()
-          .where((t) => t.roomID == roomID);
+      final turrets = game.world.children.whereType<TurretEntity>().where(
+        (t) => t.roomID == roomID,
+      );
       int maxTurretLv = 0;
       if (turrets.isNotEmpty) {
         maxTurretLv = turrets.map((t) => t.level).reduce(math.max);
@@ -207,9 +207,9 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
 
     // 1. Check Requirements (Turret level)
     if (nextUpgrade.requirementLabel != null) {
-      final turrets = game.world.children
-          .whereType<TurretEntity>()
-          .where((t) => t.roomID == roomID);
+      final turrets = game.world.children.whereType<TurretEntity>().where(
+        (t) => t.roomID == roomID,
+      );
       int maxTurretLv = 0;
       if (turrets.isNotEmpty) {
         maxTurretLv = turrets.map((t) => t.level).reduce(math.max);

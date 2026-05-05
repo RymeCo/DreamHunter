@@ -211,12 +211,18 @@ class TurretEntity extends BaseEntity with TapCallbacks {
       if (_currentTarget!.isDestroyed) stillViable = false;
 
       // 2. Is it out of range?
-      if (stillViable && center.distanceTo(_currentTarget!.center) > range + 16) {
+      if (stillViable &&
+          center.distanceTo(_currentTarget!.center) > range + 16) {
         stillViable = false;
       }
 
       // 3. Is Line of Sight lost?
-      if (stillViable && !game.hasLineOfSight(center, _currentTarget!.center, ignoredRoomID: roomID)) {
+      if (stillViable &&
+          !game.hasLineOfSight(
+            center,
+            _currentTarget!.center,
+            ignoredRoomID: roomID,
+          )) {
         stillViable = false;
       }
 
@@ -229,14 +235,18 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     if (_currentTarget == null && _scanTimer >= 0.2) {
       _scanTimer = 0;
 
-      // EXCLUSIVE TARGETING PROTOCOL: 
+      // EXCLUSIVE TARGETING PROTOCOL:
       // Max 2 active turrets per room can fire simultaneously.
-      final activeTurretsCount = game.turrets.whereType<TurretEntity>().where((t) => 
-        t != this && 
-        t.roomID == roomID && 
-        t._currentTarget != null && 
-        !t.isStunned
-      ).length;
+      final activeTurretsCount = game.turrets
+          .whereType<TurretEntity>()
+          .where(
+            (t) =>
+                t != this &&
+                t.roomID == roomID &&
+                t._currentTarget != null &&
+                !t.isStunned,
+          )
+          .length;
 
       if (activeTurretsCount < 2) {
         _currentTarget = _findBestVisibleMonster();
@@ -250,7 +260,7 @@ class TurretEntity extends BaseEntity with TapCallbacks {
         _currentTarget!.center.y - center.y,
         _currentTarget!.center.x - center.x,
       );
-      
+
       // We use simple assignment for now, but targetAngle is correct
       head.angle = targetAngle;
 
@@ -268,13 +278,15 @@ class TurretEntity extends BaseEntity with TapCallbacks {
 
     // Sort monsters by distance to ensure we pick the closest VISIBLE one
     final sortedMonsters = game.monsters.where((m) => !m.isDestroyed).toList();
-    sortedMonsters.sort((a, b) => 
-      center.distanceTo(a.center).compareTo(center.distanceTo(b.center))
+    sortedMonsters.sort(
+      (a, b) =>
+          center.distanceTo(a.center).compareTo(center.distanceTo(b.center)),
     );
 
     for (final monster in sortedMonsters) {
       final dist = center.distanceTo(monster.center);
-      if (dist > range) break; // Since sorted, all subsequent monsters are also out of range
+      if (dist > range)
+        break; // Since sorted, all subsequent monsters are also out of range
 
       // LoS check for this specific monster
       if (game.hasLineOfSight(center, monster.center, ignoredRoomID: roomID)) {
@@ -287,13 +299,13 @@ class TurretEntity extends BaseEntity with TapCallbacks {
 
   void _fire() {
     if (_currentTarget == null) return;
-    
+
     // Play sound and rumble
     AudioManager.instance.playClick();
-    
+
     // Determine ownership
     final isPlayerOwned = roomID == MatchManager.instance.currentRoomID;
-    
+
     // VELOCITY UPGRADE: 1000px/s makes it virtually a 100% hit (tracer speed)
     final velocity = Vector2(cos(head.angle), sin(head.angle)) * 1000;
 
@@ -317,4 +329,3 @@ class TurretHeadComponent extends SpriteComponent {
         position: Vector2(16, 16), // Center in parent
       );
 }
-

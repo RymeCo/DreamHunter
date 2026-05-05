@@ -13,15 +13,16 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      return isSignedIn() && get(/databases/$(database)/documents/players/$(request.auth.uid)).data.role == 'admin';
     }
 
     function isModerator() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isModerator == true;
+      return isSignedIn() && 
+        get(/databases/$(database)/documents/players/$(request.auth.uid)).data.role in ['admin', 'moderator'];
     }
 
     // User profiles
-    match /users/{userId} {
+    match /players/{userId} {
       // Allow users to read their own profile
       allow read: if isSignedIn() && (isOwner(userId) || isAdmin() || isModerator());
       

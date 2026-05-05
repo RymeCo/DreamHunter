@@ -18,7 +18,7 @@ class ChatService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  
+
   WebSocketChannel? _channel;
   final _messageController = StreamController<List<ChatMessage>>.broadcast();
   final List<ChatMessage> _messageBuffer = [];
@@ -33,15 +33,21 @@ class ChatService {
         _messageBuffer.clear();
       }
       _currentRegion = region;
-      
+
       // OPTIMIZATION: Always push the current buffer (even if empty) to avoid the UI spinner
-      developer.log('Pushing current buffer (length: ${_messageBuffer.length}) to UI.', name: 'ChatService');
+      developer.log(
+        'Pushing current buffer (length: ${_messageBuffer.length}) to UI.',
+        name: 'ChatService',
+      );
       Future.microtask(() => _messageController.add(List.from(_messageBuffer)));
-      
+
       _connect(region);
     } else {
       // Even if already connected, push current buffer to ensure the new listener gets data
-      developer.log('Active channel found, pushing current buffer.', name: 'ChatService');
+      developer.log(
+        'Active channel found, pushing current buffer.',
+        name: 'ChatService',
+      );
       Future.microtask(() => _messageController.add(List.from(_messageBuffer)));
     }
     return _messageController.stream;
@@ -54,14 +60,19 @@ class ChatService {
     try {
       // 1. Get the ID token with a timeout to prevent hanging
       developer.log('Step 1: Fetching token...', name: 'ChatService');
-      final token = await ApiGateway().getIdToken()
-          .timeout(const Duration(seconds: 5), onTimeout: () {
-            developer.log('Token fetch timed out!', name: 'ChatService');
-            return null;
-          });
-      
+      final token = await ApiGateway().getIdToken().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          developer.log('Token fetch timed out!', name: 'ChatService');
+          return null;
+        },
+      );
+
       if (token == null) {
-        developer.log('Step 1 Failed: No token available.', name: 'ChatService');
+        developer.log(
+          'Step 1 Failed: No token available.',
+          name: 'ChatService',
+        );
         _isConnecting = false;
         return;
       }
@@ -70,48 +81,66 @@ class ChatService {
       final wsUrl = ApiGateway.baseUrl
           .replaceFirst('https://', 'wss://')
           .replaceFirst('http://', 'ws://');
-      
+
       final uri = Uri.parse('$wsUrl/ws/chat/$region?token=$token');
       developer.log('Step 2: Connecting to $uri', name: 'ChatService');
 
       // 3. Connect to WebSocket
       _channel = WebSocketChannel.connect(uri);
-      
+
       // We must wait for the connection to be established to know if it succeeded
       // But WebSocketChannel.connect is lazy. The handshake happens on the first listen.
-      
+
       _channel!.stream.listen(
         (data) {
           try {
             final json = jsonDecode(data);
             final message = ChatMessage.fromJson(json);
-            
+
             // Deduplication
             if (!_messageBuffer.any((m) => m.id == message.id)) {
               _messageBuffer.add(message);
               _messageBuffer.sort((a, b) => a.timestamp.compareTo(b.timestamp));
               if (_messageBuffer.length > 50) _messageBuffer.removeAt(0);
-              
+
               _messageController.add(List.from(_messageBuffer));
             }
           } catch (e) {
-            developer.log('Step 3: Error decoding message: $data', error: e, name: 'ChatService');
+            developer.log(
+              'Step 3: Error decoding message: $data',
+              error: e,
+              name: 'ChatService',
+            );
           }
         },
         onError: (error) {
-          developer.log('Step 3: WebSocket Stream Error', error: error, name: 'ChatService');
+          developer.log(
+            'Step 3: WebSocket Stream Error',
+            error: error,
+            name: 'ChatService',
+          );
           _reconnect(region);
         },
         onDone: () {
-          developer.log('Step 3: WebSocket Stream Closed (onDone)', name: 'ChatService');
+          developer.log(
+            'Step 3: WebSocket Stream Closed (onDone)',
+            name: 'ChatService',
+          );
           _reconnect(region);
         },
       );
-      
-      developer.log('Step 4: Connection listener established.', name: 'ChatService');
+
+      developer.log(
+        'Step 4: Connection listener established.',
+        name: 'ChatService',
+      );
       _isConnecting = false;
     } catch (e) {
-      developer.log('Step 5: Connection sequence failed catastrophically', error: e, name: 'ChatService');
+      developer.log(
+        'Step 5: Connection sequence failed catastrophically',
+        error: e,
+        name: 'ChatService',
+      );
       _isConnecting = false;
       _reconnect(region);
     }
@@ -135,7 +164,9 @@ class ChatService {
     if (_lastMessageTime != null) {
       final diff = DateTime.now().difference(_lastMessageTime!);
       if (diff.inSeconds < 5) {
-        throw Exception('Please wait ${5 - diff.inSeconds}s before chatting again.');
+        throw Exception(
+          'Please wait ${5 - diff.inSeconds}s before chatting again.',
+        );
       }
     }
 
@@ -154,7 +185,7 @@ class ChatService {
     if (_channel != null) {
       _channel!.sink.add(jsonEncode(message.toJson()));
       _lastMessageTime = DateTime.now();
-      
+
       // Track task progress
       TaskService.instance.trackAction(TaskType.chat);
     } else {
@@ -164,7 +195,9 @@ class ChatService {
 
   /// Keep daily announcement on Firestore as it's a "cold" read (once a day).
   Future<Map<String, dynamic>?> getDailyAnnouncement() async {
-    final lastShown = await StorageEngine.instance.getMetadata('last_announcement_info');
+    final lastShown = await StorageEngine.instance.getMetadata(
+      'last_announcement_info',
+    );
     final today = DateTime.now().toIso8601String().split('T')[0];
 
     if (lastShown != null && lastShown['date'] == today) {
@@ -184,18 +217,26 @@ class ChatService {
         final announcement = {
           'date': today,
           'message': data['daily_message'] ?? 'Welcome to DreamHunter!',
-          'rules': data['rules'] ?? [
-            '1. Be respectful to others.',
-            '2. No spamming or advertising.',
-            '3. Keep it family friendly.',
-          ],
+          'rules':
+              data['rules'] ??
+              [
+                '1. Be respectful to others.',
+                '2. No spamming or advertising.',
+                '3. Keep it family friendly.',
+              ],
         };
 
-        await StorageEngine.instance.saveMetadata('last_announcement_info', {'date': today});
+        await StorageEngine.instance.saveMetadata('last_announcement_info', {
+          'date': today,
+        });
         return announcement;
       }
     } catch (e) {
-      developer.log('Announcement fetch failed or timed out', error: e, name: 'ChatService');
+      developer.log(
+        'Announcement fetch failed or timed out',
+        error: e,
+        name: 'ChatService',
+      );
       // Return default announcement so user isn't stuck waiting
       return {
         'date': today,

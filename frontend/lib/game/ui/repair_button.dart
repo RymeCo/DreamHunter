@@ -150,7 +150,8 @@ class RepairButton extends PositionComponent
       _cooldownOverlay.isActiveIndicator = true;
     } else {
       // Show cooldown progress (filling)
-      _cooldownOverlay.progress = game.player.repairCooldown / GameConfig.repairCooldown;
+      _cooldownOverlay.progress =
+          game.player.repairCooldown / GameConfig.repairCooldown;
       _cooldownOverlay.isActiveIndicator = false;
     }
 

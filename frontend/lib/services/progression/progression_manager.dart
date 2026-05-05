@@ -55,13 +55,9 @@ class ProgressionManager extends ChangeNotifier {
   Future<void> _persist() async {
     final cached = await StorageEngine.instance.getMetadata('player_profile');
     if (cached != null) {
-      final updated = {
-        ...cached,
-        'level': _level,
-        'xp': _xp,
-      };
+      final updated = {...cached, 'level': _level, 'xp': _xp};
       await StorageEngine.instance.saveMetadata('player_profile', updated);
-      
+
       // We don't call backupPlayer here to avoid spamming the backend;
       // ProfileManager will handle the full sync at natural intervals.
     }

@@ -119,7 +119,7 @@ class MatchManager extends ChangeNotifier {
     // DistancePenalty = Distance / 20
     // LevelPenalty = Level * 5
     // FinalScore = BaseScore - DistancePenalty - LevelPenalty
-    
+
     list.sort((a, b) {
       final aScore = _calculateTargetScore(a, monsterPos);
       final bScore = _calculateTargetScore(b, monsterPos);
@@ -131,7 +131,7 @@ class MatchManager extends ChangeNotifier {
 
   double _calculateTargetScore(_TargetValue target, Vector2 monsterPos) {
     double score = 0;
-    
+
     // 1. Occupancy is the highest priority
     if (target.isOccupied) score += 100;
     if (target.isPlayer) score += 50;

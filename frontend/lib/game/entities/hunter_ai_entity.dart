@@ -44,7 +44,8 @@ class HunterAIEntity extends BaseEntity {
   }
 
   @override
-  String get roomID => isMounted ? game.getRoomIDAt(position) : targetBed.roomID;
+  String get roomID =>
+      isMounted ? game.getRoomIDAt(position) : targetBed.roomID;
 
   @override
   Future<void> onLoad() async {
@@ -106,7 +107,9 @@ class HunterAIEntity extends BaseEntity {
     if (myRoom.isEmpty) return;
 
     // PERFORMANCE OPTIMIZATION: Use game's cached _buildings list
-    final buildings = game.getBuildingsInRoom(myRoom).where((b) => b is DoorEntity || b is FridgeEntity);
+    final buildings = game
+        .getBuildingsInRoom(myRoom)
+        .where((b) => b is DoorEntity || b is FridgeEntity);
 
     bool anyDamaged = false;
     for (final b in buildings) {
@@ -171,7 +174,6 @@ class HunterAIEntity extends BaseEntity {
   void sleep(Vector2 bedPosition) {
     isSleeping = true;
     scale.x = 1.0;
-
 
     // Change visuals to just the head
     _spriteComponent.sprite = _sleepingSprite;

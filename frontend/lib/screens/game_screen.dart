@@ -65,7 +65,9 @@ class _GameScreenState extends State<GameScreen> {
       }
 
       // 2. Match Ended Check (Loss or Forfeit)
-      if (_matchManager.matchEnded && !_rewardDialogShown && !_matchManager.isForfeited) {
+      if (_matchManager.matchEnded &&
+          !_rewardDialogShown &&
+          !_matchManager.isForfeited) {
         _showRewardDialog();
         return;
       }
@@ -111,7 +113,7 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _showRewardDialog() async {
     if (_rewardDialogShown) return;
     _rewardDialogShown = true;
-    
+
     _matchManager.pauseGame();
 
     if (!mounted) return;

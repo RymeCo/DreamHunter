@@ -78,8 +78,11 @@ class _LoginDialogState extends State<LoginDialog> {
       } catch (e) {
         debugPrint('Auth error: $e');
         if (mounted) {
-          showCustomSnackBar(context, 'An unexpected error occurred.',
-              type: SnackBarType.error);
+          showCustomSnackBar(
+            context,
+            'An unexpected error occurred.',
+            type: SnackBarType.error,
+          );
           setState(() => _isLoading = false);
         }
       }

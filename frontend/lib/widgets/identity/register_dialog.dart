@@ -71,8 +71,11 @@ class _RegisterDialogState extends State<RegisterDialog> {
       } catch (e) {
         debugPrint('Registration error: $e');
         if (mounted) {
-          showCustomSnackBar(context, 'An unexpected error occurred.',
-              type: SnackBarType.error);
+          showCustomSnackBar(
+            context,
+            'An unexpected error occurred.',
+            type: SnackBarType.error,
+          );
           setState(() => _isLoading = false);
         }
       }

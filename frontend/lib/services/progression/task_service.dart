@@ -22,7 +22,7 @@ class TaskService extends ChangeNotifier {
 
     final now = DateTime.now();
     final today = now.toIso8601String().split('T')[0];
-    
+
     final metadata = await StorageEngine.instance.getMetadata(_lastResetKey);
     final lastResetDate = metadata?['date'] as String?;
 
@@ -122,16 +122,20 @@ class TaskService extends ChangeNotifier {
 
   Future<void> _saveTasks() async {
     final data = {
-      'tasks': _tasks.map((t) => {
-        'id': t.id,
-        'title': t.title,
-        'description': t.description,
-        'target': t.target,
-        'progress': t.progress,
-        'reward': t.reward,
-        'claimed': t.claimed,
-        'type': t.type.name,
-      }).toList(),
+      'tasks': _tasks
+          .map(
+            (t) => {
+              'id': t.id,
+              'title': t.title,
+              'description': t.description,
+              'target': t.target,
+              'progress': t.progress,
+              'reward': t.reward,
+              'claimed': t.claimed,
+              'type': t.type.name,
+            },
+          )
+          .toList(),
     };
     await StorageEngine.instance.saveMetadata(_tasksKey, data);
   }

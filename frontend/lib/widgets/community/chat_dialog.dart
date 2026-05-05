@@ -144,42 +144,54 @@ class _ChatDialogState extends State<ChatDialog> {
                 color: Colors.black26,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: _isSleeping 
-                ? _buildSleepOverlay()
-                : StreamBuilder<List<ChatMessage>>(
-                    stream: ChatService.instance.getMessages(region: _selectedRegion),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
-                      }
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
+              child: _isSleeping
+                  ? _buildSleepOverlay()
+                  : StreamBuilder<List<ChatMessage>>(
+                      stream: ChatService.instance.getMessages(
+                        region: _selectedRegion,
+                      ),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              'Error: ${snapshot.error}',
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          );
+                        }
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
 
-                      // Reset timer when new messages arrive
-                      if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                        // Using post-frame callback to avoid build-phase setState if needed
-                        // but since _resetInactivityTimer cancels a timer, it's generally safe.
-                      }
+                        // Reset timer when new messages arrive
+                        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                          // Using post-frame callback to avoid build-phase setState if needed
+                          // but since _resetInactivityTimer cancels a timer, it's generally safe.
+                        }
 
-                      final messages = snapshot.data!;
-                      
-                      return ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(8),
-                        itemCount: messages.length + (_announcement != null ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (_announcement != null && index == 0) {
-                            return _buildAnnouncementCard();
-                          }
-                          
-                          final messageIndex = _announcement != null ? index - 1 : index;
-                          final message = messages[messageIndex];
-                          return _MessageBubble(message: message);
-                        },
-                      );
-                    },
-                  ),
+                        final messages = snapshot.data!;
+
+                        return ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.all(8),
+                          itemCount:
+                              messages.length + (_announcement != null ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (_announcement != null && index == 0) {
+                              return _buildAnnouncementCard();
+                            }
+
+                            final messageIndex = _announcement != null
+                                ? index - 1
+                                : index;
+                            final message = messages[messageIndex];
+                            return _MessageBubble(message: message);
+                          },
+                        );
+                      },
+                    ),
             ),
           ),
         ],
@@ -194,7 +206,11 @@ class _ChatDialogState extends State<ChatDialog> {
         if (_isSleeping)
           const Text(
             '💤 POWER SAVER ACTIVE',
-            style: TextStyle(color: Colors.amber, fontSize: 8, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.amber,
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
           )
         else
           const SizedBox(),
@@ -219,7 +235,10 @@ class _ChatDialogState extends State<ChatDialog> {
                       value: e.key,
                       child: Text(
                         e.value,
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   )
@@ -263,7 +282,11 @@ class _ChatDialogState extends State<ChatDialog> {
           const SizedBox(height: 8),
           Text(
             _announcement!['message'],
-            style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              height: 1.4,
+            ),
           ),
           const Divider(color: Colors.white12, height: 20),
           const Text(
@@ -276,18 +299,23 @@ class _ChatDialogState extends State<ChatDialog> {
             ),
           ),
           const SizedBox(height: 4),
-          ...rules.map((rule) => Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Text(
-                  '• $rule',
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              )),
+          ...rules.map(
+            (rule) => Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                '• $rule',
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
+              ),
+            ),
+          ),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () => setState(() => _announcement = null),
-              child: const Text('DISMISS', style: TextStyle(color: Colors.cyanAccent, fontSize: 10)),
+              child: const Text(
+                'DISMISS',
+                style: TextStyle(color: Colors.cyanAccent, fontSize: 10),
+              ),
             ),
           ),
         ],
@@ -300,7 +328,11 @@ class _ChatDialogState extends State<ChatDialog> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.bedtime, color: Colors.amber.withValues(alpha: 0.5), size: 48),
+          Icon(
+            Icons.bedtime,
+            color: Colors.amber.withValues(alpha: 0.5),
+            size: 48,
+          ),
           const SizedBox(height: 16),
           const Text(
             'CHAT IS SLEEPING',
@@ -340,7 +372,9 @@ class _MessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
-        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isMe
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -348,7 +382,11 @@ class _MessageBubble extends StatelessWidget {
               if (!isMe)
                 Text(
                   message.senderName,
-                  style: const TextStyle(color: Colors.cyanAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.cyanAccent,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               const SizedBox(width: 4),
               Text(
@@ -359,7 +397,11 @@ class _MessageBubble extends StatelessWidget {
                 const SizedBox(width: 4),
                 const Text(
                   'YOU',
-                  style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white38,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ],
@@ -368,10 +410,14 @@ class _MessageBubble extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isMe ? Colors.cyanAccent.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05),
+              color: isMe
+                  ? Colors.cyanAccent.withValues(alpha: 0.1)
+                  : Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isMe ? Colors.cyanAccent.withValues(alpha: 0.2) : Colors.white12,
+                color: isMe
+                    ? Colors.cyanAccent.withValues(alpha: 0.2)
+                    : Colors.white12,
               ),
             ),
             child: Text(

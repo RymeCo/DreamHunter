@@ -19,7 +19,7 @@ class ShopManager extends ChangeNotifier {
   String get selectedCharacterId => _selectedCharacterId;
 
   int getOwnedCount(String itemId) {
-    // Gap Fix: Default character is always owned
+    // Default character is always owned
     if (itemId == 'char_max') return 1;
     return _localInventory[itemId] ?? 0;
   }
@@ -52,17 +52,13 @@ class ShopManager extends ChangeNotifier {
 
   /// Categorization helper for UI layout
   Map<String, List<Item>> getItemsByCategory() {
-    final List<String> order = [
-      'Hunters',
-      'Gear',
-      'Boost',
-    ];
+    final List<String> order = ['Hunters', 'Gear', 'Boost'];
     final Map<String, List<Item>> grouped = {};
     for (var cat in order) {
       // Map display name to registry category if needed
       String registryCategory = cat;
       if (cat == 'Hunters') registryCategory = 'Hunters';
-      
+
       grouped[cat] = ItemRegistry.getByCategory(registryCategory);
     }
     return grouped;

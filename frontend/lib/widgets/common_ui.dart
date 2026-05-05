@@ -131,16 +131,13 @@ class GameDialogHeader extends StatelessWidget {
               title.toUpperCase(),
               textAlign: isCentered ? TextAlign.center : TextAlign.left,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: accent,
-                    fontSize: h > 40 ? 20 : 16,
-                    letterSpacing: 2,
-                    shadows: [
-                      Shadow(
-                        color: accent.withValues(alpha: 0.4),
-                        blurRadius: 12,
-                      ),
-                    ],
-                  ),
+                color: accent,
+                fontSize: h > 40 ? 20 : 16,
+                letterSpacing: 2,
+                shadows: [
+                  Shadow(color: accent.withValues(alpha: 0.4), blurRadius: 12),
+                ],
+              ),
               overflow: TextOverflow.ellipsis, // Prevent overlap
               maxLines: 1,
             ),
@@ -200,15 +197,20 @@ class StandardGlassPage extends StatelessWidget {
     final screenHeight = MediaQuery.of(context).size.height;
 
     // Responsive sizing: Defaults to 90% of screen width (max 500) and 85% of screen height
-    final responsiveWidth = isFullScreen ? screenWidth : (width ?? (screenWidth * 0.9).clamp(320.0, 500.0));
-    final responsiveHeight = isFullScreen ? screenHeight : (height ?? (isCompact ? null : screenHeight * 0.85));
+    final responsiveWidth = isFullScreen
+        ? screenWidth
+        : (width ?? (screenWidth * 0.9).clamp(320.0, 500.0));
+    final responsiveHeight = isFullScreen
+        ? screenHeight
+        : (height ?? (isCompact ? null : screenHeight * 0.85));
 
     return Center(
       child: LiquidGlassDialog(
         width: responsiveWidth,
         height: responsiveHeight,
         borderRadius: isFullScreen ? 0 : 20.0,
-        padding: padding ??
+        padding:
+            padding ??
             EdgeInsets.symmetric(
               horizontal: (isCompact || isFullScreen) ? 16 : 24,
               vertical: (isCompact || isFullScreen) ? 12 : 20,

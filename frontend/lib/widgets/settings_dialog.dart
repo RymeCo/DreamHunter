@@ -93,32 +93,37 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 Text(
                   'DREAMHUNTER',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        letterSpacing: 8,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
+                    letterSpacing: 8,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
                 ),
                 Container(
                   margin: const EdgeInsets.only(top: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.cyanAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: Colors.cyanAccent.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Text(
                     'VERSION 1.0.0',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.cyanAccent,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
-                        ),
+                      color: Colors.cyanAccent,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 40),
-                
+
                 // Game Vision Section
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -127,55 +132,55 @@ class _SettingsDialogState extends State<SettingsDialog> {
                       Text(
                         'THE VISION',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.cyanAccent.withValues(alpha: 0.5),
-                              letterSpacing: 4,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          color: Colors.cyanAccent.withValues(alpha: 0.5),
+                          letterSpacing: 4,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Text(
                         'Step into a world where dreams and nightmares collide. DreamHunter is a high-octane dark fantasy survival experience, blending pixel-perfect retro aesthetics with modern atmospheric depth.',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white70,
-                              fontSize: 13,
-                              height: 1.6,
-                            ),
+                          color: Colors.white70,
+                          fontSize: 13,
+                          height: 1.6,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 48),
-                
+
                 // Studio Branding Section
                 Text(
                   'DEVELOPED BY',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.white24,
-                        letterSpacing: 3,
-                        fontSize: 8,
-                      ),
+                    color: Colors.white24,
+                    letterSpacing: 3,
+                    fontSize: 8,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'RYME',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 6,
-                      ),
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 6,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   '© 2026 RYME STUDIOS',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        fontSize: 9,
-                        letterSpacing: 1,
-                      ),
+                    color: Colors.white.withValues(alpha: 0.1),
+                    fontSize: 9,
+                    letterSpacing: 1,
+                  ),
                 ),
                 const SizedBox(height: 24),
               ],
@@ -201,8 +206,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
       final confirmed = await ConfirmationDialog.show(
         context,
         title: 'OVERWRITE CLOUD?',
-        message: 'Your current progress will replace the existing cloud backup. This cannot be undone.',
-        confirmLabel: 'OVERWRITE',
+        message:
+            'Your current progress will replace the existing cloud backup. This cannot be undone.\n\nWatch a short ad to proceed.',
+        confirmLabel: 'WATCH AD & OVERWRITE',
         isDestructive: true,
       );
       if (!confirmed) return;
@@ -217,7 +223,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
       final confirmed = await ConfirmationDialog.show(
         context,
         title: 'SYNC TO CLOUD?',
-        message: 'Any existing cloud data will be deleted and replaced with your current local progress.',
+        message:
+            'Any existing cloud data will be deleted and replaced with your current local progress.',
         confirmLabel: 'BACKUP NOW',
         color: Colors.cyanAccent,
       );
@@ -334,9 +341,11 @@ class _SettingsDialogState extends State<SettingsDialog> {
               children: [
                 _GlassActionItem(
                   title: 'Cloud Storage Sync',
-                  subtitle: _isSyncing 
-                      ? 'Syncing...' 
-                      : (_syncCount >= 1 ? 'Watch Ad to Sync again' : 'Backup your progress ($_syncCount/1)'),
+                  subtitle: _isSyncing
+                      ? 'Syncing...'
+                      : (_syncCount >= 1
+                            ? 'Watch Ad to Sync again'
+                            : 'Backup your progress ($_syncCount/1)'),
                   icon: Icons.cloud_done_rounded,
                   accentColor: Colors.cyanAccent,
                   onTap: _isSyncing ? () {} : _performManualSync,
@@ -379,10 +388,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
             Text(
               'DREAMHUNTER V 1.0.0',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    fontSize: 10,
-                    letterSpacing: 4,
-                  ),
+                color: Colors.white.withValues(alpha: 0.15),
+                fontSize: 10,
+                letterSpacing: 4,
+              ),
             ),
           ],
         ),

@@ -129,7 +129,8 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
         _buildConstructionItem(
           id: 'turret',
           name: 'Sentry Turret',
-          description: 'Automated defense system. Fires rapid shots at nearby nightmares.',
+          description:
+              'Automated defense system. Fires rapid shots at nearby nightmares.',
           imagePath: 'assets/images/game/defenses/turret_sheet-32x32.png',
           coinCost: GameConfig.turretBuildCost,
           benefit: '10-90 DMG/s (Max 2 per Room)',
@@ -148,7 +149,8 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
         _buildConstructionItem(
           id: 'fridge',
           name: 'Sub-Zero Fridge',
-          description: 'A heavy appliance that freezes the door, making it nearly unbreakable for a time.',
+          description:
+              'A heavy appliance that freezes the door, making it nearly unbreakable for a time.',
           imagePath: 'assets/images/game/defenses/fridge-64x64.png',
           energyCost: GameConfig.fridgeBuildCost,
           benefit: 'Status: Freezes Door',
@@ -169,7 +171,8 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
         _buildConstructionItem(
           id: 'generator:1',
           name: 'Plasma Generator',
-          description: 'Extracts energy from the dreamscape. Essential for high-tier upgrades.',
+          description:
+              'Extracts energy from the dreamscape. Essential for high-tier upgrades.',
           imagePath: 'assets/images/game/economy/generator_lv1-32x32.png',
           coinCost: GameConfig.generatorUpgrades[0].cost.coins,
           energyCost: GameConfig.generatorUpgrades[0].cost.energy,
@@ -209,7 +212,8 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
           return _buildConstructionItem(
             id: 'ore:${upg.level}',
             name: '${upg.material} Mine',
-            description: 'Extracts precious minerals from the void. Multiplies coin generation.',
+            description:
+                'Extracts precious minerals from the void. Multiplies coin generation.',
             imagePath: 'assets/images/game/economy/lv${upg.level}Ore-64x64.png',
             coinCost: upg.cost.coins,
             energyCost: upg.cost.energy,
@@ -290,7 +294,11 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
                             color: Colors.white.withValues(alpha: 0.1),
                           ),
                         ),
-                        child: _buildItemImage(imagePath, isSpriteSheet, canAfford && !isLocked),
+                        child: _buildItemImage(
+                          imagePath,
+                          isSpriteSheet,
+                          canAfford && !isLocked,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       // Name & Benefit
@@ -322,7 +330,9 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
-                                    isLocked ? (lockedLabel ?? benefit) : benefit,
+                                    isLocked
+                                        ? (lockedLabel ?? benefit)
+                                        : benefit,
                                     style: TextStyle(
                                       color: isLocked
                                           ? Colors.redAccent
@@ -345,7 +355,10 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
 
                 // Middle Section: Description
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 4.0,
+                  ),
                   child: Text(
                     description,
                     style: const TextStyle(
@@ -406,7 +419,7 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
                             return;
                           }
 
-                          // Logic Gap Fix: Resource deduction is now handled internally by tryBuild(owner: game.player)
+                          // Resource deduction is now handled internally by tryBuild(owner: game.player)
                           // We still play the sound and haptics here for UI feedback.
                           AudioManager.instance.playClick();
                           HapticManager.instance.medium();
@@ -444,8 +457,20 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
         maxHeight: 56 * 9,
         child: Stack(
           children: [
-             // Base (Col 0)
-             Image.asset(
+            // Base (Col 0)
+            Image.asset(
+              path,
+              width: 56 * 3,
+              height: 56 * 9,
+              filterQuality: FilterQuality.none,
+              fit: BoxFit.fill,
+              color: active ? null : Colors.black.withValues(alpha: 0.5),
+              colorBlendMode: active ? null : BlendMode.dstIn,
+            ),
+            // Head (Col 1) - Transposed
+            Transform.translate(
+              offset: const Offset(-56 * 1, 0),
+              child: Image.asset(
                 path,
                 width: 56 * 3,
                 height: 56 * 9,
@@ -454,19 +479,7 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
                 color: active ? null : Colors.black.withValues(alpha: 0.5),
                 colorBlendMode: active ? null : BlendMode.dstIn,
               ),
-              // Head (Col 1) - Transposed
-              Transform.translate(
-                offset: const Offset(-56 * 1, 0),
-                child: Image.asset(
-                  path,
-                  width: 56 * 3,
-                  height: 56 * 9,
-                  filterQuality: FilterQuality.none,
-                  fit: BoxFit.fill,
-                  color: active ? null : Colors.black.withValues(alpha: 0.5),
-                  colorBlendMode: active ? null : BlendMode.dstIn,
-                ),
-              ),
+            ),
           ],
         ),
       ),
@@ -482,11 +495,7 @@ class _BuildMenuDialogState extends State<BuildMenuDialog>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          color: isAffordable ? color : Colors.white24,
-          size: 16,
-        ),
+        Icon(icon, color: isAffordable ? color : Colors.white24, size: 16),
         const SizedBox(width: 4),
         Text(
           "$amount",

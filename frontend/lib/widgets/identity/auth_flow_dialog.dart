@@ -33,19 +33,19 @@ class _AuthFlowDialogState extends State<AuthFlowDialog> {
   }
 
   @override
-    Widget build(BuildContext context) {
-      const double dialogWidth = 350;
+  Widget build(BuildContext context) {
+    const double dialogWidth = 350;
 
-      switch (_currentType) {
-        case AuthDialogType.login:
-          return Center(
-            child: Transform.translate(
-              offset: const Offset(0, 50),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: dialogWidth,
-                  maxHeight: MediaQuery.of(context).size.height * 0.8,
-                ),
+    switch (_currentType) {
+      case AuthDialogType.login:
+        return Center(
+          child: Transform.translate(
+            offset: const Offset(0, 50),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: dialogWidth,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
               child: LoginDialog(
                 onRegisterRequested: () =>
                     setState(() => _currentType = AuthDialogType.register),
