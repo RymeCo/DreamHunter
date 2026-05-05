@@ -65,7 +65,6 @@ class PlayerService:
         level_query = db.collection("players")\
             .where(filter=FieldFilter("level", ">=", 1))\
             .order_by("level", direction="DESCENDING")\
-            .order_by("createdAt", direction="ASCENDING")\
             .limit(50).stream()
 
         top_levels = []
@@ -83,7 +82,6 @@ class PlayerService:
         coin_query = db.collection("players")\
             .where(filter=FieldFilter("coins", ">=", 100))\
             .order_by("coins", direction="DESCENDING")\
-            .order_by("createdAt", direction="ASCENDING")\
             .limit(50).stream()
 
         top_coins = []

@@ -1,18 +1,19 @@
 {
   "indexes": [
     {
-      "collectionGroup": "users",
+      "collectionGroup": "players",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "level", "order": "DESCENDING" },
-        { "fieldPath": "xp", "order": "DESCENDING" }
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionGroup": "users",
+      "collectionGroup": "players",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "dreamCoins", "order": "DESCENDING" }
+        { "fieldPath": "coins", "order": "DESCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
     },
     {
