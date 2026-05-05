@@ -42,6 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late StreamSubscription<User?> _authStateSubscription;
   final WalletManager _controller = WalletManager.instance;
   bool _isLoggedIn = false;
+  bool _showRelogNotice = false;
 
   @override
   void initState() {
@@ -62,6 +63,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await _controller.initialize();
     await ProgressionManager.instance.initialize();
     await DailyRoulette.instance.initialize();
+
+    // Check if we should show the relog notice
+    final relogDismissed = await StorageEngine.instance.getMetadata('relog_notice_dismissed');
+    if (relogDismissed == null) {
+      setState(() => _showRelogNotice = true);
+    }
 
     // Sync with live backend if logged in
     if (FirebaseAuth.instance.currentUser != null) {
@@ -204,12 +211,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _buildRouletteButton(),
           _buildShopButton(),
           _buildChatButton(),
+          if (_showRelogNotice) _buildRelogNotice(),
         ],
       ),
     );
   }
 
   // --- Sub-Widgets to simplify build() ---
+
+  Widget _buildRelogNotice() {
+    return Positioned(
+      top: 120,
+      left: 16,
+      right: 16,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: Colors.orange),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'SYSTEM: If you received a balance update or profile edit from an admin, please relog to sync your local wallet.',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ),
+              IconButton(
+                onPressed: () async {
+                  setState(() => _showRelogNotice = false);
+                  await StorageEngine.instance.saveMetadata(
+                    'relog_notice_dismissed',
+                    {'timestamp': DateTime.now().toIso8601String()},
+                  );
+                },
+                icon: const Icon(Icons.close, color: Colors.white54, size: 20),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
