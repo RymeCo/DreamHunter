@@ -30,8 +30,6 @@ class _ChatViewState extends State<ChatView> {
     'chinese',
     'russian',
     'spanish',
-    'lobby',
-    'trade'
   ];
 
   @override
