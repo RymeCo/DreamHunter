@@ -23,15 +23,15 @@ class _PlayerViewState extends State<PlayerView> {
     setState(() => _isSearching = true);
     try {
       final response = await _api.get('/admin/players/search?q=$query');
-      if (response.statusCode == 200) {
+      if (context.mounted && response.statusCode == 200) {
         setState(() {
           _searchResults = json.decode(response.body);
           _isSearching = false;
         });
       }
     } catch (e) {
-      setState(() => _isSearching = false);
-      if (mounted) {
+      if (context.mounted) {
+        setState(() => _isSearching = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Search failed: $e')),
         );
@@ -40,7 +40,6 @@ class _PlayerViewState extends State<PlayerView> {
   }
 
   Future<void> _showPlayerDetails(String uid) async {
-    final navigator = Navigator.of(context);
     // 1. Fetch Real-time data (Just-in-time)
     showDialog(
       context: context,
@@ -50,8 +49,10 @@ class _PlayerViewState extends State<PlayerView> {
 
     try {
       final response = await _api.get('/admin/players/$uid');
+      
       if (!context.mounted) return;
-      navigator.pop(); // Close loading
+      // Use Navigator.of(context) which is explicitly allowed if context.mounted is checked
+      Navigator.of(context).pop(); // Close loading
 
       if (response.statusCode == 200) {
         final player = json.decode(response.body);
@@ -59,7 +60,7 @@ class _PlayerViewState extends State<PlayerView> {
       }
     } catch (e) {
       if (context.mounted) {
-        navigator.pop();
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to fetch player details: $e')),
         );
@@ -70,37 +71,50 @@ class _PlayerViewState extends State<PlayerView> {
   void _showEditDialog(Map<String, dynamic> player) {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return _PlayerEditDialog(
           player: player,
           onUpdate: (updatedData) async {
-            if (!context.mounted) return;
+            if (!dialogContext.mounted) return;
+            
             // Final Confirmation
             final confirm = await showDialog<bool>(
-              context: context,
+              context: dialogContext,
               builder: (context) => AlertDialog(
                 title: const Text('Confirm Changes'),
-                content: const Text('Are you sure you want to apply these changes? This action is irreversible.'),
+                content: const Text(
+                    'Are you sure you want to apply these changes? This action is irreversible.'),
                 actions: [
-                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                  TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Apply', style: TextStyle(color: Colors.red))),
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel')),
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Apply',
+                          style: TextStyle(color: Colors.red))),
                 ],
               ),
             );
 
             if (confirm == true) {
               try {
-                final response = await _api.patch('/admin/players/${player['uid']}', body: updatedData);
+                final response = await _api.patch(
+                    '/admin/players/${player['uid']}',
+                    body: updatedData);
+                
+                if (!dialogContext.mounted) return;
+
                 if (response.statusCode == 200) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Player updated successfully!')));
-                    Navigator.pop(context);
-                    _search(); // Refresh results to show new stats/role
-                  }
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                          content: Text('Player updated successfully!')));
+                  Navigator.of(dialogContext).pop();
+                  _search(); // Refresh results to show new stats/role
                 }
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Update failed: $e')));
+                if (dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(content: Text('Update failed: $e')));
                 }
               }
             }
