@@ -28,4 +28,13 @@ class ApiGateway {
       body: json.encode(body),
     );
   }
+
+  Future<http.Response> patch(String path, {Object? body}) async {
+    final url = Uri.parse('$baseUrl$path');
+    return await http.patch(
+      url,
+      headers: await getAuthHeaders(),
+      body: json.encode(body),
+    );
+  }
 }

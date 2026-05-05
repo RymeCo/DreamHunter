@@ -3,6 +3,7 @@ from typing import List, Dict
 import datetime
 import ujson
 from core.firebase import auth_client
+from services.settings_service import settings_service
 
 router = APIRouter()
 
@@ -66,6 +67,12 @@ manager = ConnectionManager()
 
 @router.websocket("/ws/chat/{region}")
 async def websocket_endpoint(websocket: WebSocket, region: str, token: str = Query(...)):
+    # 0. Check Global Settings
+    if not settings_service.is_chat_enabled():
+        await websocket.accept() # Must accept before closing with custom code sometimes
+        await websocket.close(code=1008, reason="CHAT_DISABLED")
+        return
+
     # 1. Verify Identity (Security Gap Fix)
     try:
         decoded_token = auth_client.verify_id_token(token)
