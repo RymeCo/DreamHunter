@@ -65,7 +65,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
       transitionDuration: const Duration(milliseconds: 400),
       pageBuilder: (context, animation, secondaryAnimation) {
         return StandardGlassPage(
-          title: 'CREDITS',
+          title: 'ABOUT DREAMHUNTER',
           width: 340,
           height: 520,
           child: SingleChildScrollView(
@@ -119,18 +119,31 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 ),
                 const SizedBox(height: 40),
                 
-                // Mission / Blurb Section
+                // Game Vision Section
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    'Experience the ultimate dark fantasy hunt. A fusion of smooth retro aesthetics and modern survival mechanics.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          height: 1.6,
-                          fontStyle: FontStyle.italic,
-                        ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'THE VISION',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Colors.cyanAccent.withValues(alpha: 0.5),
+                              letterSpacing: 4,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Step into a world where dreams and nightmares collide. DreamHunter is a high-octane dark fantasy survival experience, blending pixel-perfect retro aesthetics with modern atmospheric depth.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              height: 1.6,
+                            ),
+                      ),
+                    ],
                   ),
                 ),
                 
@@ -138,19 +151,22 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 
                 // Studio Branding Section
                 Text(
-                  'PUBLISHED BY',
+                  'DEVELOPED BY',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: Colors.white24,
                         letterSpacing: 3,
                         fontSize: 8,
                       ),
                 ),
-                const SizedBox(height: 12),
-                Image.asset(
-                  'assets/images/branding/ryme_logo.png',
-                  height: 32,
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fit: BoxFit.contain,
+                const SizedBox(height: 8),
+                Text(
+                  'RYME',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 6,
+                      ),
                 ),
                 const SizedBox(height: 16),
                 Text(
