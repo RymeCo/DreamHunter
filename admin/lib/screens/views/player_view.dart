@@ -281,19 +281,23 @@ class _PlayerViewState extends State<PlayerView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Global Leaderboards',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    'Updated: ${_leaderboardData['lastUpdated'] != null ? DateTime.parse(_leaderboardData['lastUpdated']).toLocal().toString().split('.')[0] : "Never"}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Global Leaderboards',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'Updated: ${_leaderboardData['lastUpdated'] != null ? DateTime.parse(_leaderboardData['lastUpdated']).toLocal().toString().split('.')[0] : "Never"}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               OutlinedButton.icon(
                 onPressed: _isLoadingLeaderboard ? null : _forceRecalculate,
                 icon: const Icon(Icons.refresh, size: 18),

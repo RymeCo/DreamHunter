@@ -12,6 +12,7 @@ class PlayerModel {
   final bool isBannedFromChat;
   final String? muteUntil; // ISO timestamp
   final String? banUntil; // ISO timestamp
+  final String? leaderboardHideUntil; // ISO timestamp
   final String role; // 'admin', 'mod', 'player'
 
   // Progression
@@ -39,6 +40,7 @@ class PlayerModel {
     this.isBannedFromChat = false,
     this.muteUntil,
     this.banUntil,
+    this.leaderboardHideUntil,
     this.role = 'player',
     this.level = 1,
     this.xp = 0,
@@ -60,6 +62,7 @@ class PlayerModel {
       isBannedFromChat: data['isBannedFromChat'] ?? false,
       muteUntil: data['muteUntil'],
       banUntil: data['banUntil'],
+      leaderboardHideUntil: data['leaderboardHideUntil'],
       role: data['role'] ?? 'player',
       level: data['level'] ?? 1,
       xp: data['xp'] ?? 0,
@@ -81,6 +84,7 @@ class PlayerModel {
       'isBannedFromChat': isBannedFromChat,
       'muteUntil': muteUntil,
       'banUntil': banUntil,
+      'leaderboardHideUntil': leaderboardHideUntil,
       'role': role,
       'level': level,
       'xp': xp,
@@ -106,6 +110,15 @@ class PlayerModel {
     if (isBannedPermanent) return true;
     if (banUntil == null) return false;
     final until = DateTime.tryParse(banUntil!);
+    if (until == null) return false;
+    return DateTime.now().isBefore(until);
+  }
+
+  /// Helper to check if user is hidden from leaderboard.
+  bool get isHiddenFromLeaderboard {
+    if (isBannedFromLeaderboard) return true;
+    if (leaderboardHideUntil == null) return false;
+    final until = DateTime.tryParse(leaderboardHideUntil!);
     if (until == null) return false;
     return DateTime.now().isBefore(until);
   }

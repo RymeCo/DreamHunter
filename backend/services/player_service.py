@@ -109,6 +109,9 @@ class PlayerService:
             
             # Filter out banned users
             if p.get("isBannedFromLeaderboard", False): continue
+            hide_until = p.get("leaderboardHideUntil")
+            if hide_until and hide_until > now: continue
+
             if p.get("isBannedPermanent", False): continue
             ban_until = p.get("banUntil")
             if ban_until and ban_until > now: continue
@@ -134,6 +137,9 @@ class PlayerService:
             
             # Filter out banned users
             if p.get("isBannedFromLeaderboard", False): continue
+            hide_until = p.get("leaderboardHideUntil")
+            if hide_until and hide_until > now: continue
+
             if p.get("isBannedPermanent", False): continue
             ban_until = p.get("banUntil")
             if ban_until and ban_until > now: continue

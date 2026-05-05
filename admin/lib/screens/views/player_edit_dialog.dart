@@ -23,6 +23,7 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
   late bool _isBannedFromLeaderboard;
   late String? _muteUntil;
   late String? _banUntil;
+  late String? _leaderboardHideUntil;
   late String _role;
 
   @override
@@ -36,6 +37,7 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
     _isBannedFromLeaderboard = widget.player['isBannedFromLeaderboard'] ?? false;
     _muteUntil = widget.player['muteUntil'];
     _banUntil = widget.player['banUntil'];
+    _leaderboardHideUntil = widget.player['leaderboardHideUntil'];
     _role = widget.player['role'] ?? 'player';
   }
 
@@ -223,14 +225,20 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
               ),
             ),
 
-            const Divider(),
-            SwitchListTile(
+            // Leaderboard Section
+            ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Hide from Leaderboard'),
-              subtitle: const Text('Remove from rankings (Level/Coins).'),
-              value: _isBannedFromLeaderboard,
-              onChanged: (v) => setState(() => _isBannedFromLeaderboard = v),
-              activeThumbColor: Colors.orange,
+              title: const Text('Leaderboard Status', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(_formatStatus(_leaderboardHideUntil, _isBannedFromLeaderboard)),
+              trailing: ElevatedButton(
+                onPressed: () => _showDurationPicker('Hide Duration', (until, perm) {
+                  setState(() {
+                    _leaderboardHideUntil = until;
+                    _isBannedFromLeaderboard = perm;
+                  });
+                }),
+                child: const Text('Hide'),
+              ),
             ),
           ],
         ),
@@ -252,6 +260,7 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
               'isBannedFromLeaderboard': _isBannedFromLeaderboard,
               'muteUntil': _muteUntil,
               'banUntil': _banUntil,
+              'leaderboardHideUntil': _leaderboardHideUntil,
             });
           },
           child: const Text('Save Changes'),

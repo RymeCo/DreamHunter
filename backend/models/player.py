@@ -14,6 +14,7 @@ class PlayerModel(BaseModel):
     isBannedFromChat: bool = False
     muteUntil: Optional[str] = None
     banUntil: Optional[str] = None
+    leaderboardHideUntil: Optional[str] = None
     role: str = "player"
 
     level: int = 1
