@@ -60,6 +60,11 @@ class PlayerService:
         Scans all players and updates the cached leaderboard document.
         Thresholds lowered for early-stage testing/launch.
         """
+        from services.settings_service import settings_service
+        if settings_service.get_settings().get("leaderboard_paused", False):
+            print("[LEADERBOARD] Refresh skipped: Leaderboard is PAUSED.")
+            return PlayerService.get_leaderboard_cache()
+
         # 1. Fetch Top Levels (Level >= 1 for early stage)
         level_query = db.collection("players")\
             .where("level", ">=", 1)\

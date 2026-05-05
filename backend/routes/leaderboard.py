@@ -11,8 +11,17 @@ async def get_leaderboard():
     """
     Fetches the daily cached leaderboard.
     """
-    if settings_service.get_settings().get("leaderboard_paused", False):
-        raise HTTPException(status_code=503, detail="LEADERBOARD_PAUSED")
+    settings = settings_service.get_settings()
+    
+    # 1. If Disabled: Return empty data (No one shows up)
+    if settings.get("leaderboard_disabled", False):
+        return {
+            "lastUpdated": "",
+            "topLevels": [],
+            "topCoins": []
+        }
+        
+    # 2. If Paused: Just return the cache (last people are still there, but not updating)
     return PlayerService.get_leaderboard_cache()
 
 @router.get("/health")

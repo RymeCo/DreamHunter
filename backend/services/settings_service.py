@@ -8,6 +8,7 @@ class SettingsService:
         "chat_enabled": True,
         "maintenance_mode": False,
         "leaderboard_paused": False,
+        "leaderboard_disabled": False,
     }
 
     def __new__(cls):

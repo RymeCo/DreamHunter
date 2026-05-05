@@ -24,7 +24,12 @@ async def update_settings(
     The SettingsService listener will automatically update the local cache.
     """
     # Filter allowed keys to prevent arbitrary document writes
-    allowed_keys = ["chat_enabled", "maintenance_mode", "leaderboard_paused"]
+    allowed_keys = [
+        "chat_enabled", 
+        "maintenance_mode", 
+        "leaderboard_paused", 
+        "leaderboard_disabled"
+    ]
     update_data = {k: v for k, v in data.items() if k in allowed_keys}
     
     if update_data:

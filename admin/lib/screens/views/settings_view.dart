@@ -16,6 +16,7 @@ class _SettingsViewState extends State<SettingsView> {
   // Settings state
   bool _maintenanceMode = false;
   bool _leaderboardPaused = false;
+  bool _leaderboardDisabled = false;
   bool _chatEnabled = true;
 
   @override
@@ -32,6 +33,7 @@ class _SettingsViewState extends State<SettingsView> {
         setState(() {
           _maintenanceMode = data['maintenance_mode'] ?? false;
           _leaderboardPaused = data['leaderboard_paused'] ?? false;
+          _leaderboardDisabled = data['leaderboard_disabled'] ?? false;
           _chatEnabled = data['chat_enabled'] ?? true;
           _isLoading = false;
         });
@@ -49,12 +51,14 @@ class _SettingsViewState extends State<SettingsView> {
     final originalSettings = {
       'maintenance_mode': _maintenanceMode,
       'leaderboard_paused': _leaderboardPaused,
+      'leaderboard_disabled': _leaderboardDisabled,
       'chat_enabled': _chatEnabled,
     };
 
     setState(() {
       if (key == 'maintenance_mode') _maintenanceMode = value;
       if (key == 'leaderboard_paused') _leaderboardPaused = value;
+      if (key == 'leaderboard_disabled') _leaderboardDisabled = value;
       if (key == 'chat_enabled') _chatEnabled = value;
     });
 
@@ -71,6 +75,7 @@ class _SettingsViewState extends State<SettingsView> {
       setState(() {
         _maintenanceMode = originalSettings['maintenance_mode']!;
         _leaderboardPaused = originalSettings['leaderboard_paused']!;
+        _leaderboardDisabled = originalSettings['leaderboard_disabled']!;
         _chatEnabled = originalSettings['chat_enabled']!;
       });
       if (mounted) {
@@ -101,7 +106,7 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Global system switches and maintenance controls.',
+            'Global system switches and access controls.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -109,10 +114,10 @@ class _SettingsViewState extends State<SettingsView> {
           const SizedBox(height: 32),
           
           _buildToggleCard(
-            title: 'Maintenance Mode',
+            title: 'Disable Login',
             subtitle: 'When enabled, only admins can log in and play.',
             value: _maintenanceMode,
-            icon: Icons.construction,
+            icon: Icons.block,
             onChanged: (val) => _updateSetting('maintenance_mode', val),
             isDestructive: true,
           ),
@@ -121,10 +126,21 @@ class _SettingsViewState extends State<SettingsView> {
           
           _buildToggleCard(
             title: 'Pause Leaderboard',
-            subtitle: 'Temporarily hide and stop leaderboard updates.',
+            subtitle: 'Stop calculating new rankings. The last results remain visible.',
             value: _leaderboardPaused,
             icon: Icons.pause_circle_outline,
             onChanged: (val) => _updateSetting('leaderboard_paused', val),
+          ),
+
+          const SizedBox(height: 16),
+          
+          _buildToggleCard(
+            title: 'Disable Leaderboard',
+            subtitle: 'Hide all leaderboard data. No one will show up.',
+            value: _leaderboardDisabled,
+            icon: Icons.visibility_off_outlined,
+            onChanged: (val) => _updateSetting('leaderboard_disabled', val),
+            isDestructive: true,
           ),
           
           const SizedBox(height: 16),
