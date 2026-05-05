@@ -15,14 +15,23 @@ class ConnectionManager:
 
     async def connect(self, websocket: WebSocket, region: str):
         await websocket.accept()
+        print(f"[CHAT] Accepted connection for region: {region}")
+        
         if region not in self.active_connections:
             self.active_connections[region] = []
         self.active_connections[region].append(websocket)
         
         # Send history to the newly connected client
         if region in self.history:
+            print(f"[CHAT] Sending {len(self.history[region])} messages of history to {region}")
             for msg in self.history[region]:
-                await websocket.send_text(ujson.dumps(msg))
+                try:
+                    await websocket.send_text(ujson.dumps(msg))
+                except Exception as e:
+                    print(f"[CHAT] Error sending history: {e}")
+                    break
+        else:
+            print(f"[CHAT] No history found for region: {region}")
 
     def disconnect(self, websocket: WebSocket, region: str):
         if region in self.active_connections:
