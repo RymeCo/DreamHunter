@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
 import 'package:dreamhunter/game/dream_hunter_game.dart';
-import 'package:dreamhunter/game/entities/bed_entity.dart';
 
 /// The simplest possible movement behavior.
 /// AI follows its target bed's Flow Field (Gravity Map) using a smooth gradient.
@@ -25,7 +24,7 @@ class HunterMovementBehavior extends Component
 
     // 2. Are we at the bed?
     final distToBed = parent.position.distanceTo(parent.targetBed.position);
-    if (distToBed < 40.0) {
+    if (distToBed < 20.0) { // Reduced from 40.0 to prevent hallway-stopping
       if (!parent.targetBed.isOccupied) {
         parent.targetBed.occupy(parent);
         parent.sleep(parent.targetBed.position);
@@ -39,7 +38,6 @@ class HunterMovementBehavior extends Component
     // 3. Find target tile using Flow Field (Lazy Loaded)
     final flowField = game.getFlowField(parent.targetBed.roomID);
     if (flowField == null) {
-      // If we can't find a flow field, maybe the room is invalid or map changed.
       _findNewBed();
       return;
     }
@@ -55,8 +53,15 @@ class HunterMovementBehavior extends Component
 
     // Find best neighbor
     int bestDist = flowField[curX][curY];
-    Vector2? targetCenter;
+    
+    // DEBUG: If distance is 9999, we are in an unreachable tile for this bed
+    if (bestDist >= 9999) {
+      debugPrint('[AI] ${parent.skinPath} stuck in unreachable tile for ${parent.targetBed.roomID}. Re-pathing...');
+      _findNewBed();
+      return;
+    }
 
+    Vector2? targetCenter;
     for (final dir in [
       const math.Point(1, 0),
       const math.Point(-1, 0),
@@ -81,19 +86,15 @@ class HunterMovementBehavior extends Component
     if (targetCenter != null) {
       final diff = targetCenter - parent.position;
       final direction = diff.normalized();
-
-      // Move on the primary axis
+      
       parent.position += direction * speed * dt;
 
-      // "Center-Pulling" Logic: Lerp the perpendicular axis to keep AI in hallway center.
-      // This prevents drifting into walls without causing jittery "snaps".
+      // Center-Pulling Logic
       const double pullStrength = 8.0;
       if (direction.x.abs() > direction.y.abs()) {
-        // Moving Horizontal: Pull toward Y-center of the current row
         final centerY = curY * 32.0 + 16.0;
         parent.position.y += (centerY - parent.position.y) * pullStrength * dt;
       } else {
-        // Moving Vertical: Pull toward X-center of the current column
         final centerX = curX * 32.0 + 16.0;
         parent.position.x += (centerX - parent.position.x) * pullStrength * dt;
       }
@@ -115,51 +116,50 @@ class HunterMovementBehavior extends Component
     }
 
     // 2. CHECK PREFERRED BACKUPS FIRST (The "Backup Map")
-    // This allows the AI to have a 'memory' of nearby rooms
     for (final backup in parent.preferredBeds) {
+      // Important: Skip if this is already our target or if it's occupied/reserved
+      if (backup == parent.targetBed) continue;
+      
       if (!backup.isOccupied && backup.reservedBy == null) {
         parent.repathCount++;
         parent.targetBed = backup;
         parent.targetBed.reservedBy = parent;
-        debugPrint('[AI] ${parent.skinPath} using BACKUP bed: ${parent.targetBed.roomID}');
+        debugPrint('[AI] ${parent.skinPath} switched to BACKUP: ${parent.targetBed.roomID}');
         return;
       }
     }
 
-    // 3. Fallback: Find ALL currently empty and unreserved beds if backups are full
+    // 3. Fallback: Find ANY currently empty and unreserved beds
     final otherBeds = game.roomBeds.values
-        .where((b) => !b.isOccupied && b.reservedBy == null)
+        .where((b) => b != parent.targetBed && !b.isOccupied && b.reservedBy == null)
         .toList();
 
     if (otherBeds.isNotEmpty) {
-      // Sort by distance to find the NEAREST one
       otherBeds.sort((a, b) => 
         parent.position.distanceToSquared(a.position).compareTo(
         parent.position.distanceToSquared(b.position))
       );
       
-      // Assign new bed
       parent.repathCount++;
       parent.targetBed = otherBeds[0];
       parent.targetBed.reservedBy = parent;
       
-      debugPrint('[AI] ${parent.skinPath} re-pathing to GLOBAL room ${parent.targetBed.roomID}');
+      debugPrint('[AI] ${parent.skinPath} switched to GLOBAL: ${parent.targetBed.roomID}');
     } else {
-      // 4. Last Resort: Race for any unoccupied bed even if reserved
-      final unoccupiedBeds = game.world.children
-          .whereType<BedEntity>()
-          .where((b) => !b.isOccupied)
-          .toList();
-          
-      if (unoccupiedBeds.isNotEmpty) {
-        unoccupiedBeds.sort((a, b) => 
-          parent.position.distanceToSquared(a.position).compareTo(
-          parent.position.distanceToSquared(b.position))
-        );
-        parent.targetBed = unoccupiedBeds[0];
-      } else {
-        debugPrint('[ERROR] ${parent.skinPath}: No empty beds found! I am homeless.');
-      }
+      // 4. Last Resort: Wander to a random hallway tile if homeless
+      debugPrint('[AI] ${parent.skinPath}: Homeless! Wandering hallways...');
+      _wanderToHallway();
     }
+  }
+
+  void _wanderToHallway() {
+    // Pick a random direction and walk until we hit a wall or a long distance
+    final random = math.Random();
+    final angle = random.nextDouble() * 2 * math.pi;
+    final wanderDir = Vector2(math.cos(angle), math.sin(angle));
+    
+    // We don't change targetBed here, but we nudge the position to simulate wandering
+    // This prevents the "standing still" look while waiting for a room to potentially open.
+    parent.position += wanderDir * (speed * 0.5); // Slower wander speed
   }
 }
