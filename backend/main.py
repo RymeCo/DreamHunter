@@ -9,8 +9,6 @@ import pytz
 
 app = FastAPI(title="DreamHunter API", version="1.0.0")
 
-# --- Scheduler for Leaderboards ---
-# Target: 00:00:01 Philippine Time (PHT)
 scheduler = BackgroundScheduler()
 pht = pytz.timezone('Asia/Manila')
 
@@ -24,7 +22,6 @@ scheduler.add_job(
 )
 scheduler.start()
 
-# Configure CORS for Flutter (Web, Mobile, Desktop)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,7 +30,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include Routers
 app.include_router(auth.router, prefix="/api")
 app.include_router(profile.router, prefix="/api")
 app.include_router(leaderboard.router, prefix="/api")

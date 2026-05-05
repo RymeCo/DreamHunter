@@ -14,7 +14,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedIndex = 1; // Default to Chat Management for now
+  int _selectedIndex = 1;
 
   final List<Widget> _views = const [
     HealthView(),
@@ -36,8 +36,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             labelType: NavigationRailLabelType.all,
             leading: const Padding(
               padding: EdgeInsets.symmetric(vertical: 24.0),
-              child: Icon(Icons.admin_panel_settings,
-                  size: 40, color: Colors.deepPurple),
+              child: Icon(
+                Icons.admin_panel_settings,
+                size: 40,
+                color: Colors.deepPurple,
+              ),
             ),
             trailing: Expanded(
               child: Align(

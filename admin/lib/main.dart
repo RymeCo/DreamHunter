@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Explicitly providing options to avoid "DefaultFirebaseOptions not found" errors
+
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
   await Firebase.initializeApp(
     options: const FirebaseOptions(
       apiKey: 'AIzaSyBUCYw-9PRPpx8qL2dC5-Yxm4FDXY694og',
@@ -15,7 +17,7 @@ void main() async {
       storageBucket: 'dream-hunter-c0f89.firebasestorage.app',
     ),
   );
-  
+
   runApp(const AdminApp());
 }
 
@@ -28,7 +30,10 @@ class AdminApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'DH Admin',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple, brightness: Brightness.dark),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          brightness: Brightness.dark,
+        ),
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFF0D0E21),
       ),

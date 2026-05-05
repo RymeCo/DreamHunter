@@ -14,7 +14,6 @@ async def sync_user(uid: str = Depends(get_current_user)):
     """
     player = PlayerService.sync_player(uid)
     
-    # 1. Enforce Maintenance Mode (Exclude Admins)
     if settings_service.get_settings().get("maintenance_mode", False):
         if player.role != "admin":
             raise HTTPException(
@@ -22,7 +21,6 @@ async def sync_user(uid: str = Depends(get_current_user)):
                 detail="MAINTENANCE_MODE"
             )
 
-    # 2. Enforce Permanent Ban
     if player.isBannedPermanent:
         from fastapi import HTTPException, status
         raise HTTPException(

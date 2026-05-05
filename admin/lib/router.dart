@@ -15,18 +15,17 @@ final adminRouter = GoRouter(
       return isLoggingIn ? null : '/login';
     }
 
-    // Use Backend API (HTTP) instead of Firestore SDK to avoid gRPC/GMS issues in Waydroid.
     try {
       final api = ApiGateway();
       final response = await api.post('/auth/sync');
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['role'] == 'admin') {
           return isLoggingIn ? '/dashboard' : null;
         }
       }
-      
+
       await FirebaseAuth.instance.signOut();
       return '/login';
     } catch (_) {
@@ -35,10 +34,7 @@ final adminRouter = GoRouter(
     }
   },
   routes: [
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: '/dashboard',
       builder: (context, state) => const DashboardScreen(),

@@ -27,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _passwordController.text.trim(),
         );
 
-        // Sync with live backend to verify role
         final api = ApiGateway();
         final response = await api.post('/auth/sync');
 
@@ -48,15 +47,15 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } on FirebaseAuthException catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Login Failed: ${e.message}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Login Failed: ${e.message}')));
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
         }
       } finally {
         if (mounted) setState(() => _isLoading = false);
@@ -67,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0E21), // Matching DH theme
+      backgroundColor: const Color(0xFF0D0E21),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -76,11 +75,19 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.admin_panel_settings, size: 80, color: Colors.deepPurpleAccent),
+                const Icon(
+                  Icons.admin_panel_settings,
+                  size: 80,
+                  color: Colors.deepPurpleAccent,
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'DH Admin',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 40),
                 TextFormField(
@@ -90,10 +97,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     labelText: 'Admin Email',
                     labelStyle: TextStyle(color: Colors.white70),
                     border: OutlineInputBorder(),
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white24),
+                    ),
                   ),
                   keyboardType: TextInputType.emailAddress,
-                  validator: (v) => (v == null || !v.contains('@')) ? 'Invalid email' : null,
+                  validator: (v) =>
+                      (v == null || !v.contains('@')) ? 'Invalid email' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -103,25 +113,40 @@ class _LoginScreenState extends State<LoginScreen> {
                     labelText: 'Password',
                     labelStyle: TextStyle(color: Colors.white70),
                     border: OutlineInputBorder(),
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white24),
+                    ),
                   ),
                   obscureText: true,
-                  validator: (v) => (v == null || v.length < 6) ? 'Min 6 characters' : null,
+                  validator: (v) =>
+                      (v == null || v.length < 6) ? 'Min 6 characters' : null,
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: _isLoading
-                      ? const Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent))
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.deepPurpleAccent,
+                          ),
+                        )
                       : ElevatedButton(
                           onPressed: _login,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.deepPurpleAccent,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text('LOGIN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'LOGIN',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                 ),
               ],

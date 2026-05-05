@@ -9,9 +9,7 @@ router = APIRouter()
 
 class ConnectionManager:
     def __init__(self):
-        # region -> list of websockets
         self.active_connections: Dict[str, List[WebSocket]] = {}
-        # region -> list of recent messages (max 50)
         self.history: Dict[str, List[dict]] = {}
 
     async def connect(self, websocket: WebSocket, region: str):
@@ -22,7 +20,6 @@ class ConnectionManager:
             self.active_connections[region] = []
         self.active_connections[region].append(websocket)
         
-        # Send history to the newly connected client
         if region in self.history:
             print(f"[CHAT] Sending {len(self.history[region])} messages of history to {region}")
             for msg in self.history[region]:
@@ -42,7 +39,6 @@ class ConnectionManager:
                 pass
 
     async def broadcast(self, message: dict, region: str):
-        # Update history
         if region not in self.history:
             self.history[region] = []
         
@@ -50,7 +46,6 @@ class ConnectionManager:
         if len(self.history[region]) > 50:
             self.history[region].pop(0)
 
-        # Broadcast to all active connections in the region
         if region in self.active_connections:
             stale_connections = []
             for connection in self.active_connections[region]:
@@ -59,7 +54,6 @@ class ConnectionManager:
                 except Exception:
                     stale_connections.append(connection)
             
-            # Clean up stale connections
             for stale in stale_connections:
                 self.disconnect(stale, region)
 
@@ -67,13 +61,11 @@ manager = ConnectionManager()
 
 @router.websocket("/ws/chat/{region}")
 async def websocket_endpoint(websocket: WebSocket, region: str, token: str = Query(...)):
-    # 0. Check Global Settings
     if not settings_service.is_chat_enabled():
-        await websocket.accept() # Must accept before closing with custom code sometimes
+        await websocket.accept() 
         await websocket.close(code=1008, reason="CHAT_DISABLED")
         return
 
-    # 1. Verify Identity (Security Gap Fix)
     try:
         decoded_token = auth_client.verify_id_token(token)
         uid = decoded_token['uid']
@@ -88,11 +80,8 @@ async def websocket_endpoint(websocket: WebSocket, region: str, token: str = Que
             data = await websocket.receive_text()
             message_data = ujson.loads(data)
             
-            # 2. Prevent Impersonation (Security Gap Fix)
-            # Override senderId with the verified UID from the token
             message_data["senderId"] = uid
             
-            # Add server-side timestamp and ID
             message_data["timestamp"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
             message_data["id"] = f"msg_{int(datetime.datetime.now().timestamp() * 1000)}"
             message_data["region"] = region

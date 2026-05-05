@@ -22,19 +22,13 @@ async def search_players(
     q: str = Query(..., min_length=2),
     uid: str = Depends(get_admin_user)
 ):
-    """
-    Searches for players by name, UID, or Email.
-    Uses Firebase Auth for O(0-cost) email lookup when possible.
-    """
-    results = {} # Use dict to deduplicate by UID automatically
+    results = {} 
     
-    # 1. Search by exact UID (O(1) read)
     uid_doc = db.collection("players").document(q).get()
     if uid_doc.exists:
         p = uid_doc.to_dict()
         results[p["uid"]] = _format_player_summary(p)
 
-    # 2. Search by exact Email (O(1) with Auth API - 0 Firestore read for Auth)
     if "@" in q and len(results) < 20:
         try:
             user = auth_client.get_user_by_email(q)
@@ -43,9 +37,8 @@ async def search_players(
                 if p_doc.exists:
                     results[user.uid] = _format_player_summary(p_doc.to_dict())
         except Exception:
-            pass # Email not found in Auth
+            pass 
 
-    # 3. Search by Name (Prefix Search - Lazy)
     if len(results) < 20:
         name_query = db.collection("players") \
             .where("name", ">=", q) \
@@ -76,30 +69,68 @@ async def get_player_details(
     return doc.to_dict()
 
 from routes.chat import manager
+from services.settings_service import settings_service
 
 @router.get("/system/health")
 async def get_system_health(uid: str = Depends(get_admin_user)):
-    """
-    Fetches basic system metrics.
-    0-cost mindset: Only triggered manually by admins.
-    """
-    # 1. Registration Count (Rough estimate via Firestore metadata or collection stats)
-    # Note: For absolute 0-cost, we could use a counter, but for small-medium scale, 
-    # aggregation queries are efficient.
     try:
-        # This is a metadata-only operation in many cases or a low-cost aggregation
         player_count = db.collection("players").count().get()[0][0].value
     except Exception:
         player_count = "Unknown"
+        
+    try:
+        banned_count = db.collection("players").where("isBannedPermanent", "==", True).count().get()[0][0].value
+    except Exception:
+        banned_count = 0
 
-    # 2. Live Connections (From memory manager - 0 cost)
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    try:
+        new_today = db.collection("players").where("createdAt", ">=", today_start).count().get()[0][0].value
+    except Exception:
+        new_today = 0
+
     active_chats = sum(len(conns) for conns in manager.active_connections.values())
     regions_active = len([r for r, c in manager.active_connections.items() if len(c) > 0])
+
+    settings = settings_service.get_settings()
 
     return {
         "status": "online",
         "totalPlayers": player_count,
+        "bannedPlayers": banned_count,
+        "newPlayersToday": new_today,
         "activeChatConnections": active_chats,
         "activeRegions": regions_active,
+        "maintenanceMode": settings.get("maintenance_mode", False),
+        "leaderboardPaused": settings.get("leaderboard_paused", False),
+        "chatEnabled": settings.get("chat_enabled", True),
         "timestamp": datetime.now().isoformat()
     }
+
+@router.get("/system/announcement")
+async def get_announcement(uid: str = Depends(get_admin_user)):
+    """
+    Fetches the current daily announcement and rules.
+    """
+    doc = db.collection("metadata").document("announcements").get()
+    if doc.exists:
+        return doc.to_dict()
+    return {
+        "daily_message": "Welcome to DreamHunter!",
+        "rules": [
+            "1. Be respectful to others.",
+            "2. No spamming or advertising.",
+            "3. Keep it family friendly."
+        ]
+    }
+
+@router.patch("/system/announcement")
+async def update_announcement(
+    uid: str = Depends(get_admin_user),
+    data: dict = Body(...)
+):
+    """
+    Updates the daily announcement and rules.
+    """
+    db.collection("metadata").document("announcements").set(data, merge=True)
+    return {"status": "ok", "message": "Announcement updated"}

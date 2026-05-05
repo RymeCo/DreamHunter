@@ -20,6 +20,7 @@ class _HealthViewState extends State<HealthView> {
     setState(() => _isLoading = true);
     try {
       final response = await _api.get('/admin/system/health');
+      if (!mounted) return;
       if (response.statusCode == 200) {
         setState(() {
           _healthData = json.decode(response.body);
@@ -28,8 +29,8 @@ class _HealthViewState extends State<HealthView> {
         });
       }
     } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to fetch system health: $e')),
         );
@@ -47,25 +48,29 @@ class _HealthViewState extends State<HealthView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'System Health',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _lastChecked == null
-                        ? 'Snapshot not yet taken.'
-                        : 'Last checked: ${DateFormat('HH:mm:ss').format(_lastChecked!)}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'System Health',
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _lastChecked == null
+                          ? 'Snapshot not yet taken.'
+                          : 'Last checked (PHT): ${DateFormat('HH:mm:ss').format(_lastChecked!.toUtc().add(const Duration(hours: 8)))} | ${DateFormat('hh:mm:ss a').format(_lastChecked!.toUtc().add(const Duration(hours: 8)))}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 16),
               ElevatedButton.icon(
                 onPressed: _isLoading ? null : _checkHealth,
                 icon: _isLoading
@@ -77,8 +82,13 @@ class _HealthViewState extends State<HealthView> {
                     : const Icon(Icons.refresh),
                 label: const Text('Fetch Status'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ],
@@ -90,22 +100,29 @@ class _HealthViewState extends State<HealthView> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.monitor_heart_outlined,
-                            size: 64,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .outline
-                                .withValues(alpha: 0.3)),
+                        Icon(
+                          Icons.monitor_heart_outlined,
+                          size: 64,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.outline.withValues(alpha: 0.3),
+                        ),
                         const SizedBox(height: 16),
-                        const Text('Tap "Fetch Status" to perform a manual health check.'),
+                        const Text(
+                          'Tap "Fetch Status" to perform a manual health check.',
+                        ),
                       ],
                     ),
                   )
                 : GridView.count(
-                    crossAxisCount: MediaQuery.of(context).size.width > 900 ? 3 : 2,
+                    crossAxisCount: MediaQuery.of(context).size.width > 900
+                        ? 3
+                        : 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 1.5,
+                    childAspectRatio: MediaQuery.of(context).size.width > 600
+                        ? 1.5
+                        : 1.1,
                     children: [
                       _buildMetricCard(
                         'Server Status',
@@ -114,10 +131,32 @@ class _HealthViewState extends State<HealthView> {
                         Colors.green,
                       ),
                       _buildMetricCard(
+                        'Maintenance',
+                        _healthData!['maintenanceMode'] == true
+                            ? 'ACTIVE'
+                            : 'OFF',
+                        Icons.construction,
+                        _healthData!['maintenanceMode'] == true
+                            ? Colors.red
+                            : Colors.green,
+                      ),
+                      _buildMetricCard(
                         'Total Players',
                         '${_healthData!['totalPlayers']}',
                         Icons.people_outline,
                         Colors.blue,
+                      ),
+                      _buildMetricCard(
+                        'New Today',
+                        '${_healthData!['newPlayersToday']}',
+                        Icons.person_add_alt_1_outlined,
+                        Colors.teal,
+                      ),
+                      _buildMetricCard(
+                        'Banned Players',
+                        '${_healthData!['bannedPlayers']}',
+                        Icons.block,
+                        Colors.red,
                       ),
                       _buildMetricCard(
                         'Chat Connections',
@@ -131,6 +170,16 @@ class _HealthViewState extends State<HealthView> {
                         Icons.public,
                         Colors.deepPurple,
                       ),
+                      _buildMetricCard(
+                        'Leaderboard',
+                        _healthData!['leaderboardPaused'] == true
+                            ? 'PAUSED'
+                            : 'LIVE',
+                        Icons.leaderboard_outlined,
+                        _healthData!['leaderboardPaused'] == true
+                            ? Colors.orange
+                            : Colors.blue,
+                      ),
                     ],
                   ),
           ),
@@ -139,7 +188,12 @@ class _HealthViewState extends State<HealthView> {
     );
   }
 
-  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
+  Widget _buildMetricCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -147,23 +201,27 @@ class _HealthViewState extends State<HealthView> {
         side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             Text(
               title,
+              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),

@@ -13,7 +13,6 @@ async def get_leaderboard():
     """
     settings = settings_service.get_settings()
     
-    # 1. If Disabled: Return empty data (No one shows up)
     if settings.get("leaderboard_disabled", False):
         return {
             "lastUpdated": "",
@@ -21,7 +20,6 @@ async def get_leaderboard():
             "topCoins": []
         }
         
-    # 2. If Paused: Just return the cache (last people are still there, but not updating)
     return PlayerService.get_leaderboard_cache()
 
 @router.get("/health")
@@ -41,7 +39,7 @@ async def manual_refresh(uid: str = Depends(get_admin_user)):
 
 @router.post("/clear", include_in_schema=False)
 async def clear_leaderboard(
-    metric: str, # "level" or "coins"
+    metric: str,
     uid: str = Depends(get_admin_user)
 ):
     """
