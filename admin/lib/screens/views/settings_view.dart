@@ -12,6 +12,7 @@ class SettingsView extends StatefulWidget {
 class _SettingsViewState extends State<SettingsView> {
   final ApiGateway _api = ApiGateway();
   bool _isLoading = true;
+  bool _isRefreshing = false;
   
   // Settings state
   bool _maintenanceMode = false;
@@ -86,6 +87,30 @@ class _SettingsViewState extends State<SettingsView> {
     }
   }
 
+  Future<void> _forceRefresh() async {
+    setState(() => _isRefreshing = true);
+    try {
+      final response = await _api.post('/leaderboard/refresh');
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Leaderboard refreshed successfully!')),
+          );
+        }
+      } else {
+        throw Exception('Server returned ${response.statusCode}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to refresh leaderboard: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isRefreshing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -152,6 +177,50 @@ class _SettingsViewState extends State<SettingsView> {
             icon: Icons.chat_outlined,
             onChanged: (val) => _updateSetting('chat_enabled', val),
           ),
+          
+          const SizedBox(height: 32),
+          const Divider(),
+          const SizedBox(height: 24),
+          
+          Text(
+            'Actions',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 16),
+          
+          SizedBox(
+            width: 250,
+            child: OutlinedButton.icon(
+              onPressed: _isRefreshing || _leaderboardPaused ? null : _forceRefresh,
+              icon: _isRefreshing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
+              label: Text(_isRefreshing ? 'Refreshing...' : 'Force Leaderboard Refresh'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          if (_leaderboardPaused)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                'Cannot refresh while leaderboard is paused.',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 12,
+                ),
+              ),
+            ),
         ],
       ),
     );

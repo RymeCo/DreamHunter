@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from core.security import get_current_user
+from core.security import get_current_user, get_admin_user
 from services.player_service import PlayerService
 from models.player import LeaderboardCache
 from services.settings_service import settings_service
@@ -29,10 +29,10 @@ async def health_check():
     return {"status": "ok", "message": "Leaderboard router is active"}
 
 @router.post("/refresh", include_in_schema=False)
-async def manual_refresh():
+async def manual_refresh(uid: str = Depends(get_admin_user)):
     """
     Internal endpoint to force a refresh.
-    Temporarily unprotected for manual trigger.
+    Only accessible to admins.
     """
     try:
         return PlayerService.refresh_leaderboards()
