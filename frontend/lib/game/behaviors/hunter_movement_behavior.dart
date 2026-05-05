@@ -23,13 +23,15 @@ class HunterMovementBehavior extends Component
     }
 
     // 2. Are we at the bed?
-    final distToBed = parent.position.distanceTo(parent.targetBed.position);
-    if (distToBed < 20.0) { // Reduced from 40.0 to prevent hallway-stopping
+    // We check distance to the bed center for more natural "snapping"
+    final bedCenter = parent.targetBed.position + (parent.targetBed.size / 2);
+    final distToBed = parent.position.distanceTo(bedCenter);
+    
+    if (distToBed < 32.0) { 
       if (!parent.targetBed.isOccupied) {
         parent.targetBed.occupy(parent);
         parent.sleep(parent.targetBed.position);
       } else {
-        // Bed was taken just as we arrived!
         _findNewBed();
       }
       return;
@@ -54,9 +56,16 @@ class HunterMovementBehavior extends Component
     // Find best neighbor
     int bestDist = flowField[curX][curY];
     
-    // DEBUG: If distance is 9999, we are in an unreachable tile for this bed
+    // FIX: If we are in the target tile (bestDist == 0) but not yet "sleeping" 
+    // because the distance check failed, we must manually nudge toward the bed center.
+    if (bestDist == 0) {
+      final diff = bedCenter - parent.position;
+      parent.position += diff.normalized() * speed * dt;
+      return;
+    }
+
     if (bestDist >= 9999) {
-      debugPrint('[AI] ${parent.skinPath} stuck in unreachable tile for ${parent.targetBed.roomID}. Re-pathing...');
+      debugPrint('[AI] ${parent.skinPath} stuck in unreachable tile. Re-pathing...');
       _findNewBed();
       return;
     }
@@ -115,26 +124,13 @@ class HunterMovementBehavior extends Component
       parent.targetBed.reservedBy = null;
     }
 
-    // 2. CHECK PREFERRED BACKUPS FIRST (The "Backup Map")
-    for (final backup in parent.preferredBeds) {
-      // Important: Skip if this is already our target or if it's occupied/reserved
-      if (backup == parent.targetBed) continue;
-      
-      if (!backup.isOccupied && backup.reservedBy == null) {
-        parent.repathCount++;
-        parent.targetBed = backup;
-        parent.targetBed.reservedBy = parent;
-        debugPrint('[AI] ${parent.skinPath} switched to BACKUP: ${parent.targetBed.roomID}');
-        return;
-      }
-    }
-
-    // 3. Fallback: Find ANY currently empty and unreserved beds
+    // 2. Find ANY currently empty and unreserved beds (SIMPLIFIED)
     final otherBeds = game.roomBeds.values
         .where((b) => b != parent.targetBed && !b.isOccupied && b.reservedBy == null)
         .toList();
 
     if (otherBeds.isNotEmpty) {
+      // Find nearest
       otherBeds.sort((a, b) => 
         parent.position.distanceToSquared(a.position).compareTo(
         parent.position.distanceToSquared(b.position))
@@ -144,10 +140,9 @@ class HunterMovementBehavior extends Component
       parent.targetBed = otherBeds[0];
       parent.targetBed.reservedBy = parent;
       
-      debugPrint('[AI] ${parent.skinPath} switched to GLOBAL: ${parent.targetBed.roomID}');
+      debugPrint('[AI] ${parent.skinPath} switched bed to room: ${parent.targetBed.roomID}');
     } else {
-      // 4. Last Resort: Wander to a random hallway tile if homeless
-      debugPrint('[AI] ${parent.skinPath}: Homeless! Wandering hallways...');
+      // 3. Last Resort: Wander
       _wanderToHallway();
     }
   }
