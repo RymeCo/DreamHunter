@@ -3,6 +3,7 @@ from typing import List, Optional
 from core.security import get_admin_user
 from core.firebase import db, auth_client
 from datetime import datetime
+from models.player import PlayerModel
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
