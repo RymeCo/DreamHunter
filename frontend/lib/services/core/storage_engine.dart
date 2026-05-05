@@ -100,6 +100,10 @@ class StorageEngine {
     return null;
   }
 
+  Future<void> removeMetadata(String key) async {
+    await _p.remove(_getScopedKey(key));
+  }
+
   // --- Global (Unscoped) Data ---
 
   Future<void> saveGlobalMetadata(String key, Map<String, dynamic> data) async {
@@ -116,6 +120,10 @@ class StorageEngine {
       }
     }
     return null;
+  }
+
+  Future<void> removeGlobalMetadata(String key) async {
+    await _p.remove('global_$key');
   }
 
   // --- Daily Quota Tracking ---

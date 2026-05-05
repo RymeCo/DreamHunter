@@ -25,23 +25,8 @@ class ChatService {
   String? _currentRegion;
   bool _isConnecting = false;
   DateTime? _lastMessageTime;
-  bool _relogAnnouncementShown = false;
 
   Stream<List<ChatMessage>> getMessages({String region = 'english'}) {
-    // Inject system announcement if not shown yet
-    if (!_relogAnnouncementShown) {
-      _messageBuffer.add(ChatMessage(
-        id: 'relog_announcement',
-        senderId: 'system',
-        senderName: 'System',
-        text:
-            'NOTICE: If your account stats were updated by an admin, please RELOG to synchronize your local economy and profile.',
-        timestamp: DateTime.now(),
-        region: 'all',
-      ));
-      _relogAnnouncementShown = true;
-    }
-
     // Reconnect if switching regions OR if the channel was closed/disconnected
     if (_currentRegion != region || _channel == null) {
       if (_currentRegion != region) {

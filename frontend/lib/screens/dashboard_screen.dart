@@ -64,9 +64,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await ProgressionManager.instance.initialize();
     await DailyRoulette.instance.initialize();
 
-    // Check if we should show the relog notice
-    final relogDismissed = await StorageEngine.instance.getMetadata('relog_notice_dismissed');
-    if (relogDismissed == null) {
+    // Listen for admin edits during background sync
+    ProfileManager.instance.adminEditDetected.addListener(() {
+      if (mounted && ProfileManager.instance.adminEditDetected.value) {
+        setState(() => _showRelogNotice = true);
+      }
+    });
+
+    // Check if we have a pending relog notice from a previous sync
+    final pendingNotice = await StorageEngine.instance.getMetadata('relog_notice_pending');
+    if (pendingNotice != null) {
       setState(() => _showRelogNotice = true);
     }
 
@@ -246,9 +253,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               IconButton(
                 onPressed: () async {
                   setState(() => _showRelogNotice = false);
-                  await StorageEngine.instance.saveMetadata(
-                    'relog_notice_dismissed',
-                    {'timestamp': DateTime.now().toIso8601String()},
+                  ProfileManager.instance.adminEditDetected.value = false;
+                  await StorageEngine.instance.removeMetadata(
+                    'relog_notice_pending',
                   );
                 },
                 icon: const Icon(Icons.close, color: Colors.white54, size: 20),
