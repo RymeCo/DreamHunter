@@ -7,6 +7,7 @@ import 'package:dreamhunter/services/identity/profile_manager.dart';
 import 'package:dreamhunter/services/economy/shop_manager.dart';
 import 'package:dreamhunter/services/progression/progression_manager.dart';
 import 'package:dreamhunter/data/item_registry.dart';
+import 'package:dreamhunter/widgets/confirmation_dialog.dart';
 import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/models/player_model.dart';
 
@@ -313,7 +314,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
 
   Widget _buildBackupSection(BuildContext context) {
     return FutureBuilder<int>(
-      future: StorageEngine.instance.getDailyCount('cloud_backup'),
+      future: StorageEngine.instance.getDailyCount('cloud_sync'),
       builder: (context, snapshot) {
         final count = snapshot.data ?? 0;
         final bool isLimitReached = count >= 1;
@@ -326,16 +327,29 @@ class _ProfileDialogState extends State<ProfileDialog> {
               child: ElevatedButton.icon(
                 onPressed: isGuest ? null : () async {
                   AudioManager().playClick();
+                  
+                  final confirmed = await ConfirmationDialog.show(
+                    context,
+                    title: isLimitReached ? 'OVERWRITE CLOUD?' : 'SYNC TO CLOUD?',
+                    message: 'Any existing cloud data will be deleted and replaced with your current local progress. This cannot be undone.',
+                    confirmLabel: isLimitReached ? 'OVERWRITE' : 'BACKUP NOW',
+                    isDestructive: isLimitReached,
+                    color: isLimitReached ? null : Colors.cyanAccent,
+                  );
+                  if (!confirmed) return;
+
                   if (isLimitReached) {
                     AdManager.instance.showRewardAd(
                       context: context,
                       onRewardEarned: () async {
                         await ProfileManager.instance.backupPlayer();
+                        await StorageEngine.instance.incrementDailyCount('cloud_sync');
                         if (mounted) setState(() {});
                       },
                     );
                   } else {
                     await ProfileManager.instance.backupPlayer();
+                    await StorageEngine.instance.incrementDailyCount('cloud_sync');
                     if (mounted) setState(() {});
                   }
                 },

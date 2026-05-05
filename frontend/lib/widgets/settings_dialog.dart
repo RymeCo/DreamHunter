@@ -1,3 +1,4 @@
+import 'package:dreamhunter/widgets/confirmation_dialog.dart';
 import 'package:dreamhunter/widgets/branding/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
@@ -60,7 +61,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
       context: context,
       barrierLabel: "AboutDialog",
       barrierDismissible: true,
-      barrierColor: Colors.black92,
+      barrierColor: Colors.black,
       transitionDuration: const Duration(milliseconds: 400),
       pageBuilder: (context, animation, secondaryAnimation) {
         return StandardGlassPage(
@@ -181,6 +182,15 @@ class _SettingsDialogState extends State<SettingsDialog> {
     }
 
     if (_syncCount >= 1) {
+      final confirmed = await ConfirmationDialog.show(
+        context,
+        title: 'OVERWRITE CLOUD?',
+        message: 'Your current progress will replace the existing cloud backup. This cannot be undone.',
+        confirmLabel: 'OVERWRITE',
+        isDestructive: true,
+      );
+      if (!confirmed) return;
+
       AdManager.instance.showRewardAd(
         context: context,
         onRewardEarned: () async {
@@ -188,6 +198,15 @@ class _SettingsDialogState extends State<SettingsDialog> {
         },
       );
     } else {
+      final confirmed = await ConfirmationDialog.show(
+        context,
+        title: 'SYNC TO CLOUD?',
+        message: 'Any existing cloud data will be deleted and replaced with your current local progress.',
+        confirmLabel: 'BACKUP NOW',
+        color: Colors.cyanAccent,
+      );
+      if (!confirmed) return;
+
       await _executeSync();
     }
   }
