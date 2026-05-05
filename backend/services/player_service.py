@@ -1,7 +1,6 @@
 from core.firebase import db, auth_client
 from models.player import PlayerModel, LeaderboardEntry, LeaderboardCache
 from datetime import datetime
-from google.cloud.firestore_v1.base_query import FieldFilter
 
 class PlayerService:
     @staticmethod
@@ -63,7 +62,7 @@ class PlayerService:
         """
         # 1. Fetch Top Levels (Level >= 1 for early stage)
         level_query = db.collection("players")\
-            .where(filter=FieldFilter("level", ">=", 1))\
+            .where("level", ">=", 1)\
             .order_by("level", direction="DESCENDING")\
             .limit(50).stream()
 
@@ -80,7 +79,7 @@ class PlayerService:
 
         # 2. Fetch Top Coins (Coins >= 100 for early stage)
         coin_query = db.collection("players")\
-            .where(filter=FieldFilter("coins", ">=", 100))\
+            .where("coins", ">=", 100)\
             .order_by("coins", direction="DESCENDING")\
             .limit(50).stream()
 
