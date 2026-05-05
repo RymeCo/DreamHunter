@@ -1,8 +1,9 @@
+import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'api_gateway.dart';
 
 final adminRouter = GoRouter(
   initialLocation: '/login',
@@ -14,19 +15,20 @@ final adminRouter = GoRouter(
       return isLoggingIn ? null : '/login';
     }
 
-    // Persistence Check: Verify admin status from Firestore
+    // Use Backend API (HTTP) instead of Firestore SDK to avoid gRPC/GMS issues in Waydroid.
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('players')
-          .doc(user.uid)
-          .get();
-
-      if (doc.data()?['role'] == 'admin') {
-        return isLoggingIn ? '/dashboard' : null;
-      } else {
-        await FirebaseAuth.instance.signOut();
-        return '/login';
+      final api = ApiGateway();
+      final response = await api.post('/auth/sync');
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['role'] == 'admin') {
+          return isLoggingIn ? '/dashboard' : null;
+        }
       }
+      
+      await FirebaseAuth.instance.signOut();
+      return '/login';
     } catch (_) {
       await FirebaseAuth.instance.signOut();
       return '/login';

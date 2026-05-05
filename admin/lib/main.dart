@@ -17,14 +17,6 @@ void main() async {
       storageBucket: 'dream-hunter-c0f89.firebasestorage.app',
     ),
   );
-
-  // Force Firestore to use Long Polling (HTTP/1.1) instead of gRPC.
-  // This allows Firestore to work on Android devices WITHOUT Google Play Services (like Waydroid).
-  FirebaseFirestore.instance.settings = const Settings(
-    persistenceEnabled: true,
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-    experimentalForceLongPolling: true,
-  );
   
   runApp(const AdminApp());
 }

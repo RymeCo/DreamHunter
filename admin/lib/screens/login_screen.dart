@@ -1,7 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
+import '../api_gateway.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,25 +26,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _loading = true);
     try {
-      final cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      final doc = await FirebaseFirestore.instance
-          .collection('players')
-          .doc(cred.user!.uid)
-          .get();
+      // Use Backend API (HTTP) instead of Firestore SDK to avoid gRPC/GMS issues in Waydroid.
+      final api = ApiGateway();
+      final response = await api.post('/auth/sync');
 
-      if (doc.data()?['role'] == 'admin') {
-        if (mounted) context.go('/dashboard');
-      } else {
-        await FirebaseAuth.instance.signOut();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Access Denied: Not an Admin')),
-          );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['role'] == 'admin') {
+          if (mounted) context.go('/dashboard');
+        } else {
+          await FirebaseAuth.instance.signOut();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Access Denied: Not an Admin')),
+            );
+          }
         }
+      } else {
+        throw Exception('Failed to sync with backend: ${response.statusCode}');
       }
     } catch (e) {
       if (mounted) {
