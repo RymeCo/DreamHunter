@@ -6,6 +6,10 @@ class ApiGateway {
   static const String baseUrl = 'https://dreamhunter-api.onrender.com/api';
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  Future<String?> getIdToken() async {
+    return await _auth.currentUser?.getIdToken();
+  }
+
   Future<Map<String, String>> getAuthHeaders() async {
     final user = _auth.currentUser;
     final token = await user?.getIdToken();
