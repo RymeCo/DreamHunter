@@ -34,11 +34,9 @@ class ChatService {
       }
       _currentRegion = region;
       
-      // OPTIMIZATION: Push existing buffer immediately if we have it
-      if (_messageBuffer.isNotEmpty) {
-        developer.log('Pushing ${_messageBuffer.length} messages from cache immediately.', name: 'ChatService');
-        Future.microtask(() => _messageController.add(List.from(_messageBuffer)));
-      }
+      // OPTIMIZATION: Always push the current buffer (even if empty) to avoid the UI spinner
+      developer.log('Pushing current buffer (length: ${_messageBuffer.length}) to UI.', name: 'ChatService');
+      Future.microtask(() => _messageController.add(List.from(_messageBuffer)));
       
       _connect(region);
     } else {
