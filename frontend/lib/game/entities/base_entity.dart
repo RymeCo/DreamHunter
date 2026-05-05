@@ -117,10 +117,12 @@ abstract class BaseEntity extends PositionComponent
     // 2. Add Resources to Owner (Fair Play Enforcement)
     if (owner != null) {
       if (owner.hasCategory('player')) {
-        if (refundCoins > 0)
+        if (refundCoins > 0) {
           MatchManager.instance.updateMatchCoins(refundCoins);
-        if (refundEnergy > 0)
+        }
+        if (refundEnergy > 0) {
           MatchManager.instance.updateMatchEnergy(refundEnergy);
+        }
       } else {
         owner.matchCoins += refundCoins;
         owner.matchEnergy += refundEnergy;

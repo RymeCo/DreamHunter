@@ -20,6 +20,8 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
   late int _level;
   late bool _isBannedPermanent;
   late bool _isBannedFromChat;
+  late String? _muteUntil;
+  late String? _banUntil;
   late String _role;
 
   @override
@@ -30,7 +32,113 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
     _level = widget.player['level'] ?? 1;
     _isBannedPermanent = widget.player['isBannedPermanent'] ?? false;
     _isBannedFromChat = widget.player['isBannedFromChat'] ?? false;
+    _muteUntil = widget.player['muteUntil'];
+    _banUntil = widget.player['banUntil'];
     _role = widget.player['role'] ?? 'player';
+  }
+
+  String _formatStatus(String? until, bool isPermanent) {
+    if (isPermanent) return 'Permanent';
+    if (until == null) return 'Active';
+    try {
+      final date = DateTime.parse(until);
+      if (date.isBefore(DateTime.now())) return 'Active (Expired)';
+      return 'Until ${date.day}/${date.month} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return 'Restricted';
+    }
+  }
+
+  Future<void> _showDurationPicker(
+    String title,
+    Function(String?, bool) onSelected,
+  ) async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) {
+        final customController = TextEditingController();
+        return AlertDialog(
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('1 Hour'),
+                onTap: () => Navigator.pop(context, {
+                  'until': DateTime.now()
+                      .add(const Duration(hours: 1))
+                      .toIso8601String(),
+                  'perm': false,
+                }),
+              ),
+              ListTile(
+                title: const Text('1 Day'),
+                onTap: () => Navigator.pop(context, {
+                  'until': DateTime.now()
+                      .add(const Duration(days: 1))
+                      .toIso8601String(),
+                  'perm': false,
+                }),
+              ),
+              ListTile(
+                title: const Text('7 Days'),
+                onTap: () => Navigator.pop(context, {
+                  'until': DateTime.now()
+                      .add(const Duration(days: 7))
+                      .toIso8601String(),
+                  'perm': false,
+                }),
+              ),
+              ListTile(
+                title: const Text('Permanent'),
+                onTap: () => Navigator.pop(context, {'until': null, 'perm': true}),
+              ),
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: customController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Custom Days',
+                          hintText: 'e.g. 30',
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.check),
+                      onPressed: () {
+                        final days = int.tryParse(customController.text);
+                        if (days != null) {
+                          Navigator.pop(context, {
+                            'until': DateTime.now()
+                                .add(Duration(days: days))
+                                .toIso8601String(),
+                            'perm': false,
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              ListTile(
+                title: const Text('Lift Restriction',
+                    style: TextStyle(color: Colors.green)),
+                onTap: () => Navigator.pop(context, {'until': null, 'perm': false}),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (result != null) {
+      onSelected(result['until'], result['perm']);
+    }
   }
 
   @override
@@ -79,19 +187,38 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
               ],
               onChanged: (v) => setState(() => _role = v!),
             ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('Permanently Banned'),
-              subtitle: const Text('Restrict all access.'),
-              value: _isBannedPermanent,
-              onChanged: (v) => setState(() => _isBannedPermanent = v),
-              activeThumbColor: Colors.red,
+            const SizedBox(height: 24),
+            
+            // Ban Section
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Account Status', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(_formatStatus(_banUntil, _isBannedPermanent)),
+              trailing: ElevatedButton(
+                onPressed: () => _showDurationPicker('Ban Duration', (until, perm) {
+                  setState(() {
+                    _banUntil = until;
+                    _isBannedPermanent = perm;
+                  });
+                }),
+                child: const Text('Restrict'),
+              ),
             ),
-            SwitchListTile(
-              title: const Text('Muted from Chat'),
-              subtitle: const Text('Restrict chat permissions.'),
-              value: _isBannedFromChat,
-              onChanged: (v) => setState(() => _isBannedFromChat = v),
+
+            // Mute Section
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Chat Status', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(_formatStatus(_muteUntil, _isBannedFromChat)),
+              trailing: ElevatedButton(
+                onPressed: () => _showDurationPicker('Mute Duration', (until, perm) {
+                  setState(() {
+                    _muteUntil = until;
+                    _isBannedFromChat = perm;
+                  });
+                }),
+                child: const Text('Mute'),
+              ),
             ),
           ],
         ),
@@ -110,6 +237,8 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
               'role': _role,
               'isBannedPermanent': _isBannedPermanent,
               'isBannedFromChat': _isBannedFromChat,
+              'muteUntil': _muteUntil,
+              'banUntil': _banUntil,
             });
           },
           child: const Text('Save Changes'),

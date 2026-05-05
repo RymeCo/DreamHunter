@@ -59,7 +59,10 @@ class ChatService {
 
     try {
       // 1. Get the ID token with a timeout to prevent hanging
-      developer.log('Step 1: Fetching token...', name: 'ChatService');
+      developer.log(
+        'Step 1: Fetching token for region: $region...',
+        name: 'ChatService',
+      );
       final token = await ApiGateway().getIdToken().timeout(
         const Duration(seconds: 5),
         onTimeout: () {
@@ -68,9 +71,20 @@ class ChatService {
         },
       );
 
+      // SECURITY: If the user switched regions while we were fetching the token,
+      // we must abort this connection attempt to avoid region cross-talk.
+      if (_currentRegion != region) {
+        developer.log(
+          'Region changed during token fetch. Aborting connection for $region.',
+          name: 'ChatService',
+        );
+        _isConnecting = false;
+        return;
+      }
+
       if (token == null) {
         developer.log(
-          'Step 1 Failed: No token available.',
+          'Step 1 Failed: No token available. User might be logged out.',
           name: 'ChatService',
         );
         _isConnecting = false;
@@ -86,12 +100,12 @@ class ChatService {
       developer.log('Step 2: Connecting to $uri', name: 'ChatService');
 
       // 3. Connect to WebSocket
-      _channel = WebSocketChannel.connect(uri);
+      final channel = WebSocketChannel.connect(uri);
 
-      // We must wait for the connection to be established to know if it succeeded
-      // But WebSocketChannel.connect is lazy. The handshake happens on the first listen.
+      // Assign to _channel before listening so sendMessage can potentially use it immediately
+      _channel = channel;
 
-      _channel!.stream.listen(
+      channel.stream.listen(
         (data) {
           try {
             final json = jsonDecode(data);
@@ -119,19 +133,19 @@ class ChatService {
             error: error,
             name: 'ChatService',
           );
-          _reconnect(region);
+          if (_currentRegion == region) _reconnect(region);
         },
         onDone: () {
           developer.log(
             'Step 3: WebSocket Stream Closed (onDone)',
             name: 'ChatService',
           );
-          _reconnect(region);
+          if (_currentRegion == region) _reconnect(region);
         },
       );
 
       developer.log(
-        'Step 4: Connection listener established.',
+        'Step 4: Connection listener established for $region.',
         name: 'ChatService',
       );
       _isConnecting = false;
@@ -142,15 +156,15 @@ class ChatService {
         name: 'ChatService',
       );
       _isConnecting = false;
-      _reconnect(region);
+      if (_currentRegion == region) _reconnect(region);
     }
   }
 
   void _reconnect(String region) {
-    _isConnecting = false; // Reset flag so retry can proceed
-    _channel = null; // Ensure channel is null so getMessages triggers reconnect
+    _isConnecting = false;
+    _channel = null;
     Future.delayed(const Duration(seconds: 5), () {
-      if (_currentRegion == region) {
+      if (_currentRegion == region && _channel == null) {
         _connect(region);
       }
     });
@@ -158,7 +172,9 @@ class ChatService {
 
   Future<void> sendMessage(String text, {String region = 'english'}) async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      throw Exception('You must be logged in to chat.');
+    }
 
     // Rate Limiting: 5 second cooldown
     if (_lastMessageTime != null) {
@@ -171,7 +187,17 @@ class ChatService {
     }
 
     final player = await ProfileManager.instance.getPlayer();
-    if (player == null || player.isBannedFromChat || player.isMuted) return;
+    if (player == null) {
+      throw Exception('Failed to load player profile. Please try again.');
+    }
+
+    if (player.isBannedFromChat) {
+      throw Exception('You are banned from chat.');
+    }
+
+    if (player.isMuted) {
+      throw Exception('You are currently muted.');
+    }
 
     final message = ChatMessage(
       id: '',
@@ -183,13 +209,23 @@ class ChatService {
     );
 
     if (_channel != null) {
-      _channel!.sink.add(jsonEncode(message.toJson()));
-      _lastMessageTime = DateTime.now();
+      try {
+        _channel!.sink.add(jsonEncode(message.toJson()));
+        _lastMessageTime = DateTime.now();
 
-      // Track task progress
-      TaskService.instance.trackAction(TaskType.chat);
+        // Track task progress
+        TaskService.instance.trackAction(TaskType.chat);
+      } catch (e) {
+        _channel = null; // Mark as dead
+        throw Exception('Connection lost. Reconnecting...');
+      }
     } else {
-      throw Exception('Chat is currently offline. Trying to reconnect...');
+      // If channel is null, we might be connecting or disconnected.
+      // Trigger a connection if not already connecting.
+      if (!_isConnecting) {
+        _connect(region);
+      }
+      throw Exception('Chat is connecting. Please try again in a moment.');
     }
   }
 

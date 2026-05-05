@@ -449,6 +449,15 @@ class _SettingsViewState extends State<SettingsView> {
           const Text(
             'This message and rules appear in the player chat every day.',
           ),
+          const SizedBox(height: 4),
+          Text(
+            'Note: Changes take effect on the next daily reset (00:00 PHT).',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           const SizedBox(height: 16),
 
           TextField(

@@ -78,20 +78,19 @@ class _ChatDialogState extends State<ChatDialog> {
     // Wake up if sleeping
     if (_isSleeping) {
       _resetInactivityTimer();
+      // OPTIMIZATION: Wait a tiny bit for the connection to START if we were sleeping
+      await Future.delayed(const Duration(milliseconds: 100));
     }
 
     try {
-      _textController.clear();
       await ChatService.instance.sendMessage(text, region: _selectedRegion);
+      _textController.clear(); // ONLY clear if successful
       _resetInactivityTimer(); // Reset after sending
       if (widget.onMessageSent != null) widget.onMessageSent!();
     } catch (e) {
       if (mounted) {
-        showCustomSnackBar(
-          context,
-          e.toString().replaceAll('Exception: ', ''),
-          type: SnackBarType.error,
-        );
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
+        showCustomSnackBar(context, errorMsg, type: SnackBarType.error);
       }
     }
   }

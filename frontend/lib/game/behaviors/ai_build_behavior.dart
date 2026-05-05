@@ -189,8 +189,9 @@ class AIBuildBehavior extends Component
     if (myBuildings.isEmpty) return;
 
     for (final building in myBuildings) {
-      if (building is DoorEntity || building is BedEntity)
+      if (building is DoorEntity || building is BedEntity) {
         continue; // Never sell core infrastructure
+      }
 
       bool shouldDismantle = false;
 

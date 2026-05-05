@@ -360,7 +360,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         height: 102,
         overflowSize: 102,
         borderRadius: 17,
-        onTap: () => _showGameDialog(const Center(child: ChatDialog())),
+        onTap: () {
+          if (!_isLoggedIn) {
+            showCustomSnackBar(
+              context,
+              'Please login to access the global chat.',
+              type: SnackBarType.info,
+            );
+            _showAuthDialog();
+          } else {
+            _showGameDialog(const Center(child: ChatDialog()));
+          }
+        },
       ),
     );
   }
