@@ -19,27 +19,43 @@ dependencies:
   audioplayers: ^6.5.1
   google_fonts: ^8.0.2
   shared_preferences: ^2.5.4
-  uuid: ^4.5.3
-  device_info_plus: ^12.3.0
+  connectivity_plus: ^7.0.0
+  crypto: ^3.0.7
+  intl: ^0.20.2
+  web_socket_channel: ^3.0.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   mocktail: ^1.0.4
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/icon.png"
+  min_sdk_android: 21 # android >= 5.0
+  adaptive_icon_background: "#141645" # User provided brand color to fix edges
+  adaptive_icon_foreground: "assets/icon.png"
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/auth/
-    - assets/images/core/
+    - assets/audio/
+    - assets/images/
     - assets/images/dashboard/
-    - assets/images/game/environment/
+    - assets/images/dashboard/auth/
+    - assets/images/dashboard/core/
+    - assets/images/game/
     - assets/images/game/characters/
-    - assets/images/game/characters/lady/
-    - assets/images/game/characters/boy/
-    - assets/images/game/characters/man/
+    - assets/images/game/monsters/
+    - assets/images/game/economy/
+    - assets/images/game/defenses/
+    - assets/images/game/interface/
     - assets/images/tiles/
+    - assets/tiles/
 
 

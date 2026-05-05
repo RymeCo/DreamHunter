@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: dreamhunter-api
+    env: python
+    buildCommand: python -m pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    region: singapore # Choose the closest region to your players
+    envVars:
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false # Set this manually in the Render Dashboard
+      - key: PYTHON_VERSION
+        value: 3.11.6

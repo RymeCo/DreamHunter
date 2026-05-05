@@ -1,0 +1,68 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/players/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isModerator() {
+      return isSignedIn() && 
+        get(/databases/$(database)/documents/players/$(request.auth.uid)).data.role in ['admin', 'moderator'];
+    }
+
+    // User profiles
+    match /players/{userId} {
+      // Allow users to read their own profile
+      allow read: if isSignedIn() && (isOwner(userId) || isAdmin() || isModerator());
+      
+      // DENY direct writes to sensitive fields (currency, xp, level, inventory)
+      // Registration and updates MUST flow through the FastAPI backend
+      allow create: if false; 
+      allow update: if false; 
+      allow delete: if isAdmin();
+    }
+
+    // Global metadata (ReadOnly for clients)
+    match /metadata/{document=**} {
+      allow read: if isSignedIn();
+      allow write: if false; // Only via Admin/Service Account
+    }
+
+    // Shop items (ReadOnly for clients)
+    match /shop_items/{document=**} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Audit logs (ReadOnly for Admins, Write-only for System via Service Account)
+    match /audit_logs/{document=**} {
+      allow read: if isSignedIn() && isAdmin();
+      allow write: if false; 
+    }
+
+    // Reports
+    match /reports/{reportId} {
+      // Allow users to create reports
+      allow create: if isSignedIn();
+      // Allow admins and moderators to manage reports
+      allow read, update: if isSignedIn() && (isAdmin() || isModerator());
+    }
+
+    // Global Chat (Messages are read-only, sending is via Backend API)
+    match /messages/{messageId} {
+      allow read: if isSignedIn();
+      allow write: if false; 
+    }
+  }
+}

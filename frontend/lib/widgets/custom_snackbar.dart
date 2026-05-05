@@ -1,87 +1,148 @@
 import 'package:flutter/material.dart';
+import 'package:dreamhunter/services/core/haptic_manager.dart';
+import 'package:dreamhunter/core/theme/app_theme.dart';
+import 'dart:ui';
 
-/// Defines the visual style of the snackbar.
-enum SnackBarType { success, error, info }
+enum SnackBarType { success, error, warning, info }
 
-/// Displays a stylized, game-themed snackbar message at the top of the screen.
-///
-/// ### How to use:
-/// ```dart
-/// showCustomSnackBar(
-///   context,
-///   'Quest Completed!',
-///   type: SnackBarType.success,
-/// );
-/// ```
+/// A simplified, theme-centric snackbar that leverages Flutter's ScaffoldMessenger
+/// for stability, queuing, and animations.
+class CustomSnackBar {
+  static void show(
+    BuildContext context,
+    String message, {
+    SnackBarType type = SnackBarType.info,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final glass =
+        Theme.of(context).extension<GlassTheme>() ?? const GlassTheme();
+
+    // Trigger standard haptics based on type
+    _triggerHaptic(type);
+
+    // Clear existing to prevent overlap/wait times
+    scaffoldMessenger.removeCurrentSnackBar();
+
+    scaffoldMessenger.showSnackBar(
+      SnackBar(
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        backgroundColor:
+            Colors.transparent, // We use the container for glass effect
+        duration: const Duration(milliseconds: 2500),
+        padding: EdgeInsets.zero,
+        content: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: glass.blurSigma,
+              sigmaY: glass.blurSigma,
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: _getColor(
+                  type,
+                ).withValues(alpha: glass.baseOpacity * 2.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _getColor(type).withValues(alpha: glass.borderAlpha),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(_getIcon(type), color: _getColor(type), size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      message.toUpperCase(),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontSize: 13,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  if (actionLabel != null && onAction != null)
+                    TextButton(
+                      onPressed: onAction,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      child: Text(
+                        actionLabel,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Color _getColor(SnackBarType type) {
+    switch (type) {
+      case SnackBarType.success:
+        return Colors.greenAccent;
+      case SnackBarType.error:
+        return Colors.redAccent;
+      case SnackBarType.warning:
+        return Colors.amberAccent;
+      case SnackBarType.info:
+        return Colors.blueAccent;
+    }
+  }
+
+  static IconData _getIcon(SnackBarType type) {
+    switch (type) {
+      case SnackBarType.success:
+        return Icons.check_circle_rounded;
+      case SnackBarType.error:
+        return Icons.error_rounded;
+      case SnackBarType.warning:
+        return Icons.warning_rounded;
+      case SnackBarType.info:
+        return Icons.info_rounded;
+    }
+  }
+
+  static void _triggerHaptic(SnackBarType type) {
+    switch (type) {
+      case SnackBarType.error:
+        HapticManager.instance.medium();
+        break;
+      case SnackBarType.warning:
+        HapticManager.instance.light();
+        break;
+      default:
+        HapticManager.instance.light();
+    }
+  }
+}
+
+/// Legacy wrapper kept for simplicity and project-wide usage.
 void showCustomSnackBar(
   BuildContext context,
   String message, {
   SnackBarType type = SnackBarType.info,
+  String? actionLabel,
+  VoidCallback? onAction,
 }) {
-  final overlay = Overlay.of(context);
-  final overlayEntry = OverlayEntry(
-    builder: (context) {
-      Color bgColor;
-      IconData icon;
-
-      switch (type) {
-        case SnackBarType.success:
-          bgColor = Colors.greenAccent.withValues(alpha: 0.9);
-          icon = Icons.check_circle_outline;
-          break;
-        case SnackBarType.error:
-          bgColor = Colors.redAccent.withValues(alpha: 0.9);
-          icon = Icons.error_outline;
-          break;
-        case SnackBarType.info:
-          bgColor = Colors.blueAccent.withValues(alpha: 0.9);
-          icon = Icons.info_outline;
-          break;
-      }
-
-      return Positioned(
-        bottom: 50,
-        left: 20,
-        right: 20,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Icon(icon, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    message,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
+  CustomSnackBar.show(
+    context,
+    message,
+    type: type,
+    actionLabel: actionLabel,
+    onAction: onAction,
   );
-
-  overlay.insert(overlayEntry);
-  Future.delayed(const Duration(seconds: 3), () {
-    overlayEntry.remove();
-  });
 }

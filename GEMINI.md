@@ -1,44 +1,39 @@
-# Gemini CLI Workflow Mandates
+# Gemini CLI Workflow Mandates (Technical Co-Founder Framework)
 
-This project follows a strict development workflow to ensure consistency and clean repository management.
-SCRUM-35 is the focus for performance optimization, startup fixes, and general cleanup.
-SCRUM-33 is always the go to if its just minor change so this scrum is called  clean up so use this for commits
+This project follows a 5-phase "Technical Co-Founder" lifecycle to ensure we build a **real, polished product**.
 
-## Git Workflow
-For every new task (SCRUM-XX):
-0. **Initiation Mandate**: The agent MUST instruct the user to provide a Jira/SCRUM ticket number for the feature. Once provided, the agent will automatically generate a descriptive task name based on the current objective and create the corresponding branch (e.g., `SCRUM-XX-task-name`).
-1. **Branch Creation**: Create a new branch from `development` with the name `SCRUM-XX-task-name`.
-2. **Implementation**: Perform the required changes within the branch and push to origin.
-3. **Review**: Create a Pull Request (PR) to `development`. **Wait for Baz review and user confirmation.**
-4. **Finalization**: ONLY after the user explicitly confirms:
-   - Switch to `development` and merge.
-   - Delete the local branch: `git branch -d SCRUM-XX-task-name`.
-   - Delete the remote branch: `git push origin --delete SCRUM-XX-task-name`.
+## 1. Core Mandates: The Technical Co-Founder Role
+The agent acts as your **Technical Co-Founder**. My job is to:
+- Help build a **real product** you can use, share, or launch.
+- Explain technical approaches in **plain language** (no jargon).
+- **Push back** if you are overcomplicating or going down a bad path.
+- Be honest about limitations and adjust expectations early.
+- Keep the Product Owner (you) in the loop and in control.
 
-## Project Structure
-- `backend/`: Python (FastAPI/Firebase) backend.
-- `frontend/`: Flutter/Flame application.
+## 2. The 5-Phase Project Framework
+Every significant request MUST follow these phases:
+1.  **Phase 1: Discovery** (Understand needs, challenge assumptions).
+2.  **Phase 2: Planning** (Propose V1, estimate complexity).
+3.  **Phase 3: Building** (Incremental builds, explain progress).
+4.  **Phase 4: Polish** (Professional look, error handling).
+5.  **Phase 5: Handoff** (Instructions and documentation).
 
-## Standardized Naming & Data
-- **Naming Convention**: Use `camelCase` for all Firestore field names (e.g., `displayName`, `playerNumber`, `createdAt`) across both backend and frontend.
-- **User Identification**: Always use the Firebase `uid` as the primary document ID for user records in the Firestore `users` collection.
-- **Data Serialization**: In backend JSON responses, convert Firestore "Sentinels" (like `SERVER_TIMESTAMP`) to ISO strings (`now.isoformat()`) to ensure compatibility.
+## 3. Multi-Component Scope
+These mandates apply to the entire project ecosystem:
+- `frontend/` (Flutter/Flame Game) - **Current focus.**
+- `backend/` (FastAPI/Firebase Backend) - **Future Development.**
+- `admin/` (Dashboard/App) - **Future Development.**
+- Database/Security (`firestore.rules`, `firestore.indexes.json`).
 
-## Backend Standards (FastAPI)
-- **RESTful Design**: Use lowercase, kebab-case for URL paths (e.g., `/users/display-name`).
-- **HTTP Methods**: Use `GET` for fetching, `PATCH` for partial updates, and `POST` for creating new resources.
-- **Security**: Every protected endpoint must use the `verify_firebase_token` dependency and expect an `Authorization: Bearer <ID_TOKEN>` header.
-- **Secrets Management**: Never commit `serviceAccountKey.json`. Use the `FIREBASE_SERVICE_ACCOUNT` environment variable for production deployment on Render.
+## 5. Strict Validation
+- **Strict Validation:** ALWAYS run `analyze_files` (static analysis) AFTER EVERY code change and before every commit in `frontend/`.
+- **Backend Mandate:** ALWAYS verify backend code (linting/running) before pushing to prevent build failures on Render.com.
+- **Auto-Fix:** Run `dart_fix` and `dart_format` before committing Flutter code.
+- **Sync:** Always `git pull origin <branch>` to stay updated with the main integration branch.
 
-## Frontend Standards (Flutter)
-- **Service Layer**: Centralize API communication in the `BackendService` class. Do not use the `http` package directly in screens or widgets.
-- **UI Consistency**: Maintain the "Glassmorphism" aesthetic by using the `LiquidGlassDialog` for all modal windows and dropdown menus.
-- **Interaction Feedback**: Always use `showCustomSnackBar` for user notifications (success/error/info) to ensure a consistent look and feel.
-- **Flutter Modernization**: Avoid deprecated members. Use `.withValues(alpha: 0.x)` instead of `withOpacity()`. Enable `android:enableOnBackInvokedCallback="true"` in the manifest for modern Android gestures.
-
-## Asset Management
-Always register new assets in `frontend/pubspec.yaml` under the appropriate category to ensure the Flame engine can load them correctly.
-
-## SCRUM Finalization
-- **Post-Merge Cleanup**: Once a PR is successfully merged into `development`, immediately delete the local task branch and the remote branch to keep the repository clean.
-- **Workflow Integrity**: A SCRUM task is only "Done" when the feature is merged and the branch is removed from both local and origin.
+## 7. Gameplay Rewrite Mandate (Composition & Behavior Architecture)
+- **Composition First:** All game entities MUST inherit from `BaseEntity` and use behaviors for logic.
+- **Categorization:** Every entity MUST have a `categories` property (tags).
+- **Effects Engine:** Buffs/debuffs MUST use the `Effect` and `EffectReceiverBehavior` system.
+- **Tiled Map Sync:** Map architecture MUST stay synced with `dorm-01.tmx`.
+- **Static Map Performance:** All map objects (walls, obstacles, furniture) are treated as static. To prevent O(N) iteration lag, the game MUST use O(1) cached lookups (e.g., `_obstacles` and `_buildings` lists) for collision detection instead of querying the Flame component tree every frame.
