@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../api_gateway.dart';
+import '../../utils/formatters.dart';
 import 'player_edit_dialog.dart';
 
 class PlayerView extends StatefulWidget {
@@ -290,7 +291,7 @@ class _PlayerViewState extends State<PlayerView> {
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      'Updated: ${_leaderboardData['lastUpdated'] != null ? DateTime.parse(_leaderboardData['lastUpdated']).toLocal().toString().split('.')[0] : "Never"}',
+                      'Updated: ${_leaderboardData['lastUpdated'] != null ? AppFormatters.formatFullDateTime(DateTime.parse(_leaderboardData['lastUpdated'])) : "Never"}',
                       style: Theme.of(context).textTheme.bodySmall,
                       overflow: TextOverflow.ellipsis,
                     ),

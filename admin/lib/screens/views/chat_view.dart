@@ -5,6 +5,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../api_gateway.dart';
 import '../../models/chat_message.dart';
+import '../../utils/formatters.dart';
 import 'player_edit_dialog.dart';
 
 class ChatView extends StatefulWidget {
@@ -297,29 +298,25 @@ class _ChatViewState extends State<ChatView> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            border: Border(
-              bottom: BorderSide(
-                color: Theme.of(context).colorScheme.outlineVariant,
-              ),
-            ),
-          ),
+        // Region & Status Bar
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              Text(
-                'Live Monitor:',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(width: 16),
+              const Icon(Icons.public, size: 20),
+              const SizedBox(width: 8),
               DropdownButton<String>(
                 value: _selectedRegion,
+                underline: const SizedBox(),
+                style: TextStyle(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
                 onChanged: (val) {
                   if (val != null) {
                     setState(() => _selectedRegion = val);
@@ -336,46 +333,12 @@ class _ChatViewState extends State<ChatView> {
                     .toList(),
               ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: _isConnected
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _isConnected ? Colors.green : Colors.red,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _isConnected ? Colors.green : Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _isConnected ? 'Connected' : 'Disconnected',
-                      style: TextStyle(
-                        color: _isConnected ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _ConnectionStatusChip(isConnected: _isConnected),
             ],
           ),
         ),
+
+        const Divider(height: 1),
 
         Expanded(
           child: _messages.isEmpty
@@ -386,16 +349,19 @@ class _ChatViewState extends State<ChatView> {
                       Icon(
                         Icons.chat_bubble_outline,
                         size: 48,
-                        color: Theme.of(context).colorScheme.outline,
+                        color: colorScheme.outline,
                       ),
                       const SizedBox(height: 16),
-                      const Text('Waiting for messages...'),
+                      Text(
+                        'No activity in ${_selectedRegion.toUpperCase()}',
+                        style: TextStyle(color: colorScheme.outline),
+                      ),
                     ],
                   ),
                 )
               : ListView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   itemCount: _messages.length,
                   itemBuilder: (context, index) {
                     final msg = _messages[index];
@@ -404,107 +370,23 @@ class _ChatViewState extends State<ChatView> {
                         msg.type == MessageType.announcement;
                     final isCensored = _censoredMessages.contains(msg.id);
 
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: InkWell(
-                        onTap: () => _showModerationMenu(msg),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    msg.senderName,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: isSystem
-                                          ? Colors.orange
-                                          : Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '${msg.timestamp.hour}:${msg.timestamp.minute.toString().padLeft(2, '0')}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall
-                                        ?.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.outline,
-                                        ),
-                                  ),
-                                  if (isCensored)
-                                    const Padding(
-                                      padding: EdgeInsets.only(left: 8.0),
-                                      child: Icon(
-                                        Icons.visibility_off,
-                                        size: 12,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSystem
-                                      ? Colors.orange.withValues(alpha: 0.05)
-                                      : Theme.of(context)
-                                            .colorScheme
-                                            .surfaceContainerHighest
-                                            .withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: isSystem
-                                      ? Border.all(
-                                          color: Colors.orange.withValues(
-                                            alpha: 0.2,
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                child: Text(
-                                  isCensored
-                                      ? 'Content hidden by moderator'
-                                      : msg.text,
-                                  style: TextStyle(
-                                    fontStyle: isCensored
-                                        ? FontStyle.italic
-                                        : FontStyle.normal,
-                                    color: isCensored
-                                        ? Colors.grey
-                                        : Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    return _ChatMessageTile(
+                      message: msg,
+                      isSystem: isSystem,
+                      isCensored: isCensored,
+                      onTap: () => _showModerationMenu(msg),
                     );
                   },
                 ),
         ),
 
+        // Input Area
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             border: Border(
-              top: BorderSide(
-                color: Theme.of(context).colorScheme.outlineVariant,
-              ),
+              top: BorderSide(color: colorScheme.outlineVariant),
             ),
           ),
           child: Row(
@@ -513,19 +395,22 @@ class _ChatViewState extends State<ChatView> {
                 child: TextField(
                   controller: _messageController,
                   decoration: InputDecoration(
-                    hintText: 'Send system message to region...',
+                    hintText: 'Broadcast as ADMIN...',
+                    filled: true,
+                    fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      horizontal: 20,
+                      vertical: 10,
                     ),
                   ),
                   onSubmitted: (_) => _sendMessage(),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               IconButton.filled(
                 onPressed: _isConnected ? _sendMessage : null,
                 icon: const Icon(Icons.send),
@@ -534,6 +419,118 @@ class _ChatViewState extends State<ChatView> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ConnectionStatusChip extends StatelessWidget {
+  final bool isConnected;
+  const _ConnectionStatusChip({required this.isConnected});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isConnected ? Colors.green : Colors.red;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            isConnected ? 'LIVE' : 'OFFLINE',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChatMessageTile extends StatelessWidget {
+  final ChatMessage message;
+  final bool isSystem;
+  final bool isCensored;
+  final VoidCallback onTap;
+
+  const _ChatMessageTile({
+    required this.message,
+    required this.isSystem,
+    required this.isCensored,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isSystem 
+                ? Colors.orange.withValues(alpha: 0.05) 
+                : colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSystem 
+                  ? Colors.orange.withValues(alpha: 0.2) 
+                  : colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    message.senderName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isSystem ? Colors.orange : colorScheme.primary,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    AppFormatters.formatTime(message.timestamp),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.outline,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                isCensored ? 'Content hidden by moderator' : message.text,
+                style: TextStyle(
+                  fontStyle: isCensored ? FontStyle.italic : FontStyle.normal,
+                  color: isCensored ? colorScheme.outline : colorScheme.onSurface,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

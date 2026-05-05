@@ -26,7 +26,7 @@ class WalletManager extends ChangeNotifier {
       _dreamCoins = data['dreamCoins'] ?? 0;
       _hellStones = data['hellStones'] ?? 0;
     } catch (e) {
-      debugPrint('Economy Init Error: $e');
+      // Wallet Init Error
     }
 
     _isLoading = false;

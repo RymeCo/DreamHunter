@@ -1,5 +1,4 @@
 import 'package:audioplayers/audioplayers.dart';
-import 'dart:developer' as developer;
 import 'package:dreamhunter/services/core/storage_engine.dart';
 import 'package:flutter/widgets.dart';
 import 'dart:async';
@@ -85,13 +84,8 @@ class AudioManager with WidgetsBindingObserver {
           'audio/reward.ogg',
         ]),
       );
-
-      developer.log(
-        'AudioManager: Initialized (Vol: $_musicVolume)',
-        name: 'AudioManager',
-      );
     } catch (e) {
-      developer.log('AudioManager: Init Error: $e', name: 'AudioManager');
+      // AudioManager Init Error
     }
   }
 
@@ -116,10 +110,6 @@ class AudioManager with WidgetsBindingObserver {
   Future<void> setGameMode(bool active) async {
     _isGameMode = active;
     await _applyVolumes();
-    developer.log(
-      'AudioManager: GameMode ${active ? 'Active (1.1x boost)' : 'Inactive'}',
-      name: 'AudioManager',
-    );
   }
 
   Future<void> _persistSettings() async {
@@ -170,7 +160,7 @@ class AudioManager with WidgetsBindingObserver {
       await _activeBgmPlayer.setVolume(targetVolume);
       await _activeBgmPlayer.play(AssetSource(assetPath));
     } catch (e) {
-      developer.log('AudioManager: BGM Error: $e', name: 'AudioManager');
+      // AudioManager BGM Error
     }
   }
 

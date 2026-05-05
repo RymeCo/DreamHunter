@@ -1,25 +1,27 @@
-.vscode/
+# General
 .DS_Store
 .idea/
+.vscode/
+*.log
+node_modules/
+
+# Gemini CLI
 .gemini/
-docs
 AGENTS.md
 GEMINI.MD2
-node_modules/
-build/
-.github
-*.log
-# VS Code related
-.vscode/
-.gemini/
 note.txt
-# GSD Workflow - Local Setup
-.gemini/gsd_active
-.gemini/settings.json
-.gemini/commands/gsd/
-
-gha-creds-*.json
 
 # Backend
-__pycache__/
-*.pyc
+**/__pycache__/
+**/*.pyc
+backend/.env
+backend/venv/
+
+# Build Artifacts
+build/
+gha-creds-*.json
+
+# Ignore generic APKs, keep the specific release ones
+*.apk
+!DreamHunter.apk
+!DH-Admin.apk

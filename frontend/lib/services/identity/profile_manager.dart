@@ -66,7 +66,7 @@ class ProfileManager {
           return PlayerModel.fromMap(data, uid);
         }
       } catch (e) {
-        debugPrint('Failed to fetch from backend, falling back to cache: $e');
+        // Backend fetch failed
       }
     }
 
@@ -90,7 +90,6 @@ class ProfileManager {
     if (cached != null) {
       final localPlayer = PlayerModel.fromMap(cached, user.uid);
       if (localPlayer.isBannedPermanent) {
-        debugPrint('Backup aborted: Account is permanently banned.');
         return;
       }
     }
@@ -132,7 +131,6 @@ class ProfileManager {
     // SECURITY: If we already know they are banned, don't even try to sync
     final cached = await StorageEngine.instance.getMetadata('player_profile');
     if (cached != null && (cached['isBannedPermanent'] ?? false)) {
-      debugPrint('Sync aborted: User is permanently banned.');
       return;
     }
 
@@ -165,7 +163,7 @@ class ProfileManager {
       final isNewUser =
           (data['level'] ?? 1) == 1 && (data['coins'] ?? 100) == 100;
       if (isNewUser && StorageEngine.instance.hasGuestData()) {
-        await StorageEngine.instance.promoteGuestToUser(user!.uid);
+        await StorageEngine.instance.promoteGuestToUser(user.uid);
         await backupPlayer();
         return;
       }
@@ -261,7 +259,7 @@ class ProfileManager {
             }
           }
         } catch (e) {
-          debugPrint('Cache Date Parse Error: $e');
+          // Cache Parse Error
         }
       }
     }
@@ -278,7 +276,7 @@ class ProfileManager {
         return data;
       }
     } catch (e) {
-      debugPrint('Leaderboard API Error: $e');
+      // Leaderboard API Error
     }
 
     return cached ?? {"lastUpdated": "", "topLevels": [], "topCoins": []};

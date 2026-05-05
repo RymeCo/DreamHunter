@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
 import 'package:dreamhunter/game/dream_hunter_game.dart';
@@ -220,9 +219,6 @@ class AIBuildBehavior extends Component
       }
 
       if (shouldDismantle) {
-        debugPrint(
-          '[AI] Strategic Dismantle: AI ${parent.hunterIndex} selling ${building.runtimeType} in room ${parent.targetBed.roomID}',
-        );
         building.sell(owner: parent);
         _resetTimer();
         return;

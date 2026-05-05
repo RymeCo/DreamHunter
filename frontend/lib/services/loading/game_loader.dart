@@ -56,7 +56,6 @@ class GameLoader {
             stream.removeListener(listener);
           },
           onError: (exception, stackTrace) {
-            debugPrint('GameLoader: Error loading $path: $exception');
             if (!completer.isCompleted) {
               completer.completeError(exception, stackTrace);
             }
@@ -70,7 +69,6 @@ class GameLoader {
         final ui.Image image = await completer.future.timeout(
           const Duration(seconds: 3),
           onTimeout: () {
-            debugPrint('GameLoader: Timeout loading $path');
             throw TimeoutException('Asset load timed out: $path');
           },
         );
@@ -85,7 +83,7 @@ class GameLoader {
         canvas.drawImage(image, Offset.zero, Paint());
         recorder.endRecording().dispose();
       } catch (e) {
-        debugPrint('GameLoader: Skipping asset: $path - $e');
+        // Skipping asset
       }
       loaded++;
       onProgress(loaded / gameImages.length);

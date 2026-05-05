@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../api_gateway.dart';
+import '../../utils/formatters.dart';
 
 class HealthView extends StatefulWidget {
   const HealthView({super.key});
@@ -64,7 +64,7 @@ class _HealthViewState extends State<HealthView> {
                     Text(
                       _lastChecked == null
                           ? 'Snapshot not yet taken.'
-                          : 'Last checked (PHT): ${DateFormat('HH:mm:ss').format(_lastChecked!.toUtc().add(const Duration(hours: 8)))} | ${DateFormat('hh:mm:ss a').format(_lastChecked!.toUtc().add(const Duration(hours: 8)))}',
+                          : 'Last checked: ${AppFormatters.formatFullDateTime(_lastChecked)}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],

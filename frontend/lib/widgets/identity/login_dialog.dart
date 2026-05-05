@@ -76,7 +76,6 @@ class _LoginDialogState extends State<LoginDialog> {
           setState(() => _isLoading = false);
         }
       } catch (e) {
-        debugPrint('Auth error: $e');
         if (mounted) {
           showCustomSnackBar(
             context,

@@ -33,7 +33,6 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
         });
       }
     } catch (e) {
-      debugPrint('Leaderboard Fetch Error: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -35,19 +34,11 @@ class ChatService {
       _currentRegion = region;
 
       // OPTIMIZATION: Always push the current buffer (even if empty) to avoid the UI spinner
-      developer.log(
-        'Pushing current buffer (length: ${_messageBuffer.length}) to UI.',
-        name: 'ChatService',
-      );
       Future.microtask(() => _messageController.add(List.from(_messageBuffer)));
 
       _connect(region);
     } else {
       // Even if already connected, push current buffer to ensure the new listener gets data
-      developer.log(
-        'Active channel found, pushing current buffer.',
-        name: 'ChatService',
-      );
       Future.microtask(() => _messageController.add(List.from(_messageBuffer)));
     }
     return _messageController.stream;
@@ -59,14 +50,9 @@ class ChatService {
 
     try {
       // 1. Get the ID token with a timeout to prevent hanging
-      developer.log(
-        'Step 1: Fetching token for region: $region...',
-        name: 'ChatService',
-      );
       final token = await ApiGateway().getIdToken().timeout(
         const Duration(seconds: 5),
         onTimeout: () {
-          developer.log('Token fetch timed out!', name: 'ChatService');
           return null;
         },
       );
@@ -74,19 +60,11 @@ class ChatService {
       // SECURITY: If the user switched regions while we were fetching the token,
       // we must abort this connection attempt to avoid region cross-talk.
       if (_currentRegion != region) {
-        developer.log(
-          'Region changed during token fetch. Aborting connection for $region.',
-          name: 'ChatService',
-        );
         _isConnecting = false;
         return;
       }
 
       if (token == null) {
-        developer.log(
-          'Step 1 Failed: No token available. User might be logged out.',
-          name: 'ChatService',
-        );
         _isConnecting = false;
         return;
       }
@@ -97,7 +75,6 @@ class ChatService {
           .replaceFirst('http://', 'ws://');
 
       final uri = Uri.parse('$wsUrl/ws/chat/$region?token=$token');
-      developer.log('Step 2: Connecting to $uri', name: 'ChatService');
 
       // 3. Connect to WebSocket
       final channel = WebSocketChannel.connect(uri);
@@ -129,41 +106,19 @@ class ChatService {
               _messageController.add(List.from(_messageBuffer));
             }
           } catch (e) {
-            developer.log(
-              'Step 3: Error decoding message: $data',
-              error: e,
-              name: 'ChatService',
-            );
+            // Error decoding message
           }
         },
         onError: (error) {
-          developer.log(
-            'Step 3: WebSocket Stream Error',
-            error: error,
-            name: 'ChatService',
-          );
           if (_currentRegion == region) _reconnect(region);
         },
         onDone: () {
-          developer.log(
-            'Step 3: WebSocket Stream Closed (onDone)',
-            name: 'ChatService',
-          );
           if (_currentRegion == region) _reconnect(region);
         },
       );
 
-      developer.log(
-        'Step 4: Connection listener established for $region.',
-        name: 'ChatService',
-      );
       _isConnecting = false;
     } catch (e) {
-      developer.log(
-        'Step 5: Connection sequence failed catastrophically',
-        error: e,
-        name: 'ChatService',
-      );
       _isConnecting = false;
       if (_currentRegion == region) _reconnect(region);
     }
@@ -195,9 +150,16 @@ class ChatService {
       }
     }
 
-    final player = await ProfileManager.instance.getPlayer();
+    var player = await ProfileManager.instance.getPlayer();
     if (player == null) {
       throw Exception('Failed to load player profile. Please try again.');
+    }
+
+    // REPAIR: If the local cache thinks we are muted/banned, force a refresh from the backend
+    // to see if an admin has lifted the restriction "immediately".
+    if (player.isBannedFromChat || player.isMuted) {
+      player = await ProfileManager.instance.getPlayer(forceRefresh: true);
+      if (player == null) throw Exception('Failed to verify profile status.');
     }
 
     if (player.isBannedFromChat) {
@@ -205,6 +167,15 @@ class ChatService {
     }
 
     if (player.isMuted) {
+      final until = player.muteUntil != null 
+          ? DateTime.tryParse(player.muteUntil!)?.toLocal() 
+          : null;
+      
+      if (until != null) {
+        final hours = until.difference(DateTime.now()).inHours;
+        final mins = until.difference(DateTime.now()).inMinutes % 60;
+        throw Exception('You are muted for another ${hours}h ${mins}m.');
+      }
       throw Exception('You are currently muted.');
     }
 
@@ -277,11 +248,6 @@ class ChatService {
         return announcement;
       }
     } catch (e) {
-      developer.log(
-        'Announcement fetch failed or timed out',
-        error: e,
-        name: 'ChatService',
-      );
       // Return default announcement so user isn't stuck waiting
       return {
         'date': today,

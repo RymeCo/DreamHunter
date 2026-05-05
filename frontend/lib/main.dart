@@ -5,6 +5,7 @@ import 'package:dreamhunter/services/core/haptic_manager.dart';
 import 'package:dreamhunter/services/core/layout_baseline.dart';
 import 'package:dreamhunter/services/core/storage_engine.dart';
 import 'package:dreamhunter/services/progression/task_service.dart';
+import 'package:dreamhunter/services/progression/tutorial_service.dart';
 import 'package:dreamhunter/widgets/pillarbox_wrapper.dart';
 import 'package:flame/flame.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +24,7 @@ void main() async {
   await HapticManager().initialize();
   await AudioManager().initialize();
   await TaskService().initialize();
+  await TutorialService().initialize();
 
   if (!ThemeData().platform.toString().contains('web')) {
     await Flame.device.fullScreen();

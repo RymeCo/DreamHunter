@@ -65,8 +65,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0E21),
+      backgroundColor: colorScheme.surface,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -75,31 +77,28 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.admin_panel_settings,
-                  size: 80,
-                  color: Colors.deepPurpleAccent,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    'assets/icon.png',
+                    width: 120,
+                    height: 120,
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 const Text(
                   'DH Admin',
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 40),
                 TextFormField(
                   controller: _emailController,
-                  style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
                     labelText: 'Admin Email',
-                    labelStyle: TextStyle(color: Colors.white70),
                     border: OutlineInputBorder(),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white24),
-                    ),
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) =>
@@ -108,14 +107,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _passwordController,
-                  style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
                     labelText: 'Password',
-                    labelStyle: TextStyle(color: Colors.white70),
                     border: OutlineInputBorder(),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white24),
-                    ),
                   ),
                   obscureText: true,
                   validator: (v) =>
@@ -127,15 +121,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 54,
                   child: _isLoading
                       ? const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.deepPurpleAccent,
-                          ),
+                          child: CircularProgressIndicator(),
                         )
                       : ElevatedButton(
                           onPressed: _login,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurpleAccent,
-                            foregroundColor: Colors.white,
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: colorScheme.onPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),

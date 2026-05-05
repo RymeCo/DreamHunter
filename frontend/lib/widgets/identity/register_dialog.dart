@@ -69,7 +69,6 @@ class _RegisterDialogState extends State<RegisterDialog> {
           setState(() => _isLoading = false);
         }
       } catch (e) {
-        debugPrint('Registration error: $e');
         if (mounted) {
           showCustomSnackBar(
             context,

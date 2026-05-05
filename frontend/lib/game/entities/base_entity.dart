@@ -104,9 +104,6 @@ abstract class BaseEntity extends PositionComponent
 
     // MANDATE: Doors and Beds CANNOT be sold.
     if (hasCategory('door') || hasCategory('bed')) {
-      debugPrint(
-        '[SAFETY] Blocked attempt to sell core infrastructure: $runtimeType',
-      );
       return;
     }
 

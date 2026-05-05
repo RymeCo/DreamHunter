@@ -104,21 +104,55 @@ async def websocket_endpoint(websocket: WebSocket, region: str, token: str = Que
             p = user_doc.to_dict()
             
             # 1. Check if Banned (Account)
-            now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            now = datetime.datetime.now(datetime.timezone.utc)
             is_perm_banned = p.get("isBannedPermanent", False)
             ban_until = p.get("banUntil")
             
-            if is_perm_banned or (ban_until and ban_until > now):
+            if is_perm_banned:
                 await websocket.close(code=1008, reason="ACCOUNT_BANNED")
                 break
+                
+            if ban_until:
+                try:
+                    ban_until_dt = datetime.datetime.fromisoformat(ban_until.replace('Z', '+00:00'))
+                    if ban_until_dt.tzinfo is None:
+                        ban_until_dt = ban_until_dt.replace(tzinfo=datetime.timezone.utc)
+                    
+                    if ban_until_dt > now:
+                        await websocket.close(code=1008, reason="ACCOUNT_BANNED")
+                        break
+                except Exception as e:
+                    print(f"[CHAT] Error parsing banUntil: {e}")
 
             # 2. Check if Muted (Chat)
             is_muted_flag = p.get("isBannedFromChat", False)
             mute_until = p.get("muteUntil")
             
-            if is_muted_flag or (mute_until and mute_until > now):
-                # Optionally send a private system message to the user
+            if is_muted_flag:
+                await websocket.send_text(ujson.dumps({
+                    "type": "system",
+                    "text": "Your account is restricted. You cannot send messages.",
+                    "senderName": "System",
+                    "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                }))
                 continue
+
+            if mute_until:
+                try:
+                    mute_until_dt = datetime.datetime.fromisoformat(mute_until.replace('Z', '+00:00'))
+                    if mute_until_dt.tzinfo is None:
+                        mute_until_dt = mute_until_dt.replace(tzinfo=datetime.timezone.utc)
+                    
+                    if mute_until_dt > now:
+                        await websocket.send_text(ujson.dumps({
+                            "type": "system",
+                            "text": f"You are muted until {mute_until_dt.strftime('%H:%M:%S')} UTC.",
+                            "senderName": "System",
+                            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                        }))
+                        continue
+                except Exception as e:
+                    print(f"[CHAT] Error parsing muteUntil: {e}")
 
             message_data["senderId"] = uid
             
