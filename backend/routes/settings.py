@@ -28,7 +28,8 @@ async def update_settings(
         "chat_enabled", 
         "maintenance_mode", 
         "leaderboard_paused", 
-        "leaderboard_disabled"
+        "leaderboard_disabled",
+        "backup_disabled"
     ]
     update_data = {k: v for k, v in data.items() if k in allowed_keys}
     

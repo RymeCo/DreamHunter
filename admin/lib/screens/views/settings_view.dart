@@ -18,6 +18,7 @@ class _SettingsViewState extends State<SettingsView> {
   bool _maintenanceMode = false;
   bool _leaderboardPaused = false;
   bool _leaderboardDisabled = false;
+  bool _backupDisabled = false;
   bool _chatEnabled = true;
 
   @override
@@ -35,6 +36,7 @@ class _SettingsViewState extends State<SettingsView> {
           _maintenanceMode = data['maintenance_mode'] ?? false;
           _leaderboardPaused = data['leaderboard_paused'] ?? false;
           _leaderboardDisabled = data['leaderboard_disabled'] ?? false;
+          _backupDisabled = data['backup_disabled'] ?? false;
           _chatEnabled = data['chat_enabled'] ?? true;
           _isLoading = false;
         });
@@ -53,6 +55,7 @@ class _SettingsViewState extends State<SettingsView> {
       'maintenance_mode': _maintenanceMode,
       'leaderboard_paused': _leaderboardPaused,
       'leaderboard_disabled': _leaderboardDisabled,
+      'backup_disabled': _backupDisabled,
       'chat_enabled': _chatEnabled,
     };
 
@@ -60,6 +63,7 @@ class _SettingsViewState extends State<SettingsView> {
       if (key == 'maintenance_mode') _maintenanceMode = value;
       if (key == 'leaderboard_paused') _leaderboardPaused = value;
       if (key == 'leaderboard_disabled') _leaderboardDisabled = value;
+      if (key == 'backup_disabled') _backupDisabled = value;
       if (key == 'chat_enabled') _chatEnabled = value;
     });
 
@@ -77,6 +81,7 @@ class _SettingsViewState extends State<SettingsView> {
         _maintenanceMode = originalSettings['maintenance_mode']!;
         _leaderboardPaused = originalSettings['leaderboard_paused']!;
         _leaderboardDisabled = originalSettings['leaderboard_disabled']!;
+        _backupDisabled = originalSettings['backup_disabled']!;
         _chatEnabled = originalSettings['chat_enabled']!;
       });
       if (mounted) {
@@ -119,8 +124,7 @@ class _SettingsViewState extends State<SettingsView> {
 
     return Padding(
       padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: ListView(
         children: [
           Text(
             'General Settings',
@@ -167,6 +171,17 @@ class _SettingsViewState extends State<SettingsView> {
             onChanged: (val) => _updateSetting('leaderboard_disabled', val),
             isDestructive: true,
           ),
+
+          const SizedBox(height: 16),
+          
+          _buildToggleCard(
+            title: 'Disable Backup',
+            subtitle: 'Prevent players from backing up their local data to the cloud.',
+            value: _backupDisabled,
+            icon: Icons.cloud_off,
+            onChanged: (val) => _updateSetting('backup_disabled', val),
+            isDestructive: true,
+          ),
           
           const SizedBox(height: 16),
           
@@ -190,22 +205,25 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           const SizedBox(height: 16),
           
-          SizedBox(
-            width: 250,
-            child: OutlinedButton.icon(
-              onPressed: _isRefreshing || _leaderboardPaused ? null : _forceRefresh,
-              icon: _isRefreshing
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.refresh),
-              label: Text(_isRefreshing ? 'Refreshing...' : 'Force Leaderboard Refresh'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              width: 280,
+              child: OutlinedButton.icon(
+                onPressed: _isRefreshing || _leaderboardPaused ? null : _forceRefresh,
+                icon: _isRefreshing
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh),
+                label: Text(_isRefreshing ? 'Refreshing...' : 'Force Leaderboard Refresh'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
