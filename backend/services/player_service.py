@@ -57,36 +57,34 @@ class PlayerService:
 
     @staticmethod
     def refresh_leaderboards():
-        """
-        Scans all players and updates the cached leaderboard document.
-        Rules:
-        - Level: 50+, Top 50, tie-break by older account.
-        - Coins: 30k+, Top 50, tie-break by older account.
-        """
-        # 1. Fetch Top Levels (Level >= 50)
-        level_query = db.collection("players")\
-            .where(filter=FieldFilter("level", ">=", 50))\
-            .order_by("level", direction="DESCENDING")\
-            .order_by("createdAt", direction="ASCENDING")\
-            .limit(50).stream()
+      """
+      Scans all players and updates the cached leaderboard document.
+      Thresholds lowered for early-stage testing/launch.
+      """
+      # 1. Fetch Top Levels (Level >= 1 for early stage)
+      level_query = db.collection("players")\
+          .where(filter=FieldFilter("level", ">=", 1))\
+          .order_by("level", direction="DESCENDING")\
+          .order_by("createdAt", direction="ASCENDING")\
+          .limit(50).stream()
 
-        top_levels = []
-        for doc in level_query:
-            p = doc.to_dict()
-            top_levels.append({
-                "uid": p.get("uid", ""),
-                "name": p.get("name", "Unknown"),
-                "value": p.get("level", 0),
-                "level": p.get("level", 0),
-                "createdAt": p.get("createdAt", "")
-            })
+      top_levels = []
+      for doc in level_query:
+          p = doc.to_dict()
+          top_levels.append({
+              "uid": p.get("uid", ""),
+              "name": p.get("name", "Unknown"),
+              "value": p.get("level", 0),
+              "level": p.get("level", 0),
+              "createdAt": p.get("createdAt", "")
+          })
 
-        # 2. Fetch Top Coins (Coins >= 30,000)
-        coin_query = db.collection("players")\
-            .where(filter=FieldFilter("coins", ">=", 30000))\
-            .order_by("coins", direction="DESCENDING")\
-            .order_by("createdAt", direction="ASCENDING")\
-            .limit(50).stream()
+      # 2. Fetch Top Coins (Coins >= 100 for early stage)
+      coin_query = db.collection("players")\
+          .where(filter=FieldFilter("coins", ">=", 100))\
+          .order_by("coins", direction="DESCENDING")\
+          .order_by("createdAt", direction="ASCENDING")\
+          .limit(50).stream()
 
         top_coins = []
         for doc in coin_query:

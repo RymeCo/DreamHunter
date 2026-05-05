@@ -135,11 +135,20 @@ class ProfileManager {
     
     final response = await _backend.post('/auth/sync');
     if (response.statusCode == 200) {
+      // OPTIMIZATION: Cache the token immediately after a successful sync
+      final user = _auth.currentUser;
+      if (user != null) {
+        final token = await user.getIdToken();
+        if (token != null) {
+          await StorageEngine.instance.saveCachedToken(token);
+        }
+      }
+
       final Map<String, dynamic> data = json.decode(response.body);
       
       final isNewUser = (data['level'] ?? 1) == 1 && (data['coins'] ?? 100) == 100;
       if (isNewUser && StorageEngine.instance.hasGuestData()) {
-         await StorageEngine.instance.promoteGuestToUser(user.uid);
+         await StorageEngine.instance.promoteGuestToUser(user!.uid);
          await backupPlayer();
          return; 
       }
@@ -199,6 +208,7 @@ class ProfileManager {
 
   /// Coordinates a clean logout: Signs out of Firebase and restores guest data in services.
   Future<void> logout() async {
+    await StorageEngine.instance.clearCachedToken();
     await _auth.signOut();
     await reloadAllServices();
   }
@@ -211,14 +221,19 @@ class ProfileManager {
       final lastUpdatedStr = cached['lastUpdated'] as String?;
       if (lastUpdatedStr != null) {
         try {
-          final lastUpdated = DateTime.parse(lastUpdatedStr).toUtc().add(const Duration(hours: 8)); // PHT is UTC+8
-          final nowPHT = DateTime.now().toUtc().add(const Duration(hours: 8));
-          
-          // If the cache was updated today (PHT), return it
-          if (lastUpdated.year == nowPHT.year && 
-              lastUpdated.month == nowPHT.month && 
-              lastUpdated.day == nowPHT.day) {
-            return cached;
+          // FIX: Use tryParse for better compatibility with ISO strings from different sources
+          final lastUpdated = DateTime.tryParse(lastUpdatedStr);
+          if (lastUpdated != null) {
+            // Convert to PHT (UTC+8) for daily comparison
+            final updatedPHT = lastUpdated.toUtc().add(const Duration(hours: 8));
+            final nowPHT = DateTime.now().toUtc().add(const Duration(hours: 8));
+            
+            // If the cache was updated today (PHT), return it
+            if (updatedPHT.year == nowPHT.year && 
+                updatedPHT.month == nowPHT.month && 
+                updatedPHT.day == nowPHT.day) {
+              return cached;
+            }
           }
         } catch (e) {
           debugPrint('Cache Date Parse Error: $e');
