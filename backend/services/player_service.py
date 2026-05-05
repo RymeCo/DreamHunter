@@ -20,15 +20,22 @@ class PlayerService:
         doc_ref = db.collection("players").document(uid)
         doc = doc_ref.get()
         
-        if doc.exists:
-            return PlayerModel(**doc.to_dict())
-        
-        # Create new player if doesn't exist
+        # Create or update player if necessary
         user_info = auth_client.get_user(uid)
         
+        if doc.exists:
+            # Update email if missing (for legacy users)
+            player_data = doc.to_dict()
+            if not player_data.get("email") and user_info.email:
+                db.collection("players").document(uid).update({"email": user_info.email})
+                player_data["email"] = user_info.email
+            return PlayerModel(**player_data)
+        
+        # Create new player if doesn't exist
         new_player = PlayerModel(
             uid=uid,
             name=user_info.display_name or "Dreamer",
+            email=user_info.email,
             createdAt=datetime.now().isoformat(),
         )
         

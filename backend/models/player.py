@@ -5,6 +5,7 @@ from datetime import datetime
 class PlayerModel(BaseModel):
     uid: str
     name: str
+    email: Optional[str] = None
     createdAt: str
     banned: List[str] = []
     

@@ -183,7 +183,7 @@ class _PlayerViewState extends State<PlayerView> {
                             child: Icon(p['role'] == 'admin' ? Icons.admin_panel_settings : Icons.person, color: p['role'] == 'admin' ? Colors.white : Colors.blue),
                           ),
                           title: Text(p['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('LVL ${p['level']} • UID: ${p['uid']}'),
+                          subtitle: Text('LVL ${p['level']} • ${p['email'] ?? "No Email"}'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => _showPlayerDetails(p['uid']),
                         ),
@@ -229,7 +229,16 @@ class _PlayerEditDialogState extends State<_PlayerEditDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Manage ${widget.player['name']}'),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Manage ${widget.player['name']}'),
+          Text(
+            widget.player['email'] ?? widget.player['uid'],
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+          ),
+        ],
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

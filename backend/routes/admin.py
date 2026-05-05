@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Body, status
 from typing import List, Optional
 from core.security import get_admin_user
-from core.firebase import db
-from models.player import PlayerModel
+from core.firebase import db, auth_client
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -12,8 +11,8 @@ async def search_players(
     uid: str = Depends(get_admin_user)
 ):
     """
-    Searches for players by name or UID.
-    Returns a lightweight summary to minimize database costs.
+    Searches for players by name, UID, or Email.
+    Uses Firebase Auth for O(0-cost) email lookup when possible.
     """
     results = []
     
@@ -24,13 +23,30 @@ async def search_players(
         results.append({
             "uid": p.get("uid"),
             "name": p.get("name"),
+            "email": p.get("email"),
             "level": p.get("level", 1),
             "role": p.get("role", "player")
         })
 
-    # 2. Search by Name (Prefix Search)
-    # Note: Firestore doesn't support full-text search without external tools.
-    # This prefix search is a 0-cost compromise.
+    # 2. Search by exact Email (O(1) with Auth API - 0 cost)
+    if "@" in q:
+        try:
+            user = auth_client.get_user_by_email(q)
+            if not any(r["uid"] == user.uid for r in results):
+                p_doc = db.collection("players").document(user.uid).get()
+                if p_doc.exists:
+                    p = p_doc.to_dict()
+                    results.append({
+                        "uid": p.get("uid"),
+                        "name": p.get("name"),
+                        "email": p.get("email"),
+                        "level": p.get("level", 1),
+                        "role": p.get("role", "player")
+                    })
+        except Exception:
+            pass # Email not found in Auth
+
+    # 3. Search by Name (Prefix Search)
     name_query = db.collection("players") \
         .where("name", ">=", q) \
         .where("name", "<=", q + "\uf8ff") \
@@ -38,11 +54,11 @@ async def search_players(
     
     for doc in name_query:
         p = doc.to_dict()
-        # Avoid duplicating the UID result
         if not any(r["uid"] == p.get("uid") for r in results):
             results.append({
                 "uid": p.get("uid"),
                 "name": p.get("name"),
+                "email": p.get("email"),
                 "level": p.get("level", 1),
                 "role": p.get("role", "player")
             })
