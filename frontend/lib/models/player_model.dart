@@ -11,6 +11,7 @@ class PlayerModel {
   final bool isBannedFromLeaderboard;
   final bool isBannedFromChat;
   final String? muteUntil; // ISO timestamp
+  final String? banUntil; // ISO timestamp
   final String role; // 'admin', 'mod', 'player'
 
   // Progression
@@ -37,6 +38,7 @@ class PlayerModel {
     this.isBannedFromLeaderboard = false,
     this.isBannedFromChat = false,
     this.muteUntil,
+    this.banUntil,
     this.role = 'player',
     this.level = 1,
     this.xp = 0,
@@ -57,6 +59,7 @@ class PlayerModel {
       isBannedFromLeaderboard: data['isBannedFromLeaderboard'] ?? false,
       isBannedFromChat: data['isBannedFromChat'] ?? false,
       muteUntil: data['muteUntil'],
+      banUntil: data['banUntil'],
       role: data['role'] ?? 'player',
       level: data['level'] ?? 1,
       xp: data['xp'] ?? 0,
@@ -77,6 +80,7 @@ class PlayerModel {
       'isBannedFromLeaderboard': isBannedFromLeaderboard,
       'isBannedFromChat': isBannedFromChat,
       'muteUntil': muteUntil,
+      'banUntil': banUntil,
       'role': role,
       'level': level,
       'xp': xp,
@@ -90,8 +94,18 @@ class PlayerModel {
 
   /// Helper to check if user is currently muted.
   bool get isMuted {
+    if (isBannedFromChat) return true;
     if (muteUntil == null) return false;
     final until = DateTime.tryParse(muteUntil!);
+    if (until == null) return false;
+    return DateTime.now().isBefore(until);
+  }
+
+  /// Helper to check if user is currently banned.
+  bool get isBanned {
+    if (isBannedPermanent) return true;
+    if (banUntil == null) return false;
+    final until = DateTime.tryParse(banUntil!);
     if (until == null) return false;
     return DateTime.now().isBefore(until);
   }

@@ -96,6 +96,30 @@ async def websocket_endpoint(websocket: WebSocket, region: str, token: str = Que
             if message_data.get("type") == "delete" and not is_admin:
                 continue
 
+            # Mute/Ban Check (Re-check from DB for every message to be safe)
+            user_doc = db.collection("players").document(uid).get()
+            if not user_doc.exists:
+                continue
+            
+            p = user_doc.to_dict()
+            
+            # 1. Check if Banned (Account)
+            now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            is_perm_banned = p.get("isBannedPermanent", False)
+            ban_until = p.get("banUntil")
+            
+            if is_perm_banned or (ban_until and ban_until > now):
+                await websocket.close(code=1008, reason="ACCOUNT_BANNED")
+                break
+
+            # 2. Check if Muted (Chat)
+            is_muted_flag = p.get("isBannedFromChat", False)
+            mute_until = p.get("muteUntil")
+            
+            if is_muted_flag or (mute_until and mute_until > now):
+                # Optionally send a private system message to the user
+                continue
+
             message_data["senderId"] = uid
             
             message_data["timestamp"] = datetime.datetime.now(datetime.timezone.utc).isoformat()

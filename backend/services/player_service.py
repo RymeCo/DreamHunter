@@ -96,14 +96,23 @@ class PlayerService:
             return PlayerService.get_leaderboard_cache()
 
         # 1. Fetch Top Levels (Level >= 1 for early stage)
+        # Note: We fetch more than 50 to allow for Python-side filtering of banned users
         level_query = db.collection("players")\
             .where("level", ">=", 1)\
             .order_by("level", direction="DESCENDING")\
-            .limit(50).stream()
+            .limit(100).stream()
 
         top_levels = []
+        now = datetime.now().isoformat()
         for doc in level_query:
             p = doc.to_dict()
+            
+            # Filter out banned users
+            if p.get("isBannedFromLeaderboard", False): continue
+            if p.get("isBannedPermanent", False): continue
+            ban_until = p.get("banUntil")
+            if ban_until and ban_until > now: continue
+
             top_levels.append({
                 "uid": p.get("uid", ""),
                 "name": p.get("name", "Unknown"),
@@ -111,16 +120,24 @@ class PlayerService:
                 "level": p.get("level", 0),
                 "createdAt": p.get("createdAt", "")
             })
+            if len(top_levels) >= 50: break
 
         # 2. Fetch Top Coins (Coins >= 100 for early stage)
         coin_query = db.collection("players")\
             .where("coins", ">=", 100)\
             .order_by("coins", direction="DESCENDING")\
-            .limit(50).stream()
+            .limit(100).stream()
 
         top_coins = []
         for doc in coin_query:
             p = doc.to_dict()
+            
+            # Filter out banned users
+            if p.get("isBannedFromLeaderboard", False): continue
+            if p.get("isBannedPermanent", False): continue
+            ban_until = p.get("banUntil")
+            if ban_until and ban_until > now: continue
+
             top_coins.append({
                 "uid": p.get("uid", ""),
                 "name": p.get("name", "Unknown"),
@@ -128,6 +145,7 @@ class PlayerService:
                 "level": p.get("level", 0),
                 "createdAt": p.get("createdAt", "")
             })
+            if len(top_coins) >= 50: break
 
         # 3. Save to Cache
         cache_data = {

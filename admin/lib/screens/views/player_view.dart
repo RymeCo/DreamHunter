@@ -26,6 +26,18 @@ class _PlayerViewState extends State<PlayerView> {
     _fetchLeaderboard();
   }
 
+  Future<void> _forceRecalculate() async {
+    setState(() => _isLoadingLeaderboard = true);
+    try {
+      final response = await _api.post('/leaderboard/refresh');
+      if (response.statusCode == 200) {
+        await _fetchLeaderboard();
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingLeaderboard = false);
+    }
+  }
+
   Future<void> _fetchLeaderboard() async {
     setState(() => _isLoadingLeaderboard = true);
     try {
@@ -269,13 +281,23 @@ class _PlayerViewState extends State<PlayerView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Global Leaderboards',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Global Leaderboards',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Updated: ${_leaderboardData['lastUpdated'] != null ? DateTime.parse(_leaderboardData['lastUpdated']).toLocal().toString().split('.')[0] : "Never"}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ),
-              Text(
-                'Updated: ${_leaderboardData['lastUpdated'] != null ? DateTime.parse(_leaderboardData['lastUpdated']).toLocal().toString().split('.')[0] : "Never"}',
-                style: Theme.of(context).textTheme.bodySmall,
+              OutlinedButton.icon(
+                onPressed: _isLoadingLeaderboard ? null : _forceRecalculate,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Force Recalculate'),
               ),
             ],
           ),
