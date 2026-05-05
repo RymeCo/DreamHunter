@@ -39,6 +39,6 @@ app.include_router(profile.router, prefix="/api")
 app.include_router(leaderboard.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {"message": "Welcome to the DreamHunter API", "status": "online"}

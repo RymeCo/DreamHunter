@@ -27,13 +27,24 @@ class ChatService {
   DateTime? _lastMessageTime;
 
   Stream<List<ChatMessage>> getMessages({String region = 'english'}) {
-    // FIX: Reconnect if switching regions OR if the channel was closed/disconnected
+    // Reconnect if switching regions OR if the channel was closed/disconnected
     if (_currentRegion != region || _channel == null) {
       if (_currentRegion != region) {
         _messageBuffer.clear();
       }
       _currentRegion = region;
+      
+      // OPTIMIZATION: Push existing buffer immediately if we have it
+      if (_messageBuffer.isNotEmpty) {
+        developer.log('Pushing ${_messageBuffer.length} messages from cache immediately.', name: 'ChatService');
+        Future.microtask(() => _messageController.add(List.from(_messageBuffer)));
+      }
+      
       _connect(region);
+    } else {
+      // Even if already connected, push current buffer to ensure the new listener gets data
+      developer.log('Active channel found, pushing current buffer.', name: 'ChatService');
+      Future.microtask(() => _messageController.add(List.from(_messageBuffer)));
     }
     return _messageController.stream;
   }
@@ -42,21 +53,25 @@ class ChatService {
     if (_isConnecting) return;
     _isConnecting = true;
 
-    // Get the ID token for security
-    final token = await ApiGateway().getIdToken();
-    if (token == null) {
-      _isConnecting = false;
-      return;
-    }
-
-    // Convert https://.../api to wss://.../api/ws/chat/region?token=...
-    final wsUrl = ApiGateway.baseUrl
-        .replaceFirst('https://', 'wss://')
-        .replaceFirst('http://', 'ws://');
-    
-    final uri = Uri.parse('$wsUrl/ws/chat/$region?token=$token');
-
     try {
+      // Get the ID token for security
+      developer.log('Fetching token for chat...', name: 'ChatService');
+      final token = await ApiGateway().getIdToken();
+      
+      if (token == null) {
+        developer.log('No token found, chat cannot connect.', name: 'ChatService');
+        _isConnecting = false;
+        return;
+      }
+
+      // Convert https://.../api to wss://.../api/ws/chat/region?token=...
+      final wsUrl = ApiGateway.baseUrl
+          .replaceFirst('https://', 'wss://')
+          .replaceFirst('http://', 'ws://');
+      
+      final uri = Uri.parse('$wsUrl/ws/chat/$region?token=$token');
+
+      developer.log('Connecting to WebSocket: $uri', name: 'ChatService');
       _channel = WebSocketChannel.connect(uri);
       
       _channel!.stream.listen(
@@ -96,7 +111,8 @@ class ChatService {
   }
 
   void _reconnect(String region) {
-    _isConnecting = false;
+    _isConnecting = false; // Reset flag so retry can proceed
+    _channel = null; // Ensure channel is null so getMessages triggers reconnect
     Future.delayed(const Duration(seconds: 5), () {
       if (_currentRegion == region) {
         _connect(region);
@@ -149,7 +165,13 @@ class ChatService {
     }
 
     try {
-      final doc = await _firestore.collection('metadata').doc('announcements').get();
+      // ADDED: 3 second timeout to Firestore read to prevent hanging on bad connections
+      final doc = await _firestore
+          .collection('metadata')
+          .doc('announcements')
+          .get()
+          .timeout(const Duration(seconds: 3));
+
       if (doc.exists) {
         final data = doc.data()!;
         final announcement = {
@@ -166,6 +188,8 @@ class ChatService {
         return announcement;
       }
     } catch (e) {
+      developer.log('Announcement fetch failed or timed out', error: e, name: 'ChatService');
+      // Return default announcement so user isn't stuck waiting
       return {
         'date': today,
         'message': 'Welcome to DreamHunter! Stay tuned for daily updates.',

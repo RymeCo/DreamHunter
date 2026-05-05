@@ -13,7 +13,7 @@ class ApiGateway {
   Future<String?> getIdToken() async {
     final user = _auth.currentUser;
     if (user == null) return null;
-    return await user.getIdToken(true);
+    return await user.getIdToken();
   }
 
   /// Generates headers with the Bearer token.

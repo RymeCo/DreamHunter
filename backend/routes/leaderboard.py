@@ -13,9 +13,9 @@ async def get_leaderboard():
     return PlayerService.get_leaderboard_cache()
 
 @router.post("/refresh", include_in_schema=False)
-async def manual_refresh(uid: str = Depends(get_current_user)):
+async def manual_refresh():
     """
-    Internal endpoint to force a refresh (to be called by scheduler).
-    In a real app, this should be protected by an API Key or Admin role.
+    Internal endpoint to force a refresh.
+    Temporarily unprotected for manual trigger.
     """
     return PlayerService.refresh_leaderboards()
