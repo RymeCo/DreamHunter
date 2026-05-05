@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import auth, profile, leaderboard, chat, settings
+from routes import auth, profile, leaderboard, chat, settings, admin
 from services.player_service import PlayerService
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -39,6 +39,7 @@ app.include_router(profile.router, prefix="/api")
 app.include_router(leaderboard.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def root():

@@ -51,6 +51,30 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   Future<void> _updateSetting(String key, bool value) async {
+    // Show confirmation dialog
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Action'),
+          content: Text(
+              'Are you sure you want to ${value ? "enable" : "disable"} this setting? This is a global change.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Confirm', style: TextStyle(color: Colors.orange)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
     final originalSettings = {
       'maintenance_mode': _maintenanceMode,
       'leaderboard_paused': _leaderboardPaused,
@@ -93,6 +117,28 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   Future<void> _forceRefresh() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Refresh'),
+          content: const Text('Are you sure you want to force a global leaderboard refresh? This recalculates rankings for all players.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Confirm', style: TextStyle(color: Colors.orange)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
     setState(() => _isRefreshing = true);
     try {
       final response = await _api.post('/leaderboard/refresh');
