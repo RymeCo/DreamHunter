@@ -44,14 +44,14 @@
 
         /* --- NAVIGATION --- */
         nav {
-            padding: 40px 0;
+            padding: 50px 0;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
         .brand img {
-            height: 35px;
+            height: 60px; /* Increased from 35px */
             width: auto;
             display: block;
         }
@@ -68,48 +68,40 @@
         }
 
         .hero-logo {
-            width: 180px;
+            width: 320px; /* Increased from 180px */
             height: auto;
-            margin-bottom: 24px;
-            filter: drop-shadow(0 0 15px var(--primary-glow));
+            margin-bottom: 32px;
+            filter: drop-shadow(0 0 25px var(--primary-glow));
         }
 
         .hero h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2.5rem, 8vw, 4rem);
-            font-weight: 900;
-            letter-spacing: -1px;
-            margin-bottom: 12px;
-            background: linear-gradient(to bottom, #fff 50%, #00e5ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-transform: uppercase;
+            display: none; /* Removed DreamHunter text */
         }
 
         .hero p {
             max-width: 500px;
             color: var(--text-dim);
-            font-size: 1rem;
-            margin-bottom: 32px;
+            font-size: 1.1rem;
+            margin-bottom: 40px;
             font-weight: 300;
         }
 
         /* --- DOWNLOAD BUTTONS --- */
         .download-group {
             display: flex;
-            gap: 16px;
+            gap: 20px;
             flex-wrap: wrap;
             justify-content: center;
             width: 100%;
         }
 
         .btn {
-            padding: 16px 32px;
-            border-radius: 6px;
+            padding: 18px 40px;
+            border-radius: 8px;
             text-decoration: none;
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 2px;
             transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
@@ -119,7 +111,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 260px;
+            min-width: 280px;
         }
 
         .btn-primary {
@@ -129,9 +121,9 @@
         }
 
         .btn:hover {
-            transform: translateY(-3px);
+            transform: translateY(-4px);
             border-color: var(--primary);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5), 0 0 15px var(--primary-glow);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5), 0 0 20px var(--primary-glow);
         }
 
         .btn-primary:hover {
@@ -140,22 +132,22 @@
 
         .btn span {
             font-family: 'Inter', sans-serif;
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             opacity: 0.6;
-            margin-top: 4px;
+            margin-top: 6px;
             text-transform: none;
             letter-spacing: 0;
         }
 
         /* --- ABOUT SLIDER --- */
         .slider-section {
-            padding: 40px 0;
+            padding: 50px 0;
             width: 100%;
         }
 
         .slider-wrapper {
             width: 100%;
-            height: 150px;
+            height: 180px;
             position: relative;
             border-radius: 12px;
             overflow: hidden;
@@ -165,13 +157,13 @@
 
         .slider {
             display: flex;
-            width: 300%;
+            width: 400%; /* Increased for more slides */
             height: 100%;
             transition: transform 1s cubic-bezier(0.85, 0, 0.15, 1);
         }
 
         .slide {
-            width: 33.333%;
+            width: 25%;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -187,7 +179,7 @@
             color: var(--primary);
             text-transform: uppercase;
             letter-spacing: 3px;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             opacity: 0.8;
         }
 
@@ -195,6 +187,7 @@
             font-size: 1.1rem;
             font-weight: 300;
             color: #fff;
+            max-width: 800px;
         }
 
         .slide b {
@@ -206,7 +199,7 @@
         footer {
             padding: 30px 0;
             text-align: center;
-            color: rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.2);
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -215,17 +208,19 @@
 
         /* --- ANIMATION --- */
         @keyframes slide {
-            0%, 28% { transform: translateX(0); }
-            33%, 61% { transform: translateX(-33.333%); }
-            66%, 94% { transform: translateX(-66.666%); }
+            0%, 22% { transform: translateX(0); }
+            25%, 47% { transform: translateX(-25%); }
+            50%, 72% { transform: translateX(-50%); }
+            75%, 97% { transform: translateX(-75%); }
             100% { transform: translateX(0); }
         }
 
-        .slider { animation: slide 15s infinite; }
+        .slider { animation: slide 20s infinite; }
 
         @media (max-width: 600px) {
             .btn { min-width: 100%; }
-            .hero h1 { font-size: 2.5rem; }
+            .hero-logo { width: 240px; }
+            .slide p { font-size: 0.95rem; }
         }
 
     </style>
@@ -241,17 +236,16 @@
 
         <section class="hero">
             <img src="assets/hero_logo.png" alt="DreamHunter Logo" class="hero-logo">
-            <h1>DreamHunter</h1>
-            <p>Survival is a choice. Mastery is a journey. Experience the next evolution of mobile RPGs.</p>
+            <p>Master your destiny in a high-stakes survival world. Built for the bold. Optimized by Ryme.</p>
 
             <div class="download-group">
                 <a href="https://github.com/RymeCo/DreamHunter/releases/download/v1.0.0/DreamHunter_v1.0.apk" class="btn btn-primary">
-                    Play Now
-                    <span>v1.0.0 (66MB) • Android</span>
+                    Enter the Dream
+                    <span>Download App • v1.0.0 (66MB)</span>
                 </a>
                 <a href="https://github.com/RymeCo/DreamHunter/releases/download/v1.0.0/DreamHunter_Admin_v1.0.apk" class="btn">
                     Admin Portal
-                    <span>v1.0.0 (53MB) • Android</span>
+                    <span>System Management • v1.0.0 (53MB)</span>
                 </a>
             </div>
         </section>
@@ -260,15 +254,19 @@
             <div class="slider-wrapper">
                 <div class="slider">
                     <div class="slide">
-                        <h2>Developer</h2>
-                        <p>Developed by <b>RymeCo.</b></p>
+                        <h2>Backed by the Company</h2>
+                        <p>Developed and sustained by <b>RymeCo.</b></p>
                     </div>
                     <div class="slide">
                         <h2>Team Member</h2>
                         <p><b>Royette Andrei C. Telar</b></p>
                     </div>
                     <div class="slide">
-                        <h2>Compliance</h2>
+                        <h2>Tech Stack</h2>
+                        <p>Dart • Flutter • Flame Engine • FastAPI • Render.com • Firebase • Jira • Buzz • Cron Job Org</p>
+                    </div>
+                    <div class="slide">
+                        <h2>In Compliance</h2>
                         <p>Information Management • Database Management • Algorithm Complexity</p>
                     </div>
                 </div>
@@ -276,7 +274,7 @@
         </section>
 
         <footer>
-            Built by Ryme &copy; 2026
+            Vision by Ryme &copy; 2026
         </footer>
     </div>
 
