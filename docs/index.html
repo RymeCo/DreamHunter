@@ -6,16 +6,18 @@
     <title>DreamHunter | RymeCo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #00e5ff;
-            --primary-glow: rgba(0, 229, 255, 0.4);
-            --bg: #030303;
+            --primary: #00f2fe;
+            --primary-rgb: 0, 242, 254;
+            --secondary: #4facfe;
+            --bg: #000000;
             --surface: #0a0a0a;
             --text: #ffffff;
             --text-dim: rgba(255, 255, 255, 0.6);
-            --disabled: rgba(255, 255, 255, 0.2);
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -23,10 +25,11 @@
         body {
             background-color: var(--bg);
             background-image: 
-                radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.1) 0%, transparent 70%);
+                radial-gradient(circle at 50% -20%, rgba(var(--primary-rgb), 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(79, 172, 254, 0.05) 0%, transparent 40%);
             color: var(--text);
-            font-family: 'Inter', sans-serif;
-            line-height: 1.4;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            line-height: 1.5;
             height: 100vh;
             width: 100vw;
             overflow: hidden;
@@ -35,58 +38,61 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1100px;
             margin: 0 auto;
-            padding: 0 40px;
+            padding: 0 32px;
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
         }
 
-        /* --- PROFESSIONAL NAV BAR --- */
+        /* --- MODERN NAV BAR --- */
         header {
-            padding: 24px 0;
+            padding: 32px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
         }
 
         .brand img {
-            height: 80px;
+            height: 60px;
             width: auto;
-            display: block;
-            transition: transform 0.3s ease;
-        }
-        
-        .brand:hover img {
-            transform: scale(1.05);
+            filter: drop-shadow(0 0 10px rgba(var(--primary-rgb), 0.3));
         }
 
         .nav-links {
             display: flex;
-            gap: 32px;
+            gap: 40px;
             align-items: center;
         }
 
         .nav-links a {
             text-decoration: none;
             color: var(--text-dim);
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            transition: color 0.3s ease;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: -0.2px;
+            transition: all 0.3s ease;
         }
 
         .nav-links a:hover {
-            color: var(--primary);
+            color: var(--text);
         }
 
         .nav-email {
+            padding: 8px 16px;
+            border-radius: 100px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
             color: var(--primary) !important;
-            font-weight: 700;
         }
 
         /* --- HERO SECTION --- */
@@ -97,113 +103,119 @@
             align-items: center;
             justify-content: center;
             flex: 2;
-            padding: 20px 0;
+            padding: 40px 0;
         }
 
         .hero-logo {
-            width: clamp(180px, 20vh, 350px);
+            width: clamp(160px, 18vh, 320px);
             height: auto;
-            margin-bottom: 15px;
-            filter: drop-shadow(0 0 25px var(--primary-glow));
+            margin-bottom: 24px;
+            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .hero h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #fff 30%, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .hero p {
-            max-width: 600px;
+            max-width: 540px;
             color: var(--text-dim);
-            font-size: clamp(0.85rem, 1.4vh, 1rem);
-            margin-bottom: 25px;
-            font-weight: 300;
-            letter-spacing: 0.5px;
+            font-size: clamp(0.9rem, 1.4vh, 1.05rem);
+            margin-bottom: 40px;
+            font-weight: 400;
         }
 
-        /* --- DOWNLOAD GRID --- */
-        .download-grid {
+        /* --- DOWNLOAD BUTTONS --- */
+        .platform-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
             width: 100%;
-            max-width: 800px;
-            margin-bottom: 20px;
+            max-width: 900px;
         }
 
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
+        .platform-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 16px;
+            border-radius: 16px;
             text-decoration: none;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
             color: var(--text);
             display: flex;
             flex-direction: column;
             align-items: center;
-            text-align: center;
+            gap: 8px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .btn-primary {
-            background: var(--text);
-            color: #000;
-            border: none;
+        .platform-card:hover:not(.disabled) {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--primary);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
 
-        .btn-disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            border-color: transparent;
-            background: rgba(255, 255, 255, 0.02);
+        .platform-card i {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+
+        .platform-card b {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .platform-card span {
+            font-size: 0.65rem;
             color: var(--text-dim);
         }
 
-        .btn:not(.btn-disabled):hover {
-            transform: translateY(-4px);
-            border-color: var(--primary);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5), 0 0 15px var(--primary-glow);
+        .disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            filter: grayscale(1);
         }
 
-        .btn-primary:not(.btn-disabled):hover {
-            background: var(--primary);
-        }
-
-        .btn span {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.6rem;
-            opacity: 0.6;
-            margin-top: 4px;
-            text-transform: none;
-            letter-spacing: 0;
-        }
-
-        /* --- COMPLIANCE SLIDER --- */
-        .slider-section {
+        /* --- ABOUT SLIDER --- */
+        .details-section {
             width: 100%;
-            padding-bottom: 30px;
-            flex: 0.4;
+            padding: 40px 0 60px;
+            flex: 0.8;
             display: flex;
             align-items: center;
         }
 
-        .slider-wrapper {
+        .details-card {
             width: 100%;
-            height: 100px;
+            height: 140px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
             position: relative;
-            border-radius: 12px;
             overflow: hidden;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            align-items: center;
+            backdrop-filter: blur(10px);
         }
 
         .slider {
             display: flex;
             width: 400%;
             height: 100%;
-            transition: transform 1s cubic-bezier(0.85, 0, 0.15, 1);
+            transition: transform 1.2s cubic-bezier(0.8, 0, 0.2, 1);
         }
 
         .slide {
@@ -213,52 +225,64 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 10px;
+            padding: 0 40px;
             text-align: center;
         }
 
-        .slide h2 {
-            font-family: 'Orbitron', sans-serif;
+        .slide-tag {
             font-size: 0.65rem;
+            font-weight: 800;
             color: var(--primary);
             text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-bottom: 4px;
-            opacity: 0.8;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
         }
 
-        .slide p {
-            font-size: 0.9rem;
-            font-weight: 300;
+        .slide-content {
+            font-size: 1.1rem;
+            font-weight: 500;
             color: #fff;
-            max-width: 900px;
         }
 
-        .slide b {
-            font-weight: 700;
-            color: var(--primary);
+        /* --- TECH STACK GRID --- */
+        .tech-grid {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tech-icon {
+            height: 24px;
+            width: auto;
+            filter: brightness(0) invert(1) opacity(0.6);
+            transition: all 0.3s ease;
+        }
+
+        .tech-icon:hover {
+            filter: brightness(1) invert(0) opacity(1);
+            transform: scale(1.2);
         }
 
         /* --- ANIMATION --- */
         @keyframes slide {
-            0%, 22% { transform: translateX(0); }
-            25%, 47% { transform: translateX(-25%); }
-            50%, 72% { transform: translateX(-50%); }
-            75%, 97% { transform: translateX(-75%); }
+            0%, 20% { transform: translateX(0); }
+            25%, 45% { transform: translateX(-25%); }
+            50%, 70% { transform: translateX(-50%); }
+            75%, 95% { transform: translateX(-75%); }
             100% { transform: translateX(0); }
         }
 
-        .slider { animation: slide 20s infinite; }
+        .slider { animation: slide 24s infinite; }
 
-        @media (max-width: 800px) {
-            header { flex-direction: column; gap: 12px; padding: 12px 0; }
-            .brand img { height: 60px; }
+        @media (max-width: 900px) {
+            .platform-grid { grid-template-columns: repeat(2, 1fr); }
+            body { height: auto; overflow-y: auto; }
+            .container { height: auto; }
+            .details-card { height: 180px; margin-bottom: 40px; }
+            header { flex-direction: column; gap: 20px; }
             .nav-links { gap: 15px; }
-            .download-grid { grid-template-columns: 1fr; width: 100%; }
-            .hero-logo { width: 150px; }
-            .slider-wrapper { height: 80px; }
-            .slide p { font-size: 0.75rem; }
-            body { overflow-y: auto; height: auto; }
         }
 
     </style>
@@ -268,57 +292,69 @@
     <div class="container">
         <header>
             <a href="#" class="brand">
-                <img src="assets/by_ryme.png" alt="Ryme Logo">
+                <img src="assets/by_ryme.png" alt="Ryme">
             </a>
             <nav class="nav-links">
-                <a href="#">About Us</a>
-                <a href="#">Contact Us</a>
+                <a href="#">Overview</a>
+                <a href="#">Community</a>
                 <a href="mailto:ractenopen@gmail.com" class="nav-email">ractenopen@gmail.com</a>
             </nav>
         </header>
 
         <section class="hero">
             <img src="assets/hero_logo.png" alt="DreamHunter Logo" class="hero-logo">
-            <p>Master your destiny in a high-stakes survival world. Built for the bold. Optimized by Ryme.</p>
+            <h1>DreamHunter</h1>
+            <p>Master your destiny in a high-stakes survival world. Built for the bold. Optimized by RymeCo.</p>
 
-            <div class="download-grid">
-                <a href="https://github.com/RymeCo/DreamHunter/releases/download/v1.0.0/DreamHunter_v1.0.apk" class="btn btn-primary">
-                    Android
-                    <span>v1.0.0 (66MB) • .APK</span>
+            <div class="platform-grid">
+                <a href="https://github.com/RymeCo/DreamHunter/releases/download/v1.0.0/DreamHunter_v1.0.apk" class="platform-card">
+                    <b>Android</b>
+                    <span>v1.0.0 • .APK</span>
                 </a>
-                <a href="#" class="btn btn-disabled">
-                    iOS
-                    <span>Coming Soon • App Store</span>
+                <a href="#" class="platform-card disabled">
+                    <b>iOS</b>
+                    <span>Coming Soon</span>
                 </a>
-                <a href="#" class="btn">
-                    Windows
-                    <span>Coming Soon • .EXE</span>
+                <a href="#" class="platform-card">
+                    <b>Windows</b>
+                    <span>Early Access</span>
                 </a>
-                <a href="#" class="btn">
-                    Linux
-                    <span>Coming Soon • .DEB</span>
+                <a href="#" class="platform-card">
+                    <b>Linux</b>
+                    <span>Early Access</span>
                 </a>
             </div>
         </section>
 
-        <section class="slider-section">
-            <div class="slider-wrapper">
+        <section class="details-section">
+            <div class="details-card">
                 <div class="slider">
+                    <!-- Slide 1: Company -->
                     <div class="slide">
-                        <h2>Backed by the Company</h2>
-                        <p>Developed and sustained by <b>RymeCo.</b></p>
+                        <div class="slide-tag">Foundation</div>
+                        <div class="slide-content">Developed & Backed by <b>RymeCo.</b></div>
                     </div>
+                    <!-- Slide 2: Tech Stack -->
                     <div class="slide">
-                        <h2>Team Member</h2>
-                        <p><b>Royette Andrei C. Telar</b></p>
+                        <div class="slide-tag">Powered By</div>
+                        <div class="tech-grid">
+                            <img src="https://cdn.simpleicons.org/flutter/02569B" title="Flutter" class="tech-icon">
+                            <img src="https://cdn.simpleicons.org/dart/0175C2" title="Dart" class="tech-icon">
+                            <img src="https://cdn.simpleicons.org/fastapi/05998B" title="FastAPI" class="tech-icon">
+                            <img src="https://cdn.simpleicons.org/firebase/FFCA28" title="Firebase" class="tech-icon">
+                            <img src="https://cdn.simpleicons.org/render/46E3B7" title="Render" class="tech-icon">
+                            <img src="https://cdn.simpleicons.org/jira/0052CC" title="Jira" class="tech-icon">
+                        </div>
                     </div>
+                    <!-- Slide 3: Team -->
                     <div class="slide">
-                        <h2>Tech Stack</h2>
-                        <p>Dart • Flutter • Flame Engine • FastAPI • Render.com • Firebase • Jira • Buzz • Cron Job Org</p>
+                        <div class="slide-tag">Lead Developer</div>
+                        <div class="slide-content"><b>Royette Andrei C. Telar</b></div>
                     </div>
+                    <!-- Slide 4: Compliance -->
                     <div class="slide">
-                        <h2>In Compliance</h2>
-                        <p>Information Management • Database Management • Algorithm Complexity</p>
+                        <div class="slide-tag">In Compliance</div>
+                        <div class="slide-content">Information & Database Management • Algorithm Complexity</div>
                     </div>
                 </div>
             </div>
