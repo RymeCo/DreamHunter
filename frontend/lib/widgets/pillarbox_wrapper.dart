@@ -25,18 +25,23 @@ class PillarboxWrapper extends StatelessWidget {
               // Target: 500:850 aspect ratio
               final targetW = h * LayoutBaseline.targetAspectRatio;
 
+              // Update global scale factor in the singleton
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                LayoutBaseline.instance.updateScale(h);
+              });
+
               if (w > targetW) {
                 // Screen is wider than our target portrait ratio: Apply Pillarboxing
                 return Center(
                   child: SizedBox(
                     width: targetW,
                     height: h,
-                    child: _buildInnerChild(context, targetW, h),
+                    child: _buildInnerChild(context, targetW, h, true),
                   ),
                 );
               } else {
                 // Screen is narrower than or equal to our target: Fill width (Standard Portrait)
-                return _buildInnerChild(context, w, h);
+                return _buildInnerChild(context, w, h, false);
               }
             },
           ),
@@ -45,18 +50,41 @@ class PillarboxWrapper extends StatelessWidget {
     );
   }
 
-  Widget _buildInnerChild(BuildContext context, double w, double h) {
+  Widget _buildInnerChild(
+    BuildContext context,
+    double w,
+    double h,
+    bool isPillarboxed,
+  ) {
     // Override MediaQuery so the rest of the app thinks it's in a fixed-size container
     final data = MediaQuery.of(context);
+
+    // Calculate the scale needed to keep proportions fixed
+    // We scale based on height as it's our primary anchor for the portrait ratio
+    final scale = h / LayoutBaseline.targetHeight;
+
     return MediaQuery(
       data: data.copyWith(
         size: Size(w, h),
-        padding: EdgeInsets
-            .zero, // Usually we don't want OS notches in windowed mode
+        padding: EdgeInsets.zero,
         viewPadding: EdgeInsets.zero,
         viewInsets: data.viewInsets,
+        // We also scale text to keep it proportional
+        textScaler: TextScaler.linear(scale),
       ),
-      child: ClipRect(child: child),
+      child: ClipRect(
+        child: Center(
+          child: OverflowBox(
+            // We force the content to think it's exactly the target size
+            // then scale it up/down to fit the actual screen
+            minWidth: LayoutBaseline.targetWidth,
+            maxWidth: LayoutBaseline.targetWidth,
+            minHeight: LayoutBaseline.targetHeight,
+            maxHeight: LayoutBaseline.targetHeight,
+            child: Transform.scale(scale: scale, child: child),
+          ),
+        ),
+      ),
     );
   }
 }

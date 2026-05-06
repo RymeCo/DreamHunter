@@ -4,6 +4,7 @@ from core.security import get_admin_user
 from core.firebase import db, auth_client
 from datetime import datetime
 from models.player import PlayerModel
+from services.player_service import PlayerService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -68,6 +69,26 @@ async def get_player_details(
         raise HTTPException(status_code=404, detail="Player not found")
     return doc.to_dict()
 
+@router.patch("/players/{player_uid}")
+async def update_player_admin(
+    player_uid: str,
+    data: dict = Body(...),
+    uid: str = Depends(get_admin_user)
+):
+    """
+    Updates player data from the admin panel.
+    """
+    return PlayerService.update_player(player_uid, data)
+
+@router.get("/leaderboard")
+async def get_leaderboard_admin(
+    uid: str = Depends(get_admin_user)
+):
+    """
+    Returns the cached leaderboard data.
+    """
+    return PlayerService.get_leaderboard_cache()
+
 from routes.chat import manager
 from services.settings_service import settings_service
 
@@ -76,8 +97,15 @@ async def get_system_health(uid: str = Depends(get_admin_user)):
     try:
         player_count = db.collection("players").count().get()[0][0].value
     except Exception:
-        player_count = "Unknown"
+        player_count = 0
         
+    try:
+        verified_count = db.collection("players").where("isVerified", "==", True).count().get()[0][0].value
+    except Exception:
+        verified_count = 0
+
+    unverified_count = max(0, player_count - verified_count)
+
     try:
         banned_count = db.collection("players").where("isBannedPermanent", "==", True).count().get()[0][0].value
     except Exception:
@@ -97,6 +125,8 @@ async def get_system_health(uid: str = Depends(get_admin_user)):
     return {
         "status": "online",
         "totalPlayers": player_count,
+        "verifiedPlayers": verified_count,
+        "unverifiedPlayers": unverified_count,
         "bannedPlayers": banned_count,
         "newPlayersToday": new_today,
         "activeChatConnections": active_chats,

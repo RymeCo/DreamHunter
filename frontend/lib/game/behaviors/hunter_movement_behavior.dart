@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
 import 'package:dreamhunter/game/dream_hunter_game.dart';
@@ -116,7 +115,6 @@ class HunterMovementBehavior extends Component
     } else if (bestDist >= 9999) {
       // ONLY re-path if we are stuck AND have no valid neighbors (targetCenter == null)
       if (_repathCooldown <= 0) {
-        debugPrint('[AI] ${parent.skinPath} truly stuck. Re-pathing...');
         _findNewBed();
         _repathCooldown = 1.0; // Prevent spam
       }
@@ -158,10 +156,6 @@ class HunterMovementBehavior extends Component
         parent.targetBed = bestBed;
         parent.targetBed.reservedBy = parent;
         MatchManager.instance.updateBedAvailability(bestBed.roomID, false);
-
-        debugPrint(
-          '[AI] ${parent.skinPath} targeted: ${parent.targetBed.roomID}',
-        );
         return;
       }
     }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../api_gateway.dart';
+import '../../utils/formatters.dart';
 import 'player_edit_dialog.dart';
 
 class PlayerView extends StatefulWidget {
@@ -16,6 +17,77 @@ class _PlayerViewState extends State<PlayerView> {
 
   List<dynamic> _searchResults = [];
   bool _isSearching = false;
+
+  Map<String, dynamic> _leaderboardData = {};
+  bool _isLoadingLeaderboard = false;
+
+  Map<String, dynamic> _stats = {
+    'totalPlayers': 0,
+    'verifiedPlayers': 0,
+    'unverifiedPlayers': 0,
+  };
+  bool _isLoadingStats = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLeaderboard();
+    _fetchStats();
+  }
+
+  Future<void> _fetchStats() async {
+    setState(() => _isLoadingStats = true);
+    try {
+      final response = await _api.get('/admin/system/health');
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        setState(() {
+          _stats = json.decode(response.body);
+          _isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingStats = false);
+    }
+  }
+
+  Future<void> _forceRecalculate() async {
+    setState(() => _isLoadingLeaderboard = true);
+    try {
+      final response = await _api.post('/leaderboard/refresh');
+      if (response.statusCode == 200) {
+        await _fetchLeaderboard();
+        await _fetchStats();
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingLeaderboard = false);
+    }
+  }
+
+  Future<void> _fetchLeaderboard() async {
+    setState(() => _isLoadingLeaderboard = true);
+    try {
+      final response = await _api.get('/admin/leaderboard');
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        setState(() {
+          _leaderboardData = json.decode(response.body);
+          _isLoadingLeaderboard = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingLeaderboard = false);
+      }
+    }
+  }
+
+  void _clearResults() {
+    setState(() {
+      _searchResults = [];
+      _searchController.clear();
+    });
+  }
 
   Future<void> _search() async {
     final query = _searchController.text.trim();
@@ -117,6 +189,7 @@ class _PlayerViewState extends State<PlayerView> {
                   );
                   Navigator.of(dialogContext).pop();
                   _search();
+                  _fetchLeaderboard();
                 }
               } catch (e) {
                 if (dialogContext.mounted) {
@@ -134,24 +207,46 @@ class _PlayerViewState extends State<PlayerView> {
 
   @override
   Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          TabBar(
+            tabs: const [
+              Tab(text: 'Player Management', icon: Icon(Icons.person_search)),
+              Tab(text: 'Leaderboard Viewer', icon: Icon(Icons.leaderboard)),
+            ],
+            labelColor: Theme.of(context).colorScheme.primary,
+            unselectedLabelColor: Theme.of(context).colorScheme.outline,
+            indicatorColor: Theme.of(context).colorScheme.primary,
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [_buildSearchTab(), _buildLeaderboardTab()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchTab() {
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildStatsSection(),
+          const SizedBox(height: 32),
           Text(
-            'Player Management',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+            'Search Players',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Search for players by Name or UID to manage their accounts.',
-          ),
+          const Text('Search for players by Name or UID.'),
           const SizedBox(height: 24),
-
           Row(
             children: [
               Expanded(
@@ -160,10 +255,17 @@ class _PlayerViewState extends State<PlayerView> {
                   decoration: InputDecoration(
                     hintText: 'Enter Nickname or UID...',
                     prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: _clearResults,
+                          )
+                        : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                  onChanged: (v) => setState(() {}),
                   onSubmitted: (_) => _search(),
                 ),
               ),
@@ -189,9 +291,7 @@ class _PlayerViewState extends State<PlayerView> {
               ),
             ],
           ),
-
           const SizedBox(height: 24),
-
           Expanded(
             child: _searchResults.isEmpty
                 ? Center(
@@ -214,43 +314,259 @@ class _PlayerViewState extends State<PlayerView> {
                     itemCount: _searchResults.length,
                     itemBuilder: (context, index) {
                       final p = _searchResults[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.outlineVariant,
-                          ),
-                        ),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: p['role'] == 'admin'
-                                ? Colors.deepPurple
-                                : Colors.blue.shade100,
-                            child: Icon(
-                              p['role'] == 'admin'
-                                  ? Icons.admin_panel_settings
-                                  : Icons.person,
-                              color: p['role'] == 'admin'
-                                  ? Colors.white
-                                  : Colors.blue,
-                            ),
-                          ),
-                          title: Text(
-                            p['name'],
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Text(
-                            'LVL ${p['level']} • ${p['email'] ?? "No Email"}',
-                          ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _showPlayerDetails(p['uid']),
-                        ),
-                      );
+                      return _buildPlayerCard(p);
                     },
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatsSection() {
+    return Row(
+      children: [
+        _buildStatCard(
+          'Total Players',
+          '${_stats['totalPlayers'] ?? 0}',
+          Icons.group,
+          Colors.blue,
+        ),
+        const SizedBox(width: 16),
+        _buildStatCard(
+          'Verified',
+          '${_stats['verifiedPlayers'] ?? 0}',
+          Icons.verified,
+          Colors.cyan,
+        ),
+        const SizedBox(width: 16),
+        _buildStatCard(
+          'Unverified',
+          '${_stats['unverifiedPlayers'] ?? 0}',
+          Icons.pending,
+          Colors.orange,
+        ),
+        const SizedBox(width: 16),
+        IconButton.filledTonal(
+          onPressed: _isLoadingStats ? null : _fetchStats,
+          icon: _isLoadingStats
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.refresh),
+          tooltip: 'Refresh Stats',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeaderboardTab() {
+    if (_isLoadingLeaderboard && _leaderboardData.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final topLevels = _leaderboardData['topLevels'] as List<dynamic>? ?? [];
+    final topCoins = _leaderboardData['topCoins'] as List<dynamic>? ?? [];
+
+    return RefreshIndicator(
+      onRefresh: _fetchLeaderboard,
+      child: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Global Leaderboards',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Updated: ${_leaderboardData['lastUpdated'] != null ? AppFormatters.formatFullDateTime(DateTime.parse(_leaderboardData['lastUpdated'])) : "Never"}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: _isLoadingLeaderboard ? null : _forceRecalculate,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Force Recalculate'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildLeaderboardSection(
+            'Top Levels',
+            topLevels,
+            Icons.trending_up,
+            Colors.blue,
+          ),
+          const SizedBox(height: 32),
+          _buildLeaderboardSection(
+            'Top Coins',
+            topCoins,
+            Icons.monetization_on,
+            Colors.orange,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLeaderboardSection(
+    String title,
+    List<dynamic> entries,
+    IconData icon,
+    Color color,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (entries.isEmpty)
+          const Text('No entries found.')
+        else
+          ...entries.asMap().entries.map((e) {
+            final idx = e.key;
+            final p = e.value;
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: idx == 0
+                      ? Colors.amber
+                      : (idx == 1
+                            ? Colors.grey.shade300
+                            : (idx == 2
+                                  ? Colors.orange.shade200
+                                  : Colors.blue.shade50)),
+                  child: Text(
+                    '${idx + 1}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: idx < 3 ? Colors.black87 : Colors.blue,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  p['name'],
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text('LVL ${p['level']}'),
+                trailing: Text(
+                  '${p['value']}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: color,
+                  ),
+                ),
+                onTap: () => _showPlayerDetails(p['uid']),
+              ),
+            );
+          }),
+      ],
+    );
+  }
+
+  Widget _buildPlayerCard(Map<String, dynamic> p) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: p['role'] == 'admin'
+              ? Colors.deepPurple
+              : Colors.blue.shade100,
+          child: Icon(
+            p['role'] == 'admin' ? Icons.admin_panel_settings : Icons.person,
+            color: p['role'] == 'admin' ? Colors.white : Colors.blue,
+          ),
+        ),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                p['name'],
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (p['isVerified'] == true) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.verified, size: 16, color: Colors.blue),
+            ],
+          ],
+        ),
+        subtitle: Text('LVL ${p['level']} • ${p['email'] ?? "No Email"}'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _showPlayerDetails(p['uid']),
       ),
     );
   }

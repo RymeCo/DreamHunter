@@ -7,6 +7,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   await Firebase.initializeApp(
     options: const FirebaseOptions(
@@ -28,14 +29,38 @@ class AdminApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'DH Admin',
+      title: 'DreamHunter Admin',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.dark,
-        ),
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF0D0E21),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF6750A4),
+          brightness: Brightness.dark,
+          surface: const Color(0xFF1C1B1F),
+        ),
+        scaffoldBackgroundColor: const Color(0xFF1C1B1F),
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Color(0xFF1C1B1F),
+          surfaceTintColor: Colors.transparent,
+        ),
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: const Color(0xFF1C1B1F),
+          indicatorColor: const Color(0xFF4F378B).withValues(alpha: 0.5),
+          labelTextStyle: WidgetStateProperty.all(
+            const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: const Color(0xFF6750A4).withValues(alpha: 0.2),
+            ),
+          ),
+          color: const Color(0xFF252429),
+        ),
       ),
       routerConfig: adminRouter,
     );

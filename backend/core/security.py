@@ -20,6 +20,28 @@ async def get_current_user(auth: HTTPAuthorizationCredentials = Security(securit
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+async def get_verified_user(auth: HTTPAuthorizationCredentials = Security(security)):
+    """
+    Verifies the token AND ensures the email is verified.
+    """
+    token = auth.credentials
+    try:
+        decoded_token = auth_client.verify_id_token(token)
+        if not decoded_token.get('email_verified', False):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="EMAIL_NOT_VERIFIED"
+            )
+        return decoded_token['uid']
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid authentication credentials: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
 async def get_admin_user(uid: str = Depends(get_current_user)):
     """
     Verifies that the current user has the 'admin' role.

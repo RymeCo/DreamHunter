@@ -42,6 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late StreamSubscription<User?> _authStateSubscription;
   final WalletManager _controller = WalletManager.instance;
   bool _isLoggedIn = false;
+  bool _showRelogNotice = false;
 
   @override
   void initState() {
@@ -62,6 +63,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await _controller.initialize();
     await ProgressionManager.instance.initialize();
     await DailyRoulette.instance.initialize();
+
+    // Listen for admin edits during background sync
+    ProfileManager.instance.adminEditDetected.addListener(() {
+      if (mounted && ProfileManager.instance.adminEditDetected.value) {
+        setState(() => _showRelogNotice = true);
+      }
+    });
+
+    // Check if we have a pending relog notice from a previous sync
+    final pendingNotice = await StorageEngine.instance.getMetadata(
+      'relog_notice_pending',
+    );
+    if (pendingNotice != null) {
+      setState(() => _showRelogNotice = true);
+    }
 
     // Sync with live backend if logged in
     if (FirebaseAuth.instance.currentUser != null) {
@@ -204,12 +220,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _buildRouletteButton(),
           _buildShopButton(),
           _buildChatButton(),
+          if (_showRelogNotice) _buildRelogNotice(),
         ],
       ),
     );
   }
 
   // --- Sub-Widgets to simplify build() ---
+
+  Widget _buildRelogNotice() {
+    return Positioned(
+      top: 120,
+      left: 16,
+      right: 16,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: Colors.orange),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'SYSTEM: If you received a balance update or profile edit from an admin, please relog to sync your local wallet.',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ),
+              IconButton(
+                onPressed: () async {
+                  setState(() => _showRelogNotice = false);
+                  ProfileManager.instance.adminEditDetected.value = false;
+                  await StorageEngine.instance.removeMetadata(
+                    'relog_notice_pending',
+                  );
+                },
+                icon: const Icon(Icons.close, color: Colors.white54, size: 20),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
@@ -360,7 +418,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         height: 102,
         overflowSize: 102,
         borderRadius: 17,
-        onTap: () => _showGameDialog(const Center(child: ChatDialog())),
+        onTap: () {
+          if (!_isLoggedIn) {
+            showCustomSnackBar(
+              context,
+              'Please login to access the global chat.',
+              type: SnackBarType.info,
+            );
+            _showAuthDialog();
+          } else {
+            _showGameDialog(const Center(child: ChatDialog()));
+          }
+        },
       ),
     );
   }

@@ -10,9 +10,12 @@ class PlayerModel(BaseModel):
     banned: List[str] = []
     
     isBannedPermanent: bool = False
+    isVerified: bool = False
     isBannedFromLeaderboard: bool = False
     isBannedFromChat: bool = False
     muteUntil: Optional[str] = None
+    banUntil: Optional[str] = None
+    leaderboardHideUntil: Optional[str] = None
     role: str = "player"
 
     level: int = 1

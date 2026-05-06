@@ -285,8 +285,9 @@ class TurretEntity extends BaseEntity with TapCallbacks {
 
     for (final monster in sortedMonsters) {
       final dist = center.distanceTo(monster.center);
-      if (dist > range)
+      if (dist > range) {
         break; // Since sorted, all subsequent monsters are also out of range
+      }
 
       // LoS check for this specific monster
       if (game.hasLineOfSight(center, monster.center, ignoredRoomID: roomID)) {

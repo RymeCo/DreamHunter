@@ -5,7 +5,7 @@ from core.firebase import db
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
-@router.get("/")
+@router.get("")
 async def get_settings(uid: str = Depends(get_admin_user)):
     """
     Fetches all global system settings.
@@ -13,7 +13,7 @@ async def get_settings(uid: str = Depends(get_admin_user)):
     """
     return settings_service.get_settings()
 
-@router.patch("/")
+@router.patch("")
 async def update_settings(
     uid: str = Depends(get_admin_user),
     data: dict = Body(...)

@@ -19,6 +19,9 @@ class ProfileManager {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ApiGateway _backend = ApiGateway();
 
+  /// Notifier to signal the UI when an admin edit is detected.
+  final ValueNotifier<bool> adminEditDetected = ValueNotifier<bool>(false);
+
   /// Fetches the active player model, prioritizing Local Cache for speed and cost-saving.
   /// Only goes to the backend if the cache is older than 24 hours or missing.
   Future<PlayerModel?> getPlayer({bool forceRefresh = false}) async {
@@ -63,7 +66,7 @@ class ProfileManager {
           return PlayerModel.fromMap(data, uid);
         }
       } catch (e) {
-        debugPrint('Failed to fetch from backend, falling back to cache: $e');
+        // Backend fetch failed
       }
     }
 
@@ -87,7 +90,6 @@ class ProfileManager {
     if (cached != null) {
       final localPlayer = PlayerModel.fromMap(cached, user.uid);
       if (localPlayer.isBannedPermanent) {
-        debugPrint('Backup aborted: Account is permanently banned.');
         return;
       }
     }
@@ -129,27 +131,39 @@ class ProfileManager {
     // SECURITY: If we already know they are banned, don't even try to sync
     final cached = await StorageEngine.instance.getMetadata('player_profile');
     if (cached != null && (cached['isBannedPermanent'] ?? false)) {
-      debugPrint('Sync aborted: User is permanently banned.');
       return;
     }
 
     final response = await _backend.post('/auth/sync');
     if (response.statusCode == 200) {
-      // OPTIMIZATION: Cache the token immediately after a successful sync
-      final user = _auth.currentUser;
-      if (user != null) {
-        final token = await user.getIdToken();
-        if (token != null) {
-          await StorageEngine.instance.saveCachedToken(token);
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      // 1. Detect Admin Edits (Compare critical fields with current cache)
+      final currentProfile = await StorageEngine.instance.getMetadata(
+        'player_profile',
+      );
+      if (currentProfile != null) {
+        final bool coinsChanged =
+            (data['coins'] ?? 100) != (currentProfile['coins'] ?? 100);
+        final bool stonesChanged =
+            (data['stones'] ?? 0) != (currentProfile['stones'] ?? 0);
+        final bool levelChanged =
+            (data['level'] ?? 1) != (currentProfile['level'] ?? 1);
+
+        if (coinsChanged || stonesChanged || levelChanged) {
+          adminEditDetected.value = true;
+          await StorageEngine.instance.saveMetadata('relog_notice_pending', {
+            'detectedAt': DateTime.now().toIso8601String(),
+          });
         }
       }
 
-      final Map<String, dynamic> data = json.decode(response.body);
+      // 2. OPTIMIZATION: Cache the token immediately after a successful sync
 
       final isNewUser =
           (data['level'] ?? 1) == 1 && (data['coins'] ?? 100) == 100;
       if (isNewUser && StorageEngine.instance.hasGuestData()) {
-        await StorageEngine.instance.promoteGuestToUser(user!.uid);
+        await StorageEngine.instance.promoteGuestToUser(user.uid);
         await backupPlayer();
         return;
       }
@@ -245,7 +259,7 @@ class ProfileManager {
             }
           }
         } catch (e) {
-          debugPrint('Cache Date Parse Error: $e');
+          // Cache Parse Error
         }
       }
     }
@@ -262,7 +276,7 @@ class ProfileManager {
         return data;
       }
     } catch (e) {
-      debugPrint('Leaderboard API Error: $e');
+      // Leaderboard API Error
     }
 
     return cached ?? {"lastUpdated": "", "topLevels": [], "topCoins": []};

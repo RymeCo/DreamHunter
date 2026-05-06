@@ -3,6 +3,7 @@ import 'package:dreamhunter/services/identity/auth_manager.dart';
 import 'package:dreamhunter/services/identity/profile_manager.dart';
 import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/widgets/liquid_glass_dialog.dart';
+import 'package:dreamhunter/widgets/identity/verification_notice_dialog.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
 import 'package:flutter/material.dart';
 
@@ -47,12 +48,28 @@ class _RegisterDialogState extends State<RegisterDialog> {
           displayName: _displayNameController.text.trim(),
         );
 
+        // Send verification email immediately
+        await _authService.sendEmailVerification();
+
         if (mounted) {
           // Sync with live backend to create initial Firestore profile
           await ProfileManager.instance.syncWithBackend();
 
           setState(() => _isLoading = false);
-          widget.onRegisterSuccess();
+
+          // Show verification notice before finalizing
+          if (mounted) {
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => VerificationNoticeDialog(
+                email: _emailController.text.trim(),
+                onContinue: () => Navigator.pop(context),
+              ),
+            );
+          }
+
+          if (mounted) widget.onRegisterSuccess();
         }
       } on FirebaseAuthException catch (e) {
         String message = 'Registration failed.';
@@ -69,7 +86,6 @@ class _RegisterDialogState extends State<RegisterDialog> {
           setState(() => _isLoading = false);
         }
       } catch (e) {
-        debugPrint('Registration error: $e');
         if (mounted) {
           showCustomSnackBar(
             context,

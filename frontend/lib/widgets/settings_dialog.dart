@@ -211,7 +211,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
         confirmLabel: 'WATCH AD & OVERWRITE',
         isDestructive: true,
       );
-      if (!confirmed) return;
+      if (!confirmed || !mounted) return;
 
       AdManager.instance.showRewardAd(
         context: context,
@@ -228,7 +228,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
         confirmLabel: 'BACKUP NOW',
         color: Colors.cyanAccent,
       );
-      if (!confirmed) return;
+      if (!confirmed || !mounted) return;
 
       await _executeSync();
     }

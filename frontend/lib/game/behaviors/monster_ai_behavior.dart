@@ -36,7 +36,6 @@ class MonsterAIBehavior extends Component
   final double stunRange = 64.0;
 
   double _stuckTimer = 0;
-  double _logThrottleTimer = 0;
   double _playerTargetingTimer = 0;
   double _stunCooldownValue = 0;
   math.Point<int>? _lastTile;
@@ -74,10 +73,6 @@ class MonsterAIBehavior extends Component
       if (currentTile == _lastTile && !isAtSpawn) {
         _stuckTimer += dt;
         if (_stuckTimer > 2.0 && shouldScan) {
-          debugPrint(
-            '[ERROR] Monster Stuck in tile $currentTile. State: $state. Target: $target. Forcing recovery.',
-          );
-
           // RECOVERY 1: Snap to current tile center to "un-snag" from corners
           parent.position = Vector2(
             currentTile.x * 32.0 + 16.0,
@@ -89,16 +84,10 @@ class MonsterAIBehavior extends Component
           // RECOVERY 2: If we have a path, nudge forward to the next waypoint
           if (currentPath.isNotEmpty && pathIndex < currentPath.length) {
             final nextWaypoint = currentPath[pathIndex].clone();
-            debugPrint(
-              '[AI] Panic Nudge: Moving monster from ${parent.position} to next waypoint $nextWaypoint',
-            );
             parent.position = nextWaypoint;
             pathIndex++;
           } else {
             // RECOVERY 3: If no path or stuck even after pick, force a retreat to clear the area
-            debugPrint(
-              '[AI] Stuck Recovery: No path found, forcing retreat to spawn.',
-            );
             state = MonsterState.retreating;
             target = null; // Clear target when retreating
             _calculatePathToSpawn();
@@ -113,8 +102,6 @@ class MonsterAIBehavior extends Component
       _lastTile = null;
     }
 
-    _logThrottleTimer += dt;
-
     if (game.graceTimer.value > 0) {
       state = MonsterState.idle;
       currentPath = [];
@@ -126,7 +113,6 @@ class MonsterAIBehavior extends Component
     if (_chaseTimer > 0) {
       _chaseTimer -= dt;
       if (_chaseTimer <= 0) {
-        debugPrint('[AI] Aggro Leash expired. Returning to strategic target.');
         _pickNewTarget(); // This will prioritize the strategic target again
       }
     }
@@ -217,9 +203,6 @@ class MonsterAIBehavior extends Component
         for (final b in buildings) {
           if (b is DoorEntity && b.hp / b.maxHp <= 0.1) {
             shouldStun = true;
-            debugPrint(
-              '[AI] Monster using Stun on critical door (${(b.hp / b.maxHp * 100).toInt()}% HP)',
-            );
             break;
           }
         }
@@ -330,9 +313,6 @@ class MonsterAIBehavior extends Component
         currentPath = [];
       } else {
         if (!_calculatePathToTarget()) {
-          debugPrint(
-            '[ERROR] Path calculation failed during hunt. Picking new target.',
-          );
           _lastTarget = target;
           _pickNewTarget();
         }
@@ -404,10 +384,6 @@ class MonsterAIBehavior extends Component
           if (!blockedX) parent.position.x = nextPosition.x;
           if (!blockedY) parent.position.y = nextPosition.y;
         } else {
-          if (_logThrottleTimer > 1.0) {
-            debugPrint('[ERROR] Monster blocked by wall at $nextPosition.');
-            _logThrottleTimer = 0;
-          }
           if (target != null && parent.center.distanceTo(target!.center) < 48) {
             state = MonsterState.attacking;
             currentPath = [];
@@ -767,9 +743,6 @@ class MonsterAIBehavior extends Component
     if (door != null) {
       // Door exists and is not destroyed! Force redirection to door.
       if (target != door) {
-        debugPrint(
-          '[AI] Hard Lock: Redirecting monster from ${target.runtimeType} to Door of room $roomID',
-        );
         target = door;
         state = MonsterState.hunting;
         _calculatePathToTarget();

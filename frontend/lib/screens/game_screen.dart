@@ -8,6 +8,8 @@ import 'package:dreamhunter/widgets/game/vignette_overlay.dart';
 import 'package:dreamhunter/widgets/game/grace_timer_overlay.dart';
 import 'package:dreamhunter/widgets/game/match_timer_overlay.dart';
 import 'package:dreamhunter/widgets/game/game_economy_hud.dart';
+import 'package:dreamhunter/widgets/game/tutorial_hud.dart';
+import 'package:dreamhunter/services/progression/tutorial_service.dart';
 import 'package:dreamhunter/widgets/game/reward_dialog.dart';
 import 'package:dreamhunter/services/loading/game_loader.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
@@ -30,6 +32,9 @@ class _GameScreenState extends State<GameScreen> {
 
     // Reset economy and pause state for a new match
     _matchManager.resetMatch();
+
+    // Reset tutorial to start if not already fully completed
+    TutorialService.instance.resetProgressIfNotCompleted();
 
     _game = DreamHunterGame(
       onMatchEnded: () {
@@ -154,6 +159,14 @@ class _GameScreenState extends State<GameScreen> {
 
             // Economy HUD
             Positioned(top: 45, left: 20, child: GameEconomyHUD(game: _game)),
+
+            // Tutorial HUD
+            Positioned(
+              bottom: 120,
+              left: 0,
+              right: 0,
+              child: TutorialHUD(game: _game),
+            ),
 
             // Grace Timer Overlay
             Positioned(

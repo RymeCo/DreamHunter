@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamHunter | High-Stakes Survival</title>
+    <style>
+        :root {
+            --primary: #00e5ff;
+            --bg: #050505;
+            --surface: #121212;
+            --text: #ffffff;
+            --text-dim: #888888;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* --- NAVIGATION --- */
+        nav {
+            padding: 32px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-text {
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--primary);
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+
+        .hero p {
+            max-width: 600px;
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            margin-bottom: 48px;
+        }
+
+        /* --- SLIDER --- */
+        .slider-wrapper {
+            width: 100%;
+            max-width: 1000px;
+            height: 500px;
+            position: relative;
+            margin-bottom: 80px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+        }
+
+        .slider {
+            display: flex;
+            width: 300%;
+            height: 100%;
+            transition: transform 0.8s cubic-bezier(0.85, 0, 0.15, 1);
+        }
+
+        .slide {
+            width: 33.333%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: flex-end;
+            padding: 40px;
+            position: relative;
+        }
+
+        .slide::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0; top: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        }
+
+        .slide-content {
+            position: relative;
+            z-index: 2;
+            text-align: left;
+        }
+
+        .slide-content h3 { font-size: 1.5rem; color: var(--primary); }
+
+        /* --- DOWNLOAD BUTTONS --- */
+        .download-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 80px;
+        }
+
+        .btn {
+            padding: 18px 36px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-main {
+            background-color: var(--primary);
+            color: #000;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text);
+        }
+
+        .btn:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,229,255,0.2); }
+        .btn span { font-size: 0.7rem; opacity: 0.7; font-weight: 400; margin-top: 4px; }
+
+        /* --- FOOTER --- */
+        footer {
+            padding: 60px 0;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        /* --- ANIMATION LOGIC --- */
+        @keyframes slide {
+            0%, 25% { transform: translateX(0); }
+            33%, 58% { transform: translateX(-33.33%); }
+            66%, 91% { transform: translateX(-66.66%); }
+            100% { transform: translateX(0); }
+        }
+
+        .slider { animation: slide 15s infinite; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <nav>
+            <div class="logo-text">DreamHunter</div>
+        </nav>
+
+        <section class="hero">
+            <h1>Rise. Survive. Conquer.</h1>
+            <p>A minimalist dark fantasy RPG with pixel-perfect proportions and real-time cloud synchronization.</p>
+
+            <div class="slider-wrapper">
+                <div class="slider">
+                    <!-- Replace with your actual screenshot URLs from GitHub -->
+                    <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=1000')">
+                        <div class="slide-content">
+                            <h3>High-Stakes Combat</h3>
+                        </div>
+                    </div>
+                    <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=1000')">
+                        <div class="slide-content">
+                            <h3>Real-Time Leaderboard</h3>
+                        </div>
+                    </div>
+                    <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1000')">
+                        <div class="slide-content">
+                            <h3>Verified Identity</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="download-container">
+                <a href="#" class="btn btn-main">
+                    Download Player App
+                    <span>DreamHunter_v1.0.apk (66MB)</span>
+                </a>
+                <a href="#" class="btn btn-outline">
+                    Admin Dashboard
+                    <span>DreamHunter_Admin_v1.0.apk (53MB)</span>
+                </a>
+            </div>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 DreamHunter Development Team. All rights reserved.</p>
+        </footer>
+    </div>
+
+</body>
+</html>
