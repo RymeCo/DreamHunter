@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DreamHunter | Ryme</title>
-    <link rel="icon" type="image/png" href="assets/icon.png">
+    <title>DreamHunter | RymeCo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -12,11 +11,10 @@
         :root {
             --primary: #00e5ff;
             --primary-glow: rgba(0, 229, 255, 0.4);
-            --bg: #030303;
+            --bg: #050505;
             --surface: #0a0a0a;
             --text: #ffffff;
             --text-dim: rgba(255, 255, 255, 0.6);
-            --accent: #ff0055;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,10 +22,7 @@
         body {
             background-color: var(--bg);
             background-image: 
-                radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.05) 0%, transparent 50%),
-                url('assets/bg.png');
-            background-size: cover;
-            background-attachment: fixed;
+                radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.1) 0%, transparent 70%);
             color: var(--text);
             font-family: 'Inter', sans-serif;
             line-height: 1.6;
@@ -55,32 +50,16 @@
             align-items: center;
         }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-        }
-
         .brand img {
-            height: 40px;
+            height: 35px;
             width: auto;
-            filter: drop-shadow(0 0 10px var(--primary-glow));
-        }
-
-        .brand-text {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
-            font-weight: 700;
-            letter-spacing: 2px;
-            color: var(--text);
-            text-transform: uppercase;
+            display: block;
         }
 
         /* --- HERO SECTION --- */
         .hero {
             text-align: center;
-            padding-bottom: 40px;
+            padding-bottom: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -88,13 +67,20 @@
             flex: 1;
         }
 
+        .hero-logo {
+            width: 180px;
+            height: auto;
+            margin-bottom: 24px;
+            filter: drop-shadow(0 0 15px var(--primary-glow));
+        }
+
         .hero h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2.5rem, 10vw, 4.5rem);
+            font-size: clamp(2.5rem, 8vw, 4rem);
             font-weight: 900;
             letter-spacing: -1px;
             margin-bottom: 12px;
-            background: linear-gradient(to bottom, #fff 40%, #00e5ff);
+            background: linear-gradient(to bottom, #fff 50%, #00e5ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-transform: uppercase;
@@ -106,7 +92,6 @@
             font-size: 1rem;
             margin-bottom: 32px;
             font-weight: 300;
-            letter-spacing: 0.5px;
         }
 
         /* --- DOWNLOAD BUTTONS --- */
@@ -120,23 +105,21 @@
 
         .btn {
             padding: 16px 32px;
-            border-radius: 4px;
+            border-radius: 6px;
             text-decoration: none;
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
             font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 2px;
             transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-            position: relative;
-            overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.05);
             color: var(--text);
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 240px;
+            min-width: 260px;
         }
 
         .btn-primary {
@@ -146,26 +129,25 @@
         }
 
         .btn:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
             border-color: var(--primary);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4), 0 0 15px var(--primary-glow);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5), 0 0 15px var(--primary-glow);
         }
 
         .btn-primary:hover {
             background: var(--primary);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4), 0 0 20px var(--primary-glow);
         }
 
         .btn span {
             font-family: 'Inter', sans-serif;
             font-size: 0.65rem;
-            opacity: 0.5;
-            font-weight: 400;
+            opacity: 0.6;
             margin-top: 4px;
+            text-transform: none;
             letter-spacing: 0;
         }
 
-        /* --- SLIDER AT BOTTOM --- */
+        /* --- ABOUT SLIDER --- */
         .slider-section {
             padding: 40px 0;
             width: 100%;
@@ -173,62 +155,77 @@
 
         .slider-wrapper {
             width: 100%;
-            height: 240px;
+            height: 150px;
             position: relative;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
+            background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .slider {
             display: flex;
-            width: 400%;
+            width: 300%;
             height: 100%;
             transition: transform 1s cubic-bezier(0.85, 0, 0.15, 1);
         }
 
         .slide {
-            width: 25%;
+            width: 33.333%;
             height: 100%;
-            background-size: cover;
-            background-position: center;
-            filter: grayscale(0.2) contrast(1.1);
-            transition: filter 0.5s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
         }
 
-        .slide:hover {
-            filter: grayscale(0) contrast(1.2);
+        .slide h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+            opacity: 0.8;
+        }
+
+        .slide p {
+            font-size: 1.1rem;
+            font-weight: 300;
+            color: #fff;
+        }
+
+        .slide b {
+            font-weight: 700;
+            color: var(--primary);
         }
 
         /* --- FOOTER --- */
         footer {
-            padding: 40px 0;
+            padding: 30px 0;
             text-align: center;
-            color: var(--text-dim);
-            font-size: 0.75rem;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 2px;
             font-family: 'Orbitron', sans-serif;
         }
 
-        footer span {
-            color: var(--primary);
-        }
-
         /* --- ANIMATION --- */
         @keyframes slide {
-            0%, 20% { transform: translateX(0); }
-            25%, 45% { transform: translateX(-25%); }
-            50%, 70% { transform: translateX(-50%); }
-            75%, 95% { transform: translateX(-75%); }
+            0%, 28% { transform: translateX(0); }
+            33%, 61% { transform: translateX(-33.333%); }
+            66%, 94% { transform: translateX(-66.666%); }
             100% { transform: translateX(0); }
         }
 
-        .slider { animation: slide 20s infinite; }
+        .slider { animation: slide 15s infinite; }
 
-        @media (max-height: 800px) {
-            .hero { padding-top: 20px; }
-            .slider-wrapper { height: 180px; }
+        @media (max-width: 600px) {
+            .btn { min-width: 100%; }
+            .hero h1 { font-size: 2.5rem; }
         }
 
     </style>
@@ -237,15 +234,15 @@
 
     <div class="container">
         <nav>
-            <a href="#" class="brand">
-                <img src="assets/icon.png" alt="DreamHunter Icon">
-                <div class="brand-text">Ryme</div>
-            </a>
+            <div class="brand">
+                <img src="assets/by_ryme.png" alt="Ryme">
+            </div>
         </nav>
 
         <section class="hero">
+            <img src="assets/hero_logo.png" alt="DreamHunter Logo" class="hero-logo">
             <h1>DreamHunter</h1>
-            <p>Survival is a choice. Mastery is a journey. Explore the high-stakes world of DreamHunter.</p>
+            <p>Survival is a choice. Mastery is a journey. Experience the next evolution of mobile RPGs.</p>
 
             <div class="download-group">
                 <a href="https://github.com/RymeCo/DreamHunter/releases/download/v1.0.0/DreamHunter_v1.0.apk" class="btn btn-primary">
@@ -262,16 +259,24 @@
         <section class="slider-section">
             <div class="slider-wrapper">
                 <div class="slider">
-                    <div class="slide" style="background-image: url('assets/screenshot_1.png')"></div>
-                    <div class="slide" style="background-image: url('assets/preview.png')"></div>
-                    <div class="slide" style="background-image: url('assets/screenshot1.png')"></div>
-                    <div class="slide" style="background-image: url('assets/screenshot.png')"></div>
+                    <div class="slide">
+                        <h2>Developer</h2>
+                        <p>Developed by <b>RymeCo.</b></p>
+                    </div>
+                    <div class="slide">
+                        <h2>Team Member</h2>
+                        <p><b>Royette Andrei C. Telar</b></p>
+                    </div>
+                    <div class="slide">
+                        <h2>Compliance</h2>
+                        <p>Information Management • Database Management • Algorithm Complexity</p>
+                    </div>
                 </div>
             </div>
         </section>
 
         <footer>
-            Built by <span>Ryme</span> &copy; 2026
+            Built by Ryme &copy; 2026
         </footer>
     </div>
 
