@@ -3,171 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DreamHunter | High-Stakes Survival</title>
+    <title>DreamHunter | Ryme</title>
+    <link rel="icon" type="image/png" href="assets/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #00e5ff;
-            --bg: #050505;
-            --surface: #121212;
+            --primary-glow: rgba(0, 229, 255, 0.4);
+            --bg: #030303;
+            --surface: #0a0a0a;
             --text: #ffffff;
-            --text-dim: #888888;
+            --text-dim: rgba(255, 255, 255, 0.6);
+            --accent: #ff0055;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.05) 0%, transparent 50%),
+                url('assets/bg.png');
+            background-size: cover;
+            background-attachment: fixed;
             color: var(--text);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', sans-serif;
             line-height: 1.6;
             overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 0 24px;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         /* --- NAVIGATION --- */
         nav {
-            padding: 32px 0;
+            padding: 40px 0;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
         }
 
-        .logo-text {
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .brand img {
+            height: 40px;
+            width: auto;
+            filter: drop-shadow(0 0 10px var(--primary-glow));
+        }
+
+        .brand-text {
+            font-family: 'Orbitron', sans-serif;
             font-size: 1.2rem;
-            font-weight: 800;
-            letter-spacing: 4px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--text);
             text-transform: uppercase;
-            color: var(--primary);
         }
 
         /* --- HERO SECTION --- */
         .hero {
+            text-align: center;
+            padding-bottom: 40px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 80px 0;
-            text-align: center;
+            justify-content: center;
+            flex: 1;
         }
 
         .hero h1 {
-            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.5rem, 10vw, 4.5rem);
             font-weight: 900;
-            letter-spacing: -2px;
-            margin-bottom: 16px;
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+            background: linear-gradient(to bottom, #fff 40%, #00e5ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             text-transform: uppercase;
         }
 
         .hero p {
-            max-width: 600px;
+            max-width: 500px;
             color: var(--text-dim);
-            font-size: 1.1rem;
-            margin-bottom: 48px;
+            font-size: 1rem;
+            margin-bottom: 32px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
         }
 
-        /* --- SLIDER --- */
+        /* --- DOWNLOAD BUTTONS --- */
+        .download-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 240px;
+        }
+
+        .btn-primary {
+            background: var(--text);
+            color: #000;
+            border: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4), 0 0 15px var(--primary-glow);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4), 0 0 20px var(--primary-glow);
+        }
+
+        .btn span {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.65rem;
+            opacity: 0.5;
+            font-weight: 400;
+            margin-top: 4px;
+            letter-spacing: 0;
+        }
+
+        /* --- SLIDER AT BOTTOM --- */
+        .slider-section {
+            padding: 40px 0;
+            width: 100%;
+        }
+
         .slider-wrapper {
             width: 100%;
-            max-width: 1000px;
-            height: 500px;
+            height: 240px;
             position: relative;
-            margin-bottom: 80px;
-            border-radius: 24px;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .slider {
             display: flex;
-            width: 300%;
+            width: 400%;
             height: 100%;
-            transition: transform 0.8s cubic-bezier(0.85, 0, 0.15, 1);
+            transition: transform 1s cubic-bezier(0.85, 0, 0.15, 1);
         }
 
         .slide {
-            width: 33.333%;
+            width: 25%;
             height: 100%;
             background-size: cover;
             background-position: center;
-            display: flex;
-            align-items: flex-end;
-            padding: 40px;
-            position: relative;
+            filter: grayscale(0.2) contrast(1.1);
+            transition: filter 0.5s ease;
         }
 
-        .slide::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0; right: 0; top: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        .slide:hover {
+            filter: grayscale(0) contrast(1.2);
         }
-
-        .slide-content {
-            position: relative;
-            z-index: 2;
-            text-align: left;
-        }
-
-        .slide-content h3 { font-size: 1.5rem; color: var(--primary); }
-
-        /* --- DOWNLOAD BUTTONS --- */
-        .download-container {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-bottom: 80px;
-        }
-
-        .btn {
-            padding: 18px 36px;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .btn-main {
-            background-color: var(--primary);
-            color: #000;
-        }
-
-        .btn-outline {
-            background-color: transparent;
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text);
-        }
-
-        .btn:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,229,255,0.2); }
-        .btn span { font-size: 0.7rem; opacity: 0.7; font-weight: 400; margin-top: 4px; }
 
         /* --- FOOTER --- */
         footer {
-            padding: 60px 0;
-            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 40px 0;
             text-align: center;
             color: var(--text-dim);
-            font-size: 0.9rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: 'Orbitron', sans-serif;
         }
 
-        /* --- ANIMATION LOGIC --- */
+        footer span {
+            color: var(--primary);
+        }
+
+        /* --- ANIMATION --- */
         @keyframes slide {
-            0%, 25% { transform: translateX(0); }
-            33%, 58% { transform: translateX(-33.33%); }
-            66%, 91% { transform: translateX(-66.66%); }
+            0%, 20% { transform: translateX(0); }
+            25%, 45% { transform: translateX(-25%); }
+            50%, 70% { transform: translateX(-50%); }
+            75%, 95% { transform: translateX(-75%); }
             100% { transform: translateX(0); }
         }
 
-        .slider { animation: slide 15s infinite; }
+        .slider { animation: slide 20s infinite; }
+
+        @media (max-height: 800px) {
+            .hero { padding-top: 20px; }
+            .slider-wrapper { height: 180px; }
+        }
 
     </style>
 </head>
@@ -175,48 +237,41 @@
 
     <div class="container">
         <nav>
-            <div class="logo-text">DreamHunter</div>
+            <a href="#" class="brand">
+                <img src="assets/icon.png" alt="DreamHunter Icon">
+                <div class="brand-text">Ryme</div>
+            </a>
         </nav>
 
         <section class="hero">
-            <h1>Rise. Survive. Conquer.</h1>
-            <p>A minimalist dark fantasy RPG with pixel-perfect proportions and real-time cloud synchronization.</p>
+            <h1>DreamHunter</h1>
+            <p>Survival is a choice. Mastery is a journey. Explore the high-stakes world of DreamHunter.</p>
 
-            <div class="slider-wrapper">
-                <div class="slider">
-                    <!-- Replace with your actual screenshot URLs from GitHub -->
-                    <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=1000')">
-                        <div class="slide-content">
-                            <h3>High-Stakes Combat</h3>
-                        </div>
-                    </div>
-                    <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=1000')">
-                        <div class="slide-content">
-                            <h3>Real-Time Leaderboard</h3>
-                        </div>
-                    </div>
-                    <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1000')">
-                        <div class="slide-content">
-                            <h3>Verified Identity</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="download-container">
-                <a href="https://github.com/RymeCo/DreamHunter/releases/download/v1.0.0/DreamHunter_v1.0.apk" class="btn btn-main">
-                    Download Player App
-                    <span>DreamHunter_v1.0.apk (66MB)</span>
+            <div class="download-group">
+                <a href="https://github.com/RymeCo/DreamHunter/releases/download/v1.0.0/DreamHunter_v1.0.apk" class="btn btn-primary">
+                    Play Now
+                    <span>v1.0.0 (66MB) • Android</span>
                 </a>
-                <a href="https://github.com/RymeCo/DreamHunter/releases/download/v1.0.0/DreamHunter_Admin_v1.0.apk" class="btn btn-outline">
-                    Admin Dashboard
-                    <span>DreamHunter_Admin_v1.0.apk (53MB)</span>
+                <a href="https://github.com/RymeCo/DreamHunter/releases/download/v1.0.0/DreamHunter_Admin_v1.0.apk" class="btn">
+                    Admin Portal
+                    <span>v1.0.0 (53MB) • Android</span>
                 </a>
             </div>
         </section>
 
+        <section class="slider-section">
+            <div class="slider-wrapper">
+                <div class="slider">
+                    <div class="slide" style="background-image: url('assets/screenshot_1.png')"></div>
+                    <div class="slide" style="background-image: url('assets/preview.png')"></div>
+                    <div class="slide" style="background-image: url('assets/screenshot1.png')"></div>
+                    <div class="slide" style="background-image: url('assets/screenshot.png')"></div>
+                </div>
+            </div>
+        </section>
+
         <footer>
-            <p>&copy; 2026 DreamHunter Development Team. All rights reserved.</p>
+            Built by <span>Ryme</span> &copy; 2026
         </footer>
     </div>
 
