@@ -88,6 +88,48 @@ class _LoginDialogState extends State<LoginDialog> {
     }
   }
 
+  void _forgotPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      showCustomSnackBar(
+        context,
+        'Please enter a valid email address first.',
+        type: SnackBarType.error,
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await _authService.sendPasswordResetEmail(email);
+      if (mounted) {
+        showCustomSnackBar(
+          context,
+          'Reset link sent! If not found, please check your Spam folder.',
+          type: SnackBarType.info,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'Failed to send reset email.';
+      if (e.code == 'user-not-found') {
+        message = 'No user found for that email.';
+      }
+      if (mounted) {
+        showCustomSnackBar(context, message, type: SnackBarType.error);
+      }
+    } catch (e) {
+      if (mounted) {
+        showCustomSnackBar(
+          context,
+          'An error occurred. Please try again.',
+          type: SnackBarType.error,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -120,6 +162,24 @@ class _LoginDialogState extends State<LoginDialog> {
                     validator: (v) =>
                         (v == null || v.length < 6) ? 'Min 6 characters' : null,
                     enabled: !_isLoading,
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _isLoading ? null : _forgotPassword,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Forgot Password?',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.cyanAccent.withValues(alpha: 0.7),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 25),
                   SizedBox(

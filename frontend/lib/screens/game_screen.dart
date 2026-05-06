@@ -32,7 +32,7 @@ class _GameScreenState extends State<GameScreen> {
 
     // Reset economy and pause state for a new match
     _matchManager.resetMatch();
-    
+
     // Reset tutorial to start if not already fully completed
     TutorialService.instance.resetProgressIfNotCompleted();
 

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from core.security import get_current_user
+from core.security import get_current_user, get_verified_user
 from services.player_service import PlayerService
 from models.player import PlayerModel
 from services.settings_service import settings_service
@@ -17,7 +17,7 @@ async def get_profile(uid: str = Depends(get_current_user)):
     return player
 
 @router.patch("/update", response_model=PlayerModel)
-async def update_profile(data: dict, uid: str = Depends(get_current_user)):
+async def update_profile(data: dict, uid: str = Depends(get_verified_user)):
     """
     Updates specific fields of the player profile.
     Check if backup is globally disabled first.

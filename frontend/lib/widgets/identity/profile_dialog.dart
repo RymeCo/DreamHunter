@@ -6,6 +6,7 @@ import 'package:dreamhunter/services/core/storage_engine.dart';
 import 'package:dreamhunter/services/identity/profile_manager.dart';
 import 'package:dreamhunter/services/progression/progression_manager.dart';
 import 'package:dreamhunter/widgets/confirmation_dialog.dart';
+import 'package:dreamhunter/widgets/custom_snackbar.dart';
 import 'package:dreamhunter/widgets/common_ui.dart';
 import 'package:dreamhunter/models/player_model.dart';
 
@@ -30,6 +31,9 @@ class _ProfileDialogState extends State<ProfileDialog> {
   }
 
   Future<void> _fetchData() async {
+    // Reload user to get latest verification status
+    await AuthManager.instance.reloadUser();
+
     final player = await ProfileManager.instance.getPlayer();
     final ranks = await ProfileManager.instance.getLeaderboardRank();
 
@@ -39,6 +43,48 @@ class _ProfileDialogState extends State<ProfileDialog> {
         _levelRank = ranks['levelRank'] ?? '??';
         _coinsRank = ranks['coinsRank'] ?? '??';
       });
+    }
+  }
+
+  void _resendVerification() async {
+    try {
+      await AuthManager.instance.sendEmailVerification();
+      if (mounted) {
+        showCustomSnackBar(
+          context,
+          'Verification resent! Please check your Spam or All Mail folders.',
+          type: SnackBarType.info,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showCustomSnackBar(
+          context,
+          'Failed to resend email.',
+          type: SnackBarType.error,
+        );
+      }
+    }
+  }
+
+  void _refreshVerification() async {
+    setState(() => _player = null); // Show loading state briefly
+    await _fetchData();
+    if (mounted) {
+      final user = AuthManager().currentUser;
+      if (user?.emailVerified ?? false) {
+        showCustomSnackBar(
+          context,
+          'Account successfully verified!',
+          type: SnackBarType.info,
+        );
+      } else {
+        showCustomSnackBar(
+          context,
+          'Still unverified. Did you click the link in your email?',
+          type: SnackBarType.info,
+        );
+      }
     }
   }
 
@@ -138,23 +184,90 @@ class _ProfileDialogState extends State<ProfileDialog> {
                 const SizedBox(height: 16),
 
                 // Player Identity
-                Text(
-                  displayName.toUpperCase(),
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      displayName.toUpperCase(),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    if (user?.emailVerified ?? false) ...[
+                      const SizedBox(width: 8),
+                      Tooltip(
+                        message: 'Account verified and tied to $email',
+                        child: GestureDetector(
+                          onTap: () {
+                            showCustomSnackBar(
+                              context,
+                              'Verified account tied to $email',
+                              type: SnackBarType.info,
+                            );
+                          },
+                          child: const Icon(
+                            Icons.verified,
+                            color: Colors.cyanAccent,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 if (email != null) ...[
                   const SizedBox(height: 4),
-                  Text(
-                    email,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white38,
-                      letterSpacing: 1.1,
-                      fontSize: 11,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        email,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white38,
+                          letterSpacing: 1.1,
+                          fontSize: 11,
+                        ),
+                      ),
+                      if (!(user?.emailVerified ?? false)) ...[
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: _resendVerification,
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(0, 0),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text(
+                            'RESEND',
+                            style: TextStyle(
+                              color: Colors.orangeAccent,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text(
+                          '•',
+                          style: TextStyle(color: Colors.white24, fontSize: 9),
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          onPressed: _refreshVerification,
+                          icon: const Icon(
+                            Icons.refresh,
+                            color: Colors.cyanAccent,
+                            size: 14,
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          visualDensity: VisualDensity.compact,
+                          tooltip: 'Refresh Status',
+                        ),
+                      ],
+                    ],
                   ),
                 ],
                 if (_player != null) ...[
@@ -306,26 +419,22 @@ class _ProfileDialogState extends State<ProfileDialog> {
     );
   }
 
-  Color _getStatusColor() {
-    if (_player?.isBannedPermanent ?? false) return Colors.red;
-    if (_player?.isMuted ?? false) return Colors.orange;
-    return Colors.blueAccent;
-  }
-
   Widget _buildBackupSection(BuildContext context) {
     return FutureBuilder<int>(
       future: StorageEngine.instance.getDailyCount('cloud_sync'),
       builder: (context, snapshot) {
         final count = snapshot.data ?? 0;
         final bool isLimitReached = count >= 1;
-        final bool isGuest = AuthManager().currentUser == null;
+        final user = AuthManager().currentUser;
+        final bool isGuest = user == null;
+        final bool isVerified = user?.emailVerified ?? false;
 
         return Column(
           children: [
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: isGuest
+                onPressed: (isGuest || !isVerified)
                     ? null
                     : () async {
                         AudioManager().playClick();
@@ -343,7 +452,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
                           isDestructive: isLimitReached,
                           color: isLimitReached ? null : Colors.cyanAccent,
                         );
-                        if (!confirmed) return;
+                        if (!confirmed || !context.mounted) return;
 
                         if (isLimitReached) {
                           AdManager.instance.showRewardAd(
@@ -398,6 +507,14 @@ class _ProfileDialogState extends State<ProfileDialog> {
                 child: Text(
                   'LOG IN TO BACKUP PROGRESS',
                   style: TextStyle(color: Colors.white24, fontSize: 9),
+                ),
+              )
+            else if (!isVerified)
+              const Padding(
+                padding: EdgeInsets.only(top: 8.0),
+                child: Text(
+                  'VERIFY EMAIL TO ENABLE BACKUP',
+                  style: TextStyle(color: Colors.orangeAccent, fontSize: 9),
                 ),
               ),
           ],

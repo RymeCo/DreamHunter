@@ -86,7 +86,7 @@ class ChatService {
         (data) {
           try {
             final json = jsonDecode(data);
-            
+
             // Handle global message deletion (Censorship)
             if (json['type'] == 'delete') {
               final targetId = json['targetId'];
@@ -167,10 +167,10 @@ class ChatService {
     }
 
     if (player.isMuted) {
-      final until = player.muteUntil != null 
-          ? DateTime.tryParse(player.muteUntil!)?.toLocal() 
+      final until = player.muteUntil != null
+          ? DateTime.tryParse(player.muteUntil!)?.toLocal()
           : null;
-      
+
       if (until != null) {
         final hours = until.difference(DateTime.now()).inHours;
         final mins = until.difference(DateTime.now()).inMinutes % 60;

@@ -39,7 +39,7 @@ class _TutorialHUDState extends State<TutorialHUD> {
     if (!mounted || _tutorial.isCompleted) return;
     _checkProgress();
     // Rebuild to update quest text if sleeping state changes
-    setState(() {}); 
+    setState(() {});
   }
 
   void _checkProgress() {
@@ -65,7 +65,9 @@ class _TutorialHUDState extends State<TutorialHUD> {
         final roomID = _manager.currentRoomID;
         if (roomID.isNotEmpty) {
           // Find the door for this room
-          final door = widget.game.doorMap.values.where((d) => d.roomID == roomID).firstOrNull;
+          final door = widget.game.doorMap.values
+              .where((d) => d.roomID == roomID)
+              .firstOrNull;
           if (door != null && door.totalUpgrades >= 1) {
             _tutorial.moveToNextStep();
           }

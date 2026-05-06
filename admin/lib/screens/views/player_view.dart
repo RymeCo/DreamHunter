@@ -21,10 +21,34 @@ class _PlayerViewState extends State<PlayerView> {
   Map<String, dynamic> _leaderboardData = {};
   bool _isLoadingLeaderboard = false;
 
+  Map<String, dynamic> _stats = {
+    'totalPlayers': 0,
+    'verifiedPlayers': 0,
+    'unverifiedPlayers': 0,
+  };
+  bool _isLoadingStats = false;
+
   @override
   void initState() {
     super.initState();
     _fetchLeaderboard();
+    _fetchStats();
+  }
+
+  Future<void> _fetchStats() async {
+    setState(() => _isLoadingStats = true);
+    try {
+      final response = await _api.get('/admin/system/health');
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        setState(() {
+          _stats = json.decode(response.body);
+          _isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingStats = false);
+    }
   }
 
   Future<void> _forceRecalculate() async {
@@ -33,6 +57,7 @@ class _PlayerViewState extends State<PlayerView> {
       final response = await _api.post('/leaderboard/refresh');
       if (response.statusCode == 200) {
         await _fetchLeaderboard();
+        await _fetchStats();
       }
     } catch (e) {
       if (mounted) setState(() => _isLoadingLeaderboard = false);
@@ -55,6 +80,13 @@ class _PlayerViewState extends State<PlayerView> {
         setState(() => _isLoadingLeaderboard = false);
       }
     }
+  }
+
+  void _clearResults() {
+    setState(() {
+      _searchResults = [];
+      _searchController.clear();
+    });
   }
 
   Future<void> _search() async {
@@ -190,10 +222,7 @@ class _PlayerViewState extends State<PlayerView> {
           ),
           Expanded(
             child: TabBarView(
-              children: [
-                _buildSearchTab(),
-                _buildLeaderboardTab(),
-              ],
+              children: [_buildSearchTab(), _buildLeaderboardTab()],
             ),
           ),
         ],
@@ -207,9 +236,13 @@ class _PlayerViewState extends State<PlayerView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildStatsSection(),
+          const SizedBox(height: 32),
           Text(
             'Search Players',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           const Text('Search for players by Name or UID.'),
@@ -222,8 +255,17 @@ class _PlayerViewState extends State<PlayerView> {
                   decoration: InputDecoration(
                     hintText: 'Enter Nickname or UID...',
                     prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: _clearResults,
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
+                  onChanged: (v) => setState(() {}),
                   onSubmitted: (_) => _search(),
                 ),
               ),
@@ -231,11 +273,20 @@ class _PlayerViewState extends State<PlayerView> {
               ElevatedButton(
                 onPressed: _isSearching ? null : _search,
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: _isSearching
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text('Search'),
               ),
             ],
@@ -247,7 +298,13 @@ class _PlayerViewState extends State<PlayerView> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.people_outline, size: 64, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
+                        Icon(
+                          Icons.people_outline,
+                          size: 64,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.outline.withValues(alpha: 0.5),
+                        ),
                         const SizedBox(height: 16),
                         const Text('No players found. Try a different search.'),
                       ],
@@ -262,6 +319,85 @@ class _PlayerViewState extends State<PlayerView> {
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatsSection() {
+    return Row(
+      children: [
+        _buildStatCard(
+          'Total Players',
+          '${_stats['totalPlayers'] ?? 0}',
+          Icons.group,
+          Colors.blue,
+        ),
+        const SizedBox(width: 16),
+        _buildStatCard(
+          'Verified',
+          '${_stats['verifiedPlayers'] ?? 0}',
+          Icons.verified,
+          Colors.cyan,
+        ),
+        const SizedBox(width: 16),
+        _buildStatCard(
+          'Unverified',
+          '${_stats['unverifiedPlayers'] ?? 0}',
+          Icons.pending,
+          Colors.orange,
+        ),
+        const SizedBox(width: 16),
+        IconButton.filledTonal(
+          onPressed: _isLoadingStats ? null : _fetchStats,
+          icon: _isLoadingStats
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.refresh),
+          tooltip: 'Refresh Stats',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -288,7 +424,9 @@ class _PlayerViewState extends State<PlayerView> {
                   children: [
                     Text(
                       'Global Leaderboards',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       'Updated: ${_leaderboardData['lastUpdated'] != null ? AppFormatters.formatFullDateTime(DateTime.parse(_leaderboardData['lastUpdated'])) : "Never"}',
@@ -307,15 +445,30 @@ class _PlayerViewState extends State<PlayerView> {
             ],
           ),
           const SizedBox(height: 24),
-          _buildLeaderboardSection('Top Levels', topLevels, Icons.trending_up, Colors.blue),
+          _buildLeaderboardSection(
+            'Top Levels',
+            topLevels,
+            Icons.trending_up,
+            Colors.blue,
+          ),
           const SizedBox(height: 32),
-          _buildLeaderboardSection('Top Coins', topCoins, Icons.monetization_on, Colors.orange),
+          _buildLeaderboardSection(
+            'Top Coins',
+            topCoins,
+            Icons.monetization_on,
+            Colors.orange,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildLeaderboardSection(String title, List<dynamic> entries, IconData icon, Color color) {
+  Widget _buildLeaderboardSection(
+    String title,
+    List<dynamic> entries,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -323,7 +476,10 @@ class _PlayerViewState extends State<PlayerView> {
           children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(width: 8),
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -335,17 +491,38 @@ class _PlayerViewState extends State<PlayerView> {
             final p = e.value;
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: idx == 0 ? Colors.amber : (idx == 1 ? Colors.grey.shade300 : (idx == 2 ? Colors.orange.shade200 : Colors.blue.shade50)),
-                  child: Text('${idx + 1}', style: TextStyle(fontWeight: FontWeight.bold, color: idx < 3 ? Colors.black87 : Colors.blue)),
+                  backgroundColor: idx == 0
+                      ? Colors.amber
+                      : (idx == 1
+                            ? Colors.grey.shade300
+                            : (idx == 2
+                                  ? Colors.orange.shade200
+                                  : Colors.blue.shade50)),
+                  child: Text(
+                    '${idx + 1}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: idx < 3 ? Colors.black87 : Colors.blue,
+                    ),
+                  ),
                 ),
-                title: Text(p['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(
+                  p['name'],
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 subtitle: Text('LVL ${p['level']}'),
                 trailing: Text(
                   '${p['value']}',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: color,
+                  ),
                 ),
                 onTap: () => _showPlayerDetails(p['uid']),
               ),
@@ -364,13 +541,29 @@ class _PlayerViewState extends State<PlayerView> {
       ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: p['role'] == 'admin' ? Colors.deepPurple : Colors.blue.shade100,
+          backgroundColor: p['role'] == 'admin'
+              ? Colors.deepPurple
+              : Colors.blue.shade100,
           child: Icon(
             p['role'] == 'admin' ? Icons.admin_panel_settings : Icons.person,
             color: p['role'] == 'admin' ? Colors.white : Colors.blue,
           ),
         ),
-        title: Text(p['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                p['name'],
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (p['isVerified'] == true) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.verified, size: 16, color: Colors.blue),
+            ],
+          ],
+        ),
         subtitle: Text('LVL ${p['level']} • ${p['email'] ?? "No Email"}'),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => _showPlayerDetails(p['uid']),

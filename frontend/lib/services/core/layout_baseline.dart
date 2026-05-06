@@ -17,6 +17,16 @@ class LayoutBaseline extends ChangeNotifier {
   static const double targetHeight = 850.0;
   static const double targetAspectRatio = targetWidth / targetHeight;
 
+  /// Global Scale Factor: How much to scale the UI based on current dimensions.
+  double _scale = 1.0;
+  double get scale => _scale;
+
+  /// Sets the current scale based on the actual height vs target height.
+  void updateScale(double actualHeight) {
+    _scale = actualHeight / targetHeight;
+    notifyListeners();
+  }
+
   Future<void> initialize() async {
     // Default to black, we no longer support "white" padding to preserve aesthetic
     _pillarboxColor = pureBlack;

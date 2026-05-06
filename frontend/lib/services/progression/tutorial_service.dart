@@ -1,13 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:dreamhunter/services/core/storage_engine.dart';
 
-enum TutorialStep {
-  findBed,
-  upgradeBed,
-  upgradeDoor,
-  buildTurret,
-  completed,
-}
+enum TutorialStep { findBed, upgradeBed, upgradeDoor, buildTurret, completed }
 
 class TutorialService extends ChangeNotifier {
   static final TutorialService instance = TutorialService._internal();
@@ -22,7 +16,7 @@ class TutorialService extends ChangeNotifier {
 
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     final data = await StorageEngine.instance.getMetadata('tutorial_status');
     if (data != null) {
       final completed = data['completed'] as bool? ?? false;
@@ -32,7 +26,7 @@ class TutorialService extends ChangeNotifier {
         _currentStep = TutorialStep.findBed; // Rerun from start if not finished
       }
     }
-    
+
     _isInitialized = true;
     notifyListeners();
   }
@@ -65,7 +59,9 @@ class TutorialService extends ChangeNotifier {
   }
 
   String getQuestText(bool isSleeping) {
-    if (!isSleeping && _currentStep != TutorialStep.findBed && _currentStep != TutorialStep.completed) {
+    if (!isSleeping &&
+        _currentStep != TutorialStep.findBed &&
+        _currentStep != TutorialStep.completed) {
       return 'Quest: Find a bed to sleep in.';
     }
 

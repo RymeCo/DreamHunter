@@ -26,9 +26,19 @@ class PlayerService:
         if doc.exists:
             # Update email if missing (for legacy users)
             player_data = doc.to_dict()
+            updates = {}
             if not player_data.get("email") and user_info.email:
-                db.collection("players").document(uid).update({"email": user_info.email})
+                updates["email"] = user_info.email
                 player_data["email"] = user_info.email
+            
+            # Always sync verification status
+            if player_data.get("isVerified") != user_info.email_verified:
+                updates["isVerified"] = user_info.email_verified
+                player_data["isVerified"] = user_info.email_verified
+            
+            if updates:
+                db.collection("players").document(uid).update(updates)
+                
             return PlayerModel(**player_data)
         
         # Create new player if doesn't exist
@@ -36,6 +46,7 @@ class PlayerService:
             uid=uid,
             name=user_info.display_name or "Dreamer",
             email=user_info.email,
+            isVerified=user_info.email_verified,
             createdAt=datetime.now().isoformat(),
         )
         
@@ -98,6 +109,7 @@ class PlayerService:
         # 1. Fetch Top Levels (Level >= 1 for early stage)
         # Note: We fetch more than 50 to allow for Python-side filtering of banned users
         level_query = db.collection("players")\
+            .where("isVerified", "==", True)\
             .where("level", ">=", 1)\
             .order_by("level", direction="DESCENDING")\
             .limit(100).stream()
@@ -127,6 +139,7 @@ class PlayerService:
 
         # 2. Fetch Top Coins (Coins >= 100 for early stage)
         coin_query = db.collection("players")\
+            .where("isVerified", "==", True)\
             .where("coins", ">=", 100)\
             .order_by("coins", direction="DESCENDING")\
             .limit(100).stream()

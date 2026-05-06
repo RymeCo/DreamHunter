@@ -97,8 +97,15 @@ async def get_system_health(uid: str = Depends(get_admin_user)):
     try:
         player_count = db.collection("players").count().get()[0][0].value
     except Exception:
-        player_count = "Unknown"
+        player_count = 0
         
+    try:
+        verified_count = db.collection("players").where("isVerified", "==", True).count().get()[0][0].value
+    except Exception:
+        verified_count = 0
+
+    unverified_count = max(0, player_count - verified_count)
+
     try:
         banned_count = db.collection("players").where("isBannedPermanent", "==", True).count().get()[0][0].value
     except Exception:
@@ -118,6 +125,8 @@ async def get_system_health(uid: str = Depends(get_admin_user)):
     return {
         "status": "online",
         "totalPlayers": player_count,
+        "verifiedPlayers": verified_count,
+        "unverifiedPlayers": unverified_count,
         "bannedPlayers": banned_count,
         "newPlayersToday": new_today,
         "activeChatConnections": active_chats,

@@ -85,7 +85,7 @@ class _ChatViewState extends State<ChatView> {
         (data) {
           if (!mounted || _isDisposed) return;
           final json = jsonDecode(data);
-          
+
           if (json['type'] == 'delete') {
             final targetId = json['targetId'];
             setState(() {
@@ -117,12 +117,9 @@ class _ChatViewState extends State<ChatView> {
 
   Future<void> _censorMessageGlobal(String messageId) async {
     if (_channel == null) return;
-    
-    final payload = {
-      'type': 'delete',
-      'targetId': messageId,
-    };
-    
+
+    final payload = {'type': 'delete', 'targetId': messageId};
+
     _channel!.sink.add(jsonEncode(payload));
   }
 
@@ -136,7 +133,13 @@ class _ChatViewState extends State<ChatView> {
             children: [
               ListTile(
                 leading: const Icon(Icons.delete_forever, color: Colors.red),
-                title: const Text('Censor Globally', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                title: const Text(
+                  'Censor Globally',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 subtitle: const Text('Remove message for ALL players'),
                 onTap: () {
                   _censorMessageGlobal(message.id);
@@ -299,7 +302,7 @@ class _ChatViewState extends State<ChatView> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Column(
       children: [
         // Region & Status Bar
@@ -382,12 +385,15 @@ class _ChatViewState extends State<ChatView> {
 
         // Input Area
         Container(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16 + MediaQuery.of(context).viewInsets.bottom,
+          ),
           decoration: BoxDecoration(
             color: colorScheme.surface,
-            border: Border(
-              top: BorderSide(color: colorScheme.outlineVariant),
-            ),
+            border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
           ),
           child: Row(
             children: [
@@ -397,7 +403,9 @@ class _ChatViewState extends State<ChatView> {
                   decoration: InputDecoration(
                     hintText: 'Broadcast as ADMIN...',
                     filled: true,
-                    fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    fillColor: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.3,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
                       borderSide: BorderSide.none,
@@ -486,13 +494,13 @@ class _ChatMessageTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isSystem 
-                ? Colors.orange.withValues(alpha: 0.05) 
+            color: isSystem
+                ? Colors.orange.withValues(alpha: 0.05)
                 : colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSystem 
-                  ? Colors.orange.withValues(alpha: 0.2) 
+              color: isSystem
+                  ? Colors.orange.withValues(alpha: 0.2)
                   : colorScheme.outlineVariant.withValues(alpha: 0.5),
             ),
           ),
@@ -513,8 +521,8 @@ class _ChatMessageTile extends StatelessWidget {
                   Text(
                     AppFormatters.formatTime(message.timestamp),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: colorScheme.outline,
-                        ),
+                      color: colorScheme.outline,
+                    ),
                   ),
                 ],
               ),
@@ -523,7 +531,9 @@ class _ChatMessageTile extends StatelessWidget {
                 isCensored ? 'Content hidden by moderator' : message.text,
                 style: TextStyle(
                   fontStyle: isCensored ? FontStyle.italic : FontStyle.normal,
-                  color: isCensored ? colorScheme.outline : colorScheme.onSurface,
+                  color: isCensored
+                      ? colorScheme.outline
+                      : colorScheme.onSurface,
                   fontSize: 14,
                 ),
               ),

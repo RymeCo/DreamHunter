@@ -72,7 +72,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
 
     // Check if we have a pending relog notice from a previous sync
-    final pendingNotice = await StorageEngine.instance.getMetadata('relog_notice_pending');
+    final pendingNotice = await StorageEngine.instance.getMetadata(
+      'relog_notice_pending',
+    );
     if (pendingNotice != null) {
       setState(() => _showRelogNotice = true);
     }

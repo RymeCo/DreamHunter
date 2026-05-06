@@ -32,6 +32,21 @@ class AuthManager {
     await _auth.signOut();
   }
 
+  /// Sends a verification email to the current user.
+  Future<void> sendEmailVerification() async {
+    await _auth.currentUser?.sendEmailVerification();
+  }
+
+  /// Sends a password reset email to the specified email address.
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
+
+  /// Reloads the current user to refresh the emailVerified status.
+  Future<void> reloadUser() async {
+    await _auth.currentUser?.reload();
+  }
+
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 }

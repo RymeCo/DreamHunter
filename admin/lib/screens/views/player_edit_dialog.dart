@@ -19,6 +19,7 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
   late int _coins;
   late int _stones;
   late int _level;
+  late bool _isVerified;
   late bool _isBannedPermanent;
   late bool _isBannedFromChat;
   late bool _isBannedFromLeaderboard;
@@ -33,9 +34,11 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
     _coins = widget.player['coins'] ?? 0;
     _stones = widget.player['stones'] ?? 0;
     _level = widget.player['level'] ?? 1;
+    _isVerified = widget.player['isVerified'] ?? false;
     _isBannedPermanent = widget.player['isBannedPermanent'] ?? false;
     _isBannedFromChat = widget.player['isBannedFromChat'] ?? false;
-    _isBannedFromLeaderboard = widget.player['isBannedFromLeaderboard'] ?? false;
+    _isBannedFromLeaderboard =
+        widget.player['isBannedFromLeaderboard'] ?? false;
     _muteUntil = widget.player['muteUntil'];
     _banUntil = widget.player['banUntil'];
     _leaderboardHideUntil = widget.player['leaderboardHideUntil'];
@@ -101,11 +104,15 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
                 ),
                 ListTile(
                   title: const Text('Permanent'),
-                  onTap: () => Navigator.pop(context, {'until': null, 'perm': true}),
+                  onTap: () =>
+                      Navigator.pop(context, {'until': null, 'perm': true}),
                 ),
                 const Divider(),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
@@ -140,10 +147,19 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
                 ),
                 const Divider(),
                 ListTile(
-                  title: const Text('Lift Restriction',
-                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                  leading: const Icon(Icons.check_circle_outline, color: Colors.green),
-                  onTap: () => Navigator.pop(context, {'until': null, 'perm': false}),
+                  title: const Text(
+                    'Lift Restriction',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  leading: const Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.green,
+                  ),
+                  onTap: () =>
+                      Navigator.pop(context, {'until': null, 'perm': false}),
                 ),
               ],
             ),
@@ -175,17 +191,31 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Manage ${widget.player['name']}',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              'Manage ${widget.player['name']}',
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+                          if (_isVerified) ...[
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.verified,
+                              size: 20,
+                              color: Colors.blue,
+                            ),
+                          ],
+                        ],
                       ),
                       Text(
                         widget.player['email'] ?? widget.player['uid'],
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
                       ),
                     ],
                   ),
@@ -221,6 +251,16 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
                     ),
                     const SizedBox(height: 24),
                     _buildSectionTitle('Permissions'),
+                    SwitchListTile(
+                      title: const Text('Email Verified'),
+                      subtitle: const Text(
+                        'Manually toggle verification status',
+                      ),
+                      value: _isVerified,
+                      onChanged: (v) => setState(() => _isVerified = v),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: _role,
                       decoration: InputDecoration(
@@ -228,10 +268,15 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'player', child: Text('Player')),
+                        DropdownMenuItem(
+                          value: 'player',
+                          child: Text('Player'),
+                        ),
                         DropdownMenuItem(value: 'admin', child: Text('Admin')),
                       ],
                       onChanged: (v) => setState(() => _role = v!),
@@ -262,7 +307,10 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
                     ),
                     _buildRestrictionTile(
                       'Leaderboard',
-                      _formatStatus(_leaderboardHideUntil, _isBannedFromLeaderboard),
+                      _formatStatus(
+                        _leaderboardHideUntil,
+                        _isBannedFromLeaderboard,
+                      ),
                       Icons.visibility_off,
                       () => _showDurationPicker('Hide Duration', (until, perm) {
                         setState(() {
@@ -291,6 +339,7 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
                       'coins': _coins,
                       'stones': _stones,
                       'role': _role,
+                      'isVerified': _isVerified,
                       'isBannedPermanent': _isBannedPermanent,
                       'isBannedFromChat': _isBannedFromChat,
                       'isBannedFromLeaderboard': _isBannedFromLeaderboard,
@@ -300,8 +349,12 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
                     });
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer,
+                    foregroundColor: Theme.of(
+                      context,
+                    ).colorScheme.onPrimaryContainer,
                   ),
                   child: const Text('Save Changes'),
                 ),
@@ -341,7 +394,7 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
     VoidCallback onEdit,
   ) {
     final isActive = status.contains('Active') || status == 'N/A';
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: InkWell(
@@ -353,8 +406,8 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
             color: Theme.of(context).colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isActive 
-                  ? Theme.of(context).colorScheme.outlineVariant 
+              color: isActive
+                  ? Theme.of(context).colorScheme.outlineVariant
                   : Colors.red.withValues(alpha: 0.3),
             ),
           ),
@@ -368,13 +421,18 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
                     Text(
                       status,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isActive ? Theme.of(context).colorScheme.outline : Colors.red,
+                        color: isActive
+                            ? Theme.of(context).colorScheme.outline
+                            : Colors.red,
                       ),
                     ),
                   ],
@@ -447,15 +505,22 @@ class _PlayerEditDialogState extends State<PlayerEditDialog> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
               ),
               constraints: const BoxConstraints(minWidth: 80),
               child: Text(
                 '$value',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
