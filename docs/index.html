@@ -75,7 +75,7 @@
         }
 
         .brand img {
-            height: 48px;
+            height: 70px; /* Another 20% bigger than 58px */
             width: auto;
             filter: grayscale(1) brightness(2);
         }
@@ -101,14 +101,6 @@
             text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.5);
         }
 
-        .nav-email {
-            padding: 6px 14px;
-            border-radius: 4px;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            color: var(--primary) !important;
-        }
-
         /* --- ATMOSPHERIC HERO SECTION --- */
         .hero {
             text-align: center;
@@ -121,7 +113,7 @@
         }
 
         .hero-logo {
-            width: clamp(140px, 16vh, 280px);
+            width: clamp(240px, 26vh, 480px); /* Another 20% bigger */
             height: auto;
             margin-bottom: 32px;
             filter: drop-shadow(0 0 30px rgba(0,0,0,0.8));
@@ -267,8 +259,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 0 60px;
+            padding: 0 40px;
             text-align: center;
+            flex-shrink: 0;
         }
 
         .slide-tag {
@@ -281,11 +274,13 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            justify-content: center;
+            width: 100%;
         }
 
         .slide-tag::before, .slide-tag::after {
             content: '';
-            width: 30px;
+            width: 15px; /* Shorter lines */
             height: 1px;
             background: var(--primary);
             opacity: 0.3;
@@ -330,6 +325,72 @@
 
         .slider { animation: slide 20s infinite; }
 
+        /* --- MEDIA GALLERY --- */
+        .gallery-section {
+            width: 100%;
+            padding: 40px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .gallery-header {
+            font-size: 0.7rem;
+            font-weight: 900;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .gallery-header::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--glass-border);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            justify-items: center;
+        }
+
+        .gallery-item {
+            aspect-ratio: 9/19;
+            background: #000;
+            border: 4px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 260px;
+        }
+
+        .gallery-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(var(--primary-rgb), 0.2);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.8;
+            transition: all 0.5s ease;
+        }
+
+        .gallery-item:hover img {
+            opacity: 1;
+        }
+
         @media (max-width: 900px) {
             .platform-grid { grid-template-columns: repeat(2, 1fr); }
             body { height: auto; overflow-y: auto; }
@@ -350,9 +411,7 @@
                 <img src="assets/by_ryme.png" alt="Ryme">
             </a>
             <nav class="nav-links">
-                <a href="#">Overview</a>
-                <a href="#">Community</a>
-                <a href="mailto:ractenopen@gmail.com" class="nav-email">ractenopen@gmail.com</a>
+                <a href="mailto:ractenopen@gmail.com" class="nav-email">Contact Us</a>
             </nav>
         </header>
 
@@ -370,13 +429,13 @@
                     <b>iOS</b>
                     <span>Coming Soon</span>
                 </a>
-                <a href="#" class="platform-card">
+                <a href="#" class="platform-card disabled">
                     <b>Windows</b>
-                    <span>Early Access</span>
+                    <span>Coming Soon</span>
                 </a>
-                <a href="#" class="platform-card">
+                <a href="#" class="platform-card disabled">
                     <b>Linux</b>
-                    <span>Early Access</span>
+                    <span>Coming Soon</span>
                 </a>
             </div>
         </section>
