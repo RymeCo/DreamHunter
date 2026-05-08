@@ -70,13 +70,20 @@ class ChatService {
       }
 
       // 2. Prepare WebSocket URL
-      // Remove '/api' suffix from baseUrl for WebSocket path
-      final base = ApiGateway.baseUrl.replaceAll('/api', '');
-      final wsUrl = base
-          .replaceFirst('https://', 'wss://')
-          .replaceFirst('http://', 'ws://');
+      // Use robust Uri construction to handle schemes and query encoding
+      final baseUri = Uri.parse(ApiGateway.baseUrl);
+      final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
 
-      final uri = Uri.parse('$wsUrl/ws/chat/$region?token=$token');
+      // Cleanly append the websocket path segments
+      String path = baseUri.path;
+      if (!path.endsWith('/')) path += '/';
+      path += 'ws/chat/$region';
+
+      final uri = baseUri.replace(
+        scheme: wsScheme,
+        path: path,
+        queryParameters: {'token': token},
+      );
 
       // 3. Connect to WebSocket
       final channel = WebSocketChannel.connect(uri);
