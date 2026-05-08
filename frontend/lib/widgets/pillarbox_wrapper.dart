@@ -70,18 +70,20 @@ class PillarboxWrapper extends StatelessWidget {
                   child: SizedBox(
                     width: LayoutBaseline.targetWidth,
                     height: LayoutBaseline.targetHeight,
-                    child: MediaQuery(
-                      data: outerData.copyWith(
-                        size: const Size(
-                          LayoutBaseline.targetWidth,
-                          LayoutBaseline.targetHeight,
+                    child: ClipRect(
+                      child: MediaQuery(
+                        data: outerData.copyWith(
+                          size: const Size(
+                            LayoutBaseline.targetWidth,
+                            LayoutBaseline.targetHeight,
+                          ),
+                          padding: mappedPadding,
+                          viewPadding: mappedPadding, // Use mapped padding here
+                          viewInsets: mappedInsets,
+                          textScaler: const TextScaler.linear(1.0),
                         ),
-                        padding: mappedPadding,
-                        viewPadding: mappedPadding, // Use mapped padding here
-                        viewInsets: mappedInsets,
-                        textScaler: const TextScaler.linear(1.0),
+                        child: child,
                       ),
-                      child: child,
                     ),
                   ),
                 ),
