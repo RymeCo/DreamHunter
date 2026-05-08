@@ -213,8 +213,8 @@ class _PlayerViewState extends State<PlayerView> {
         children: [
           TabBar(
             tabs: const [
-              Tab(text: 'Player Management', icon: Icon(Icons.person_search)),
-              Tab(text: 'Leaderboard Viewer', icon: Icon(Icons.leaderboard)),
+              Tab(text: 'Players', icon: Icon(Icons.person_search)),
+              Tab(text: 'Leaderboard', icon: Icon(Icons.leaderboard)),
             ],
             labelColor: Theme.of(context).colorScheme.primary,
             unselectedLabelColor: Theme.of(context).colorScheme.outline,
@@ -324,41 +324,57 @@ class _PlayerViewState extends State<PlayerView> {
   }
 
   Widget _buildStatsSection() {
-    return Row(
-      children: [
-        _buildStatCard(
-          'Total Players',
-          '${_stats['totalPlayers'] ?? 0}',
-          Icons.group,
-          Colors.blue,
-        ),
-        const SizedBox(width: 16),
-        _buildStatCard(
-          'Verified',
-          '${_stats['verifiedPlayers'] ?? 0}',
-          Icons.verified,
-          Colors.cyan,
-        ),
-        const SizedBox(width: 16),
-        _buildStatCard(
-          'Unverified',
-          '${_stats['unverifiedPlayers'] ?? 0}',
-          Icons.pending,
-          Colors.orange,
-        ),
-        const SizedBox(width: 16),
-        IconButton.filledTonal(
-          onPressed: _isLoadingStats ? null : _fetchStats,
-          icon: _isLoadingStats
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.refresh),
-          tooltip: 'Refresh Stats',
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double itemWidth = (constraints.maxWidth - 48) / 3;
+        final bool isCompact = itemWidth < 100;
+
+        return Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            SizedBox(
+              width: isCompact ? null : itemWidth,
+              child: _buildStatCard(
+                'Total',
+                '${_stats['totalPlayers'] ?? 0}',
+                Icons.group,
+                Colors.blue,
+              ),
+            ),
+            SizedBox(
+              width: isCompact ? null : itemWidth,
+              child: _buildStatCard(
+                'Verified',
+                '${_stats['verifiedPlayers'] ?? 0}',
+                Icons.verified,
+                Colors.cyan,
+              ),
+            ),
+            SizedBox(
+              width: isCompact ? null : itemWidth,
+              child: _buildStatCard(
+                'Unverified',
+                '${_stats['unverifiedPlayers'] ?? 0}',
+                Icons.pending,
+                Colors.orange,
+              ),
+            ),
+            IconButton.filledTonal(
+              onPressed: _isLoadingStats ? null : _fetchStats,
+              icon: _isLoadingStats
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
+              tooltip: 'Refresh Stats',
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -368,36 +384,49 @@ class _PlayerViewState extends State<PlayerView> {
     IconData icon,
     Color color,
   ) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 12),
-            Text(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
               value,
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
             ),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.outline,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
