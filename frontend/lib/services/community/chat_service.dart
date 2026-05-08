@@ -70,7 +70,9 @@ class ChatService {
       }
 
       // 2. Prepare WebSocket URL
-      final wsUrl = ApiGateway.baseUrl
+      // Remove '/api' suffix from baseUrl for WebSocket path
+      final base = ApiGateway.baseUrl.replaceAll('/api', '');
+      final wsUrl = base
           .replaceFirst('https://', 'wss://')
           .replaceFirst('http://', 'ws://');
 

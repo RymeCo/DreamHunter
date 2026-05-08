@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
@@ -204,6 +205,9 @@ class BuildingSlotEntity extends BaseEntity with TapCallbacks {
     }
 
     if (newBuilding != null) {
+      developer.log(
+        '[DEBUG] Construction: Built $baseId (Lv $level) in room $roomID (Owner: ${owner?.hunterIndex ?? 'Unknown'})',
+      );
       game.world.add(newBuilding);
       removeFromParent();
       return true;

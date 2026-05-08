@@ -88,10 +88,11 @@ class FridgeEntity extends BaseEntity with TapCallbacks {
   }
 
   void _findDoor() {
-    // Find all doors and pick the one with matching roomID
-    for (final child in game.world.children) {
-      if (child is DoorEntity && child.roomID == roomID) {
-        _targetDoor = child;
+    // Optimized lookup using game's room-indexed buildings map
+    final buildings = game.getBuildingsInRoom(roomID);
+    for (final b in buildings) {
+      if (b is DoorEntity) {
+        _targetDoor = b;
         break;
       }
     }

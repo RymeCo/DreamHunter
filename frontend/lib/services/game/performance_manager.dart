@@ -14,11 +14,12 @@ class PerformanceManager extends ChangeNotifier {
 
   double _lowFPSDuration = 0.0;
   static const double lagThreshold = 25.0; // FPS below this is "laggy"
-  static const double sustainedDuration = 5.0; // Seconds of lag before notification
+  static const double sustainedDuration =
+      5.0; // Seconds of lag before notification
 
   void updateFPS(double dt) {
     if (dt <= 0) return;
-    
+
     // Smooth the FPS reading (Exponential Moving Average)
     final instantFPS = 1.0 / dt;
     _currentFPS = _currentFPS * 0.9 + instantFPS * 0.1;
@@ -28,7 +29,8 @@ class PerformanceManager extends ChangeNotifier {
       if (_lowFPSDuration >= sustainedDuration && !_isLagging) {
         _isLagging = true;
         notifyListeners();
-        AudioManager.instance.playError(); // Subtle alert
+        AudioManager.instance
+            .playClick(); // Use click instead of non-existent error sound
       }
     } else {
       // Recovery logic: Needs a bit of "good" performance to reset the warning

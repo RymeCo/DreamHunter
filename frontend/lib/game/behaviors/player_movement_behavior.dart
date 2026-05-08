@@ -51,6 +51,8 @@ class PlayerMovementBehavior extends Component
 
       if (!game.isPositionBlocked(hitboxX)) {
         parent.position.x = nextX;
+      } else {
+        // Optional: print('[DEBUG] Player blocked on X');
       }
 
       // Check Y movement
@@ -63,6 +65,8 @@ class PlayerMovementBehavior extends Component
 
       if (!game.isPositionBlocked(hitboxY)) {
         parent.position.y = nextY;
+      } else {
+        // Optional: print('[DEBUG] Player blocked on Y');
       }
 
       // Flip sprite based on movement direction

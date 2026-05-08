@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:dreamhunter/services/core/storage_engine.dart';
+// Removed unused StorageEngine import
 
 /// The bridge between the Flutter frontend and the FastAPI backend.
 class ApiGateway {
@@ -11,22 +11,14 @@ class ApiGateway {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// Fetches the ID token, prioritizing the local cache for O(1) speed.
+  /// Fetches the ID token from Firebase.
   Future<String?> getIdToken() async {
-    // 1. Try local cache first (Instant)
-    final cached = StorageEngine.instance.getCachedToken();
-    if (cached != null) return cached;
-
-    // 2. Fallback to Firebase (Network)
     final user = _auth.currentUser;
     if (user == null) return null;
 
-    final token = await user.getIdToken();
-    if (token != null) {
-      // Pre-warm the cache for the next call
-      await StorageEngine.instance.saveCachedToken(token);
-    }
-    return token;
+    // Firebase's internal SDK handles token caching and automatic refresh.
+    // Manual caching in StorageEngine is redundant and can lead to stale tokens.
+    return await user.getIdToken();
   }
 
   /// Generates headers with the Bearer token.

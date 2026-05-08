@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
@@ -152,6 +153,9 @@ class HunterMovementBehavior extends Component
       }
 
       if (bestBed != null) {
+        developer.log(
+          '[DEBUG] Hunter ${parent.hunterIndex} found new bed in room ${bestBed.roomID}',
+        );
         parent.repathCount++;
         parent.targetBed = bestBed;
         parent.targetBed.reservedBy = parent;
@@ -160,6 +164,9 @@ class HunterMovementBehavior extends Component
       }
     }
 
+    developer.log(
+      '[DEBUG] Hunter ${parent.hunterIndex} NO BED AVAILABLE. Wandering...',
+    );
     // 3. Last Resort: Wander
     _wanderToHallway();
   }

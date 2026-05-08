@@ -20,9 +20,7 @@ class UpdateDialog extends StatelessWidget {
           scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
           child: FadeTransition(
             opacity: animation,
-            child: Center(
-              child: UpdateDialog(info: info),
-            ),
+            child: Center(child: UpdateDialog(info: info)),
           ),
         );
       },
@@ -45,9 +43,9 @@ class UpdateDialog extends StatelessWidget {
               Text(
                 "Update Available",
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),

@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
@@ -148,6 +149,9 @@ class OreEntity extends BaseEntity with TapCallbacks {
     }
 
     if (success) {
+      developer.log(
+        'Upgrade: Ore in room $roomID upgraded to level $level (Owner: ${entity.hunterIndex ?? 'Unknown'})',
+      );
       level++;
       hp = maxHp; // Heal to max HP on upgrade
       _updateVisuals();

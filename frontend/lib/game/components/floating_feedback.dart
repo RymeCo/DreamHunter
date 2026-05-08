@@ -133,7 +133,7 @@ class FloatingFeedback extends PositionComponent {
       final fadeStart = duration * 0.5; // Start fading halfway through
       if (_timer > fadeStart) {
         _alpha = (1.0 - (_timer - fadeStart) / (duration - fadeStart)).clamp(
-          0.0,
+          0.001,
           1.0,
         );
         scale = Vector2.all(_alpha * baseScale);

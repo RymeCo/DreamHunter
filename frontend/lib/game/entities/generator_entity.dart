@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
@@ -237,6 +238,9 @@ class GeneratorEntity extends BaseEntity with TapCallbacks {
     }
 
     if (success) {
+      developer.log(
+        'Upgrade: Generator in room $roomID upgraded to level $level (Owner: ${entity.hunterIndex ?? 'Unknown'})',
+      );
       level++;
       hp = maxHp; // Heal to max HP on upgrade
 

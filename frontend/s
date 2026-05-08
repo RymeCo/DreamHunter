@@ -1,0 +1,2043 @@
+[mI/flutter ( 2788): [DEBUG] Pathfound in 35us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 31us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 50.8, LoS Checks/s: 46, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 36us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 44us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 29us (2 iterations, length: 2)
+[mI/Choreographer( 2788): Skipped 58 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 32us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 33.8, LoS Checks/s: 32, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 25us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 21us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 24us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 26us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.4, LoS Checks/s: 36, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 30us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 23us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 36us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 31.8, LoS Checks/s: 32, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 49us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 45us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 43us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 23us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Upgrade: Door in room room_12 upgraded to level 3 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 34.8, LoS Checks/s: 33, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 44us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 42us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 64us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 36us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 29.3, LoS Checks/s: 30, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 26us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 30us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 36us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 42us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 30.8, LoS Checks/s: 31, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 44us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 42us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 43us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Construction: Built turret (Lv 1) in room room_5 (Owner: 4)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 47us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 29.6, LoS Checks/s: 29, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 42us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 22us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 21us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.5, LoS Checks/s: 41, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 23us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 40us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 34us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 30us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.7, LoS Checks/s: 39, Collision Checks/s: 0
+[mI/Choreographer( 2788): Skipped 47 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 58us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 20us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 38us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Upgrade: Door in room room_10 upgraded to level 3 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 44us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.3, LoS Checks/s: 41, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 40us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 32us (2 iterations, length: 2)
+[mI/Choreographer( 2788): Skipped 39 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 28us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 20us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 44.0, LoS Checks/s: 41, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 29us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Upgrade: Bed in room room_8 upgraded to level 3 (Owner: 5)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 34us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 32us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 27us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.2, LoS Checks/s: 40, Collision Checks/s: 0
+[mI/Choreographer( 2788): Skipped 34 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 40us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 35us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 21us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 40us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.6, LoS Checks/s: 44, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 40us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 19us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 20us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.9, LoS Checks/s: 42, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 33us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 29us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 20us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 32us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.9, LoS Checks/s: 41, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 90us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 33us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 26us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 45us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.6, LoS Checks/s: 38, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 38us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 26us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 345us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 75us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 50.5, LoS Checks/s: 45, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 29us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 28us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 25us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 38us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 34.2, LoS Checks/s: 35, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 27us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 24us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 18us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.3, LoS Checks/s: 41, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 57us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 39us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 32us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 40us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.7, LoS Checks/s: 44, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 23us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 18us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 34us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 20us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.2, LoS Checks/s: 44, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 34us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 28us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 32us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 33us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.0, LoS Checks/s: 38, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 65us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 36us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 33us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 22us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.3, LoS Checks/s: 42, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 37us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 35us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 31us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 28us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.0, LoS Checks/s: 45, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 32us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 23us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 22us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 31us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.4, LoS Checks/s: 42, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 21us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 29us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 34us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 21us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.7, LoS Checks/s: 43, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 20us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 22us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 38us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 45.7, LoS Checks/s: 44, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 25us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 33us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: DoorEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 352.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 21us (2 iterations, length: 2)
+[mI/flutter ( 2788): [DEBUG] Pathfound in 29us (4 iterations, length: 4)
+[mI/flutter ( 2788): [DEBUG] Monster State: MonsterState.attacking -> MonsterState.hunting
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: BedEntity(
+[mI/flutter ( 2788):   position: Vector2(832.0, 416.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(848.0, 430.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 90us (4 iterations, length: 4)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.0, LoS Checks/s: 33, Collision Checks/s: 7
+[mI/flutter ( 2788): [DEBUG] Upgrade: Bed in room room_10 upgraded to level 4 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] Monster State: MonsterState.hunting -> MonsterState.attacking
+[mI/Choreographer( 2788): Skipped 36 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Upgrade: Door in room room_8 upgraded to level 3 (Owner: 5)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 44.4, LoS Checks/s: 32, Collision Checks/s: 7
+[mI/flutter ( 2788): [DEBUG] Pathfound in 130us (12 iterations, length: 8)
+[mI/flutter ( 2788): [DEBUG] Monster State: MonsterState.attacking -> MonsterState.hunting
+[mI/flutter ( 2788): [DEBUG] Upgrade: Bed in room room_12 upgraded to level 4 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 49.5, LoS Checks/s: 18, Collision Checks/s: 28
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 49.5, LoS Checks/s: 4, Collision Checks/s: 37
+[mI/flutter ( 2788): [DEBUG] Monster State: MonsterState.hunting -> MonsterState.attacking
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.6, LoS Checks/s: 42, Collision Checks/s: 2
+[mI/Choreographer( 2788): Skipped 46 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 52.3, LoS Checks/s: 45, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 46.8, LoS Checks/s: 44, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.7, LoS Checks/s: 40, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Door in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 27us (3 iterations, length: 3)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 34.4, LoS Checks/s: 38, Collision Checks/s: 0
+[mI/Choreographer( 2788): Skipped 69 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.7, LoS Checks/s: 40, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.5, LoS Checks/s: 47, Collision Checks/s: 0
+[mI/Choreographer( 2788): Skipped 55 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.9, LoS Checks/s: 44, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 46.4, LoS Checks/s: 49, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.2, LoS Checks/s: 41, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Pathfound in 116us (25 iterations, length: 11)
+[mI/flutter ( 2788): [DEBUG] Monster State: MonsterState.attacking -> MonsterState.hunting
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 44.6, LoS Checks/s: 42, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] Monster Aggro Switch: BedEntity(
+[mI/flutter ( 2788):   position: Vector2(1088.0, 128.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 32.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): ) -> HunterAIEntity(
+[mI/flutter ( 2788):   position: Vector2(1104.0, 142.0),
+[mI/flutter ( 2788):   size: Vector2(32.0, 24.0),
+[mI/flutter ( 2788):   angle: 0.0,
+[mI/flutter ( 2788):   scale: [1.0,1.0],
+[mI/flutter ( 2788): )
+[mI/flutter ( 2788): [DEBUG] Pathfound in 124us (15 iterations, length: 9)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 47.5, LoS Checks/s: 2, Collision Checks/s: 37
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.1, LoS Checks/s: 0, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] Monster State: MonsterState.hunting -> MonsterState.attacking
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.4, LoS Checks/s: 2, Collision Checks/s: 33
+[mI/Choreographer( 2788): Skipped 49 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 48us (3 iterations, length: 3)
+[mI/flutter ( 2788): [DEBUG] Monster State: MonsterState.attacking -> MonsterState.hunting
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 351us (27 iterations, length: 16)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.3, LoS Checks/s: 38, Collision Checks/s: 0
+[mI/flutter ( 2788): [DEBUG] Construction: Built turret (Lv 1) in room room_8 (Owner: 5)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 48.1, LoS Checks/s: 0, Collision Checks/s: 39
+[mI/Choreographer( 2788): Skipped 57 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 45.5, LoS Checks/s: 0, Collision Checks/s: 36
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.9, LoS Checks/s: 2, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 46.0, LoS Checks/s: 4, Collision Checks/s: 37
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 222us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.8, LoS Checks/s: 5, Collision Checks/s: 34
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.7, LoS Checks/s: 5, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 46.3, LoS Checks/s: 4, Collision Checks/s: 38
+[mI/flutter ( 2788): [DEBUG] Upgrade: Bed in room room_10 upgraded to level 5 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 45.8, LoS Checks/s: 0, Collision Checks/s: 37
+[mI/Choreographer( 2788): Skipped 58 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.6, LoS Checks/s: 0, Collision Checks/s: 34
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 211us (25 iterations, length: 15)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.9, LoS Checks/s: 1, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/Choreographer( 2788): Skipped 57 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 45.6, LoS Checks/s: 0, Collision Checks/s: 35
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.6, LoS Checks/s: 3, Collision Checks/s: 36
+[mI/Choreographer( 2788): Skipped 47 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 48.0, LoS Checks/s: 4, Collision Checks/s: 37
+[mI/flutter ( 2788): [DEBUG] Upgrade: Turret in room room_8 upgraded to level 1 (Owner: 5)
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 364us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] Construction: Built turret (Lv 1) in room room_9 (Owner: 3)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.8, LoS Checks/s: 5, Collision Checks/s: 30
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 39us (6 iterations, length: 6)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.3, LoS Checks/s: 5, Collision Checks/s: 28
+[mI/Choreographer( 2788): Skipped 57 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.5, LoS Checks/s: 5, Collision Checks/s: 32
+[mD/MediaCodecList( 2788): codecHandlesFormat: no format, so no extra checks
+[mI/OMXClient( 2788): IOmx service obtained
+[mD/MediaCodec( 2788): flushMediametrics
+[mD/MediaCodec( 2788): flushMediametrics
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 313us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.8, LoS Checks/s: 5, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.0, LoS Checks/s: 5, Collision Checks/s: 32
+[mI/Choreographer( 2788): Skipped 46 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.2, LoS Checks/s: 2, Collision Checks/s: 35
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 46.6, LoS Checks/s: 0, Collision Checks/s: 34
+[mI/Choreographer( 2788): Skipped 58 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Upgrade: Door in room room_10 upgraded to level 4 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 155us (25 iterations, length: 15)
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.3, LoS Checks/s: 1, Collision Checks/s: 27
+[mI/Choreographer( 2788): Skipped 44 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 45.4, LoS Checks/s: 0, Collision Checks/s: 31
+[mI/Choreographer( 2788): Skipped 49 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_10 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.1, LoS Checks/s: 1, Collision Checks/s: 34
+[mI/Choreographer( 2788): Skipped 58 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.0, LoS Checks/s: 4, Collision Checks/s: 29
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.5, LoS Checks/s: 4, Collision Checks/s: 31
+[mI/Choreographer( 2788): Skipped 51 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 348us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.0, LoS Checks/s: 6, Collision Checks/s: 32
+[mI/Choreographer( 2788): Skipped 49 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 44.5, LoS Checks/s: 4, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.8, LoS Checks/s: 2, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_10 (Owner: 0)
+[mI/Choreographer( 2788): Skipped 34 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.2, LoS Checks/s: 0, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 219us (25 iterations, length: 15)
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 54us (4 iterations, length: 4)
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 258us (25 iterations, length: 15)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.9, LoS Checks/s: 2, Collision Checks/s: 29
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 46.2, LoS Checks/s: 0, Collision Checks/s: 38
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.3, LoS Checks/s: 0, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.6, LoS Checks/s: 4, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.1, LoS Checks/s: 4, Collision Checks/s: 35
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 260us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.9, LoS Checks/s: 5, Collision Checks/s: 33
+[mI/Choreographer( 2788): Skipped 50 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.5, LoS Checks/s: 5, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.3, LoS Checks/s: 2, Collision Checks/s: 28
+[mI/Choreographer( 2788): Skipped 55 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.5, LoS Checks/s: 0, Collision Checks/s: 28
+[mI/flutter ( 2788): [DEBUG] Upgrade: Bed in room room_8 upgraded to level 4 (Owner: 5)
+[mI/Choreographer( 2788): Skipped 63 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 136us (25 iterations, length: 15)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.0, LoS Checks/s: 1, Collision Checks/s: 28
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.8, LoS Checks/s: 0, Collision Checks/s: 31
+[mI/Choreographer( 2788): Skipped 42 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.1, LoS Checks/s: 0, Collision Checks/s: 31
+[mI/Choreographer( 2788): Skipped 45 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 44.3, LoS Checks/s: 4, Collision Checks/s: 35
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.4, LoS Checks/s: 4, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 243us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] Upgrade: Door in room room_10 upgraded to level 5 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.6, LoS Checks/s: 6, Collision Checks/s: 33
+[mI/Choreographer( 2788): Skipped 39 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 71us (7 iterations, length: 7)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.3, LoS Checks/s: 4, Collision Checks/s: 27
+[mI/Choreographer( 2788): Skipped 37 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.4, LoS Checks/s: 5, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 257us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/Choreographer( 2788): Skipped 46 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.9, LoS Checks/s: 6, Collision Checks/s: 30
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.4, LoS Checks/s: 4, Collision Checks/s: 31
+[mI/Choreographer( 2788): Skipped 54 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.5, LoS Checks/s: 4, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.4, LoS Checks/s: 0, Collision Checks/s: 31
+[mI/Choreographer( 2788): Skipped 47 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.7, LoS Checks/s: 0, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 239us (25 iterations, length: 15)
+[mI/Choreographer( 2788): Skipped 44 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.6, LoS Checks/s: 1, Collision Checks/s: 31
+[mI/Choreographer( 2788): Skipped 40 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 44.4, LoS Checks/s: 0, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.8, LoS Checks/s: 3, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.8, LoS Checks/s: 4, Collision Checks/s: 34
+[mI/flutter ( 2788): [DEBUG] Upgrade: Door in room room_8 upgraded to level 4 (Owner: 5)
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 283us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 31.8, LoS Checks/s: 6, Collision Checks/s: 27
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.0, LoS Checks/s: 4, Collision Checks/s: 28
+[mI/Choreographer( 2788): Skipped 66 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.2, LoS Checks/s: 3, Collision Checks/s: 29
+[mI/Choreographer( 2788): Skipped 45 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.7, LoS Checks/s: 0, Collision Checks/s: 30
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 209us (23 iterations, length: 14)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.7, LoS Checks/s: 0, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.1, LoS Checks/s: 0, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 33.6, LoS Checks/s: 1, Collision Checks/s: 27
+[mI/Choreographer( 2788): Skipped 49 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.1, LoS Checks/s: 4, Collision Checks/s: 28
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 239us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.0, LoS Checks/s: 6, Collision Checks/s: 32
+[mI/Choreographer( 2788): Skipped 44 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.5, LoS Checks/s: 4, Collision Checks/s: 30
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.8, LoS Checks/s: 5, Collision Checks/s: 36
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.9, LoS Checks/s: 1, Collision Checks/s: 28
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 47.3, LoS Checks/s: 0, Collision Checks/s: 37
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_8 (Owner: 5)
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 373us (25 iterations, length: 15)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.7, LoS Checks/s: 1, Collision Checks/s: 28
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.8, LoS Checks/s: 0, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.4, LoS Checks/s: 2, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.7, LoS Checks/s: 4, Collision Checks/s: 35
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 312us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.5, LoS Checks/s: 5, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.9, LoS Checks/s: 5, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 98us (7 iterations, length: 7)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.9, LoS Checks/s: 5, Collision Checks/s: 29
+[mI/flutter ( 2788): [DEBUG] Upgrade: Door in room room_10 upgraded to level 6 (Owner: 0)
+[mI/Choreographer( 2788): Skipped 30 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 46.2, LoS Checks/s: 4, Collision Checks/s: 36
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 448us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.0, LoS Checks/s: 6, Collision Checks/s: 34
+[mI/Choreographer( 2788): Skipped 40 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.1, LoS Checks/s: 5, Collision Checks/s: 31
+[mI/Choreographer( 2788): Skipped 42 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.8, LoS Checks/s: 2, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.5, LoS Checks/s: 0, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 209us (25 iterations, length: 15)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.8, LoS Checks/s: 1, Collision Checks/s: 31
+[mI/Choreographer( 2788): Skipped 44 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.4, LoS Checks/s: 0, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.6, LoS Checks/s: 0, Collision Checks/s: 33
+[mI/Choreographer( 2788): Skipped 47 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.7, LoS Checks/s: 5, Collision Checks/s: 35
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.7, LoS Checks/s: 4, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 285us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.9, LoS Checks/s: 5, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.9, LoS Checks/s: 5, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] Upgrade: Turret in room room_8 upgraded to level 2 (Owner: 5)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.4, LoS Checks/s: 2, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.5, LoS Checks/s: 0, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 292us (25 iterations, length: 15)
+[mD/MediaCodecList( 2788): codecHandlesFormat: no format, so no extra checks
+[mI/OMXClient( 2788): IOmx service obtained
+[mD/MediaCodec( 2788): flushMediametrics
+[mD/MediaCodec( 2788): flushMediametrics
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.9, LoS Checks/s: 0, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.9, LoS Checks/s: 0, Collision Checks/s: 30
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.1, LoS Checks/s: 2, Collision Checks/s: 30
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.1, LoS Checks/s: 3, Collision Checks/s: 29
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 435us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.0, LoS Checks/s: 6, Collision Checks/s: 30
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.1, LoS Checks/s: 5, Collision Checks/s: 35
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.2, LoS Checks/s: 4, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.6, LoS Checks/s: 0, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.2, LoS Checks/s: 0, Collision Checks/s: 34
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 209us (25 iterations, length: 15)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.0, LoS Checks/s: 1, Collision Checks/s: 30
+[mI/flutter ( 2788): [DEBUG] Upgrade: Bed in room room_10 upgraded to level 6 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 41.5, LoS Checks/s: 0, Collision Checks/s: 33
+[mI/Choreographer( 2788): Skipped 43 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.8, LoS Checks/s: 1, Collision Checks/s: 30
+[mI/flutter ( 2788): [DEBUG] Construction: Built fridge (Lv 1) in room room_12 (Owner: 1)
+[mI/Choreographer( 2788): Skipped 47 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.4, LoS Checks/s: 4, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 300us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.3, LoS Checks/s: 5, Collision Checks/s: 32
+[mI/Choreographer( 2788): Skipped 42 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.4, LoS Checks/s: 5, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 48us (7 iterations, length: 7)
+[mI/Choreographer( 2788): Skipped 32 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.8, LoS Checks/s: 5, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 329us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.3, LoS Checks/s: 6, Collision Checks/s: 32
+[mI/Choreographer( 2788): Skipped 40 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.7, LoS Checks/s: 5, Collision Checks/s: 33
+[mI/Choreographer( 2788): Skipped 39 frames!  The application may be doing too much work on its main thread.
+[mI/Choreographer( 2788): Skipped 32 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.5, LoS Checks/s: 4, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.8, LoS Checks/s: 1, Collision Checks/s: 34
+[mI/Choreographer( 2788): Skipped 43 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 34.0, LoS Checks/s: 0, Collision Checks/s: 29
+[mI/Choreographer( 2788): Skipped 47 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 885us (25 iterations, length: 15)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 34.2, LoS Checks/s: 1, Collision Checks/s: 26
+[mI/Choreographer( 2788): Skipped 35 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 34.5, LoS Checks/s: 0, Collision Checks/s: 30
+[mI/Choreographer( 2788): Skipped 39 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.7, LoS Checks/s: 1, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] Upgrade: Bed in room room_8 upgraded to level 5 (Owner: 5)
+[mI/Choreographer( 2788): Skipped 41 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Upgrade: Generator in room room_10 upgraded to level 1 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.5, LoS Checks/s: 3, Collision Checks/s: 29
+[mI/Choreographer( 2788): Skipped 52 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 307us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.5, LoS Checks/s: 6, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] Upgrade: Generator in room room_10 upgraded to level 1 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.4, LoS Checks/s: 4, Collision Checks/s: 28
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.7, LoS Checks/s: 5, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/Choreographer( 2788): Skipped 41 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.9, LoS Checks/s: 1, Collision Checks/s: 30
+[mI/Choreographer( 2788): Skipped 46 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.5, LoS Checks/s: 0, Collision Checks/s: 29
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 211us (25 iterations, length: 15)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 30.0, LoS Checks/s: 0, Collision Checks/s: 23
+[mI/Choreographer( 2788): Skipped 54 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.7, LoS Checks/s: 0, Collision Checks/s: 29
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 32.1, LoS Checks/s: 2, Collision Checks/s: 28
+[mI/Choreographer( 2788): Skipped 37 frames!  The application may be doing too much work on its main thread.
+[mI/Choreographer( 2788): Skipped 35 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.7, LoS Checks/s: 4, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 408us (44 iterations, length: 17)
+[mI/Choreographer( 2788): Skipped 32 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.1, LoS Checks/s: 6, Collision Checks/s: 32
+[mI/Choreographer( 2788): Skipped 32 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 37.1, LoS Checks/s: 4, Collision Checks/s: 29
+[mI/flutter ( 2788): [DEBUG] Upgrade: Turret in room room_8 upgraded to level 3 (Owner: 5)
+[mI/Choreographer( 2788): Skipped 35 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.4, LoS Checks/s: 5, Collision Checks/s: 33
+[mI/Choreographer( 2788): Skipped 34 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.9, LoS Checks/s: 0, Collision Checks/s: 34
+[mD/MediaCodecList( 2788): codecHandlesFormat: no format, so no extra checks
+[mI/OMXClient( 2788): IOmx service obtained
+[mD/MediaCodec( 2788): flushMediametrics
+[mD/MediaCodec( 2788): flushMediametrics
+[mI/Choreographer( 2788): Skipped 43 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Construction: Built turret (Lv 1) in room room_10 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 31.2, LoS Checks/s: 0, Collision Checks/s: 27
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 211us (25 iterations, length: 15)
+[mI/Choreographer( 2788): Skipped 44 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Upgrade: Turret in room room_10 upgraded to level 1 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 33.6, LoS Checks/s: 1, Collision Checks/s: 27
+[mI/Choreographer( 2788): Skipped 40 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.8, LoS Checks/s: 0, Collision Checks/s: 30
+[mD/MediaCodecList( 2788): codecHandlesFormat: no format, so no extra checks
+[mI/OMXClient( 2788): IOmx service obtained
+[mD/MediaCodec( 2788): flushMediametrics
+[mD/MediaCodec( 2788): flushMediametrics
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 34.6, LoS Checks/s: 3, Collision Checks/s: 33
+[mI/Choreographer( 2788): Skipped 46 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Upgrade: Turret in room room_10 upgraded to level 2 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 34.5, LoS Checks/s: 3, Collision Checks/s: 29
+[mI/Choreographer( 2788): Skipped 54 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 420us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 34.3, LoS Checks/s: 6, Collision Checks/s: 28
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 31.4, LoS Checks/s: 5, Collision Checks/s: 27
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 78us (6 iterations, length: 6)
+[mI/flutter ( 2788): [DEBUG] Upgrade: Generator in room room_10 upgraded to level 2 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 31.7, LoS Checks/s: 5, Collision Checks/s: 22
+[mI/Choreographer( 2788): Skipped 60 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 341us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 33.2, LoS Checks/s: 5, Collision Checks/s: 28
+[mI/Choreographer( 2788): Skipped 38 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 33.4, LoS Checks/s: 5, Collision Checks/s: 28
+[mI/Choreographer( 2788): Skipped 37 frames!  The application may be doing too much work on its main thread.
+[mI/Choreographer( 2788): Skipped 36 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 34.2, LoS Checks/s: 4, Collision Checks/s: 29
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 39.5, LoS Checks/s: 0, Collision Checks/s: 36
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 43.1, LoS Checks/s: 0, Collision Checks/s: 33
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 251us (25 iterations, length: 15)
+[mI/Choreographer( 2788): Skipped 40 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 40.0, LoS Checks/s: 1, Collision Checks/s: 30
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/Choreographer( 2788): Skipped 33 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 32.0, LoS Checks/s: 0, Collision Checks/s: 29
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.3, LoS Checks/s: 3, Collision Checks/s: 31
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.4, LoS Checks/s: 4, Collision Checks/s: 32
+[mI/Choreographer( 2788): Skipped 31 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 751us (44 iterations, length: 17)
+[mI/Choreographer( 2788): Skipped 33 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 33.1, LoS Checks/s: 5, Collision Checks/s: 30
+[mI/Choreographer( 2788): Skipped 34 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 42.5, LoS Checks/s: 5, Collision Checks/s: 30
+[mI/flutter ( 2788): [DEBUG] Upgrade: Generator in room room_10 upgraded to level 2 (Owner: 0)
+[mI/Choreographer( 2788): Skipped 34 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 33.7, LoS Checks/s: 5, Collision Checks/s: 28
+[mI/flutter ( 2788): [DEBUG] Upgrade: Door in room room_8 upgraded to level 5 (Owner: 5)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 33.6, LoS Checks/s: 0, Collision Checks/s: 29
+[mI/Choreographer( 2788): Skipped 42 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.0, LoS Checks/s: 0, Collision Checks/s: 28
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 470us (23 iterations, length: 14)
+[mI/Choreographer( 2788): Skipped 39 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.6, LoS Checks/s: 0, Collision Checks/s: 28
+[mI/Choreographer( 2788): Skipped 30 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.7, LoS Checks/s: 0, Collision Checks/s: 30
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 34.3, LoS Checks/s: 4, Collision Checks/s: 26
+[mI/Choreographer( 2788): Skipped 49 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 29.9, LoS Checks/s: 4, Collision Checks/s: 27
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 321us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 36.2, LoS Checks/s: 6, Collision Checks/s: 29
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.9, LoS Checks/s: 4, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 38.4, LoS Checks/s: 3, Collision Checks/s: 32
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] Construction: Built ore (Lv 1) in room room_10 (Owner: 0)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 35.6, LoS Checks/s: 0, Collision Checks/s: 32
+[mI/Choreographer( 2788): Skipped 46 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 1238us (25 iterations, length: 15)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 30.6, LoS Checks/s: 1, Collision Checks/s: 27
+[mI/Choreographer( 2788): Skipped 55 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 30.0, LoS Checks/s: 0, Collision Checks/s: 26
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 29.8, LoS Checks/s: 0, Collision Checks/s: 26
+[mI/Choreographer( 2788): Skipped 80 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 29.1, LoS Checks/s: 4, Collision Checks/s: 25
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 28.1, LoS Checks/s: 4, Collision Checks/s: 24
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 1073us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 22.9, LoS Checks/s: 5, Collision Checks/s: 18
+[mI/flutter ( 2788): [DEBUG] Upgrade: Turret in room room_8 upgraded to level 4 (Owner: 5)
+[mI/Choreographer( 2788): Skipped 161 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 99us (6 iterations, length: 6)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 22.4, LoS Checks/s: 5, Collision Checks/s: 17
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 25.4, LoS Checks/s: 4, Collision Checks/s: 19
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 384us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 26.8, LoS Checks/s: 6, Collision Checks/s: 24
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 24.1, LoS Checks/s: 5, Collision Checks/s: 19
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 22.8, LoS Checks/s: 2, Collision Checks/s: 19
+[mI/flutter ( 2788): [DEBUG] Construction: Built generator (Lv 1) in room room_12 (Owner: 1)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 26.0, LoS Checks/s: 0, Collision Checks/s: 22
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 336us (25 iterations, length: 15)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 26.9, LoS Checks/s: 1, Collision Checks/s: 23
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 20.5, LoS Checks/s: 0, Collision Checks/s: 15
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 20.1, LoS Checks/s: 0, Collision Checks/s: 18
+[mI/Choreographer( 2788): Skipped 255 frames!  The application may be doing too much work on its main thread.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 15.9, LoS Checks/s: 3, Collision Checks/s: 13
+[mI/flutter ( 2788): [DEBUG] Upgrade: Door in room room_9 upgraded to level 0 (Owner: 3)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 15.8, LoS Checks/s: 3, Collision Checks/s: 12
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 357us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 21.0, LoS Checks/s: 5, Collision Checks/s: 16
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 20.7 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 20.2 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 19.7 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 23.6 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 23.2 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 21.6 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 20.9 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 20.4 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 19.8 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 19.3 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 18.9 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 18.5 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 18.2 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 17.6 FPS
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 17.6, LoS Checks/s: 5, Collision Checks/s: 13
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 17.0 FPS
+[mD/MediaCodecList( 2788): codecHandlesFormat: no format, so no extra checks
+[mI/OMXClient( 2788): IOmx service obtained
+[mD/MediaCodec( 2788): flushMediametrics
+[mD/MediaCodec( 2788): flushMediametrics
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 16.5 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 16.1 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 15.6 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 15.3 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 14.9 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 14.7 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 14.4 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 14.2 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 14.2 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 14.0 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 13.8 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 13.9 FPS
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 13.9, LoS Checks/s: 4, Collision Checks/s: 11
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 13.5 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 13.4 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 13.2 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 13.0 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 12.8 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 12.7 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 12.7 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 12.6 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 12.2 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 12.2 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 12.2 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 12.1 FPS
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 12.1, LoS Checks/s: 1, Collision Checks/s: 9
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 11.9 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 11.9 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 11.9 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 12.0 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 11.9 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 11.8 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 11.8 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 11.8 FPS
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_5
+[mI/flutter ( 2788): [DEBUG] Pathfound in 382us (19 iterations, length: 12)
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 11.6 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 11.4 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 11.2 FPS
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 11.2, LoS Checks/s: 0, Collision Checks/s: 7
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 10.9 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 10.6 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 10.1 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 10.1 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 10.1 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.9 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.8 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.8 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.7 FPS
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 9.7, LoS Checks/s: 0, Collision Checks/s: 6
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.3 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.2 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.1 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.0 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.1 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.2 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.3 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.1 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.1 FPS
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 9.1, LoS Checks/s: 4, Collision Checks/s: 7
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.0 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 9.0 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 8.9 FPS
+[mI/flutter ( 2788): [DEBUG] LAG DETECTED: 8.9 FPS
+
+[m══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞═════════════════════════════════════════════════════════
+[mThe following assertion was thrown during paint():
+[m'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+
+[mThe relevant error-causing widget was:
+[m  RenderGameWidget
+[m  RenderGameWidget:file:///home/ryme/.pub-cache/hosted/pub.dev/flame-1.36.0/lib/src/game/game_widget/game_widget.dart:356:36
+
+[mWhen the exception was thrown, this was the stack:
+[m#2      _NativeCanvas.drawImageRect (dart:ui/painting.dart:7471:12)
+[m#3      Sprite.render (package:flame/src/sprite.dart:164:12)
+[m#4      SpriteComponent.render (package:flame/src/components/sprite_component.dart:126:13)
+[m#5      Component.renderTree (package:flame/src/components/core/component.dart:587:5)
+[m#6      Transform2DDecorator.apply (package:flame/src/rendering/transform2d_decorator.dart:20:9)
+[m#7      Decorator.applyChain (package:flame/src/rendering/decorator.dart:38:5)
+[m#8      PositionComponent.renderTree (package:flame/src/components/position_component.dart:523:15)
+[m#9      Component.renderTree (package:flame/src/components/core/component.dart:595:15)
+[m#10     Transform2DDecorator.apply (package:flame/src/rendering/transform2d_decorator.dart:20:9)
+[m#11     Decorator.applyChain (package:flame/src/rendering/decorator.dart:38:5)
+[m#12     PositionComponent.renderTree (package:flame/src/components/position_component.dart:523:15)
+[m#13     Component.renderTree (package:flame/src/components/core/component.dart:595:15)
+[m#14     World.renderFromCamera (package:flame/src/camera/world.dart:33:11)
+[m#15     CameraComponent.renderTree.renderWorld (package:flame/src/camera/camera_component.dart:208:18)
+[m#16     CameraComponent.renderTree (package:flame/src/camera/camera_component.dart:232:11)
+[m#17     FlameGame.renderTree (package:flame/src/game/flame_game.dart:168:17)
+[m#18     FlameGame.render (package:flame/src/game/flame_game.dart:158:7)
+[m#19     GameRenderBox.paint (package:flame/src/game/game_render_box.dart:149:10)
+[m#20     RenderObject._paintWithContext (package:flutter/src/rendering/object.dart:3429:7)
+[m#21     PaintingContext._repaintCompositedChild (package:flutter/src/rendering/object.dart:180:11)
+[m#22     PaintingContext.repaintCompositedChild (package:flutter/src/rendering/object.dart:125:5)
+[m#23     PipelineOwner.flushPaint (package:flutter/src/rendering/object.dart:1325:31)
+[m#24     PipelineOwner.flushPaint (package:flutter/src/rendering/object.dart:1335:15)
+[m#25     RendererBinding.drawFrame (package:flutter/src/rendering/binding.dart:631:23)
+[m#26     WidgetsBinding.drawFrame (package:flutter/src/widgets/binding.dart:1304:13)
+[m#27     RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+[m#28     SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1430:15)
+[m#29     SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1345:9)
+[m#30     SchedulerBinding._handleDrawFrame (package:flutter/src/scheduler/binding.dart:1198:5)
+[m#31     _invoke (dart:ui/hooks.dart:356:13)
+[m#32     PlatformDispatcher._drawFrame (dart:ui/platform_dispatcher.dart:444:5)
+[m#33     _drawFrame (dart:ui/hooks.dart:328:31)
+[m(elided 2 frames from class _AssertionError)
+
+[mThe following RenderObject was being processed when the exception was fired: GameRenderBox#babd3:
+[m  needs compositing
+[m  creator: RenderGameWidget ← Listener ← _GestureSemantics ← RawGestureDetector ← Stack ←
+[m    FutureBuilder<void> ← LayoutBuilder ← DecoratedBox ← Directionality ← MouseRegion ← Semantics ←
+[m    _FocusInheritedScope ← ⋯
+[m  parentData: <none> (can use size)
+[m  constraints: BoxConstraints(0.0<=w<=500.0, 0.0<=h<=850.0)
+[m  layer: OffsetLayer#99983
+[m  size: Size(500.0, 850.0)
+[mThis RenderObject has no descendants.
+[m════════════════════════════════════════════════════════════════════════════════════════════════════
+
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 8.1, LoS Checks/s: 2, Collision Checks/s: 6
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mI/flutter ( 2788): [DEBUG] Monster Strategic Target: Bed in room room_4
+[mI/flutter ( 2788): [DEBUG] Pathfound in 1992us (44 iterations, length: 17)
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 12.5, LoS Checks/s: 6, Collision Checks/s: 7
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mI/flutter ( 2788): [DEBUG] PERF: FPS: 13.2, LoS Checks/s: 5, Collision Checks/s: 8
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mAnother exception was thrown: 'dart:ui/painting.dart': Failed assertion: line 7471 pos 12: '<optimized out>': is not true.
+[mI/reamhunter.ryme( 2788): Thread[6,tid=2795,WaitingInMainSignalCatcherLoop,Thread*=0x7f2a9cc10e90,peer=0x138000d0,"Signal Catcher"]: reacting to signal 3
+[mI/reamhunter.ryme( 2788): 
+[mI/reamhunter.ryme( 2788): Wrote stack traces to tombstoned
+[mE/flutter ( 2788): [ERROR:flutter/runtime/dart_vm_initializer.cc(40)] Unhandled Exception: TimeoutException after 0:00:30.000000: Future not completed
+[mE/flutter ( 2788): #0      Future.timeout.<anonymous closure> (dart:async/future_impl.dart:1042:24)
+[mE/flutter ( 2788): <asynchronous suspension>
+[mE/flutter ( 2788): #1      Future.wait.<anonymous closure> (dart:async/future.dart:546:21)
+[mE/flutter ( 2788): <asynchronous suspension>
+[mE/flutter ( 2788): #2      AudioPlayer._completePrepared (package:audioplayers/src/audioplayer.dart:369:5)
+[mE/flutter ( 2788): <asynchronous suspension>
+[mE/flutter ( 2788): #3      AudioPlayer.setSourceAsset (package:audioplayers/src/audioplayer.dart:426:5)
+[mE/flutter ( 2788): <asynchronous suspension>
+[mE/flutter ( 2788): #4      AudioPlayer.setSource (package:audioplayers/src/audioplayer.dart:352:5)
+[mE/flutter ( 2788): <asynchronous suspension>
+[mE/flutter ( 2788): #5      AudioPlayer.play (package:audioplayers/src/audioplayer.dart:218:5)
+[mE/flutter ( 2788): <asynchronous suspension>
+[mE/flutter ( 2788): 
+[mE/flutter ( 2788): [ERROR:flutter/runtime/dart_vm_initializer.cc(40)] Unhandled Exception: Unable to load asset: "assets/audio/error.ogg".
+[mE/flutter ( 2788): The asset does not exist or has empty data.
+[mE/flutter ( 2788): #0      PlatformAssetBundle.load.<anonymous closure> (package:flutter/src/services/asset_bundle.dart:332:13)
+[mE/flutter ( 2788): <asynchronous suspension>
+[mE/flutter ( 2788): #1      AudioCache.fetchToMemory (package:audioplayers/src/audio_cache.dart:99:22)
+[mE/flutter ( 2788): <asynchronous suspension>
+[mE/flutter ( 2788): #2      AudioCache.load (package:audioplayers/src/audio_cache.dart:141:31)
+[mE/flutter ( 2788): <asynchronous suspension>
+[mE/flutter ( 2788): #3      AudioCache.loadPath (package:audioplayers/src/audio_cache.dart:150:26)
+[mE/flutter ( 2788): <asynchronous suspension>
+[m[mE/flutter ( 2788): #4      AudioPlayer.setSourceAsset (package:audioplayers/src/audioplayer.dart:425:23)
+[mE/flutter ( 2788): <asynchronous suspension>
+[mE/flutter ( 2788): #5      AudioPlayer.setSource (package:audioplayers/src/audioplayer.dart:352:5)
+[mE/flutter ( 2788): <asynchronous suspension>
+[mE/flutter ( 2788): #6      AudioPlayer.play (package:audioplayers/src/audioplayer.dart:218:5)
+[mE/flutter ( 2788): <asynchronous suspension>
+[mE/flutter ( 2788): 
+[mI/Choreographer( 2788): Skipped 1296 frames!  The application may be doing too much work on its main thread.
+
+[mApplication finished.
+[m]133;A\[35m❯[39m [22;1;31mscript
+[m]133;C\zsh: script: command not found...
+[mInstall package 'util-linux-script' to provide command 'script'? [N/y] y
+
+
+[m * Waiting in queue... 
+[m * Loading list of packages.... 
+[mThe following packages have to be installed:
+[m util-linux-script_2.41.3-7.fc43.x86_64  Utilities for creating and replaying typescripts of terminal session
+[mThe following packages have to be downgraded:
+[m libblkid_2.41.3-7.fc43.i686             Block device ID library
+[m libblkid_2.41.3-7.fc43.x86_64           Block device ID library
+[m libblkid-devel_2.41.3-7.fc43.x86_64     Block device ID library
+[m libfdisk_2.41.3-7.fc43.x86_64           Partitioning library for fdisk-like programs
+[m liblastlog2_2.41.3-7.fc43.x86_64        lastlog database library and PAM module
+[m libmount_2.41.3-7.fc43.i686             Device mounting library
+[m libmount_2.41.3-7.fc43.x86_64           Device mounting library
+[m libmount-devel_2.41.3-7.fc43.x86_64     Device mounting library
+[m libsmartcols_2.41.3-7.fc43.x86_64       Formatting library for ls-like programs
+[m libuuid_2.41.3-7.fc43.i686              Universally unique ID library
+[m libuuid_2.41.3-7.fc43.x86_64            Universally unique ID library
+[m util-linux_2.41.3-7.fc43.x86_64         Collection of basic system utilities
+[m util-linux-core_2.41.3-7.fc43.x86_64    The most essential utilities from the util-linux suite
+[mProceed with changes? [N/y] y
+
+
+[m * Waiting in queue... 
+[m * Waiting for authentication... 
+[m * Waiting in queue... 
+[m * Downloading packages... Failed to install packages: Cannot download Packages/u/util-linux-core-2.41.3-7.fc43.x86_64.rpm: All mirrors were tried; Last error: Status code: 4
+[m04 for https://mirror.krfoss.org/fedora/updates/43/Everything/x86_64/Packages/u/util-linux-core-2.41.3-7.fc43.x86_64.rpm (IP: 104.18.2.112)
+
+[m]133;A\[34m~/All/Programming/School/DreamHunter/frontend [38:5:242mdevelopment*[36m ⇡[38:5:242m [33m1m 15s [31m❯[39m                                                                                             [38:5:242m07:03:37 PM

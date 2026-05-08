@@ -121,7 +121,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _authStateSubscription.cancel();
-    ProfileManager.instance.adminEditDetected.removeListener(_onAdminEditDetected);
+    ProfileManager.instance.adminEditDetected.removeListener(
+      _onAdminEditDetected,
+    );
     super.dispose();
   }
 

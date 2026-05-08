@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
@@ -147,6 +148,9 @@ class BedEntity extends BaseEntity with TapCallbacks {
     }
 
     if (success) {
+      developer.log(
+        '[DEBUG] Upgrade: Bed in room $roomID upgraded to level $level (Owner: ${entity.hunterIndex ?? 'Unknown'})',
+      );
       level++;
       hp = maxHp; // Heal to max HP on upgrade
 

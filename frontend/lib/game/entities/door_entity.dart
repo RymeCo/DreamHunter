@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
@@ -297,6 +298,11 @@ class DoorEntity extends BaseEntity with TapCallbacks {
 
   void _updateHealthBar() {
     if (isDestroyed) return;
+
+    // Safety check for max values to prevent division by zero or NaN
+    final safeMaxHp = maxHp > 0 ? maxHp : 1.0;
+    final safeMaxShield = maxShieldHp > 0 ? maxShieldHp : 1.0;
+
     final bool isDamaged = hp < maxHp || shieldHp > 0;
 
     if (isDamaged && !isOpen) {
@@ -304,12 +310,14 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       _hbFill.renderBar = true;
       _hbShield.renderBar = shieldHp > 0;
 
-      // Fill Green bar based on HP
-      _hbFill.size.x = (hp / maxHp) * 24.0;
+      // Fill Green bar based on HP (Clamped 0-24)
+      final hpRatio = (hp / safeMaxHp).clamp(0.0, 1.0);
+      _hbFill.size.x = hpRatio * 24.0;
 
-      // Fill Cyan bar based on Shield
+      // Fill Cyan bar based on Shield (Clamped 0-24)
       if (shieldHp > 0) {
-        _hbShield.size.x = (shieldHp / maxHp).clamp(0, 1) * 24.0;
+        final shieldRatio = (shieldHp / safeMaxShield).clamp(0.0, 1.0);
+        _hbShield.size.x = shieldRatio * 24.0;
         _iceOverlay.scale = Vector2.all(1.0);
 
         // Subtle color filter instead of solid tint
@@ -324,10 +332,9 @@ class DoorEntity extends BaseEntity with TapCallbacks {
         _spriteComponent.paint.color = Colors.white;
       }
 
-      final hpPercent = hp / maxHp;
-      if (hpPercent < 0.25) {
+      if (hpRatio < 0.25) {
         _hbFill.paint.color = Colors.redAccent;
-      } else if (hpPercent < 0.5) {
+      } else if (hpRatio < 0.5) {
         _hbFill.paint.color = Colors.orangeAccent;
       } else {
         _hbFill.paint.color = Colors.greenAccent;
@@ -404,6 +411,9 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     }
 
     if (success) {
+      developer.log(
+        'Upgrade: Door in room $roomID upgraded to level $totalUpgrades (Owner: ${entity.hunterIndex ?? 'Unknown'})',
+      );
       if (skipCost && entity.hasCategory('player')) {
         MatchManager.instance.incrementAdUpgrades();
       }

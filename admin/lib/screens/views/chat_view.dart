@@ -363,6 +363,12 @@ class _ChatViewState extends State<ChatView> {
                     .toList(),
               ),
               const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.delete_sweep, color: Colors.red),
+                tooltip: 'Clear Chat for Everyone',
+                onPressed: _isConnected ? _clearChat : null,
+              ),
+              const SizedBox(width: 8),
               _ConnectionStatusChip(isConnected: _isConnected),
             ],
           ),

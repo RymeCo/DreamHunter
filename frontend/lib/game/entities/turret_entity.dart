@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
@@ -169,6 +170,9 @@ class TurretEntity extends BaseEntity with TapCallbacks {
     }
 
     if (success) {
+      developer.log(
+        'Upgrade: Turret in room $roomID upgraded to level $level (Owner: ${entity.hunterIndex ?? 'Unknown'})',
+      );
       level++;
       _applyStats();
       hp = maxHp; // Full heal on upgrade
@@ -231,10 +235,7 @@ class TurretEntity extends BaseEntity with TapCallbacks {
       final activeTurretsCount = game.turrets
           .whereType<TurretEntity>()
           .where(
-            (t) =>
-                t != this &&
-                t.roomID == roomID &&
-                t._currentTarget != null,
+            (t) => t != this && t.roomID == roomID && t._currentTarget != null,
           )
           .length;
 

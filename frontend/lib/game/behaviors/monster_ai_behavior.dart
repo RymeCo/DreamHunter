@@ -182,7 +182,6 @@ class MonsterAIBehavior extends Component
   }
 
   bool _isRoomOccupied(String roomID) {
-
     if (roomID.isEmpty) return false;
     final bed = game.roomBeds[roomID];
     return bed?.isOccupied ?? false;

@@ -49,11 +49,26 @@ If you update the APKs, remember to update the version text in `docs/index.html`
 ---
 
 ## 📦 Creating GitHub Releases
-To create a formal release with the APKs attached as binary assets:
-1.  Tag the version: `git tag v1.0.x && git push origin v1.0.x`
-2.  Create release via `gh` CLI:
+To maintain a professional release history, follow the standard naming scheme.
+
+### 1. Standard Naming Scheme
+*   **Tag:** `vX.Y.Z` (e.g., `v1.0.2`)
+*   **Title:** `vX.Y.Z - [Short Summary]` (e.g., `v1.0.2 - Optimization & UI Stability`)
+*   **Assets:** Always include both `dreamhunter-release.apk` and `admin-release.apk`.
+
+### 2. Creation Workflow
+1.  **Tag the version:**
     ```bash
-    gh release create v1.0.x docs/downloads/dreamhunter-release.apk --title "Release v1.0.x" --notes "Release notes here"
+    git tag v1.0.x
+    git push origin v1.0.x
+    ```
+2.  **Create the release:**
+    ```bash
+    gh release create v1.0.x \
+      docs/downloads/dreamhunter-release.apk \
+      docs/downloads/admin-release.apk \
+      --title "v1.0.x - [Description]" \
+      --notes "Describe the major changes here."
     ```
 
 ---

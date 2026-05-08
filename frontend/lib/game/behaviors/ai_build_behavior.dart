@@ -49,6 +49,8 @@ class AIBuildBehavior extends Component
   void _checkBuild() {
     if (!parent.isSleeping) return;
 
+    // print('[DEBUG] AI ${parent.hunterIndex} checking build options...');
+
     // Dumb Personality Check: 50% chance to just "forget" to check for upgrades this tick
     if (parent.personality == AIPersonality.dumb && _random.nextBool()) {
       return;

@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:math' as math;
 import 'package:flame/game.dart';
 import 'package:flame/flame.dart';
@@ -42,6 +43,9 @@ class DreamHunterGame extends FlameGame
   /// Cached lists for high-performance collision checks (Updated in onLoad/onRemove)
   final List<MapObstacle> _obstacles = [];
   final List<BaseEntity> _buildings = [];
+
+  /// Map of room IDs to buildings for O(1) optimized lookups.
+  final Map<String, List<BaseEntity>> _buildingsByRoom = {};
   Iterable<BaseEntity> get buildings => _buildings;
   final List<BaseEntity> buildingSlots = [];
   final List<BaseEntity> turrets = []; // For O(1) stun/targeting
@@ -385,6 +389,7 @@ class DreamHunterGame extends FlameGame
     String? ignoredRoomID,
     bool shaveCorners = true,
   }) {
+    _losChecksThisFrame++;
     final startTileX = (start.x / 32.0).floor();
     final startTileY = (start.y / 32.0).floor();
     final endTileX = (end.x / 32.0).floor();
@@ -450,6 +455,7 @@ class DreamHunterGame extends FlameGame
     List<BaseEntity>? ignoredEntities,
     Vector2? targetPos,
   }) {
+    _collisionChecksThisFrame++;
     // 1. Check Buildings (Doors, etc.) - Full Rect Check (Dynamic)
     for (final building in _buildings) {
       if (ignoredEntities != null && ignoredEntities.contains(building)) {
@@ -535,6 +541,11 @@ class DreamHunterGame extends FlameGame
   void registerBuilding(BaseEntity building) {
     if (!_buildings.contains(building)) {
       _buildings.add(building);
+
+      // Add to room-indexed map
+      if (building.roomID.isNotEmpty) {
+        _buildingsByRoom.putIfAbsent(building.roomID, () => []).add(building);
+      }
     }
   }
 
@@ -543,7 +554,12 @@ class DreamHunterGame extends FlameGame
 
   /// Unregisters a building from collision tracking.
   void unregisterBuilding(BaseEntity building) {
-    _buildings.remove(building);
+    if (_buildings.remove(building)) {
+      // Remove from room-indexed map
+      if (building.roomID.isNotEmpty) {
+        _buildingsByRoom[building.roomID]?.remove(building);
+      }
+    }
   }
 
   /// Unregisters a door from LoS tracking.
@@ -574,8 +590,8 @@ class DreamHunterGame extends FlameGame
   /// Optimized lookup for buildings in a specific room
   Iterable<BaseEntity> getBuildingsInRoom(String roomID) {
     if (roomID.isEmpty) return const [];
-    // Only return buildings that are NOT destroyed
-    return _buildings.where((b) => b.roomID == roomID && !b.isDestroyed);
+    // Only return buildings that are NOT destroyed (O(K) where K is buildings in room)
+    return _buildingsByRoom[roomID]?.where((b) => !b.isDestroyed) ?? const [];
   }
 
   /// Registers a turret for global tracking (e.g., room-specific fire limits).
@@ -600,11 +616,20 @@ class DreamHunterGame extends FlameGame
     if (_flowFieldCache.containsKey(roomID)) {
       _flowFieldLRU.remove(roomID);
       _flowFieldLRU.add(roomID);
+      developer.log('[DEBUG] FlowField Cache HIT for room: $roomID');
       return _flowFieldCache[roomID];
     }
 
+    developer.log(
+      '[DEBUG] FlowField Cache MISS for room: $roomID. Calculating...',
+    );
+    final stopwatch = Stopwatch()..start();
+
     final bed = roomBeds[roomID];
-    if (bed == null) return null;
+    if (bed == null) {
+      developer.log('[DEBUG] FlowField Error: Bed not found for room $roomID');
+      return null;
+    }
 
     final targetX = (bed.position.x / 32).floor();
     final targetY = (bed.position.y / 32).floor();
@@ -624,7 +649,7 @@ class DreamHunterGame extends FlameGame
       // Find node with lowest distance (Dijkstra)
       // This MUST be done every iteration for the flow field weights (1, 2, 100) to work.
       queue.sort((a, b) => field[a.x][a.y].compareTo(field[b.x][b.y]));
-      
+
       final curr = queue.removeAt(0);
       final dist = field[curr.x][curr.y];
 
@@ -661,6 +686,11 @@ class DreamHunterGame extends FlameGame
       }
     }
 
+    stopwatch.stop();
+    developer.log(
+      '[DEBUG] FlowField Calculated for $roomID in ${stopwatch.elapsedMicroseconds}us',
+    );
+
     // 2. Cache the result for future hunters
     // Finalize LRU Cache
     if (_flowFieldLRU.length >= _maxFlowFieldCache) {
@@ -696,10 +726,29 @@ class DreamHunterGame extends FlameGame
     PerformanceManager.instance.resetLagWarning();
   }
 
+  int _losChecksThisFrame = 0;
+  int _collisionChecksThisFrame = 0;
+  double _debugTimer = 0;
+
   @override
   void update(double dt) {
     PerformanceManager.instance.updateFPS(dt);
+    if (PerformanceManager.instance.isLagging) {
+      developer.log(
+        '[DEBUG] LAG DETECTED: ${PerformanceManager.instance.currentFPS.toStringAsFixed(1)} FPS',
+      );
+    }
     super.update(dt);
+
+    _debugTimer += dt;
+    if (_debugTimer >= 1.0) {
+      developer.log(
+        '[DEBUG] PERF: FPS: ${PerformanceManager.instance.currentFPS.toStringAsFixed(1)}, LoS Checks/s: $_losChecksThisFrame, Collision Checks/s: $_collisionChecksThisFrame',
+      );
+      _losChecksThisFrame = 0;
+      _collisionChecksThisFrame = 0;
+      _debugTimer = 0;
+    }
 
     // Update global building slot pulse (More subtle: slower speed and lower peak opacity)
     _pulseTimer += dt;
@@ -928,6 +977,7 @@ class DreamHunterGame extends FlameGame
   }
 
   List<Vector2> getShortestPath(Vector2 start, Vector2 end) {
+    final stopwatch = Stopwatch()..start();
     final startX = (start.x / 32).floor().clamp(0, gridW - 1);
     final startY = (start.y / 32).floor().clamp(0, gridH - 1);
     final endX = (end.x / 32).floor().clamp(0, gridW - 1);
@@ -945,7 +995,9 @@ class DreamHunterGame extends FlameGame
       startPoint: _heuristic(startPoint, endPoint),
     };
 
+    int iterations = 0;
     while (openSet.isNotEmpty) {
+      iterations++;
       // Find node in openSet with lowest fScore
       var current = openSet[0];
       var minF = fScore[current] ?? 999999;
@@ -958,7 +1010,12 @@ class DreamHunterGame extends FlameGame
       }
 
       if (current == endPoint) {
-        return _reconstructPath(cameFrom, current);
+        stopwatch.stop();
+        final path = _reconstructPath(cameFrom, current);
+        developer.log(
+          '[DEBUG] Pathfound in ${stopwatch.elapsedMicroseconds}us ($iterations iterations, length: ${path.length})',
+        );
+        return path;
       }
 
       openSet.remove(current);
@@ -980,6 +1037,10 @@ class DreamHunterGame extends FlameGame
       }
     }
 
+    stopwatch.stop();
+    developer.log(
+      '[DEBUG] Pathfinding FAILED in ${stopwatch.elapsedMicroseconds}us ($iterations iterations)',
+    );
     return [];
   }
 

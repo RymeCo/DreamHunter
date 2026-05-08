@@ -224,6 +224,8 @@ class _MonsterHealthBar extends RectangleComponent
   }
 
   void updateVisuals() {
-    _fill.size.x = (parent.hp / parent.maxHp) * 24.0;
+    final safeMaxHp = parent.maxHp > 0 ? parent.maxHp : 1.0;
+    final ratio = (parent.hp / safeMaxHp).clamp(0.0, 1.0);
+    _fill.size.x = ratio * 24.0;
   }
 }

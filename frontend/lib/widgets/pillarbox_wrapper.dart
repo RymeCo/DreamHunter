@@ -46,21 +46,26 @@ class PillarboxWrapper extends StatelessWidget {
 
               final mappedPadding = EdgeInsets.only(
                 top: math.max(0, outerData.padding.top - verticalBar) / scale,
-                bottom: math.max(0, outerData.padding.bottom - verticalBar) /
-                    scale,
-                left: math.max(0, outerData.padding.left - horizontalBar) /
-                    scale,
-                right: math.max(0, outerData.padding.right - horizontalBar) /
+                bottom:
+                    math.max(0, outerData.padding.bottom - verticalBar) / scale,
+                left:
+                    math.max(0, outerData.padding.left - horizontalBar) / scale,
+                right:
+                    math.max(0, outerData.padding.right - horizontalBar) /
                     scale,
               );
 
               final mappedInsets = EdgeInsets.only(
-                top: math.max(0, outerData.viewInsets.top - verticalBar) / scale,
-                bottom: math.max(0, outerData.viewInsets.bottom - verticalBar) /
+                top:
+                    math.max(0, outerData.viewInsets.top - verticalBar) / scale,
+                bottom:
+                    math.max(0, outerData.viewInsets.bottom - verticalBar) /
                     scale,
-                left: math.max(0, outerData.viewInsets.left - horizontalBar) /
+                left:
+                    math.max(0, outerData.viewInsets.left - horizontalBar) /
                     scale,
-                right: math.max(0, outerData.viewInsets.right - horizontalBar) /
+                right:
+                    math.max(0, outerData.viewInsets.right - horizontalBar) /
                     scale,
               );
 
