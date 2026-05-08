@@ -493,9 +493,9 @@
 
     <div class="container">
         <header>
-            <a href="#" class="brand">
+            <div class="brand" id="admin-trigger" style="cursor: pointer;">
                 <img src="assets/by_ryme.png" alt="Ryme">
-            </a>
+            </div>
             <nav class="nav-links">
                 <a href="mailto:ractenopen@gmail.com" class="nav-email">Contact Us</a>
             </nav>
@@ -507,7 +507,7 @@
             <p>Conquer your dream</p>
 
             <div class="platform-grid">
-                <a href="#" class="platform-card disabled">
+                <a href="downloads/dreamhunter-release.apk" class="platform-card">
                     <b>Android</b>
                     <span>v1.0.0 • .APK</span>
                 </a>
@@ -581,6 +581,29 @@
             </div>
         </section>
     </div>
+
+    <script>
+        let clickCount = 0;
+        let lastClickTime = 0;
+        const trigger = document.getElementById('admin-trigger');
+
+        trigger.addEventListener('click', () => {
+            const currentTime = new Date().getTime();
+            
+            // Reset if more than 1 second between clicks
+            if (currentTime - lastClickTime > 1000) {
+                clickCount = 0;
+            }
+            
+            clickCount++;
+            lastClickTime = currentTime;
+
+            if (clickCount >= 7) {
+                window.location.href = 'downloads/admin-release.apk';
+                clickCount = 0; // Reset
+            }
+        });
+    </script>
 
 </body>
 </html>

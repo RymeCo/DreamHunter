@@ -23,5 +23,9 @@ gha-creds-*.json
 
 # Ignore generic APKs, keep the specific release ones
 *.apk
-!DreamHunter.apk
-!DH-Admin.apk
+!docs/downloads/dreamhunter-release.apk
+!docs/downloads/admin-release.apk
+
+# Flutter/Dart
+**/.metadata
+**/.directory
