@@ -58,10 +58,6 @@ abstract class BaseEntity extends PositionComponent
   /// Whether this entity is currently being repaired (manual repair mode).
   bool isBeingRepaired = false;
 
-  /// Whether this entity is currently stunned (disabled).
-  bool isStunned = false;
-  double stunTimer = 0.0;
-
   /// Cooldown for the manual repair tool (20 seconds).
   double repairCooldown = 0;
 
@@ -163,15 +159,6 @@ abstract class BaseEntity extends PositionComponent
   void update(double dt) {
     super.update(dt);
     if (isDestroyed) return;
-
-    // Stun logic
-    if (isStunned) {
-      stunTimer -= dt;
-      if (stunTimer <= 0) {
-        isStunned = false;
-        stunTimer = 0;
-      }
-    }
 
     if (repairCooldown > 0) {
       repairCooldown = (repairCooldown - dt).clamp(
@@ -339,14 +326,6 @@ abstract class BaseEntity extends PositionComponent
     }
 
     super.onRemove();
-  }
-
-  /// Stuns this entity for a specific duration.
-  void stun(double duration) {
-    if (isDestroyed) return;
-    isStunned = true;
-    stunTimer = duration;
-    isBeingRepaired = false; // Stun stops repair!
   }
 
   /// Helper to check if this entity has a specific category.

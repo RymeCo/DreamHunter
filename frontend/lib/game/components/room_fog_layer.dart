@@ -39,9 +39,15 @@ class RoomFogLayer extends PositionComponent
     _deathTimer = 8.0;
   }
 
+  double _updateThrottle = 0;
+
   @override
   void update(double dt) {
     super.update(dt);
+
+    _updateThrottle += dt;
+    if (_updateThrottle < 0.1) return; // 10 FPS for fog logic is plenty
+    _updateThrottle = 0;
 
     if (_deathTimer > 0) {
       _deathTimer -= dt;

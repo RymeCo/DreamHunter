@@ -6,7 +6,6 @@ import 'package:dreamhunter/game/dream_hunter_game.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/entities/door_entity.dart';
 import 'package:dreamhunter/game/entities/bed_entity.dart';
-import 'package:dreamhunter/game/entities/turret_entity.dart';
 import 'package:dreamhunter/game/entities/player_entity.dart';
 import 'package:dreamhunter/game/entities/hunter_ai_entity.dart';
 import 'package:dreamhunter/game/components/floating_feedback.dart';
@@ -31,13 +30,8 @@ class MonsterAIBehavior extends Component
   double _chaseTimer = 0;
   static const double maxChaseTime = 8.0;
 
-  final double stunCooldown = 10.0;
-  final double stunDuration = 5.0;
-  final double stunRange = 64.0;
-
   double _stuckTimer = 0;
   double _playerTargetingTimer = 0;
-  double _stunCooldownValue = 0;
   math.Point<int>? _lastTile;
 
   @override
@@ -119,7 +113,6 @@ class MonsterAIBehavior extends Component
 
     if (shouldScan) {
       _checkProximityAggro();
-      _updateSkills(dt);
     }
 
     switch (state) {
@@ -188,56 +181,8 @@ class MonsterAIBehavior extends Component
     }
   }
 
-  void _updateSkills(double dt) {
-    _stunCooldownValue += dt;
-    if (_stunCooldownValue >= stunCooldown) {
-      const double areaStunRange = 96.0;
-      final buildings = game.buildings
-          .where((b) => b.center.distanceTo(parent.center) < areaStunRange)
-          .toList();
-
-      if (buildings.isNotEmpty) {
-        bool shouldStun = false;
-
-        // 1. Stun if any door in range is critical (<= 10% HP) to prevent last-second repairs
-        for (final b in buildings) {
-          if (b is DoorEntity && b.hp / b.maxHp <= 0.1) {
-            shouldStun = true;
-            break;
-          }
-        }
-
-        // 2. Stun if target is being repaired (to disrupt)
-        if (!shouldStun &&
-            target != null &&
-            target!.isBeingRepaired &&
-            parent.center.distanceTo(target!.center) < areaStunRange) {
-          shouldStun = true;
-        }
-
-        // 3. Stun if any turrets are nearby (to disable)
-        if (!shouldStun) {
-          for (final b in buildings) {
-            if (b is TurretEntity && !b.isStunned) {
-              shouldStun = true;
-              break;
-            }
-          }
-        }
-
-        if (shouldStun) {
-          _stunCooldownValue = 0;
-          parent.flashColor(Colors.purpleAccent);
-          parent.pulse(1.4);
-          for (final b in buildings) {
-            b.stun(stunDuration);
-          }
-        }
-      }
-    }
-  }
-
   bool _isRoomOccupied(String roomID) {
+
     if (roomID.isEmpty) return false;
     final bed = game.roomBeds[roomID];
     return bed?.isOccupied ?? false;

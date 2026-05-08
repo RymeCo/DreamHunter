@@ -30,6 +30,8 @@ import 'package:dreamhunter/widgets/identity/save_resolution_dialog.dart';
 import 'package:dreamhunter/widgets/game/lobby_dialog.dart';
 import 'package:dreamhunter/services/economy/shop_manager.dart';
 import 'package:dreamhunter/screens/game_loading_screen.dart';
+import 'package:dreamhunter/services/core/update_service.dart';
+import 'package:dreamhunter/widgets/update_dialog.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -65,11 +67,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await DailyRoulette.instance.initialize();
 
     // Listen for admin edits during background sync
-    ProfileManager.instance.adminEditDetected.addListener(() {
-      if (mounted && ProfileManager.instance.adminEditDetected.value) {
-        setState(() => _showRelogNotice = true);
-      }
-    });
+    ProfileManager.instance.adminEditDetected.addListener(_onAdminEditDetected);
 
     // Check if we have a pending relog notice from a previous sync
     final pendingNotice = await StorageEngine.instance.getMetadata(
@@ -123,7 +121,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _authStateSubscription.cancel();
+    ProfileManager.instance.adminEditDetected.removeListener(_onAdminEditDetected);
     super.dispose();
+  }
+
+  void _onAdminEditDetected() {
+    if (mounted && ProfileManager.instance.adminEditDetected.value) {
+      setState(() => _showRelogNotice = true);
+    }
+  }
+
+  Future<void> _checkUpdates() async {
+    // 1. Show subtle feedback
+    showCustomSnackBar(
+      context,
+      "Checking for updates...",
+      type: SnackBarType.info,
+    );
+
+    // 2. Perform check
+    final info = await UpdateService.checkForUpdates();
+
+    if (!mounted) return;
+
+    if (info == null) {
+      showCustomSnackBar(
+        context,
+        "Could not connect to update server.",
+        type: SnackBarType.error,
+      );
+      return;
+    }
+
+    if (info.isUpdateAvailable) {
+      UpdateDialog.show(context, info);
+    } else {
+      showCustomSnackBar(
+        context,
+        "You are on the latest version (${info.latestVersion}).",
+        type: SnackBarType.success,
+      );
+    }
   }
 
   Future<void> _showGameDialog(Widget dialog) async {
@@ -178,6 +216,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onLeaderboardTap: () {
                       Navigator.pop(context);
                       _showGameDialog(const LeaderboardDialog());
+                    },
+                    onCheckUpdatesTap: () {
+                      Navigator.pop(context);
+                      _checkUpdates();
                     },
                     onSettingsTap: () {
                       Navigator.pop(context);

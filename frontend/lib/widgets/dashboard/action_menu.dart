@@ -6,6 +6,7 @@ class DashboardActionMenu extends StatelessWidget {
   final VoidCallback onDailyTasksTap;
   final VoidCallback onLeaderboardTap;
   final VoidCallback onSettingsTap;
+  final VoidCallback onCheckUpdatesTap;
   final VoidCallback onExitTap;
 
   const DashboardActionMenu({
@@ -13,6 +14,7 @@ class DashboardActionMenu extends StatelessWidget {
     required this.onDailyTasksTap,
     required this.onLeaderboardTap,
     required this.onSettingsTap,
+    required this.onCheckUpdatesTap,
     required this.onExitTap,
   });
 
@@ -33,6 +35,11 @@ class DashboardActionMenu extends StatelessWidget {
             icon: Icons.leaderboard_rounded,
             label: 'Leaderboard',
             onTap: onLeaderboardTap,
+          ),
+          _buildMenuButton(
+            icon: Icons.system_update_rounded,
+            label: 'Check Updates',
+            onTap: onCheckUpdatesTap,
           ),
           _buildMenuButton(
             icon: Icons.settings_rounded,

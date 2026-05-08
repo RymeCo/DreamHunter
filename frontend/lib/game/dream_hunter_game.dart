@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flame/game.dart';
+import 'package:flame/flame.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame_tiled/flame_tiled.dart';
@@ -18,6 +19,8 @@ import 'package:dreamhunter/game/ui/repair_button.dart';
 import 'package:dreamhunter/services/game/match_manager.dart';
 import 'package:dreamhunter/services/economy/shop_manager.dart';
 import 'package:dreamhunter/data/item_registry.dart';
+
+import 'package:dreamhunter/services/game/performance_manager.dart';
 
 import 'package:dreamhunter/game/components/floating_feedback.dart';
 
@@ -52,7 +55,10 @@ class DreamHunterGame extends FlameGame
   static const int gridH = 40;
 
   /// Cache for flow fields (Dijkstra maps) to avoid redundant per-frame calculations.
+  /// LRU implementation: We track the order of access to cap the cache size.
   final Map<String, List<List<int>>> _flowFieldCache = {};
+  final List<String> _flowFieldLRU = [];
+  static const int _maxFlowFieldCache = 10;
 
   /// Map of tile coordinates to room IDs for fast lookup (Fog of War)
   final Map<math.Point<int>, String> tileRoomMap = {};
@@ -572,7 +578,7 @@ class DreamHunterGame extends FlameGame
     return _buildings.where((b) => b.roomID == roomID && !b.isDestroyed);
   }
 
-  /// Registers a turret for monster stun logic.
+  /// Registers a turret for global tracking (e.g., room-specific fire limits).
 
   void registerTurret(BaseEntity turret) {
     if (!turrets.contains(turret)) {
@@ -590,8 +596,10 @@ class DreamHunterGame extends FlameGame
   List<List<int>>? getFlowField(String roomID) {
     if (roomID.isEmpty) return null;
 
-    // 1. Return cached field if available
+    // 1. LRU Cache Management
     if (_flowFieldCache.containsKey(roomID)) {
+      _flowFieldLRU.remove(roomID);
+      _flowFieldLRU.add(roomID);
       return _flowFieldCache[roomID];
     }
 
@@ -606,12 +614,17 @@ class DreamHunterGame extends FlameGame
       (_) => List.generate(gridH, (_) => 9999),
     );
 
+    // Using a simple queue for BFS-style Dijkstra since weights are uniform (1 or 50)
+    // For even better performance, we could use a PriorityQueue from collection package,
+    // but for 40x40, BFS with a basic list is fast enough if we don't sort inside the loop.
     final queue = <math.Point<int>>[math.Point(targetX, targetY)];
     field[targetX][targetY] = 0;
 
     while (queue.isNotEmpty) {
       // Find node with lowest distance (Dijkstra)
+      // This MUST be done every iteration for the flow field weights (1, 2, 100) to work.
       queue.sort((a, b) => field[a.x][a.y].compareTo(field[b.x][b.y]));
+      
       final curr = queue.removeAt(0);
       final dist = field[curr.x][curr.y];
 
@@ -649,12 +662,43 @@ class DreamHunterGame extends FlameGame
     }
 
     // 2. Cache the result for future hunters
+    // Finalize LRU Cache
+    if (_flowFieldLRU.length >= _maxFlowFieldCache) {
+      final oldest = _flowFieldLRU.removeAt(0);
+      _flowFieldCache.remove(oldest);
+    }
     _flowFieldCache[roomID] = field;
+    _flowFieldLRU.add(roomID);
+
     return field;
+  }
+
+  /// Wipes caches and re-initializes the game world to recover from lag.
+  /// Does NOT reset MatchManager state, so no progress is lost.
+  void safeRefresh() {
+    // 1. Clear Engine Caches
+    Flame.images.clearCache();
+    Flame.assets.clearCache();
+    _flowFieldCache.clear();
+    _flowFieldLRU.clear();
+
+    // 2. Visual Feedback
+    world.add(
+      FloatingFeedback(
+        label: 'OPTIMIZING...',
+        color: Colors.cyanAccent,
+        position: player.position,
+        icon: Icons.auto_fix_high_rounded,
+        duration: 2.0,
+      ),
+    );
+
+    PerformanceManager.instance.resetLagWarning();
   }
 
   @override
   void update(double dt) {
+    PerformanceManager.instance.updateFPS(dt);
     super.update(dt);
 
     // Update global building slot pulse (More subtle: slower speed and lower peak opacity)

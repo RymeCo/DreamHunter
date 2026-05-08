@@ -377,7 +377,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 _buildDivider(),
                 _GlassActionItem(
                   title: 'About DreamHunter',
-                  subtitle: 'V1.0.0 • Project Credits',
+                  subtitle: 'V1.0.2 • Project Credits',
                   icon: Icons.info_outline_rounded,
                   accentColor: Colors.deepPurpleAccent,
                   onTap: _showAboutDialog,

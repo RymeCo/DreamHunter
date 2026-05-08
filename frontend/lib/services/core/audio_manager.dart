@@ -179,6 +179,7 @@ class AudioManager with WidgetsBindingObserver {
   void playRouletteSpin() => playSFX('audio/roulette.ogg');
   void playLevelUp() => playSFX('audio/levelup.ogg');
   void playReward() => playSFX('audio/reward.ogg');
+  void playError() => playSFX('audio/error.ogg');
 
   // Control Methods with Auto-Persistence
   Future<void> toggleMusicMute() async {

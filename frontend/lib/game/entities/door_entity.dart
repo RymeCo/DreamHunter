@@ -161,7 +161,7 @@ class DoorEntity extends BaseEntity with TapCallbacks {
     if (isDestroyed) return;
 
     // Passive Healing: 0.5% HP every 2 seconds if closed, not at max HP and NOT stunned
-    if (!isOpen && hp < maxHp && !isStunned) {
+    if (!isOpen && hp < maxHp) {
       _passiveHealTimer += dt;
       if (_passiveHealTimer >= 2.0) {
         _passiveHealTimer = 0;
@@ -205,10 +205,8 @@ class DoorEntity extends BaseEntity with TapCallbacks {
       }
     }
 
-    // Manual Repair Logic: 2% every 1s (ONLY when isBeingRepaired is true and NOT stunned)
-    if (isBeingRepaired &&
-        !isStunned &&
-        (hp < maxHp || shieldHp < maxShieldHp)) {
+    // Manual Repair Logic: 2% every 1s (ONLY when isBeingRepaired is true)
+    if (isBeingRepaired && (hp < maxHp || shieldHp < maxShieldHp)) {
       _regenTimer += dt;
       if (_regenTimer >= 1.0) {
         _regenTimer = 0;

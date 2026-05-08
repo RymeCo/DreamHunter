@@ -11,8 +11,9 @@ import 'package:dreamhunter/widgets/game/game_economy_hud.dart';
 import 'package:dreamhunter/widgets/game/tutorial_hud.dart';
 import 'package:dreamhunter/services/progression/tutorial_service.dart';
 import 'package:dreamhunter/widgets/game/reward_dialog.dart';
-import 'package:dreamhunter/services/loading/game_loader.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
+import 'package:dreamhunter/services/game/performance_manager.dart';
+import 'package:dreamhunter/services/loading/game_loader.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -174,6 +175,76 @@ class _GameScreenState extends State<GameScreen> {
               left: 0,
               right: 0,
               child: GraceTimerOverlay(notifier: _game.graceTimer),
+            ),
+
+            // PERFORMANCE RECOVERY OVERLAY
+            Positioned(
+              top: 45,
+              right: 20,
+              child: ListenableBuilder(
+                listenable: PerformanceManager.instance,
+                builder: (context, _) {
+                  if (!PerformanceManager.instance.isLagging) {
+                    return const SizedBox.shrink();
+                  }
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: const Duration(milliseconds: 500),
+                    builder: (context, value, child) {
+                      return Opacity(opacity: value, child: child);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.84),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.cyanAccent.withValues(alpha: 0.5),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.cyanAccent.withValues(alpha: 0.2),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.speed_rounded,
+                                color: Colors.amberAccent,
+                                size: 14,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                "LAG DETECTED",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          GlassButton(
+                            label: "OPTIMIZE",
+                            onTap: () {
+                              _game.safeRefresh();
+                            },
+                            color: Colors.cyanAccent,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
 
             // Match Timer Overlay

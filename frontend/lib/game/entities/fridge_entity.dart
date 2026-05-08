@@ -44,8 +44,8 @@ class FridgeEntity extends BaseEntity with TapCallbacks {
       add(WrenchComponent()..position = size / 2);
     }
 
-    // Manual Repair Logic: 2% every 1s (ONLY when isBeingRepaired is true and NOT stunned)
-    if (isBeingRepaired && !isStunned && hp < maxHp) {
+    // Manual Repair Logic: 2% every 1s (ONLY when isBeingRepaired is true)
+    if (isBeingRepaired && hp < maxHp) {
       _regenTimer += dt;
       if (_regenTimer >= 1.0) {
         _regenTimer = 0;

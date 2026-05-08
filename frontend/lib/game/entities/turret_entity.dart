@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flutter/material.dart';
 import 'package:dreamhunter/game/entities/base_entity.dart';
 import 'package:dreamhunter/game/entities/projectile_entity.dart';
 import 'package:dreamhunter/services/core/audio_manager.dart';
@@ -192,14 +191,6 @@ class TurretEntity extends BaseEntity with TapCallbacks {
   void update(double dt) {
     super.update(dt);
 
-    if (isStunned) {
-      head.paint.color = Colors.blueGrey.withValues(alpha: 0.7);
-      _currentTarget = null;
-      return;
-    } else {
-      head.paint.color = Colors.white;
-    }
-
     _fireTimer += dt;
     _scanTimer += dt;
 
@@ -243,8 +234,7 @@ class TurretEntity extends BaseEntity with TapCallbacks {
             (t) =>
                 t != this &&
                 t.roomID == roomID &&
-                t._currentTarget != null &&
-                !t.isStunned,
+                t._currentTarget != null,
           )
           .length;
 
