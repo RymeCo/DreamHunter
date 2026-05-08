@@ -23,6 +23,8 @@ gha-creds-*.json
 
 # Ignore generic APKs, keep the specific release ones
 *.apk
+!docs/downloads/dreamhunter-v1.0.3.apk
+!docs/downloads/admin-v1.0.2.apk
 !docs/downloads/dreamhunter-release.apk
 !docs/downloads/admin-release.apk
 
