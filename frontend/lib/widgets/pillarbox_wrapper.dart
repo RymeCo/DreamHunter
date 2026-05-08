@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:dreamhunter/services/core/layout_baseline.dart';
 
 /// Wraps the application to enforce the fixed portrait aspect ratio (500:850).
@@ -19,72 +20,76 @@ class PillarboxWrapper extends StatelessWidget {
           color: bgColor,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final h = constraints.maxHeight;
               final w = constraints.maxWidth;
+              final h = constraints.maxHeight;
 
-              // Target: 500:850 aspect ratio
-              final targetW = h * LayoutBaseline.targetAspectRatio;
+              // Calculate scale to fit the 500x850 target resolution within available space
+              final scaleX = w / LayoutBaseline.targetWidth;
+              final scaleY = h / LayoutBaseline.targetHeight;
+              final scale = scaleX < scaleY ? scaleX : scaleY;
 
-              // Update global scale factor in the singleton
+              // Update global scale factor for singleton consumers
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                LayoutBaseline.instance.updateScale(h);
+                if (LayoutBaseline.instance.scale != scale) {
+                  LayoutBaseline.instance.updateScale(
+                    scale * LayoutBaseline.targetHeight,
+                  );
+                }
               });
 
-              if (w > targetW) {
-                // Screen is wider than our target portrait ratio: Apply Pillarboxing
-                return Center(
+              // Map physical insets (notches, keyboards) to logical space
+              final outerData = MediaQuery.of(context);
+              final scaledWidth = LayoutBaseline.targetWidth * scale;
+              final scaledHeight = LayoutBaseline.targetHeight * scale;
+              final horizontalBar = (w - scaledWidth) / 2;
+              final verticalBar = (h - scaledHeight) / 2;
+
+              final mappedPadding = EdgeInsets.only(
+                top: math.max(0, outerData.padding.top - verticalBar) / scale,
+                bottom: math.max(0, outerData.padding.bottom - verticalBar) /
+                    scale,
+                left: math.max(0, outerData.padding.left - horizontalBar) /
+                    scale,
+                right: math.max(0, outerData.padding.right - horizontalBar) /
+                    scale,
+              );
+
+              final mappedInsets = EdgeInsets.only(
+                top: math.max(0, outerData.viewInsets.top - verticalBar) / scale,
+                bottom: math.max(0, outerData.viewInsets.bottom - verticalBar) /
+                    scale,
+                left: math.max(0, outerData.viewInsets.left - horizontalBar) /
+                    scale,
+                right: math.max(0, outerData.viewInsets.right - horizontalBar) /
+                    scale,
+              );
+
+              return Center(
+                child: FittedBox(
+                  fit: BoxFit.contain,
                   child: SizedBox(
-                    width: targetW,
-                    height: h,
-                    child: _buildInnerChild(context, targetW, h, true),
+                    width: LayoutBaseline.targetWidth,
+                    height: LayoutBaseline.targetHeight,
+                    child: MediaQuery(
+                      data: outerData.copyWith(
+                        size: const Size(
+                          LayoutBaseline.targetWidth,
+                          LayoutBaseline.targetHeight,
+                        ),
+                        padding: mappedPadding,
+                        viewPadding: mappedPadding, // Use mapped padding here
+                        viewInsets: mappedInsets,
+                        textScaler: const TextScaler.linear(1.0),
+                      ),
+                      child: child,
+                    ),
                   ),
-                );
-              } else {
-                // Screen is narrower than or equal to our target: Fill width (Standard Portrait)
-                return _buildInnerChild(context, w, h, false);
-              }
+                ),
+              );
             },
           ),
         );
       },
-    );
-  }
-
-  Widget _buildInnerChild(
-    BuildContext context,
-    double w,
-    double h,
-    bool isPillarboxed,
-  ) {
-    // Override MediaQuery so the rest of the app thinks it's in a fixed-size container
-    final data = MediaQuery.of(context);
-
-    // Calculate the scale needed to keep proportions fixed
-    // We scale based on height as it's our primary anchor for the portrait ratio
-    final scale = h / LayoutBaseline.targetHeight;
-
-    return MediaQuery(
-      data: data.copyWith(
-        size: Size(w, h),
-        padding: EdgeInsets.zero,
-        viewPadding: EdgeInsets.zero,
-        viewInsets: data.viewInsets,
-        // We also scale text to keep it proportional
-        textScaler: TextScaler.linear(scale),
-      ),
-      child: ClipRect(
-        child: Center(
-          child: OverflowBox(
-            // We force the content to think it's exactly the target size
-            // then scale it up/down to fit the actual screen
-            minWidth: LayoutBaseline.targetWidth,
-            maxWidth: LayoutBaseline.targetWidth,
-            minHeight: LayoutBaseline.targetHeight,
-            maxHeight: LayoutBaseline.targetHeight,
-            child: Transform.scale(scale: scale, child: child),
-          ),
-        ),
-      ),
     );
   }
 }

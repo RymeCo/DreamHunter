@@ -23,8 +23,12 @@ class LayoutBaseline extends ChangeNotifier {
 
   /// Sets the current scale based on the actual height vs target height.
   void updateScale(double actualHeight) {
-    _scale = actualHeight / targetHeight;
-    notifyListeners();
+    final newScale = actualHeight / targetHeight;
+    // Prevent infinite rebuilds due to floating-point inaccuracy
+    if ((_scale - newScale).abs() > 0.001) {
+      _scale = newScale;
+      notifyListeners();
+    }
   }
 
   Future<void> initialize() async {
