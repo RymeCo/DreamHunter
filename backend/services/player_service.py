@@ -99,31 +99,33 @@ class PlayerService:
     def refresh_leaderboards():
         """
         Scans all players and updates the cached leaderboard document.
-        Thresholds lowered for early-stage testing/launch.
+        Criteria: Level >= 50, Coins >= 30,000. Verified only.
+        Tie-breaker: Older account (earlier createdAt) wins.
         """
         from services.settings_service import settings_service
         if settings_service.get_settings().get("leaderboard_paused", False):
             print("[LEADERBOARD] Refresh skipped: Leaderboard is PAUSED.")
             return PlayerService.get_leaderboard_cache()
 
-        # 1. Fetch Top Levels (Level >= 1 for early stage)
-        # Note: We fetch more than 50 to allow for Python-side filtering of banned users
+        now = datetime.now().isoformat()
+
+        # 1. Fetch Top Levels (Level >= 50)
+        # We fetch more to allow for tie-breaking and filtering in Python
         level_query = db.collection("players")\
             .where("isVerified", "==", True)\
-            .where("level", ">=", 1)\
+            .where("level", ">=", 50)\
             .order_by("level", direction="DESCENDING")\
+            .order_by("createdAt", direction="ASCENDING")\
             .limit(100).stream()
 
         top_levels = []
-        now = datetime.now().isoformat()
         for doc in level_query:
             p = doc.to_dict()
             
-            # Filter out banned users
+            # Filter out banned/hidden users
             if p.get("isBannedFromLeaderboard", False): continue
             hide_until = p.get("leaderboardHideUntil")
             if hide_until and hide_until > now: continue
-
             if p.get("isBannedPermanent", False): continue
             ban_until = p.get("banUntil")
             if ban_until and ban_until > now: continue
@@ -137,22 +139,22 @@ class PlayerService:
             })
             if len(top_levels) >= 50: break
 
-        # 2. Fetch Top Coins (Coins >= 100 for early stage)
+        # 2. Fetch Top Coins (Coins >= 30,000)
         coin_query = db.collection("players")\
             .where("isVerified", "==", True)\
-            .where("coins", ">=", 100)\
+            .where("coins", ">=", 30000)\
             .order_by("coins", direction="DESCENDING")\
+            .order_by("createdAt", direction="ASCENDING")\
             .limit(100).stream()
 
         top_coins = []
         for doc in coin_query:
             p = doc.to_dict()
             
-            # Filter out banned users
+            # Filter out banned/hidden users
             if p.get("isBannedFromLeaderboard", False): continue
             hide_until = p.get("leaderboardHideUntil")
             if hide_until and hide_until > now: continue
-
             if p.get("isBannedPermanent", False): continue
             ban_until = p.get("banUntil")
             if ban_until and ban_until > now: continue

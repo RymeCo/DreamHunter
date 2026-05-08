@@ -123,6 +123,33 @@ class _ChatViewState extends State<ChatView> {
     _channel!.sink.add(jsonEncode(payload));
   }
 
+  Future<void> _clearChat() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Chat?'),
+        content: Text(
+          'This will permanently remove all messages in the ${_selectedRegion.toUpperCase()} region for ALL players. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Clear for All', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && _channel != null) {
+      final payload = {'type': 'clear', 'region': _selectedRegion};
+      _channel!.sink.add(jsonEncode(payload));
+    }
+  }
+
   void _showModerationMenu(ChatMessage message) {
     showModalBottomSheet(
       context: context,

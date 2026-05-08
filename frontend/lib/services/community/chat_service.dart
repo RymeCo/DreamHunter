@@ -95,6 +95,12 @@ class ChatService {
               return;
             }
 
+            if (json['type'] == 'clear') {
+              _messageBuffer.clear();
+              _messageController.add(List.from(_messageBuffer));
+              return;
+            }
+
             final message = ChatMessage.fromJson(json);
 
             // Deduplication

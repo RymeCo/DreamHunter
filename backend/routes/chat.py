@@ -39,8 +39,11 @@ class ConnectionManager:
                 pass
 
     async def broadcast(self, message: dict, region: str):
-        # Handle message deletion/censorship
-        if message.get("type") == "delete":
+        # Handle message deletion/censorship or full clear
+        if message.get("type") == "clear":
+            if region in self.history:
+                self.history[region] = []
+        elif message.get("type") == "delete":
             target_id = message.get("targetId")
             if region in self.history:
                 self.history[region] = [m for m in self.history[region] if m.get("id") != target_id]
