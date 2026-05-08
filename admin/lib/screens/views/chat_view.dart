@@ -66,11 +66,18 @@ class _ChatViewState extends State<ChatView> {
     final token = await _api.getIdToken();
     if (token == null || !mounted || _isDisposed) return;
 
-    final wsUrl = ApiGateway.baseUrl
-        .replaceFirst('https://', 'wss://')
-        .replaceFirst('http://', 'ws://');
+    final baseUri = Uri.parse(ApiGateway.baseUrl);
+    final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
 
-    final uri = Uri.parse('$wsUrl/ws/chat/$_selectedRegion?token=$token');
+    String path = baseUri.path;
+    if (!path.endsWith('/')) path += '/';
+    path += 'ws/chat/$_selectedRegion';
+
+    final uri = baseUri.replace(
+      scheme: wsScheme,
+      path: path,
+      queryParameters: {'token': token},
+    );
 
     try {
       _channel = WebSocketChannel.connect(uri);
